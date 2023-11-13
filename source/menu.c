@@ -58,7 +58,7 @@ bool menu_runMenu(void *currXfb) {
 		case WAVEFORM:
 			menu_waveformMeasure(currXfb);
 			break;
-		case PLACEHOLDER:
+		case PLOT_2D:
 			menu_2dPlot(currXfb);
 			break;
 		default:
