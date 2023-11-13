@@ -11,6 +11,7 @@
 #include "waveform.h"
 
 #define SCREEN_POS_OFFSET 225
+#define SCREEN_POS_CENTER 320
 #define MENUITEMS_LEN 3
 
 // enum to keep track of what menu to display, and what logic to run
@@ -29,7 +30,7 @@ static WaveformData data = { { 0 }, 0, 0, 0, 0, 0, false };
 static u32 pressed = 0;
 static u32 held = 0;
 
-static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "A Third Thing" };
+static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot" };
 
 // the "main" for the menus
 // other menu functions are called from here
@@ -58,7 +59,7 @@ bool menu_runMenu(void *currXfb) {
 			menu_waveformMeasure(currXfb);
 			break;
 		case PLACEHOLDER:
-			menu_placeholder();
+			menu_2dPlot(currXfb);
 			break;
 		default:
 			printf("HOW DID WE END UP HERE?\n");
@@ -433,6 +434,28 @@ void menu_waveformMeasure(void *currXfb) {
 	}
 }
 
-void menu_placeholder() {
-	printf("WIP\n");
+void menu_2dPlot(void *currXfb) {
+	// display instructions and data for user
+	printf("Press A to start read\n");
+
+	// do we have data that we can display?
+	if (data.isDataReady) {
+		printf("%u samples\n", data.endPoint + 1);
+
+		// draw plot
+		// TODO: this needs to be gutted and replaced, this is not good code
+
+		// y is negated because of how the graph is drawn
+		for (int i = 0; i < data.endPoint; i++) {
+			DrawBox(SCREEN_POS_CENTER + data.data[i].ax, SCREEN_POS_OFFSET - data.data[i].ay,
+			        SCREEN_POS_CENTER + data.data[i].ax, SCREEN_POS_OFFSET - data.data[i].ay, COLOR_WHITE, currXfb);
+		}
+	}
+
+	// only start reading if A is pressed
+	// TODO: figure out if this can be removed without having to gut the current poll logic, would be better for the user to not have to do this
+	if ( pressed & PAD_BUTTON_A) {
+		measureWaveform(&data);
+		assert(data.endPoint < 5000);
+	}
 }

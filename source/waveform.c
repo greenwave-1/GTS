@@ -91,8 +91,8 @@ void measureWaveform(WaveformData *data) {
 		}
 
 		// has the stick stopped moving, and are we close to 0?
-		if ( (prevPollDiffX < 2 && prevPollDiffX > -2 && prevPollDiffY < 2 && prevPollDiffY > -2) &&
-				(currPollX < 2 && currPollX > -2 && currPollY < 2 && currPollY > -2)) {
+		if ( (prevPollDiffX < 3 && prevPollDiffX > -3 && prevPollDiffY < 3 && prevPollDiffY > -3) &&
+				(currPollX < 3 && currPollX > -3 && currPollY < 3 && currPollY > -3)) {
 			stickNotMovingCounter++;
 
 			// arbitrarily break after a certain number of passes
