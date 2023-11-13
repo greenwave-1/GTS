@@ -1,0 +1,4 @@
+# don't push build stuffs
+*.dol
+*.elf
+build/
