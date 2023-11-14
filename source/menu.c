@@ -13,11 +13,10 @@
 #define SCREEN_POS_CENTER_X 320
 #define SCREEN_POS_CENTER_Y 240
 
+#define MENUITEMS_LEN 3
+
 // 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
 #define SCREEN_TIMEPLOT_START 70
-//#define SCREEN_TIMEPLOT_END 570
-
-#define MENUITEMS_LEN 3
 
 // enum to keep track of what menu to display, and what logic to run
 static enum CURRENT_MENU currentMenu = MAIN_MENU;
@@ -35,6 +34,7 @@ static WaveformData data = { { 0 }, 0, false };
 static u32 pressed = 0;
 static u32 held = 0;
 
+// menu item strings
 static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot" };
 
 // the "main" for the menus

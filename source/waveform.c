@@ -42,12 +42,12 @@ void measureWaveform(WaveformData *data) {
 		prevPollY = currPollY;
 	}
 
+	startTime = gettime();
 	// add the initial value
 	data->data[data->endPoint].ax = currPollX;
 	data->data[data->endPoint].ay = currPollY;
 	data->endPoint++;
 
-	startTime = gettime();
 	// wait for 1ms to pass
 	while (ticks_to_millisecs(gettime() - startTime) == 0);
 

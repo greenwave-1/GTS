@@ -12,19 +12,19 @@ bool xfbSwitch = false;
 static GXRModeObj *rmode = NULL;
 
 int main(int argc, char **argv) {
-    // do basic initialization
-    // see the devkitpro wii template if you want an explanation of the following
-    // the only thing we're doing differently is a double buffer (because terminal weirdness on actual hardware)
+	// do basic initialization
+	// see the devkitpro wii template if you want an explanation of the following
+	// the only thing we're doing differently is a double buffer (because terminal weirdness on actual hardware)
 	VIDEO_Init();
 	PAD_Init();
 
 	rmode = VIDEO_GetPreferredMode(NULL);
 
 	xfb1 = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
-    xfb2 = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
+	xfb2 = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 
-    console_init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-    console_init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+	console_init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+	console_init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 
 	VIDEO_Configure(rmode);
 
@@ -47,30 +47,30 @@ int main(int argc, char **argv) {
 			break;
 		}
 
-        // check which framebuffer is next
-        if (xfbSwitch) {
-            VIDEO_ClearFrameBuffer(rmode, xfb1, COLOR_BLACK);
-            console_init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+		// check which framebuffer is next
+		if (xfbSwitch) {
+			VIDEO_ClearFrameBuffer(rmode, xfb1, COLOR_BLACK);
+			console_init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 			currXfb = xfb1;
-        } else {
-            VIDEO_ClearFrameBuffer(rmode, xfb2, COLOR_BLACK);
-            console_init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+		} else {
+			VIDEO_ClearFrameBuffer(rmode, xfb2, COLOR_BLACK);
+			console_init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 			currXfb = xfb2;
-        }
+		}
 
 		// run menu
 		shouldExit = menu_runMenu(currXfb);
 
-        // change framebuffer for next frame
-        if (xfbSwitch) {
-            VIDEO_SetNextFramebuffer(xfb1);
-        } else {
-            VIDEO_SetNextFramebuffer(xfb2);
-        }
-        xfbSwitch = !xfbSwitch;
+		// change framebuffer for next frame
+		if (xfbSwitch) {
+			VIDEO_SetNextFramebuffer(xfb1);
+		} else {
+			VIDEO_SetNextFramebuffer(xfb2);
+		}
+		xfbSwitch = !xfbSwitch;
 
 		// Wait for the next frame
-        VIDEO_Flush();
+		VIDEO_Flush();
 		VIDEO_WaitVSync();
 	}
 
