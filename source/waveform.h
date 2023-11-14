@@ -25,9 +25,6 @@ typedef struct WaveformData {
 
 	// stat values
 	// TODO: estimate poll rate?
-	// TODO: move this out of waveformdata, this won't work with scaling code as-is
-	int minX, minY;
-	int maxX, maxY;
 
 	bool isDataReady;
 

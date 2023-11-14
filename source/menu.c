@@ -30,7 +30,7 @@ static u8 mainMenuSelection = 0;
 static u8 bHeldCounter = 0;
 
 // data for drawing a waveform
-static WaveformData data = { { 0 }, 0, 0, 0, 0, 0, false };
+static WaveformData data = { { 0 }, 0, false };
 
 // vars for what buttons are pressed or held
 static u32 pressed = 0;
@@ -327,6 +327,9 @@ void menu_waveformMeasure(void *currXfb) {
 	if (data.isDataReady) {
 		printf("%u samples, drawing from sample %d\n", data.endPoint + 1, dataScrollOffset + 1);
 
+		int minX, minY;
+		int maxX, maxY;
+
 		// draw guidelines (snapback detection)
 		// TODO: this needs to be replaced with a different draw guide depending on what the user selects, once that's implemented
 		DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY, currXfb);
@@ -341,6 +344,12 @@ void menu_waveformMeasure(void *currXfb) {
 		if (data.endPoint < 500) {
 			int prevX = data.data[0].ax;
 			int prevY = data.data[0].ay;
+
+			// initialize stat values
+			minX = prevX;
+			maxX = prevX;
+			minY = prevY;
+			maxY = prevY;
 
 			// draw first point
 			DrawBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - prevY, SCREEN_TIMEPLOT_START,
@@ -358,7 +367,16 @@ void menu_waveformMeasure(void *currXfb) {
 					        SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevY,
 					        COLOR_BLUE, currXfb);
 				}
+
 				prevY = data.data[i].ay;
+
+				// update stat values
+				if (minY > prevY) {
+					minY = prevY;
+				}
+				if (maxY < prevY) {
+					maxY = prevY;
+				}
 			}
 
 			// draw first point
@@ -378,10 +396,23 @@ void menu_waveformMeasure(void *currXfb) {
 				}
 
 				prevX = data.data[i].ax;
+				// update stat values
+				if (minX > prevX) {
+					minX = prevX;
+				}
+				if (maxX < prevX) {
+					maxX = prevX;
+				}
 			}
 		} else {
 			int prevX = data.data[dataScrollOffset].ax;
 			int prevY = data.data[dataScrollOffset].ay;
+
+			// initialize stat values
+			minX = prevX;
+			maxX = prevX;
+			minY = prevY;
+			maxY = prevY;
 
 			// draw first point
 			DrawBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - prevY, SCREEN_TIMEPLOT_START,
@@ -400,6 +431,14 @@ void menu_waveformMeasure(void *currXfb) {
 					        COLOR_BLUE, currXfb);
 				}
 				prevY = data.data[i + dataScrollOffset].ay;
+
+				// update stat values
+				if (minY > prevY) {
+					minY = prevY;
+				}
+				if (maxY < prevY) {
+					maxY = prevY;
+				}
 			}
 
 			// draw first point
@@ -419,6 +458,14 @@ void menu_waveformMeasure(void *currXfb) {
 				}
 
 				prevX = data.data[i + dataScrollOffset].ax;
+
+				// update stat values
+				if (minX > prevX) {
+					minX = prevX;
+				}
+				if (maxX < prevX) {
+					maxX = prevX;
+				}
 			}
 		}
 
@@ -449,12 +496,11 @@ void menu_waveformMeasure(void *currXfb) {
 				}
 			}
 		}
+		// print min/max data
+		printf( "\x1b[21;0H");
+		printf("Min X: %04d | Min Y: %04d\n", minX, minY);
+		printf("Max X: %04d | Max Y: %04d\n", maxX, maxY);
 	}
-
-	// print min/max data
-	printf( "\x1b[21;0H");
-	printf("Min X: %04d | Min Y: %04d\n", data.minX, data.minY);
-	printf("Max X: %04d | Max Y: %04d\n", data.maxX, data.maxY);
 
 	// only start reading if A is pressed
 	// TODO: figure out if this can be removed without having to gut the current poll logic, would be better for the user to not have to do this

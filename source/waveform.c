@@ -19,8 +19,6 @@ void measureWaveform(WaveformData *data) {
 	unsigned int stickNotMovingCounter = 0;
 
 	data->endPoint = 0;
-	data->minX = 0, data->minY = 0;
-	data->maxX = 0; data->maxY = 0;
 
 	// timer var
 	long long unsigned int startTime = gettime();
@@ -74,20 +72,6 @@ void measureWaveform(WaveformData *data) {
 		// have we overrun our array?
 		if (data->endPoint == WAVEFORM_SAMPLES - 1) {
 			break;
-		}
-
-		// update min/max values
-		if (currPollX > data->maxX) {
-			data->maxX = currPollX;
-		}
-		if (currPollX < data->minX) {
-			data->minX = currPollX;
-		}
-		if (currPollY > data->maxY) {
-			data->maxY = currPollY;
-		}
-		if (currPollY < data->minY) {
-			data->minY = currPollY;
 		}
 
 		// has the stick stopped moving, and are we close to 0?
