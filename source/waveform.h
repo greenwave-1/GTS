@@ -32,6 +32,9 @@ typedef struct WaveformData {
 
 void measureWaveform(WaveformData *data);
 
+// converts raw input values to melee coordinates
+WaveformDatapoint convertStickValues(WaveformDatapoint *data);
+
 // drawing functions from phobconfigtool
 void DrawHLine (int x1, int x2, int y, int color, void *xfb);
 void DrawVLine (int x, int y1, int y2, int color, void *xfb);

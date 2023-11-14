@@ -5,7 +5,6 @@
 #include "menu.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
 #include <assert.h>
 #include "waveform.h"
@@ -167,95 +166,62 @@ void menu_controllerTest() {
 	// melee stick coordinates stuff
 	// a lot of this comes from github.com/phobgcc/phobconfigtool
 
+	static WaveformDatapoint stickCoordinatesRaw;
+	static WaveformDatapoint stickCoordinatesMelee;
+
 	// get raw stick values
-	int stickX = PAD_StickX(0), stickY = PAD_StickY(0);
-	int cStickX = PAD_SubStickX(0), cStickY = PAD_SubStickY(0);
+	stickCoordinatesRaw.ax = PAD_StickX(0), stickCoordinatesRaw.ay = PAD_StickY(0);
+	stickCoordinatesRaw.cx = PAD_SubStickX(0), stickCoordinatesRaw.cy = PAD_SubStickY(0);
 
-	int meleeStickX = stickX, meleeStickY = stickY;
-	int meleeCStickX = cStickX, meleeCStickY = cStickY;
-
-	// convert raw values to melee stick values
-	{
-		float floatStickX = stickX, floatStickY = stickY;
-		float floatCStickX = cStickX, floatCStickY = cStickY;
-
-		float stickMagnitude = sqrt((stickX * stickX) + (stickY * stickY));
-		float cStickMagnitude = sqrt((cStickX * cStickX) + (cStickY * cStickY));
-
-		// magnitude must be between 0 and 80
-		if (stickMagnitude > 80) {
-			// scale stick value to be within range
-			floatStickX = (floatStickX / stickMagnitude) * 80;
-			floatStickY = (floatStickY / stickMagnitude) * 80;
-		}
-		if (cStickMagnitude > 80) {
-			// scale stick value to be within range
-			floatCStickX = (floatCStickX / cStickMagnitude) * 80;
-			floatCStickY = (floatCStickY / cStickMagnitude) * 80;
-		}
-
-		// truncate the floats
-		meleeStickX = (int) floatStickX, meleeStickY = (int) floatStickY;
-		meleeCStickX = (int) floatCStickX, meleeCStickY = (int) floatCStickY;
-
-		// convert to the decimal format for melee
-		// specifically, we are calculating the decimal part of the values
-		meleeStickX = (((float) meleeStickX) * 0.0125) * 10000;
-		meleeStickY = (((float) meleeStickY) * 0.0125) * 10000;
-		meleeCStickX = (((float) meleeCStickX) * 0.0125) * 10000;
-		meleeCStickY = (((float) meleeCStickY) * 0.0125) * 10000;
-
-		// get rid of any negative values
-		meleeStickX = abs(meleeStickX), meleeStickY = abs(meleeStickY);
-		meleeCStickX = abs(meleeCStickX), meleeCStickY = abs(meleeCStickY);
-	}
+	// get converted stick values
+	stickCoordinatesMelee = convertStickValues(&stickCoordinatesRaw);
 
 	// print analog inputs
-	printf("Stick X: (raw)   %4d   |   (melee) ", stickX);
+	printf("Stick X: (raw)   %4d   |   (melee) ", stickCoordinatesRaw.ax);
 	// is the value negative?
-	if (stickX < 0) {
+	if (stickCoordinatesRaw.ax < 0) {
 		printf("-");
 	}
 	// is this a 1.0 value?
-	if (meleeStickX == 10000) {
+	if (stickCoordinatesMelee.ax == 10000) {
 		printf("1.0\n");
 	} else {
-		printf("0.%04d\n", meleeStickX);
+		printf("0.%04d\n", stickCoordinatesMelee.ax);
 	}
 
-	printf("Stick Y: (raw)   %4d   |   (melee) ", stickY);
+	printf("Stick Y: (raw)   %4d   |   (melee) ", stickCoordinatesRaw.ay);
 	// is the value negative?
-	if (stickY < 0) {
+	if (stickCoordinatesRaw.ay < 0) {
 		printf("-");
 	}
 	// is this a 1.0 value?
-	if (meleeStickY == 10000) {
+	if (stickCoordinatesMelee.ay == 10000) {
 		printf("1.0\n");
 	} else {
-		printf("0.%04d\n", meleeStickY);
+		printf("0.%04d\n", stickCoordinatesMelee.ay);
 	}
 
-	printf("C-Stick X: (raw) %4d   |   (melee) ", cStickX);
+	printf("C-Stick X: (raw) %4d   |   (melee) ", stickCoordinatesRaw.cx);
 	// is the value negative?
-	if (cStickX < 0) {
+	if (stickCoordinatesRaw.cx < 0) {
 		printf("-");
 	}
 	// is this a 1.0 value?
-	if (meleeCStickX == 10000) {
+	if (stickCoordinatesMelee.cx == 10000) {
 		printf("1.0\n");
 	} else {
-		printf("0.%04d\n", meleeCStickX);
+		printf("0.%04d\n", stickCoordinatesMelee.cx);
 	}
-	printf("C-Stick Y: (raw) %4d   |   (melee) ", cStickY);
+	printf("C-Stick Y: (raw) %4d   |   (melee) ", stickCoordinatesRaw.cy);
 	// is the value negative?
-	if (cStickY < 0) {
+	if (stickCoordinatesRaw.cy < 0) {
 		printf("-");
 	}
 	// is this a 1.0 value?
-	if (meleeCStickY == 10000) {
+	if (stickCoordinatesMelee.cy == 10000) {
 		printf("1.0\n");
 	} else {
-		printf("0.%04d\n", meleeCStickY);
+		printf("0.%04d\n", stickCoordinatesMelee.cy);
 	}
 
 	printf("Analog L: %d\n", PAD_TriggerL(0));
@@ -512,21 +478,89 @@ void menu_waveformMeasure(void *currXfb) {
 }
 
 void menu_2dPlot(void *currXfb) {
+	// var to keep track of the last point to draw
+	static int lastDrawPoint;
+
+	static WaveformDatapoint convertedCoords;
+
 	// display instructions and data for user
 	printf("Press A to start read\n");
 
 	// do we have data that we can display?
 	if (data.isDataReady) {
-		printf("%u samples\n", data.endPoint + 1);
+		convertedCoords = convertStickValues(&data.data[lastDrawPoint]);
+		printf("%u samples, last point is: %d\n", data.endPoint + 1, lastDrawPoint + 1);
+		printf("Use DPAD left/right to add/remove points from the plot,\nhold R to move faster, hold L for single point movements.");
+
+		// print coordinates of last drawn point
+		printf( "\x1b[21;0H");
+		printf("Raw X: %04d | Raw Y: %04d\n", data.data[lastDrawPoint].ax, data.data[lastDrawPoint].ay);
+		printf("Melee X: ");
+
+		// is the value negative?
+		if (data.data[lastDrawPoint].ax < 0) {
+			printf("-");
+		}
+		// is this a 1.0 value?
+		if (convertedCoords.ax == 10000) {
+			printf("1.0");
+		} else {
+			printf("0.%04d", convertedCoords.ax);
+		}
+		printf(" | Melee Y: ");
+		// is the value negative?
+		if (data.data[lastDrawPoint].ay < 0) {
+			printf("-");
+		}
+		// is this a 1.0 value?
+		if (convertedCoords.ay == 10000) {
+			printf("1.0\n");
+		} else {
+			printf("0.%04d\n", convertedCoords.ay);
+		}
 
 		// draw plot
 		// TODO: this needs to be gutted and replaced, this is not good code
 
 		// y is negated because of how the graph is drawn
-		for (int i = 0; i < data.endPoint; i++) {
+		for (int i = 0; i < lastDrawPoint; i++) {
 			DrawBox(SCREEN_POS_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
 			        SCREEN_POS_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
 					COLOR_WHITE, currXfb);
+		}
+
+		// does the user want to change what data is drawn?
+		// single movements with L
+		if (held & PAD_TRIGGER_L) {
+			if (pressed & PAD_BUTTON_RIGHT) {
+				if (lastDrawPoint + 1 < data.endPoint) {
+					lastDrawPoint++;
+				}
+			} else if (pressed & PAD_BUTTON_LEFT) {
+				if (lastDrawPoint - 1 >= 0) {
+					lastDrawPoint--;
+				}
+			}
+		} else if (held & PAD_BUTTON_RIGHT) {
+			if (held & PAD_TRIGGER_R) {
+				if (lastDrawPoint + 5 < data.endPoint) {
+					lastDrawPoint += 5;
+				}
+			} else {
+				if (lastDrawPoint + 1 < data.endPoint) {
+					lastDrawPoint++;
+				}
+			}
+		} else if (held & PAD_BUTTON_LEFT) {
+			if (held & PAD_TRIGGER_R) {
+				if (lastDrawPoint - 5 >= 0) {
+					lastDrawPoint -= 5;
+				}
+			} else {
+				if (lastDrawPoint - 1 >= 0) {
+					lastDrawPoint--;
+				}
+			}
 		}
 	}
 
@@ -534,6 +568,7 @@ void menu_2dPlot(void *currXfb) {
 	// TODO: figure out if this can be removed without having to gut the current poll logic, would be better for the user to not have to do this
 	if ( pressed & PAD_BUTTON_A) {
 		measureWaveform(&data);
+		lastDrawPoint = data.endPoint;
 		assert(data.endPoint < 5000);
 	}
 }
