@@ -151,7 +151,7 @@ void menu_mainMenu() {
 				currentMenu = WAVEFORM;
 				break;
 			case 2:
-				currentMenu = PLACEHOLDER;
+				currentMenu = PLOT_2D;
 				break;
 		}
 	}
