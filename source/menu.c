@@ -10,8 +10,14 @@
 #include <assert.h>
 #include "waveform.h"
 
-#define SCREEN_POS_CENTER_Y 320
-#define SCREEN_POS_CENTER_X 240
+// center of screen, 640x480
+#define SCREEN_POS_CENTER_X 320
+#define SCREEN_POS_CENTER_Y 240
+
+// 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
+#define SCREEN_TIMEPLOT_START 70
+//#define SCREEN_TIMEPLOT_END 570
+
 #define MENUITEMS_LEN 3
 
 // enum to keep track of what menu to display, and what logic to run
@@ -44,7 +50,7 @@ bool menu_runMenu(void *currXfb) {
 	held = PAD_ButtonsHeld(0);
 
 	// reset console cursor position
-	printf("\x1b[2;0H");
+	printf("\x1b[1;0H");
 	printf("FossScope (Working Title)\n\n");
 
 	// determine what menu we are in
@@ -312,20 +318,20 @@ void menu_controllerTest() {
 void menu_waveformMeasure(void *currXfb) {
 	// TODO: I would bet that there's an off-by-one in here somewhere...
 
-	static int horizontalScroll;
+	static int dataScrollOffset;
 
 	// display instructions and data for user
 	printf("Press A to start read\n");
 
 	// do we have data that we can display?
 	if (data.isDataReady) {
-		printf("%u samples, drawing from sample %d\n", data.endPoint + 1, horizontalScroll + 1);
+		printf("%u samples, drawing from sample %d\n", data.endPoint + 1, dataScrollOffset + 1);
 
 		// draw guidelines (snapback detection)
 		// TODO: this needs to be replaced with a different draw guide depending on what the user selects, once that's implemented
-		DrawHLine(SCREEN_POS_CENTER_Y - 250, SCREEN_POS_CENTER_Y + 250, SCREEN_POS_CENTER_X, COLOR_GRAY, currXfb);
-		DrawHLine(SCREEN_POS_CENTER_Y - 250, SCREEN_POS_CENTER_Y + 250, SCREEN_POS_CENTER_X + 23, COLOR_GREEN, currXfb);
-		DrawHLine(SCREEN_POS_CENTER_Y - 250, SCREEN_POS_CENTER_Y + 250, SCREEN_POS_CENTER_X - 23, COLOR_GREEN, currXfb);
+		DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY, currXfb);
+		DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, COLOR_GREEN, currXfb);
+		DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, COLOR_GREEN, currXfb);
 
 		// draw waveform
 		// TODO: this needs to be gutted and replaced, this is not good code
@@ -336,59 +342,83 @@ void menu_waveformMeasure(void *currXfb) {
 			int prevX = data.data[0].ax;
 			int prevY = data.data[0].ay;
 
+			// draw first point
+			DrawBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - prevY, SCREEN_TIMEPLOT_START,
+			        SCREEN_POS_CENTER_Y - prevY, COLOR_BLUE, currXfb);
+
 			// y is first so that x shows on top
-			for (int i = 0; i < data.endPoint; i++) {
+			for (int i = 1; i < data.endPoint; i++) {
 				// check if our x1 should be the previous point or our current data
 				if (prevY > data.data[i].ay) {
-					DrawBox(50 + i, (prevY * -1) + SCREEN_POS_CENTER_X, 50 + i + 1,
-					        (data.data[i].ay * -1) + SCREEN_POS_CENTER_X + 1, COLOR_BLUE, currXfb);
+					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevY,
+							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i].ay,
+							COLOR_BLUE, currXfb);
 				} else {
-					DrawBox(50 + i, (data.data[i].ay * -1) + SCREEN_POS_CENTER_X, 50 + i + 1,
-					        (prevY * -1) + SCREEN_POS_CENTER_X + 1, COLOR_BLUE, currXfb);
+					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i].ay,
+					        SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevY,
+					        COLOR_BLUE, currXfb);
 				}
 				prevY = data.data[i].ay;
 			}
 
+			// draw first point
+			DrawBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - prevX, SCREEN_TIMEPLOT_START,
+			        SCREEN_POS_CENTER_Y - prevX, COLOR_BLUE, currXfb);
+			
 			// x
-			for (int i = 0; i < data.endPoint; i++) {
+			for (int i = 1; i < data.endPoint; i++) {
 				if (prevX > data.data[i].ax) {
-					DrawBox(50 + i, (prevX * -1) + SCREEN_POS_CENTER_X, 50 + i + 1,
-					        (data.data[i].ax * -1) + SCREEN_POS_CENTER_X + 1, COLOR_RED, currXfb);
+					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevX,
+							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i].ax,
+							COLOR_RED, currXfb);
 				} else {
-					DrawBox(50 + i, (data.data[i].ax * -1) + SCREEN_POS_CENTER_X, 50 + i + 1,
-					        (prevX * -1) + SCREEN_POS_CENTER_X + 1, COLOR_RED, currXfb);
+					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i].ax,
+					        SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevX,
+					        COLOR_RED, currXfb);
 				}
 
 				prevX = data.data[i].ax;
 			}
 		} else {
-			int prevX = data.data[0].ax;
-			int prevY = data.data[0].ay;
+			int prevX = data.data[dataScrollOffset].ax;
+			int prevY = data.data[dataScrollOffset].ay;
+
+			// draw first point
+			DrawBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - prevY, SCREEN_TIMEPLOT_START,
+			        SCREEN_POS_CENTER_Y - prevY, COLOR_BLUE, currXfb);
 
 			// y is first so that x shows on top
-			for (int i = 0; i < 500; i++) {
+			for (int i = 1; i < 500; i++) {
 				// check if our x1 should be the previous point or our current data
-				if (prevY > data.data[i + horizontalScroll].ay) {
-					DrawBox(50 + i, (prevY * -1) + SCREEN_POS_CENTER_X, 50 + i + 1,
-					        (data.data[i + horizontalScroll].ay * -1) + SCREEN_POS_CENTER_X + 1, COLOR_BLUE, currXfb);
+				if (prevY > data.data[i + dataScrollOffset].ay) {
+					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevY,
+					        SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i + dataScrollOffset].ay,
+					        COLOR_BLUE, currXfb);
 				} else {
-					DrawBox(50 + i, (data.data[i + horizontalScroll].ay * -1) + SCREEN_POS_CENTER_X, 50 + i + 1,
-					        (prevY * -1) + SCREEN_POS_CENTER_X + 1, COLOR_BLUE, currXfb);
+					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i + dataScrollOffset].ay,
+					        SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevY,
+					        COLOR_BLUE, currXfb);
 				}
-				prevY = data.data[i + horizontalScroll].ay;
+				prevY = data.data[i + dataScrollOffset].ay;
 			}
+
+			// draw first point
+			DrawBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - prevX, SCREEN_TIMEPLOT_START,
+			        SCREEN_POS_CENTER_Y - prevX, COLOR_BLUE, currXfb);
 
 			// x
 			for (int i = 0; i < 500; i++) {
-				if (prevX > data.data[i + horizontalScroll].ax) {
-					DrawBox(50 + i, (prevX * -1) + SCREEN_POS_CENTER_X, 50 + i + 1,
-					        (data.data[i + horizontalScroll].ax * -1) + SCREEN_POS_CENTER_X + 1, COLOR_RED, currXfb);
+				if (prevX > data.data[i + dataScrollOffset].ax) {
+					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevX,
+					        SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i + dataScrollOffset].ax,
+					        COLOR_RED, currXfb);
 				} else {
-					DrawBox(50 + i, (data.data[i + horizontalScroll].ax * -1) + SCREEN_POS_CENTER_X, 50 + i + 1,
-					        (prevX * -1) + SCREEN_POS_CENTER_X + 1, COLOR_RED, currXfb);
+					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i + dataScrollOffset].ax,
+					        SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevX,
+					        COLOR_RED, currXfb);
 				}
 
-				prevX = data.data[i + horizontalScroll].ax;
+				prevX = data.data[i + dataScrollOffset].ax;
 			}
 		}
 
@@ -399,22 +429,22 @@ void menu_waveformMeasure(void *currXfb) {
 			// does the user want to scroll the waveform?
 			if (held & PAD_BUTTON_RIGHT) {
 				if (held & PAD_TRIGGER_R) {
-					if (horizontalScroll + 505 < data.endPoint) {
-						horizontalScroll += 5;
+					if (dataScrollOffset + 505 < data.endPoint) {
+						dataScrollOffset += 5;
 					}
 				} else {
-					if (horizontalScroll + 501 < data.endPoint) {
-						horizontalScroll++;
+					if (dataScrollOffset + 501 < data.endPoint) {
+						dataScrollOffset++;
 					}
 				}
 			} else if (held & PAD_BUTTON_LEFT) {
 				if (held & PAD_TRIGGER_R) {
-					if (horizontalScroll - 5 >= 0) {
-						horizontalScroll -= 5;
+					if (dataScrollOffset - 5 >= 0) {
+						dataScrollOffset -= 5;
 					}
 				} else {
-					if (horizontalScroll - 1 >= 0) {
-						horizontalScroll--;
+					if (dataScrollOffset - 1 >= 0) {
+						dataScrollOffset--;
 					}
 				}
 			}
@@ -430,7 +460,7 @@ void menu_waveformMeasure(void *currXfb) {
 	// TODO: figure out if this can be removed without having to gut the current poll logic, would be better for the user to not have to do this
 	if ( pressed & PAD_BUTTON_A) {
 		measureWaveform(&data);
-		horizontalScroll = 0;
+		dataScrollOffset = 0;
 		assert(data.endPoint < 5000);
 	}
 }
@@ -448,8 +478,9 @@ void menu_2dPlot(void *currXfb) {
 
 		// y is negated because of how the graph is drawn
 		for (int i = 0; i < data.endPoint; i++) {
-			DrawBox(SCREEN_POS_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_X - data.data[i].ay,
-			        SCREEN_POS_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_X - data.data[i].ay, COLOR_WHITE, currXfb);
+			DrawBox(SCREEN_POS_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
+			        SCREEN_POS_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
+					COLOR_WHITE, currXfb);
 		}
 	}
 
