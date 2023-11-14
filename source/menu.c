@@ -8,12 +8,13 @@
 #include <string.h>
 #include <assert.h>
 #include "waveform.h"
+#include "deadzone255.h"
 
 // center of screen, 640x480
 #define SCREEN_POS_CENTER_X 320
 #define SCREEN_POS_CENTER_Y 240
 
-#define MENUITEMS_LEN 3
+#define MENUITEMS_LEN 4
 
 // 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
 #define SCREEN_TIMEPLOT_START 70
@@ -35,7 +36,7 @@ static u32 pressed = 0;
 static u32 held = 0;
 
 // menu item strings
-static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot" };
+static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot", "Image drawing test" };
 
 // the "main" for the menus
 // other menu functions are called from here
@@ -65,6 +66,9 @@ bool menu_runMenu(void *currXfb) {
 			break;
 		case PLOT_2D:
 			menu_2dPlot(currXfb);
+			break;
+		case IMAGE_TEST:
+			menu_imageTest(currXfb);
 			break;
 		default:
 			printf("HOW DID WE END UP HERE?\n");
@@ -140,7 +144,7 @@ void menu_mainMenu() {
 			mainMenuSelection--;
 		}
 	} else if ( pressed & PAD_BUTTON_DOWN ) {
-		if (mainMenuSelection < 2) {
+		if (mainMenuSelection < MENUITEMS_LEN - 1) {
 			mainMenuSelection++;
 		}
 	}
@@ -157,6 +161,9 @@ void menu_mainMenu() {
 				break;
 			case 2:
 				currentMenu = PLOT_2D;
+				break;
+			case 3:
+				currentMenu = IMAGE_TEST;
 				break;
 		}
 	}
@@ -570,5 +577,97 @@ void menu_2dPlot(void *currXfb) {
 		measureWaveform(&data);
 		lastDrawPoint = data.endPoint;
 		assert(data.endPoint < 5000);
+	}
+}
+
+void menu_imageTest(void *currXfb) {
+	// get information on the image to be drawn
+	u32 width = deadzone_image[0] << 8 | deadzone_image[1];
+	u32 height = deadzone_image[2] << 8 | deadzone_image[3];
+	u32 pixelCount = width * height;
+
+	// where the image should be drawn from wrt 0,0
+	u32 imageOffsetX = 200;
+	u32 imageOffsetY = 100;
+
+	// where image drawing ends
+	// calculated in advance for use in the loop
+	u32 imageEndpointX = imageOffsetX + width;
+	u32 imageEndpointY = imageOffsetY + height;
+
+	printf("Image is %ux%u, total pixels: %u\n", width, height, pixelCount);
+	printf("Image start: %u,%u | Image end: %u,%u\n", imageOffsetX, imageOffsetY, imageEndpointX, imageEndpointY);
+
+	// ensure image won't go out of bounds
+	if (imageEndpointX > 640 || imageEndpointY > 480) {
+		return;
+		//printf("Image with given parameters will write incorrectly\n");
+	}
+
+	u32 byte = 4;
+	u8 runIndex = 0;
+	// first five bits are runlength
+	u8 runLength = (deadzone_image[byte] >> 3) + 1;
+	// last three bits are color, lookup color in index
+	u8 color = deadzone_indexes[ deadzone_image[byte] & 0b111];
+	// begin processing data
+	for (int row = imageOffsetY; row < imageEndpointY; row++) {
+		for (int column = imageOffsetX; column < imageEndpointX; column++) {
+			// is there a pixel to actually draw? (0-4 is transparency)
+			if (color >= 5) {
+				int newColor = 0;
+				u8 temp = color - 5;
+
+				while (temp != 0) {
+					newColor++;
+					temp--;
+				}
+
+				switch (newColor) {
+					case 0:
+						DrawBox(row, column, row, column, COLOR_MAROON, currXfb);
+						break;
+					case 1:
+						DrawBox(row, column, row, column, COLOR_GREEN, currXfb);
+						break;
+					case 2:
+						DrawBox(row, column, row, column, COLOR_OLIVE, currXfb);
+						break;
+					case 3:
+						DrawBox(row, column, row, column, COLOR_NAVY, currXfb);
+						break;
+					case 4:
+						DrawBox(row, column, row, column, COLOR_PURPLE, currXfb);
+						break;
+					case 5:
+						DrawBox(row, column, row, column, COLOR_TEAL, currXfb);
+						break;
+					case 6:
+						DrawBox(row, column, row, column, COLOR_GRAY, currXfb);
+						break;
+					case 7:
+						DrawBox(row, column, row, column, COLOR_SILVER, currXfb);
+						break;
+					case 8:
+						DrawBox(row, column, row, column, COLOR_RED, currXfb);
+						break;
+					case 9:
+						DrawBox(row, column, row, column, COLOR_LIME, currXfb);
+						break;
+					default:
+						DrawBox(row, column, row, column, COLOR_YELLOW, currXfb);
+						break;
+				}
+
+			}
+
+			runIndex++;
+			if (runIndex >= runLength) {
+				runIndex = 0;
+				byte++;
+				runLength = (deadzone_image[byte] >> 3) + 1;
+				color = deadzone_indexes[ deadzone_image[byte] & 0b111];
+			}
+		}
 	}
 }
