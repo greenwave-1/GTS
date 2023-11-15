@@ -16,15 +16,20 @@
 #define SCREEN_POS_CENTER_Y 240
 
 #define MENUITEMS_LEN 3
+#define TEST_LEN 4
 
 // 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
 #define SCREEN_TIMEPLOT_START 70
+
+enum WAVEFORM_TEST { SNAPBACK, PIVOT, DASHBACK, NO_TEST };
+
+static enum WAVEFORM_TEST currentTest = SNAPBACK;
 
 // enum to keep track of what menu to display, and what logic to run
 static enum CURRENT_MENU currentMenu = MAIN_MENU;
 
 // enum for what image to draw in 2d plot
-static enum IMAGE selectedImage = NONE;
+static enum IMAGE selectedImage = SNAPBACK;
 
 // main menu counter
 static u8 mainMenuSelection = 0;
@@ -41,6 +46,12 @@ static u32 held = 0;
 
 // menu item strings
 static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot" };
+
+static bool displayInstructions = false;
+
+static int lastDrawPoint = -1;
+static int dataScrollOffset = 0;
+
 
 // most of this is taken from
 // https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
@@ -71,11 +82,7 @@ static void drawImage(void *currXfb, const unsigned char image[], const unsigned
 		for (int column = offsetX; column < imageEndpointX; column++) {
 			// is there a pixel to actually draw? (0-4 is transparency)
 			if (color >= 5) {
-				int newColor = 0;
-				u8 temp = color - 5;
-
-				DrawBox(column, row, column, row, CUSTOM_COLORS[temp], currXfb);
-
+				DrawBox(column, row, column, row, CUSTOM_COLORS[color - 5], currXfb);
 			}
 
 			runIndex++;
@@ -113,10 +120,23 @@ bool menu_runMenu(void *currXfb) {
 			menu_controllerTest();
 			break;
 		case WAVEFORM:
-			menu_waveformMeasure(currXfb);
+			if (displayInstructions) {
+				printf("Press X to cycle the current test, results will show above the waveform.\n"
+					   "Use DPAD left/right to scroll waveform when it is larger than the\n"
+					   "displayed area, hold R to move faster.");
+			} else {
+				menu_waveformMeasure(currXfb);
+			}
 			break;
 		case PLOT_2D:
-			menu_2dPlot(currXfb);
+			if (displayInstructions) {
+				printf("Press X to cycle the stickmap background. Use DPAD left/right to change\n"
+					   "what the last point drawn is. Information on the last chosen point is\n"
+					   "displayed at the bottom. Hold R to add or remove points faster.\n"
+					   "Hold L to move one point at a time.");
+			} else {
+				menu_2dPlot(currXfb);
+			}
 			break;
 		default:
 			printf("HOW DID WE END UP HERE?\n");
@@ -127,13 +147,13 @@ bool menu_runMenu(void *currXfb) {
 	printf( "\x1b[25;0H");
 
 	// exit the program if start is pressed
-	if ( pressed & PAD_BUTTON_START && currentMenu == MAIN_MENU ) {
+	if (pressed & PAD_BUTTON_START && currentMenu == MAIN_MENU) {
 		printf("Exiting...");
 		return true;
 	}
 
 	// does the user want to move back to the main menu?
-	else if ( held & PAD_BUTTON_B && currentMenu != MAIN_MENU ) {
+	else if (held & PAD_BUTTON_B && currentMenu != MAIN_MENU) {
 		bHeldCounter++;
 
 		// give user feedback that they are holding the button
@@ -153,10 +173,17 @@ bool menu_runMenu(void *currXfb) {
 		// has the button been held long enough?
 		if (bHeldCounter > 46) {
 			currentMenu = MAIN_MENU;
+			displayInstructions = false;
 			bHeldCounter = 0;
 		}
 
 	} else {
+		// does the user want to display instructions?
+		if (pressed & PAD_TRIGGER_Z) {
+			if (currentMenu == WAVEFORM || currentMenu == PLOT_2D) {
+				displayInstructions = !displayInstructions;
+			}
+		}
 		if (currentMenu != MAIN_MENU) {
 			printf("Hold B to return to main menu.");
 		} else {
@@ -187,11 +214,11 @@ void menu_mainMenu() {
 	}
 
 	// does the user move the cursor?
-	if ( pressed & PAD_BUTTON_UP ) {
+	if (pressed & PAD_BUTTON_UP) {
 		if (mainMenuSelection > 0) {
 			mainMenuSelection--;
 		}
-	} else if ( pressed & PAD_BUTTON_DOWN ) {
+	} else if (pressed & PAD_BUTTON_DOWN) {
 		if (mainMenuSelection < MENUITEMS_LEN - 1) {
 			mainMenuSelection++;
 		}
@@ -199,7 +226,7 @@ void menu_mainMenu() {
 
 	// does the user want to move into another menu?
 	// else if to ensure that the A press is separate from any dpad stuff
-	else if ( pressed & PAD_BUTTON_A ) {
+	else if (pressed & PAD_BUTTON_A) {
 		switch (mainMenuSelection) {
 			case 0:
 				currentMenu = CONTROLLER_TEST;
@@ -283,51 +310,51 @@ void menu_controllerTest() {
 	// this is ugly, but I'm not sure of a better way to do this currently
 	// this will get redone when stuff isn't just printed to console
 	printf("A: ");
-	if ( held & PAD_BUTTON_A ) {
+	if (held & PAD_BUTTON_A) {
 		printf("Pressed");
 	}
 	printf("\nB: ");
-	if ( held & PAD_BUTTON_B ) {
+	if (held & PAD_BUTTON_B) {
 		printf("Pressed");
 	}
 	printf("\nX: ");
-	if ( held & PAD_BUTTON_X ) {
+	if (held & PAD_BUTTON_X) {
 		printf("Pressed");
 	}
 	printf("\nY: ");
-	if ( held & PAD_BUTTON_Y ) {
+	if (held & PAD_BUTTON_Y) {
 		printf("Pressed");
 	}
 	printf("\nZ: ");
-	if ( held & PAD_TRIGGER_Z ) {
+	if (held & PAD_TRIGGER_Z) {
 		printf("Pressed");
 	}
 	printf("\nStart: ");
-	if ( held & PAD_BUTTON_START ) {
+	if (held & PAD_BUTTON_START) {
 		printf("Pressed");
 	}
 	printf("\nDigital L: ");
-	if ( held & PAD_TRIGGER_L ) {
+	if (held & PAD_TRIGGER_L) {
 		printf("Pressed");
 	}
 	printf("\nDigital R: ");
-	if ( held & PAD_TRIGGER_R ) {
+	if (held & PAD_TRIGGER_R) {
 		printf("Pressed");
 	}
 	printf("\nDPAD Up: ");
-	if ( held & PAD_BUTTON_UP ) {
+	if (held & PAD_BUTTON_UP) {
 		printf("Pressed");
 	}
 	printf("\nDPAD Down: ");
-	if ( held & PAD_BUTTON_DOWN ) {
+	if (held & PAD_BUTTON_DOWN) {
 		printf("Pressed");
 	}
 	printf("\nDPAD Left: ");
-	if ( held & PAD_BUTTON_LEFT ) {
+	if (held & PAD_BUTTON_LEFT) {
 		printf("Pressed");
 	}
 	printf("\nDPAD Right: ");
-	if ( held & PAD_BUTTON_RIGHT ) {
+	if (held & PAD_BUTTON_RIGHT) {
 		printf("Pressed");
 	}
 
@@ -336,23 +363,36 @@ void menu_controllerTest() {
 void menu_waveformMeasure(void *currXfb) {
 	// TODO: I would bet that there's an off-by-one in here somewhere...
 
-	static int dataScrollOffset;
-
 	// display instructions and data for user
-	printf("Press A to start read\n");
+	printf("Press A to start read, press Z for instructions\n");
 
 	// do we have data that we can display?
 	if (data.isDataReady) {
+
 		printf("%u samples, drawing from sample %d\n", data.endPoint + 1, dataScrollOffset + 1);
 
 		int minX, minY;
 		int maxX, maxY;
 
-		// draw guidelines (snapback detection)
-		// TODO: this needs to be replaced with a different draw guide depending on what the user selects, once that's implemented
+		// draw guidelines based on selected test
 		DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY, currXfb);
-		DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, COLOR_GREEN, currXfb);
-		DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, COLOR_GREEN, currXfb);
+		// lots of the specific values are taken from:
+		// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
+		switch (currentTest) {
+			case PIVOT:
+				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
+				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
+				break;
+			case DASHBACK:
+				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
+				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
+			case SNAPBACK:
+				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, COLOR_GREEN, currXfb);
+				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, COLOR_GREEN, currXfb);
+			default:
+				break;
+		}
+
 
 		// draw waveform
 		// TODO: this needs to be gutted and replaced, this is not good code
@@ -489,8 +529,6 @@ void menu_waveformMeasure(void *currXfb) {
 
 		// do we have enough data to enable scrolling?
 		if (data.endPoint >= 500) {
-			//printf("\x1b[23;0H");
-			printf("Use DPAD left/right to scroll waveform, hold R to move faster.");
 			// does the user want to scroll the waveform?
 			if (held & PAD_BUTTON_RIGHT) {
 				if (held & PAD_TRIGGER_R) {
@@ -515,40 +553,63 @@ void menu_waveformMeasure(void *currXfb) {
 			}
 		}
 		// print min/max data
-		printf( "\x1b[21;0H");
-		printf("Min X: %04d | Min Y: %04d\n", minX, minY);
+		printf( "\x1b[22;0H");
+		printf("Min X: %04d | Min Y: %04d   |   ", minX, minY);
 		printf("Max X: %04d | Max Y: %04d\n", maxX, maxY);
+		printf("Current test: ");
+		switch (currentTest) {
+			case SNAPBACK:
+				printf("Snapback");
+				break;
+			case PIVOT:
+				printf("Pivot");
+				break;
+			case DASHBACK:
+				printf("Dashback");
+				break;
+			case NO_TEST:
+				printf("None");
+				break;
+			default:
+				printf("");
+				break;
+		}
+		printf("\n");
+
+		// does the user want to change the test?
+		if (pressed & PAD_BUTTON_X) {
+			currentTest++;
+			if (currentTest == TEST_LEN) {
+				currentTest = SNAPBACK;
+			}
+		}
 	}
 
 	// only start reading if A is pressed
 	// TODO: figure out if this can be removed without having to gut the current poll logic, would be better for the user to not have to do this
-	if ( pressed & PAD_BUTTON_A) {
+	if (pressed & PAD_BUTTON_A) {
 		measureWaveform(&data);
 		dataScrollOffset = 0;
+		lastDrawPoint = data.endPoint;
 		assert(data.endPoint < 5000);
 	}
 }
 
 void menu_2dPlot(void *currXfb) {
-	// var to keep track of the last point to draw
-	static int lastDrawPoint;
-
 	static WaveformDatapoint convertedCoords;
 
 	// display instructions and data for user
-	printf("Press A to start read\n");
+	printf("Press A to start read, press Z for instructions\n");
 
 	// do we have data that we can display?
 	if (data.isDataReady) {
 		convertedCoords = convertStickValues(&data.data[lastDrawPoint]);
 		printf("%u samples, last point is: %d\n", data.endPoint + 1, lastDrawPoint + 1);
 		// TODO: move instructions under different prompt, so I don't have to keep messing with text placement
-		//printf("DPAD left/right - add/remove points, Hold R - move faster, Hold L - add/remove single point\n"
-		//	   "hold L for single point movements. Press X to cycle stickmap.");
 
 		// print coordinates of last drawn point
 		printf( "\x1b[22;0H");
-		printf("Raw X: %04d | Raw Y: %04d\n", data.data[lastDrawPoint].ax, data.data[lastDrawPoint].ay);
+		printf("Raw X: %04d | Raw Y: %04d   |   ", data.data[lastDrawPoint].ax, data.data[lastDrawPoint].ay);
 		printf("Melee X: ");
 
 		// is the value negative?
@@ -600,7 +661,7 @@ void menu_2dPlot(void *currXfb) {
 				printf("Wait Movement");
 				drawImage(currXfb, movewait_image, movewait_indexes, SCREEN_POS_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 				break;
-			case NONE:
+			case NO_IMAGE:
 				printf("None");
 			default:
 				break;
@@ -653,16 +714,17 @@ void menu_2dPlot(void *currXfb) {
 		// does the user want to change what stickmap is displayed?
 		if (pressed & PAD_BUTTON_X) {
 			selectedImage++;
-			if (selectedImage > IMAGE_LEN) {
-				selectedImage = NONE;
+			if (selectedImage == IMAGE_LEN) {
+				selectedImage = NO_IMAGE;
 			}
 		}
 	}
 
 	// only start reading if A is pressed
 	// TODO: figure out if this can be removed without having to gut the current poll logic, would be better for the user to not have to do this
-	if ( pressed & PAD_BUTTON_A) {
+	if (pressed & PAD_BUTTON_A) {
 		measureWaveform(&data);
+		dataScrollOffset = 0;
 		lastDrawPoint = data.endPoint;
 		assert(data.endPoint < 5000);
 	}

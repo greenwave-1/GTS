@@ -32,7 +32,7 @@ void measureWaveform(WaveformData *data) {
 	int currPollX = startPosX, prevPollX = startPosX;
 	int currPollY = startPosY, prevPollY = startPosY;
 
-	// wait for the stick to move roughly 10 units outside of its starting position on either axis
+	// wait for the stick to move roughly 10 units outside its starting position on either axis
 	while ( (currPollX > startPosX - 10 && currPollX < startPosX + 10) &&
 			(currPollY > startPosY - 10 && currPollY < startPosY + 10) ) {
 		PAD_ScanPads();
@@ -77,7 +77,7 @@ void measureWaveform(WaveformData *data) {
 
 		// has the stick stopped moving, and are we close to 0?
 		if ( (prevPollDiffX < 3 && prevPollDiffX > -3 && prevPollDiffY < 3 && prevPollDiffY > -3) &&
-				(currPollX < 3 && currPollX > -3 && currPollY < 3 && currPollY > -3)) {
+				(currPollX < 3 && currPollX > -3 && currPollY < 3 && currPollY > -3) ) {
 			stickNotMovingCounter++;
 
 			// arbitrarily break after a certain number of passes
@@ -128,7 +128,6 @@ WaveformDatapoint convertStickValues(WaveformDatapoint *data) {
 	retData.cx = (int) floatCStickX, retData.cy = (int) floatCStickY;
 
 	// convert to the decimal format for melee
-	// specifically, we are calculating the decimal part of the values
 	retData.ax = (((float) retData.ax) * 0.0125) * 10000;
 	retData.ay = (((float) retData.ay) * 0.0125) * 10000;
 	retData.cx = (((float) retData.cx) * 0.0125) * 10000;

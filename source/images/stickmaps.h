@@ -8,7 +8,7 @@
 #include "ledgeR255.h"
 #include "movewait255.h"
 
-#define IMAGE_LEN 6
-enum IMAGE { NONE, DEADZONE, A_WAIT, MOVE_WAIT, CROUCH, LEDGE_L, LEDGE_R  };
+#define IMAGE_LEN 7
+enum IMAGE { NO_IMAGE, DEADZONE, A_WAIT, MOVE_WAIT, CROUCH, LEDGE_L, LEDGE_R  };
 
 #endif //STICKMAPS_H
