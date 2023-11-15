@@ -8,19 +8,23 @@
 #include <string.h>
 #include <assert.h>
 #include "waveform.h"
-#include "deadzone255.h"
+#include "images/stickmaps.h"
+#include "images/custom_colors.h"
 
 // center of screen, 640x480
 #define SCREEN_POS_CENTER_X 320
 #define SCREEN_POS_CENTER_Y 240
 
-#define MENUITEMS_LEN 4
+#define MENUITEMS_LEN 3
 
 // 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
 #define SCREEN_TIMEPLOT_START 70
 
 // enum to keep track of what menu to display, and what logic to run
 static enum CURRENT_MENU currentMenu = MAIN_MENU;
+
+// enum for what image to draw in 2d plot
+static enum IMAGE selectedImage = NONE;
 
 // main menu counter
 static u8 mainMenuSelection = 0;
@@ -36,7 +40,54 @@ static u32 pressed = 0;
 static u32 held = 0;
 
 // menu item strings
-static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot", "Image drawing test" };
+static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot" };
+
+// most of this is taken from
+// https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
+static void drawImage(void *currXfb, const unsigned char image[], const unsigned char colorIndex[8], u16 offsetX, u16 offsetY) {
+	// get information on the image to be drawn
+	u32 width = image[0] << 8 | image[1];
+	u32 height = image[2] << 8 | image[3];
+
+	// where image drawing ends
+	// calculated in advance for use in the loop
+	u32 imageEndpointX = offsetX + width;
+	u32 imageEndpointY = offsetY + height;
+
+	// ensure image won't go out of bounds
+	if (imageEndpointX > 640 || imageEndpointY > 480) {
+		return;
+		//printf("Image with given parameters will write incorrectly\n");
+	}
+
+	u32 byte = 4;
+	u8 runIndex = 0;
+	// first five bits are runlength
+	u8 runLength = (image[byte] >> 3) + 1;
+	// last three bits are color, lookup color in index
+	u8 color = colorIndex[ image[byte] & 0b111];
+	// begin processing data
+	for (int row = offsetY; row < imageEndpointY; row++) {
+		for (int column = offsetX; column < imageEndpointX; column++) {
+			// is there a pixel to actually draw? (0-4 is transparency)
+			if (color >= 5) {
+				int newColor = 0;
+				u8 temp = color - 5;
+
+				DrawBox(column, row, column, row, CUSTOM_COLORS[temp], currXfb);
+
+			}
+
+			runIndex++;
+			if (runIndex >= runLength) {
+				runIndex = 0;
+				byte++;
+				runLength = (image[byte] >> 3) + 1;
+				color = colorIndex[ image[byte] & 0b111];
+			}
+		}
+	}
+}
 
 // the "main" for the menus
 // other menu functions are called from here
@@ -66,9 +117,6 @@ bool menu_runMenu(void *currXfb) {
 			break;
 		case PLOT_2D:
 			menu_2dPlot(currXfb);
-			break;
-		case IMAGE_TEST:
-			menu_imageTest(currXfb);
 			break;
 		default:
 			printf("HOW DID WE END UP HERE?\n");
@@ -161,9 +209,6 @@ void menu_mainMenu() {
 				break;
 			case 2:
 				currentMenu = PLOT_2D;
-				break;
-			case 3:
-				currentMenu = IMAGE_TEST;
 				break;
 		}
 	}
@@ -497,10 +542,12 @@ void menu_2dPlot(void *currXfb) {
 	if (data.isDataReady) {
 		convertedCoords = convertStickValues(&data.data[lastDrawPoint]);
 		printf("%u samples, last point is: %d\n", data.endPoint + 1, lastDrawPoint + 1);
-		printf("Use DPAD left/right to add/remove points from the plot,\nhold R to move faster, hold L for single point movements.");
+		// TODO: move instructions under different prompt, so I don't have to keep messing with text placement
+		//printf("DPAD left/right - add/remove points, Hold R - move faster, Hold L - add/remove single point\n"
+		//	   "hold L for single point movements. Press X to cycle stickmap.");
 
 		// print coordinates of last drawn point
-		printf( "\x1b[21;0H");
+		printf( "\x1b[22;0H");
 		printf("Raw X: %04d | Raw Y: %04d\n", data.data[lastDrawPoint].ax, data.data[lastDrawPoint].ay);
 		printf("Melee X: ");
 
@@ -525,12 +572,45 @@ void menu_2dPlot(void *currXfb) {
 		} else {
 			printf("0.%04d\n", convertedCoords.ay);
 		}
+		printf("Currently selected stickmap: ");
+
+		// draw image below 2d plot, and print while we're at it
+		switch (selectedImage) {
+			case A_WAIT:
+				printf("Wait Attacks");
+				drawImage(currXfb, await_image, await_indexes, SCREEN_POS_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
+				break;
+			case CROUCH:
+				printf("Crouch");
+				drawImage(currXfb, crouch_image, crouch_indexes, SCREEN_POS_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
+				break;
+			case DEADZONE:
+				printf("Deadzones");
+				drawImage(currXfb, deadzone_image, deadzone_indexes, SCREEN_POS_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
+				break;
+			case LEDGE_L:
+				printf("Left Ledge");
+				drawImage(currXfb, ledgeL_image, ledgeL_indexes, SCREEN_POS_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
+				break;
+			case LEDGE_R:
+				printf("Right Ledge");
+				drawImage(currXfb, ledgeR_image, ledgeR_indexes, SCREEN_POS_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
+				break;
+			case MOVE_WAIT:
+				printf("Wait Movement");
+				drawImage(currXfb, movewait_image, movewait_indexes, SCREEN_POS_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
+				break;
+			case NONE:
+				printf("None");
+			default:
+				break;
+		}
+		printf("\n");
 
 		// draw plot
-		// TODO: this needs to be gutted and replaced, this is not good code
-
 		// y is negated because of how the graph is drawn
-		for (int i = 0; i < lastDrawPoint; i++) {
+		// TODO: why does this need to be <= to avoid an off-by-one? step through logic later this is bugging me
+		for (int i = 0; i <= lastDrawPoint; i++) {
 			DrawBox(SCREEN_POS_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
 			        SCREEN_POS_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
 					COLOR_WHITE, currXfb);
@@ -569,6 +649,14 @@ void menu_2dPlot(void *currXfb) {
 				}
 			}
 		}
+
+		// does the user want to change what stickmap is displayed?
+		if (pressed & PAD_BUTTON_X) {
+			selectedImage++;
+			if (selectedImage > IMAGE_LEN) {
+				selectedImage = NONE;
+			}
+		}
 	}
 
 	// only start reading if A is pressed
@@ -577,97 +665,5 @@ void menu_2dPlot(void *currXfb) {
 		measureWaveform(&data);
 		lastDrawPoint = data.endPoint;
 		assert(data.endPoint < 5000);
-	}
-}
-
-void menu_imageTest(void *currXfb) {
-	// get information on the image to be drawn
-	u32 width = deadzone_image[0] << 8 | deadzone_image[1];
-	u32 height = deadzone_image[2] << 8 | deadzone_image[3];
-	u32 pixelCount = width * height;
-
-	// where the image should be drawn from wrt 0,0
-	u32 imageOffsetX = 200;
-	u32 imageOffsetY = 100;
-
-	// where image drawing ends
-	// calculated in advance for use in the loop
-	u32 imageEndpointX = imageOffsetX + width;
-	u32 imageEndpointY = imageOffsetY + height;
-
-	printf("Image is %ux%u, total pixels: %u\n", width, height, pixelCount);
-	printf("Image start: %u,%u | Image end: %u,%u\n", imageOffsetX, imageOffsetY, imageEndpointX, imageEndpointY);
-
-	// ensure image won't go out of bounds
-	if (imageEndpointX > 640 || imageEndpointY > 480) {
-		return;
-		//printf("Image with given parameters will write incorrectly\n");
-	}
-
-	u32 byte = 4;
-	u8 runIndex = 0;
-	// first five bits are runlength
-	u8 runLength = (deadzone_image[byte] >> 3) + 1;
-	// last three bits are color, lookup color in index
-	u8 color = deadzone_indexes[ deadzone_image[byte] & 0b111];
-	// begin processing data
-	for (int row = imageOffsetY; row < imageEndpointY; row++) {
-		for (int column = imageOffsetX; column < imageEndpointX; column++) {
-			// is there a pixel to actually draw? (0-4 is transparency)
-			if (color >= 5) {
-				int newColor = 0;
-				u8 temp = color - 5;
-
-				while (temp != 0) {
-					newColor++;
-					temp--;
-				}
-
-				switch (newColor) {
-					case 0:
-						DrawBox(row, column, row, column, COLOR_MAROON, currXfb);
-						break;
-					case 1:
-						DrawBox(row, column, row, column, COLOR_GREEN, currXfb);
-						break;
-					case 2:
-						DrawBox(row, column, row, column, COLOR_OLIVE, currXfb);
-						break;
-					case 3:
-						DrawBox(row, column, row, column, COLOR_NAVY, currXfb);
-						break;
-					case 4:
-						DrawBox(row, column, row, column, COLOR_PURPLE, currXfb);
-						break;
-					case 5:
-						DrawBox(row, column, row, column, COLOR_TEAL, currXfb);
-						break;
-					case 6:
-						DrawBox(row, column, row, column, COLOR_GRAY, currXfb);
-						break;
-					case 7:
-						DrawBox(row, column, row, column, COLOR_SILVER, currXfb);
-						break;
-					case 8:
-						DrawBox(row, column, row, column, COLOR_RED, currXfb);
-						break;
-					case 9:
-						DrawBox(row, column, row, column, COLOR_LIME, currXfb);
-						break;
-					default:
-						DrawBox(row, column, row, column, COLOR_YELLOW, currXfb);
-						break;
-				}
-
-			}
-
-			runIndex++;
-			if (runIndex >= runLength) {
-				runIndex = 0;
-				byte++;
-				runLength = (deadzone_image[byte] >> 3) + 1;
-				color = deadzone_indexes[ deadzone_image[byte] & 0b111];
-			}
-		}
 	}
 }
