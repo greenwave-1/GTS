@@ -8,6 +8,10 @@
 #include <math.h>
 #include <ogc/lwp_watchdog.h>
 
+
+#define STICK_MOVEMENT_THRESHOLD 5
+#define STICK_ORIGIN_THRESHOLD 3
+
 //
 void measureWaveform(WaveformData *data) {
 	// set sampling rate high
@@ -33,8 +37,8 @@ void measureWaveform(WaveformData *data) {
 	int currPollY = startPosY, prevPollY = startPosY;
 
 	// wait for the stick to move roughly 10 units outside its starting position on either axis
-	while ( (currPollX > startPosX - 10 && currPollX < startPosX + 10) &&
-			(currPollY > startPosY - 10 && currPollY < startPosY + 10) ) {
+	while ( (currPollX > startPosX - STICK_MOVEMENT_THRESHOLD && currPollX < startPosX + STICK_MOVEMENT_THRESHOLD) &&
+			(currPollY > startPosY - STICK_MOVEMENT_THRESHOLD && currPollY < startPosY + STICK_MOVEMENT_THRESHOLD) ) {
 		PAD_ScanPads();
 		currPollX = PAD_StickX(0);
 		prevPollX = currPollX;
@@ -75,17 +79,28 @@ void measureWaveform(WaveformData *data) {
 			break;
 		}
 
-		// has the stick stopped moving, and are we close to 0?
-		if ( (prevPollDiffX < 3 && prevPollDiffX > -3 && prevPollDiffY < 3 && prevPollDiffY > -3) &&
-				(currPollX < 3 && currPollX > -3 && currPollY < 3 && currPollY > -3) ) {
-			stickNotMovingCounter++;
+		// only run stick position checks if we aren't doing a continuous poll
+		if (!data->continuousMeasure) {
+			// has the stick stopped moving (as defined by STICK_MOVEMENT_THRESHOLD)
+			if (prevPollDiffX < STICK_MOVEMENT_THRESHOLD && prevPollDiffX > -STICK_MOVEMENT_THRESHOLD &&
+			    prevPollDiffY < STICK_MOVEMENT_THRESHOLD && prevPollDiffY > -STICK_MOVEMENT_THRESHOLD) {
 
-			// arbitrarily break after a certain number of passes
-			if (stickNotMovingCounter > 100) {
-				break;
+				// is the stick close to origin?
+				if (currPollX < STICK_ORIGIN_THRESHOLD && currPollX > -STICK_ORIGIN_THRESHOLD &&
+				    currPollY < STICK_ORIGIN_THRESHOLD && currPollY > -STICK_ORIGIN_THRESHOLD) {
+					// accelerate our counter if we're not moving _and_ at origin
+					stickNotMovingCounter += 25;
+				}
+				stickNotMovingCounter++;
+
+				// break if the stick continues to not move
+				// TODO: this should be tweaked
+				if (stickNotMovingCounter > 500) {
+					break;
+				}
+			} else {
+				stickNotMovingCounter = 0;
 			}
-		} else {
-			stickNotMovingCounter = 0;
 		}
 
 		// slow down polling

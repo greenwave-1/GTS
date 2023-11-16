@@ -16,12 +16,12 @@
 #define SCREEN_POS_CENTER_Y 240
 
 #define MENUITEMS_LEN 3
-#define TEST_LEN 4
+#define TEST_LEN 5
 
 // 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
 #define SCREEN_TIMEPLOT_START 70
 
-enum WAVEFORM_TEST { SNAPBACK, PIVOT, DASHBACK, NO_TEST };
+enum WAVEFORM_TEST { SNAPBACK, PIVOT, DASHBACK, CONTINUOUS, NO_TEST };
 
 static enum WAVEFORM_TEST currentTest = SNAPBACK;
 
@@ -38,7 +38,7 @@ static u8 mainMenuSelection = 0;
 static u8 bHeldCounter = 0;
 
 // data for drawing a waveform
-static WaveformData data = { { 0 }, 0, false };
+static WaveformData data = { { 0 }, 0, false, false };
 
 // vars for what buttons are pressed or held
 static u32 pressed = 0;
@@ -123,7 +123,18 @@ bool menu_runMenu(void *currXfb) {
 			if (displayInstructions) {
 				printf("Press X to cycle the current test, results will show above the waveform.\n"
 					   "Use DPAD left/right to scroll waveform when it is larger than the\n"
-					   "displayed area, hold R to move faster.");
+					   "displayed area, hold R to move faster.\n\n"
+					   "MODES:\n"
+					   "Snapback: Check the min/max value on a given axis depending on where your\n"
+					   "stick started. If you moved the stick left, check the Max value on a given\n"
+					   "axis. Snapback can occur when the max value is at or above 23. If right,\n"
+					   "then at or below -23\n\n"
+					   "Pivot: For a successful pivot, you want the stick's position to stay\n"
+					   "above/below +64/-64 for ~16.6ms (1 frame). Less, and you might get nothing,\n"
+					   "more, and you might get a dashback. Check the PhobVision docs for more info.\n\n"
+					   "Dashback: A (vanilla) dashback will be successful when the stick doesn't get\n"
+					   "polled between +-23 and +-64. Less time in this range is better,\n\n"
+					   "Continuous Measure: No tests, but will poll for 3 seconds always.\n");
 			} else {
 				menu_waveformMeasure(currXfb);
 			}
@@ -382,13 +393,26 @@ void menu_waveformMeasure(void *currXfb) {
 			case PIVOT:
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
+				printf( "\x1b[9;0H");
+				printf("+64");
+				printf( "\x1b[17;0H");
+				printf("-64");
 				break;
+			case CONTINUOUS:
 			case DASHBACK:
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
+				printf( "\x1b[9;0H");
+				printf("+64");
+				printf( "\x1b[17;0H");
+				printf("-64");
 			case SNAPBACK:
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, COLOR_GREEN, currXfb);
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, COLOR_GREEN, currXfb);
+				printf( "\x1b[12;0H");
+				printf("+23");
+				printf( "\x1b[15;0H");
+				printf("-23");
 			default:
 				break;
 		}
@@ -532,8 +556,8 @@ void menu_waveformMeasure(void *currXfb) {
 			// does the user want to scroll the waveform?
 			if (held & PAD_BUTTON_RIGHT) {
 				if (held & PAD_TRIGGER_R) {
-					if (dataScrollOffset + 505 < data.endPoint) {
-						dataScrollOffset += 5;
+					if (dataScrollOffset + 510 < data.endPoint) {
+						dataScrollOffset += 10;
 					}
 				} else {
 					if (dataScrollOffset + 501 < data.endPoint) {
@@ -542,8 +566,8 @@ void menu_waveformMeasure(void *currXfb) {
 				}
 			} else if (held & PAD_BUTTON_LEFT) {
 				if (held & PAD_TRIGGER_R) {
-					if (dataScrollOffset - 5 >= 0) {
-						dataScrollOffset -= 5;
+					if (dataScrollOffset - 10 >= 0) {
+						dataScrollOffset -= 10;
 					}
 				} else {
 					if (dataScrollOffset - 1 >= 0) {
@@ -556,42 +580,49 @@ void menu_waveformMeasure(void *currXfb) {
 		printf( "\x1b[22;0H");
 		printf("Min X: %04d | Min Y: %04d   |   ", minX, minY);
 		printf("Max X: %04d | Max Y: %04d\n", maxX, maxY);
-		printf("Current test: ");
-		switch (currentTest) {
-			case SNAPBACK:
-				printf("Snapback");
-				break;
-			case PIVOT:
-				printf("Pivot");
-				break;
-			case DASHBACK:
-				printf("Dashback");
-				break;
-			case NO_TEST:
-				printf("None");
-				break;
-			default:
-				printf("");
-				break;
-		}
-		printf("\n");
-
-		// does the user want to change the test?
-		if (pressed & PAD_BUTTON_X) {
-			currentTest++;
-			if (currentTest == TEST_LEN) {
-				currentTest = SNAPBACK;
-			}
-		}
 	}
+	printf( "\x1b[23;0H");
+	printf("Current test: ");
+	switch (currentTest) {
+		case SNAPBACK:
+			printf("Snapback");
+			break;
+		case PIVOT:
+			printf("Pivot");
+			break;
+		case DASHBACK:
+			printf("Dashback");
+			break;
+		case NO_TEST:
+			printf("None");
+			break;
+		case CONTINUOUS:
+			printf("Continuous Measure");
+			break;
+		default:
+			printf("Error");
+			break;
+	}
+	printf("\n");
 
 	// only start reading if A is pressed
 	// TODO: figure out if this can be removed without having to gut the current poll logic, would be better for the user to not have to do this
 	if (pressed & PAD_BUTTON_A) {
+		if (currentTest == CONTINUOUS) {
+			data.continuousMeasure = true;
+		} else {
+			data.continuousMeasure = false;
+		}
 		measureWaveform(&data);
 		dataScrollOffset = 0;
 		lastDrawPoint = data.endPoint;
 		assert(data.endPoint < 5000);
+	// does the user want to change the test?
+	} else if (pressed & PAD_BUTTON_X) {
+		currentTest++;
+		if (currentTest == TEST_LEN) {
+			currentTest = SNAPBACK;
+		}
 	}
 }
 
@@ -723,6 +754,7 @@ void menu_2dPlot(void *currXfb) {
 	// only start reading if A is pressed
 	// TODO: figure out if this can be removed without having to gut the current poll logic, would be better for the user to not have to do this
 	if (pressed & PAD_BUTTON_A) {
+		data.continuousMeasure = false;
 		measureWaveform(&data);
 		dataScrollOffset = 0;
 		lastDrawPoint = data.endPoint;
