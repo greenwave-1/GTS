@@ -131,9 +131,10 @@ bool menu_runMenu(void *currXfb) {
 					   "then at or below -23\n\n"
 					   "Pivot: For a successful pivot, you want the stick's position to stay\n"
 					   "above/below +64/-64 for ~16.6ms (1 frame). Less, and you might get nothing,\n"
-					   "more, and you might get a dashback. Check the PhobVision docs for more info.\n\n"
+					   "more, and you might get a dashback. You also need the stick to hit 80/-80 on\n"
+					   "both sides. Check the PhobVision docs for more info.\n\n"
 					   "Dashback: A (vanilla) dashback will be successful when the stick doesn't get\n"
-					   "polled between +-23 and +-64. Less time in this range is better,\n\n"
+					   "polled between 23 and 64, or -23 and -64. Less time in this range is better,\n\n"
 					   "Continuous Measure: No tests, but will poll for 3 seconds always.\n");
 			} else {
 				menu_waveformMeasure(currXfb);
@@ -576,10 +577,130 @@ void menu_waveformMeasure(void *currXfb) {
 				}
 			}
 		}
-		// print min/max data
-		printf( "\x1b[22;0H");
-		printf("Min X: %04d | Min Y: %04d   |   ", minX, minY);
-		printf("Max X: %04d | Max Y: %04d\n", maxX, maxY);
+
+		// print test data
+		printf( "\x1b[5;0H");
+		u16 pollCount = 0;
+		switch (currentTest) {
+			case SNAPBACK:
+				printf("Min X: %04d | Min Y: %04d   |   ", minX, minY);
+				printf("Max X: %04d | Max Y: %04d\n", maxX, maxY);
+				break;
+			case PIVOT:
+				bool pivotHit80 = false;
+				bool beforePivotHit80 = false;
+				bool pivotRangePositive = false;
+				bool leftPivotRange = false;
+				// start from the back of the list
+				for (int i = data.endPoint; i >= 0; i--) {
+					// check x coordinate for +-64
+					if (data.data[i].ax >= 64 || data.data[i].ax <= -64) {
+						if (data.data[i].ax > 0) {
+							pivotRangePositive = true;
+						}
+						if (data.data[i].ax >= 80 || data.data[i].ax <= -80) {
+							pivotHit80 = true;
+						}
+						pollCount++;
+					}
+
+					// are we outside the pivot range and have already logged data of being in range
+					if (pollCount > 0 && data.data[i].ax < 64 && data.data[i].ax > -64) {
+						leftPivotRange = true;
+					}
+
+					// look for the initial input
+					if ( (data.data[i].ax >= 64 || data.data[i].ax <= -64) && leftPivotRange) {
+						if (pivotRangePositive && data.data[i].ax > 0) {
+							break;
+						} else if (!pivotRangePositive && data.data[i].ax < 0) {
+							break;
+						}
+						if (data.data[i].ax >= 80 || data.data[i].ax <= -80) {
+							beforePivotHit80 = true;
+							break;
+						}
+					}
+				}
+
+				// phobvision doc says both sides need to hit 80 to succeed
+				if (beforePivotHit80 && pivotHit80) {
+					float noTurnPercent = 0;
+					float pivotPercent = 0;
+					float dashbackPercent = 0;
+
+					// (16.6 - polls) / 16.6
+					// gets amount of time that a no turn could occur, the get percentage
+					noTurnPercent = (((1000.0 / 60.0) - pollCount) / (1000.0 / 60.0)) * 100;
+					if (noTurnPercent < 0) {
+						noTurnPercent = 0;
+					}
+
+					// no turn could occur, calculate normally
+					if (pollCount < 17) {
+						pivotPercent = ((float) pollCount / (1000.0 / 60.0)) * 100;
+					} else {
+						// 33.3 - polls
+						// opposite of the case above, we want the game to poll the second frame on a value below +-64
+						pivotPercent = (1000.0 / 30.0) - pollCount;
+						// get percentage
+						pivotPercent = (pivotPercent / (1000.0 / 60.0)) * 100;
+						if (pivotPercent < 0) {
+							pivotPercent = 0;
+						}
+
+						// (polls - 16.6) / 16.6
+						// amount of time that a dashback would be registered, provided polls >= 17
+						dashbackPercent = (((float) pollCount - (1000.0 / 60.0)) / (1000.0 / 60.0)) * 100;
+						if (dashbackPercent > 100) {
+							dashbackPercent = 100;
+						}
+					}
+
+					printf("Polls in pivot range: %u, No turn: %2.0f%% | Empty Pivot: %2.0f%% | Dashback: %2.0f%%",
+						   pollCount, noTurnPercent, pivotPercent, dashbackPercent);
+				} else {
+					printf("No pivot input detected.");
+				}
+				break;
+			case DASHBACK:
+				// go forward in list
+				for (int i = 0; i < data.endPoint; i++) {
+					// is the stick in the range
+					if ((data.data[i].ax >= 23 && data.data[i].ax < 64) || (data.data[i].ax <= -23 && data.data[i].ax > -64)) {
+						pollCount++;
+					} else if (pollCount > 0) {
+						break;
+					}
+				}
+
+				float dashbackPercent = (((1000.0 / 60.0) - pollCount) / (1000.0 / 60.0)) * 100;
+				float ucfPercent = (((1000.0 / 30.0) - pollCount) / (1000.0 / 60.0)) * 100;
+
+				// this shouldn't happen in theory, maybe on box?
+				if (dashbackPercent > 100) {
+					dashbackPercent = 100;
+				}
+				if (ucfPercent > 100) {
+					ucfPercent = 100;
+				}
+				// this definitely can happen though
+				if (dashbackPercent < 0) {
+					dashbackPercent = 0;
+				}
+				if (ucfPercent < 0) {
+					ucfPercent = 0;
+				}
+				printf("Polls in fail range: %u | Vanilla Success: %2.0f%% | UCF Success: %2.0f%%", pollCount, dashbackPercent, ucfPercent);
+				break;
+			case CONTINUOUS:
+			case NO_TEST:
+				break;
+			default:
+				printf("Error?");
+				break;
+
+		}
 	}
 	printf( "\x1b[23;0H");
 	printf("Current test: ");
