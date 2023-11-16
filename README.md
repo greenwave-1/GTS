@@ -5,7 +5,6 @@ An open source alternative to SmashScope.
 Currently not feature-complete, but in a workable state.
 
 ## Current features:
-- ~1000hz polling (can probably go faster but untested)
 - Draws waveform over ~3 seconds or when stick stops moving (whichever comes first)
 - Input viewer/button tester with melee coordinates
 - 2D stick plot with stickplot maps
