@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <app version="1">
     <name>FossScope</name>
-    <version>commit fa86226</version>
+    <version>Fill in later when making a release!</version>
     <release_date>2023-11-14</release_date>
     <short_description>A controller test program</short_description>
     <long_description>An open source controller test program with features beneficial for Melee players. Inspired by SmashScope.</long_description>
