@@ -21,7 +21,7 @@
 // 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
 #define SCREEN_TIMEPLOT_START 70
 
-enum WAVEFORM_TEST { SNAPBACK, PIVOT, DASHBACK, CONTINUOUS, NO_TEST };
+enum WAVEFORM_TEST { SNAPBACK, PIVOT, DASHBACK, FULL, NO_TEST };
 
 static enum WAVEFORM_TEST currentTest = SNAPBACK;
 
@@ -135,7 +135,7 @@ bool menu_runMenu(void *currXfb) {
 					   "both sides. Check the PhobVision docs for more info.\n\n"
 					   "Dashback: A (vanilla) dashback will be successful when the stick doesn't get\n"
 					   "polled between 23 and 64, or -23 and -64. Less time in this range is better,\n\n"
-					   "Continuous Measure: No tests, but will poll for 3 seconds always.\n");
+					   "Full Measure: Will fill the input buffer always, useful for longer inputs.\n");
 			} else {
 				menu_waveformMeasure(currXfb);
 			}
@@ -399,7 +399,7 @@ void menu_waveformMeasure(void *currXfb) {
 				printf( "\x1b[17;0H");
 				printf("-64");
 				break;
-			case CONTINUOUS:
+			case FULL:
 			case DASHBACK:
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
@@ -589,16 +589,12 @@ void menu_waveformMeasure(void *currXfb) {
 			case PIVOT:
 				bool pivotHit80 = false;
 				bool beforePivotHit80 = false;
-				bool pivotRangePositive = false;
 				bool leftPivotRange = false;
 				bool beforeLeftPivotRange = false;
 				// start from the back of the list
 				for (int i = data.endPoint; i >= 0; i--) {
 					// check x coordinate for +-64
 					if (data.data[i].ax >= 64 || data.data[i].ax <= -64) {
-						if (data.data[i].ax > 0) {
-							pivotRangePositive = true;
-						}
 						if (data.data[i].ax >= 80 || data.data[i].ax <= -80) {
 							pivotHit80 = true;
 						}
@@ -693,7 +689,7 @@ void menu_waveformMeasure(void *currXfb) {
 				}
 				printf("Polls in fail range: %u | Vanilla Success: %2.0f%% | UCF Success: %2.0f%%", pollCount, dashbackPercent, ucfPercent);
 				break;
-			case CONTINUOUS:
+			case FULL:
 			case NO_TEST:
 				break;
 			default:
@@ -717,8 +713,8 @@ void menu_waveformMeasure(void *currXfb) {
 		case NO_TEST:
 			printf("None");
 			break;
-		case CONTINUOUS:
-			printf("Continuous Measure");
+		case FULL:
+			printf("Full Measure");
 			break;
 		default:
 			printf("Error");
@@ -729,10 +725,10 @@ void menu_waveformMeasure(void *currXfb) {
 	// only start reading if A is pressed
 	// TODO: figure out if this can be removed without having to gut the current poll logic, would be better for the user to not have to do this
 	if (pressed & PAD_BUTTON_A) {
-		if (currentTest == CONTINUOUS) {
-			data.continuousMeasure = true;
+		if (currentTest == FULL) {
+			data.fullMeasure = true;
 		} else {
-			data.continuousMeasure = false;
+			data.fullMeasure = false;
 		}
 		measureWaveform(&data);
 		dataScrollOffset = 0;
@@ -875,7 +871,7 @@ void menu_2dPlot(void *currXfb) {
 	// only start reading if A is pressed
 	// TODO: figure out if this can be removed without having to gut the current poll logic, would be better for the user to not have to do this
 	if (pressed & PAD_BUTTON_A) {
-		data.continuousMeasure = false;
+		data.fullMeasure = false;
 		measureWaveform(&data);
 		dataScrollOffset = 0;
 		lastDrawPoint = data.endPoint;

@@ -80,7 +80,7 @@ void measureWaveform(WaveformData *data) {
 		}
 
 		// only run stick position checks if we aren't doing a continuous poll
-		if (!data->continuousMeasure) {
+		if (!data->fullMeasure) {
 			// has the stick stopped moving (as defined by STICK_MOVEMENT_THRESHOLD)
 			if (prevPollDiffX < STICK_MOVEMENT_THRESHOLD && prevPollDiffX > -STICK_MOVEMENT_THRESHOLD &&
 			    prevPollDiffY < STICK_MOVEMENT_THRESHOLD && prevPollDiffY > -STICK_MOVEMENT_THRESHOLD) {
