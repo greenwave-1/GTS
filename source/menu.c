@@ -591,6 +591,7 @@ void menu_waveformMeasure(void *currXfb) {
 				bool beforePivotHit80 = false;
 				bool pivotRangePositive = false;
 				bool leftPivotRange = false;
+				bool beforeLeftPivotRange = false;
 				// start from the back of the list
 				for (int i = data.endPoint; i >= 0; i--) {
 					// check x coordinate for +-64
@@ -607,15 +608,14 @@ void menu_waveformMeasure(void *currXfb) {
 					// are we outside the pivot range and have already logged data of being in range
 					if (pollCount > 0 && data.data[i].ax < 64 && data.data[i].ax > -64) {
 						leftPivotRange = true;
+						if (beforeLeftPivotRange || !pivotHit80) {
+							break;
+						}
 					}
 
 					// look for the initial input
 					if ( (data.data[i].ax >= 64 || data.data[i].ax <= -64) && leftPivotRange) {
-						if (pivotRangePositive && data.data[i].ax > 0) {
-							break;
-						} else if (!pivotRangePositive && data.data[i].ax < 0) {
-							break;
-						}
+						beforeLeftPivotRange = true;
 						if (data.data[i].ax >= 80 || data.data[i].ax <= -80) {
 							beforePivotHit80 = true;
 							break;
@@ -631,18 +631,18 @@ void menu_waveformMeasure(void *currXfb) {
 
 					// (16.6 - polls) / 16.6
 					// gets amount of time that a no turn could occur, the get percentage
-					noTurnPercent = (((1000.0 / 60.0) - pollCount) / (1000.0 / 60.0)) * 100;
+					noTurnPercent = (((1000.0 / 60.0) - (pollCount * 2)) / (1000.0 / 60.0)) * 100;
 					if (noTurnPercent < 0) {
 						noTurnPercent = 0;
 					}
 
 					// no turn could occur, calculate normally
-					if (pollCount < 17) {
-						pivotPercent = ((float) pollCount / (1000.0 / 60.0)) * 100;
+					if ((pollCount * 2)< 17) {
+						pivotPercent = ((float) (pollCount * 2) / (1000.0 / 60.0)) * 100;
 					} else {
 						// 33.3 - polls
 						// opposite of the case above, we want the game to poll the second frame on a value below +-64
-						pivotPercent = (1000.0 / 30.0) - pollCount;
+						pivotPercent = (1000.0 / 30.0) - (pollCount * 2) ;
 						// get percentage
 						pivotPercent = (pivotPercent / (1000.0 / 60.0)) * 100;
 						if (pivotPercent < 0) {
@@ -651,7 +651,7 @@ void menu_waveformMeasure(void *currXfb) {
 
 						// (polls - 16.6) / 16.6
 						// amount of time that a dashback would be registered, provided polls >= 17
-						dashbackPercent = (((float) pollCount - (1000.0 / 60.0)) / (1000.0 / 60.0)) * 100;
+						dashbackPercent = (((float) (pollCount * 2) - (1000.0 / 60.0)) / (1000.0 / 60.0)) * 100;
 						if (dashbackPercent > 100) {
 							dashbackPercent = 100;
 						}
@@ -674,8 +674,8 @@ void menu_waveformMeasure(void *currXfb) {
 					}
 				}
 
-				float dashbackPercent = (((1000.0 / 60.0) - pollCount) / (1000.0 / 60.0)) * 100;
-				float ucfPercent = (((1000.0 / 30.0) - pollCount) / (1000.0 / 60.0)) * 100;
+				float dashbackPercent = (((1000.0 / 60.0) - (pollCount * 2)) / (1000.0 / 60.0)) * 100;
+				float ucfPercent = (((1000.0 / 30.0) - (pollCount * 2)) / (1000.0 / 60.0)) * 100;
 
 				// this shouldn't happen in theory, maybe on box?
 				if (dashbackPercent > 100) {
