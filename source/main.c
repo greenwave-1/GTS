@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 
 	void *currXfb = NULL;
 
-    // main loop of the program
+	// main loop of the program
 	while (true) {
 		if (shouldExit) {
 			break;

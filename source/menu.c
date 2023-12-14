@@ -213,16 +213,16 @@ bool menu_runMenu(void *currXfb) {
 }
 
 void menu_mainMenu() {
-    int stickY = PAD_StickY(0);
+	int stickY = PAD_StickY(0);
 
-    // flags which tell whether the stick is held in an up or down position
-    u8 up = stickY > MENU_STICK_THRESHOLD;
-    u8 down = stickY < -MENU_STICK_THRESHOLD;
+	// flags which tell whether the stick is held in an up or down position
+	u8 up = stickY > MENU_STICK_THRESHOLD;
+	u8 down = stickY < -MENU_STICK_THRESHOLD;
 
-    // only move the stick if it wasn't already held for the last 10 ticks
-    u8 movable = stickheld % 10 == 0;
-    
-    // iterate over the menu items array as defined in menu.c
+	// only move the stick if it wasn't already held for the last 10 ticks
+	u8 movable = stickheld % 10 == 0;
+	
+	// iterate over the menu items array as defined in menu.c
 	for (int i = 0; i < MENUITEMS_LEN; i++) {
 		// is the item we're about to print the currently selected menu?
 		if (mainMenuSelection == i) {
@@ -266,12 +266,12 @@ void menu_mainMenu() {
 		}
 	}
 
-    // increase or reset counter for how long stick has been held
-    if (up || down) {
-        stickheld++;
-    } else {
-        stickheld = 0;
-    }
+	// increase or reset counter for how long stick has been held
+	if (up || down) {
+		stickheld++;
+	} else {
+		stickheld = 0;
+	}
 }
 
 void menu_controllerTest() {
@@ -457,7 +457,7 @@ void menu_waveformMeasure(void *currXfb) {
 
 			// draw first point
 			DrawBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - prevY, SCREEN_TIMEPLOT_START,
-			        SCREEN_POS_CENTER_Y - prevY, COLOR_BLUE, currXfb);
+					SCREEN_POS_CENTER_Y - prevY, COLOR_BLUE, currXfb);
 
 			// y is first so that x shows on top
 			for (int i = 1; i < data.endPoint; i++) {
@@ -468,8 +468,8 @@ void menu_waveformMeasure(void *currXfb) {
 							COLOR_BLUE, currXfb);
 				} else {
 					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i].ay,
-					        SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevY,
-					        COLOR_BLUE, currXfb);
+							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevY,
+							COLOR_BLUE, currXfb);
 				}
 
 				prevY = data.data[i].ay;
@@ -485,7 +485,7 @@ void menu_waveformMeasure(void *currXfb) {
 
 			// draw first point
 			DrawBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - prevX, SCREEN_TIMEPLOT_START,
-			        SCREEN_POS_CENTER_Y - prevX, COLOR_BLUE, currXfb);
+					SCREEN_POS_CENTER_Y - prevX, COLOR_BLUE, currXfb);
 			
 			// x
 			for (int i = 1; i < data.endPoint; i++) {
@@ -495,8 +495,8 @@ void menu_waveformMeasure(void *currXfb) {
 							COLOR_RED, currXfb);
 				} else {
 					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i].ax,
-					        SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevX,
-					        COLOR_RED, currXfb);
+							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevX,
+							COLOR_RED, currXfb);
 				}
 
 				prevX = data.data[i].ax;
@@ -520,19 +520,19 @@ void menu_waveformMeasure(void *currXfb) {
 
 			// draw first point
 			DrawBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - prevY, SCREEN_TIMEPLOT_START,
-			        SCREEN_POS_CENTER_Y - prevY, COLOR_BLUE, currXfb);
+					SCREEN_POS_CENTER_Y - prevY, COLOR_BLUE, currXfb);
 
 			// y is first so that x shows on top
 			for (int i = 1; i < 500; i++) {
 				// check if our x1 should be the previous point or our current data
 				if (prevY > data.data[i + dataScrollOffset].ay) {
 					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevY,
-					        SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i + dataScrollOffset].ay,
-					        COLOR_BLUE, currXfb);
+							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i + dataScrollOffset].ay,
+							COLOR_BLUE, currXfb);
 				} else {
 					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i + dataScrollOffset].ay,
-					        SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevY,
-					        COLOR_BLUE, currXfb);
+							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevY,
+							COLOR_BLUE, currXfb);
 				}
 				prevY = data.data[i + dataScrollOffset].ay;
 
@@ -547,18 +547,18 @@ void menu_waveformMeasure(void *currXfb) {
 
 			// draw first point
 			DrawBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - prevX, SCREEN_TIMEPLOT_START,
-			        SCREEN_POS_CENTER_Y - prevX, COLOR_BLUE, currXfb);
+					SCREEN_POS_CENTER_Y - prevX, COLOR_BLUE, currXfb);
 
 			// x
 			for (int i = 0; i < 500; i++) {
 				if (prevX > data.data[i + dataScrollOffset].ax) {
 					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevX,
-					        SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i + dataScrollOffset].ax,
-					        COLOR_RED, currXfb);
+							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i + dataScrollOffset].ax,
+							COLOR_RED, currXfb);
 				} else {
 					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i + dataScrollOffset].ax,
-					        SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevX,
-					        COLOR_RED, currXfb);
+							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevX,
+							COLOR_RED, currXfb);
 				}
 
 				prevX = data.data[i + dataScrollOffset].ax;
@@ -842,7 +842,7 @@ void menu_2dPlot(void *currXfb) {
 		// TODO: why does this need to be <= to avoid an off-by-one? step through logic later this is bugging me
 		for (int i = 0; i <= lastDrawPoint; i++) {
 			DrawBox(SCREEN_POS_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
-			        SCREEN_POS_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
+					SCREEN_POS_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
 					COLOR_WHITE, currXfb);
 		}
 

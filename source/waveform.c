@@ -83,11 +83,11 @@ void measureWaveform(WaveformData *data) {
 		if (!data->fullMeasure) {
 			// has the stick stopped moving (as defined by STICK_MOVEMENT_THRESHOLD)
 			if (prevPollDiffX < STICK_MOVEMENT_THRESHOLD && prevPollDiffX > -STICK_MOVEMENT_THRESHOLD &&
-			    prevPollDiffY < STICK_MOVEMENT_THRESHOLD && prevPollDiffY > -STICK_MOVEMENT_THRESHOLD) {
+				prevPollDiffY < STICK_MOVEMENT_THRESHOLD && prevPollDiffY > -STICK_MOVEMENT_THRESHOLD) {
 
 				// is the stick close to origin?
 				if (currPollX < STICK_ORIGIN_THRESHOLD && currPollX > -STICK_ORIGIN_THRESHOLD &&
-				    currPollY < STICK_ORIGIN_THRESHOLD && currPollY > -STICK_ORIGIN_THRESHOLD) {
+					currPollY < STICK_ORIGIN_THRESHOLD && currPollY > -STICK_ORIGIN_THRESHOLD) {
 					// accelerate our counter if we're not moving _and_ at origin
 					stickNotMovingCounter += 25;
 				}
