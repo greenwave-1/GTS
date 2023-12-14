@@ -21,6 +21,9 @@
 // 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
 #define SCREEN_TIMEPLOT_START 70
 
+// macro for how far the stick has to go before it counts as a movement
+#define MENU_STICK_THRESHOLD 10
+
 enum WAVEFORM_TEST { SNAPBACK, PIVOT, DASHBACK, FULL, NO_TEST };
 
 static enum WAVEFORM_TEST currentTest = SNAPBACK;
@@ -44,6 +47,9 @@ static WaveformData data = { { 0 }, 0, false, false };
 static u32 pressed = 0;
 static u32 held = 0;
 
+// var for counting how long the stick has been held away from neutral
+static u8 stickheld = 0;
+
 // menu item strings
 static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot" };
 
@@ -51,7 +57,6 @@ static bool displayInstructions = false;
 
 static int lastDrawPoint = -1;
 static int dataScrollOffset = 0;
-
 
 // most of this is taken from
 // https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
@@ -208,7 +213,16 @@ bool menu_runMenu(void *currXfb) {
 }
 
 void menu_mainMenu() {
-// iterate over the menu items array as defined in menu.c
+    int stickY = PAD_StickY(0);
+
+    // flags which tell whether the stick is held in an up or down position
+    u8 up = stickY > MENU_STICK_THRESHOLD;
+    u8 down = stickY < -MENU_STICK_THRESHOLD;
+
+    // only move the stick if it wasn't already held for the last 10 ticks
+    u8 movable = stickheld % 10 == 0;
+    
+    // iterate over the menu items array as defined in menu.c
 	for (int i = 0; i < MENUITEMS_LEN; i++) {
 		// is the item we're about to print the currently selected menu?
 		if (mainMenuSelection == i) {
@@ -226,11 +240,11 @@ void menu_mainMenu() {
 	}
 
 	// does the user move the cursor?
-	if (pressed & PAD_BUTTON_UP) {
+	if (pressed & PAD_BUTTON_UP || (up && movable)) {
 		if (mainMenuSelection > 0) {
 			mainMenuSelection--;
 		}
-	} else if (pressed & PAD_BUTTON_DOWN) {
+	} else if (pressed & PAD_BUTTON_DOWN || (down && movable)) {
 		if (mainMenuSelection < MENUITEMS_LEN - 1) {
 			mainMenuSelection++;
 		}
@@ -251,6 +265,13 @@ void menu_mainMenu() {
 				break;
 		}
 	}
+
+    // increase or reset counter for how long stick has been held
+    if (up || down) {
+        stickheld++;
+    } else {
+        stickheld = 0;
+    }
 }
 
 void menu_controllerTest() {
