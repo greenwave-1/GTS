@@ -10,6 +10,7 @@
 #include "waveform.h"
 #include "images/stickmaps.h"
 #include "images/custom_colors.h"
+#include "export.h"
 
 // center of screen, 640x480
 #define SCREEN_POS_CENTER_X 320
@@ -54,6 +55,7 @@ static u8 stickheld = 0;
 static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot" };
 
 static bool displayInstructions = false;
+static bool fileIOTest = true;
 
 static int lastDrawPoint = -1;
 static int dataScrollOffset = 0;
@@ -271,6 +273,13 @@ void menu_mainMenu() {
 		stickheld++;
 	} else {
 		stickheld = 0;
+	}
+	
+	if (pressed & PAD_TRIGGER_Z) {
+		if (!fileIOTest) {
+			exportData(NULL);
+			fileIOTest = true;
+		}
 	}
 }
 
