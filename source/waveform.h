@@ -25,7 +25,10 @@ typedef struct WaveformData {
 
 	// stat values
 	// TODO: estimate poll rate?
+	u16 pollingRate;
+	
 	bool isDataReady;
+	
 	// set to true for logic to ignore stick movement stuff and just fill the array
 	bool fullMeasure;
 

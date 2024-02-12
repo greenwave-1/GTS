@@ -42,7 +42,7 @@ static u8 mainMenuSelection = 0;
 static u8 bHeldCounter = 0;
 
 // data for drawing a waveform
-static WaveformData data = { { 0 }, 0, false, false };
+static WaveformData data = { { 0 }, 0, 500, false, false };
 
 // vars for what buttons are pressed or held
 static u32 pressed = 0;
@@ -55,7 +55,7 @@ static u8 stickheld = 0;
 static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot" };
 
 static bool displayInstructions = false;
-static bool fileIOTest = true;
+static bool fileIOSuccess = false;
 
 static int lastDrawPoint = -1;
 static int dataScrollOffset = 0;
@@ -155,6 +155,13 @@ bool menu_runMenu(void *currXfb) {
 					   "Hold L to move one point at a time.");
 			} else {
 				menu_2dPlot(currXfb);
+			}
+			break;
+		case FILE_RESULT:
+			if (fileIOSuccess) {
+				printf("File exported successfully.");
+			} else {
+				printf("File failed to export.\nTODO: Add an error number or something idk.");
 			}
 			break;
 		default:
@@ -275,11 +282,10 @@ void menu_mainMenu() {
 		stickheld = 0;
 	}
 	
+	// TODO: replace this with something in the reading menus, Z on main menu is for testing
 	if (pressed & PAD_TRIGGER_Z) {
-		if (!fileIOTest) {
-			exportData(NULL);
-			fileIOTest = true;
-		}
+		fileIOSuccess = exportData(&data, false);
+		currentMenu = FILE_RESULT;
 	}
 }
 
