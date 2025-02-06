@@ -52,8 +52,8 @@ void measureWaveform(WaveformData *data) {
 	data->data[data->endPoint].ay = currPollY;
 	data->endPoint++;
 
-	// wait for 2ms to pass
-	while (ticks_to_millisecs(gettime() - startTime) < 2);
+	// wait for 1ms to pass
+	while (ticks_to_millisecs(gettime() - startTime) < 1);
 
 	while (true) {
 		// get time for polling
@@ -104,8 +104,8 @@ void measureWaveform(WaveformData *data) {
 		}
 
 		// slow down polling
-		// polling every ~2ms
-		while (ticks_to_millisecs(gettime() - startTime) < 2);
+		// polling every ~1ms
+		while (ticks_to_millisecs(gettime() - startTime) < 1);
 	}
 	data->isDataReady = true;
 

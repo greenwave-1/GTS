@@ -16,7 +16,7 @@
 #define SCREEN_POS_CENTER_X 320
 #define SCREEN_POS_CENTER_Y 240
 
-#define MENUITEMS_LEN 3
+#define MENUITEMS_LEN 4
 #define TEST_LEN 5
 
 // 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
@@ -31,6 +31,9 @@ static enum WAVEFORM_TEST currentTest = SNAPBACK;
 
 // enum to keep track of what menu to display, and what logic to run
 static enum CURRENT_MENU currentMenu = MAIN_MENU;
+
+// enum for previous menu, we move to it when we're waiting for user input
+static enum CURRENT_MENU previousMenu = MAIN_MENU;
 
 // enum for what image to draw in 2d plot
 static enum IMAGE selectedImage = SNAPBACK;
@@ -52,7 +55,9 @@ static u32 held = 0;
 static u8 stickheld = 0;
 
 // menu item strings
-static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot" };
+static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot", "Export Data" };
+
+static bool displayedWaitingInputMessage = false;
 
 static bool displayInstructions = false;
 static bool fileIOSuccess = false;
@@ -116,7 +121,11 @@ bool menu_runMenu(void *currXfb) {
 
 	// reset console cursor position
 	printf("\x1b[1;0H");
-	printf("FossScope (Working Title)\n\n");
+	printf("FossScope (Working Title)");
+	if (data.isDataReady) {
+		printf("                    Measure Ready!");
+	}
+	printf("\n\n");
 
 	// determine what menu we are in
 	switch (currentMenu) {
@@ -157,12 +166,11 @@ bool menu_runMenu(void *currXfb) {
 				menu_2dPlot(currXfb);
 			}
 			break;
-		case FILE_RESULT:
-			if (fileIOSuccess) {
-				printf("File exported successfully.");
-			} else {
-				printf("File failed to export.\nTODO: Add an error number or something idk.");
-			}
+		case FILE_EXPORT:
+			menu_fileExport();
+			break;
+		case WAITING_MEASURE:
+			menu_waitingMeasure();
 			break;
 		default:
 			printf("HOW DID WE END UP HERE?\n");
@@ -272,6 +280,9 @@ void menu_mainMenu() {
 			case 2:
 				currentMenu = PLOT_2D;
 				break;
+			case 3:
+				currentMenu = FILE_EXPORT;
+				break;
 		}
 	}
 
@@ -280,12 +291,6 @@ void menu_mainMenu() {
 		stickheld++;
 	} else {
 		stickheld = 0;
-	}
-	
-	// TODO: replace this with something in the reading menus, Z on main menu is for testing
-	if (pressed & PAD_TRIGGER_Z) {
-		fileIOSuccess = exportData(&data, false);
-		currentMenu = FILE_RESULT;
 	}
 }
 
@@ -766,13 +771,12 @@ void menu_waveformMeasure(void *currXfb) {
 		} else {
 			data.fullMeasure = false;
 		}
-		measureWaveform(&data);
-		dataScrollOffset = 0;
-		lastDrawPoint = data.endPoint;
-		assert(data.endPoint < 5000);
+		previousMenu = WAVEFORM;
+		currentMenu = WAITING_MEASURE;
 	// does the user want to change the test?
 	} else if (pressed & PAD_BUTTON_X) {
 		currentTest++;
+		// check if we overrun our test length
 		if (currentTest == TEST_LEN) {
 			currentTest = SNAPBACK;
 		}
@@ -908,9 +912,28 @@ void menu_2dPlot(void *currXfb) {
 	// TODO: figure out if this can be removed without having to gut the current poll logic, would be better for the user to not have to do this
 	if (pressed & PAD_BUTTON_A) {
 		data.fullMeasure = false;
-		measureWaveform(&data);
-		dataScrollOffset = 0;
-		lastDrawPoint = data.endPoint;
-		assert(data.endPoint < 5000);
+		previousMenu = PLOT_2D;
+		currentMenu = WAITING_MEASURE;
 	}
+}
+
+
+void menu_fileExport() {
+	printf("todo");
+	//fileIOSuccess = exportData(&data, false);
+}
+
+
+void menu_waitingMeasure() {
+	if (!displayedWaitingInputMessage) {
+		printf("\nWaiting for user input...");
+		displayedWaitingInputMessage = true;
+		return;
+	}
+	measureWaveform(&data);
+	dataScrollOffset = 0;
+	lastDrawPoint = data.endPoint;
+	assert(data.endPoint < 5000);
+	currentMenu = previousMenu;
+	displayedWaitingInputMessage = false;
 }
