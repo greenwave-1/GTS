@@ -3,3 +3,5 @@
 *.elf
 build/
 .idea/
+release/
+*.zip
