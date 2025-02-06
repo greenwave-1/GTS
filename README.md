@@ -11,7 +11,7 @@ Currently not feature-complete, but in a workable state.
 - Works on GameCube/Wii, and with 480p
 
 ## Current issues I can think of right now:
-- Polling rate and uniformity are unknown. Currently, the code will attempt to poll at ~500hz (every 2ms), but I can't
+- Polling rate and uniformity are unknown. Currently, the code will attempt to poll at ~1000hz (every 1ms), but I can't
 verify/confirm that the controller itself is polled at that rate. 
 - Measuring the stick requires the user to press A first, investigate how to change this without losing current polling 
 method
