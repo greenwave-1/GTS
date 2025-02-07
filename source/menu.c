@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <ogc/color.h>
 #include "waveform.h"
 #include "images/stickmaps.h"
 #include "images/custom_colors.h"
@@ -16,7 +17,7 @@
 #define SCREEN_POS_CENTER_X 320
 #define SCREEN_POS_CENTER_Y 240
 
-#define MENUITEMS_LEN 4
+#define MENUITEMS_LEN 5
 #define TEST_LEN 5
 
 // 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
@@ -55,7 +56,7 @@ static u32 held = 0;
 static u8 stickheld = 0;
 
 // menu item strings
-static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot", "Export Data" };
+static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot", "Export Data", "Coordinate Viewer"};
 
 static bool displayedWaitingInputMessage = false;
 
@@ -67,6 +68,7 @@ static int dataScrollOffset = 0;
 
 // most of this is taken from
 // https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
+// TODO: move this to another file, this file is getting big enough...
 static void drawImage(void *currXfb, const unsigned char image[], const unsigned char colorIndex[8], u16 offsetX, u16 offsetY) {
 	// get information on the image to be drawn
 	u32 width = image[0] << 8 | image[1];
@@ -171,6 +173,9 @@ bool menu_runMenu(void *currXfb) {
 			break;
 		case WAITING_MEASURE:
 			menu_waitingMeasure();
+			break;
+		case COORD_MAP:
+			menu_coordinateViewer(currXfb);
 			break;
 		default:
 			printf("HOW DID WE END UP HERE?\n");
@@ -283,6 +288,9 @@ void menu_mainMenu() {
 			case 3:
 				currentMenu = FILE_EXPORT;
 				break;
+			case 4:
+				currentMenu = COORD_MAP;
+				break;
 		}
 	}
 
@@ -308,8 +316,10 @@ void menu_controllerTest() {
 	// get converted stick values
 	stickCoordinatesMelee = convertStickValues(&stickCoordinatesRaw);
 
-	// print analog inputs
+	// print raw stick coordinates
 	printf("Stick X: (raw)   %4d   |   (melee) ", stickCoordinatesRaw.ax);
+	
+	// print melee coordinates
 	// is the value negative?
 	if (stickCoordinatesRaw.ax < 0) {
 		printf("-");
@@ -320,8 +330,11 @@ void menu_controllerTest() {
 	} else {
 		printf("0.%04d\n", stickCoordinatesMelee.ax);
 	}
-
+	
+	// print raw stick coordinates
 	printf("Stick Y: (raw)   %4d   |   (melee) ", stickCoordinatesRaw.ay);
+	
+	// print melee coordinates
 	// is the value negative?
 	if (stickCoordinatesRaw.ay < 0) {
 		printf("-");
@@ -936,4 +949,103 @@ void menu_waitingMeasure() {
 	assert(data.endPoint < 5000);
 	currentMenu = previousMenu;
 	displayedWaitingInputMessage = false;
+}
+
+
+void menu_coordinateViewer(void *currXfb) {
+	// melee stick coordinates stuff
+	// a lot of this comes from github.com/phobgcc/phobconfigtool
+	
+	static WaveformDatapoint stickCoordinatesRaw;
+	static WaveformDatapoint stickCoordinatesMelee;
+	
+	// get raw stick values
+	stickCoordinatesRaw.ax = PAD_StickX(0), stickCoordinatesRaw.ay = PAD_StickY(0);
+	stickCoordinatesRaw.cx = PAD_SubStickX(0), stickCoordinatesRaw.cy = PAD_SubStickY(0);
+	
+	// get converted stick values
+	stickCoordinatesMelee = convertStickValues(&stickCoordinatesRaw);
+	
+	// print melee coordinates
+	printf("Stick X: ");
+	// is the value negative?
+	if (stickCoordinatesRaw.ax < 0) {
+		printf("-");
+	}
+	// is this a 1.0 value?
+	if (stickCoordinatesMelee.ax == 10000) {
+		printf("1.0\n");
+	} else {
+		printf("0.%04d\n", stickCoordinatesMelee.ax);
+	}
+	
+	// print melee coordinates
+	printf("Stick Y: ");
+	// is the value negative?
+	if (stickCoordinatesRaw.ay < 0) {
+		printf("-");
+	}
+	// is this a 1.0 value?
+	if (stickCoordinatesMelee.ay == 10000) {
+		printf("1.0\n");
+	} else {
+		printf("0.%04d\n", stickCoordinatesMelee.ay);
+	}
+	
+	// print melee coordinates
+	printf("C-Stick X: ");
+	// is the value negative?
+	if (stickCoordinatesRaw.cx < 0) {
+		printf("-");
+	}
+	// is this a 1.0 value?
+	if (stickCoordinatesMelee.cx == 10000) {
+		printf("1.0\n");
+	} else {
+		printf("0.%04d\n", stickCoordinatesMelee.cx);
+	}
+	
+	// print melee coordinates
+	printf("C-Stick Y: ");
+	// is the value negative?
+	if (stickCoordinatesRaw.cy < 0) {
+		printf("-");
+	}
+	// is this a 1.0 value?
+	if (stickCoordinatesMelee.cy == 10000) {
+		printf("1.0\n");
+	} else {
+		printf("0.%04d\n", stickCoordinatesMelee.cy);
+	}
+	
+	// calculate screen coordinates for stick position drawing
+	int xfbCoordX = (stickCoordinatesMelee.ax / 125) * 2;
+	if (stickCoordinatesRaw.ax < 0) {
+		xfbCoordX *= -1;
+	}
+	xfbCoordX += SCREEN_POS_CENTER_X;
+	
+	int xfbCoordY = (stickCoordinatesMelee.ay / 125) * 2;
+	if (stickCoordinatesRaw.ay > 0) {
+		xfbCoordY *= -1;
+	}
+	xfbCoordY += SCREEN_POS_CENTER_Y;
+	
+	int xfbCoordCX = (stickCoordinatesMelee.cx / 125) * 2;
+	if (stickCoordinatesRaw.cx < 0) {
+		xfbCoordCX *= -1;
+	}
+	xfbCoordCX += SCREEN_POS_CENTER_X;
+	
+	int xfbCoordCY = (stickCoordinatesMelee.cy / 125) * 2;
+	if (stickCoordinatesRaw.cy > 0) {
+		xfbCoordCY *= -1;
+	}
+	xfbCoordCY += SCREEN_POS_CENTER_Y;
+
+	DrawLine(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordX, xfbCoordY, COLOR_SILVER, currXfb);
+	DrawBox(xfbCoordX - 4, xfbCoordY - 4, xfbCoordX + 4, xfbCoordY + 4, COLOR_WHITE, currXfb);
+	
+	DrawLine(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, COLOR_MEDGRAY, currXfb);
+	DrawFilledBox(xfbCoordCX - 2, xfbCoordCY - 2, xfbCoordCX + 2, xfbCoordCY + 2, COLOR_YELLOW, currXfb);
 }

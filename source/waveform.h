@@ -44,4 +44,8 @@ void DrawHLine (int x1, int x2, int y, int color, void *xfb);
 void DrawVLine (int x, int y1, int y2, int color, void *xfb);
 void DrawBox (int x1, int y1, int x2, int y2, int color, void *xfb);
 
+// expanded drawing functions
+void DrawFilledBox (int x1, int y1, int x2, int y2, int color, void *xfb);
+void DrawLine (int x1, int y1, int x2, int y2, int color, void *xfb);
+
 #endif //FOSSSCOPE_WAVEFORM_H

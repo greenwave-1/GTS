@@ -193,3 +193,57 @@ void DrawBox (int x1, int y1, int x2, int y2, int color, void *xfb) {
 	DrawVLine (x1, y1, y2, color, xfb);
 	DrawVLine (x2, y1, y2, color, xfb);
 }
+
+void DrawFilledBox (int x1, int y1, int x2, int y2, int color, void *xfb) {
+	for (int i = x1; i < x2 + 1; i++) {
+		DrawVLine(i, y1, y2, color, xfb);
+	}
+}
+
+
+// draw a line given two coordinates, using Bresenham's line-drawing algorithm
+void DrawLine(int x1, int y1, int x2, int y2, int color, void *xfb) {
+	int distanceX = x2 - x1, distanceY = y2 - y1;
+	u32 *tmpfb = xfb;
+	// used for when one coordinate goes negative
+	int xDir = 1, yDir = 1;
+	
+	// make sure our magnitude is positive, and note if the drawing direction should be negative
+	if (distanceX < 0) {
+		xDir = -1;
+		distanceX *= -1;
+	}
+	if (distanceY < 0) {
+		yDir = -1;
+		distanceY *= -1;
+	}
+	
+	// x will be our primary axis
+	if (distanceX > distanceY) {
+		int delta = 2 * distanceY - distanceX;
+		int currY = y1;
+		
+		for (int i = 0; i < distanceX; i++) {
+			tmpfb[((x1 + (i * xDir)) + (currY * 640)) / 2] = color;
+			if (delta > 0) {
+				currY += (1 * yDir);
+				delta -= (2 * distanceX);
+			}
+			delta += (2 * distanceY);
+		}
+	// y will be our primary axis
+	} else {
+		int delta = 2 * distanceX - distanceY;
+		int currX = x1;
+		
+		for (int i = 0; i < distanceY; i++) {
+			tmpfb[(((y1 + (i * yDir)) * 640) + currX) / 2] = color;
+			//tmpfb[((x1 + i) + (currY * 640)) / 2] = color;
+			if (delta > 0) {
+				currX += (1 * xDir);
+				delta -= (2 * distanceY);
+			}
+			delta += (2 * distanceX);
+		}
+	}
+}
