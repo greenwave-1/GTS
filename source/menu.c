@@ -14,6 +14,7 @@
 #include "export.h"
 
 // center of screen, 640x480
+// TODO: replace this with a function call that takes into account other tv modes (pal)
 #define SCREEN_POS_CENTER_X 320
 #define SCREEN_POS_CENTER_Y 240
 
@@ -1042,10 +1043,29 @@ void menu_coordinateViewer(void *currXfb) {
 		xfbCoordCY *= -1;
 	}
 	xfbCoordCY += SCREEN_POS_CENTER_Y;
+	
+	// draw stickbox bounds
+	// TODO: this is dumb, do this a different way at some point
+	for (int i = 0; i < 70; i++) {
+		DrawFilledBox(SCREEN_POS_CENTER_X - STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y - STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_X - STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y - STICK_BOUNDS[(i * 2) + 1], COLOR_WHITE, currXfb);
+		DrawFilledBox(SCREEN_POS_CENTER_X - STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y - STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_X - STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y - STICK_BOUNDS[i * 2], COLOR_WHITE, currXfb);
+		
+		DrawFilledBox(SCREEN_POS_CENTER_X + STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y - STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_X + STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y - STICK_BOUNDS[(i * 2) + 1], COLOR_WHITE, currXfb);
+		DrawFilledBox(SCREEN_POS_CENTER_X + STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y - STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_X + STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y - STICK_BOUNDS[i * 2], COLOR_WHITE, currXfb);
+		
+		DrawFilledBox(SCREEN_POS_CENTER_X - STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y + STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_X - STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y + STICK_BOUNDS[(i * 2) + 1], COLOR_WHITE, currXfb);
+		DrawFilledBox(SCREEN_POS_CENTER_X - STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y + STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_X - STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y + STICK_BOUNDS[i * 2], COLOR_WHITE, currXfb);
+		
+		DrawFilledBox(SCREEN_POS_CENTER_X + STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y + STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_X + STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y + STICK_BOUNDS[(i * 2) + 1], COLOR_WHITE, currXfb);
+		DrawFilledBox(SCREEN_POS_CENTER_X + STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y + STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_X + STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y + STICK_BOUNDS[i * 2], COLOR_WHITE, currXfb);
+		
+	}
 
+	// draw analog stick line
 	DrawLine(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordX, xfbCoordY, COLOR_SILVER, currXfb);
 	DrawBox(xfbCoordX - 4, xfbCoordY - 4, xfbCoordX + 4, xfbCoordY + 4, COLOR_WHITE, currXfb);
 	
+	// draw c-stick line
 	DrawLine(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, COLOR_MEDGRAY, currXfb);
 	DrawFilledBox(xfbCoordCX - 2, xfbCoordCY - 2, xfbCoordCX + 2, xfbCoordCY + 2, COLOR_YELLOW, currXfb);
 }
