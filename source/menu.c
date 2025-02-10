@@ -57,7 +57,7 @@ static u32 held = 0;
 static u8 stickheld = 0;
 
 // menu item strings
-static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Measure Waveform", "2D Plot", "Export Data", "Coordinate Viewer"};
+static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Coordinate Viewer", "2D Plot", "Export Data" };
 
 static bool displayedWaitingInputMessage = false;
 
@@ -126,7 +126,7 @@ bool menu_runMenu(void *currXfb) {
 	printf("\x1b[3;0H");
 	printf("FossScope (Working Title)");
 	if (data.isDataReady) {
-		printf("                    Measure Ready!");
+		printf("                      Oscilloscope capture in memory!");
 	}
 	printf("\n\n");
 
@@ -184,7 +184,7 @@ bool menu_runMenu(void *currXfb) {
 	}
 
 	// move cursor to bottom left
-	printf( "\x1b[25;0H");
+	printf( "\x1b[27;0H");
 
 	// exit the program if start is pressed
 	if (pressed & PAD_BUTTON_START && currentMenu == MAIN_MENU) {
@@ -284,13 +284,13 @@ void menu_mainMenu() {
 				currentMenu = WAVEFORM;
 				break;
 			case 2:
-				currentMenu = PLOT_2D;
+				currentMenu = COORD_MAP;
 				break;
 			case 3:
-				currentMenu = FILE_EXPORT;
+				currentMenu = PLOT_2D;
 				break;
 			case 4:
-				currentMenu = COORD_MAP;
+				currentMenu = FILE_EXPORT;
 				break;
 		}
 	}
@@ -449,25 +449,25 @@ void menu_waveformMeasure(void *currXfb) {
 			case PIVOT:
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
-				printf( "\x1b[9;0H");
+				printf( "\x1b[11;0H");
 				printf("+64");
-				printf( "\x1b[17;0H");
+				printf( "\x1b[19;0H");
 				printf("-64");
 				break;
 			case FULL:
 			case DASHBACK:
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
-				printf( "\x1b[9;0H");
+				printf( "\x1b[11;0H");
 				printf("+64");
-				printf( "\x1b[17;0H");
+				printf( "\x1b[19;0H");
 				printf("-64");
 			case SNAPBACK:
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, COLOR_GREEN, currXfb);
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, COLOR_GREEN, currXfb);
-				printf( "\x1b[12;0H");
+				printf( "\x1b[14;0H");
 				printf("+23");
-				printf( "\x1b[15;0H");
+				printf( "\x1b[17;0H");
 				printf("-23");
 			default:
 				break;
@@ -634,7 +634,7 @@ void menu_waveformMeasure(void *currXfb) {
 		}
 
 		// print test data
-		printf( "\x1b[5;0H");
+		printf( "\x1b[7;0H");
 		u16 pollCount = 0;
 		switch (currentTest) {
 			case SNAPBACK:
@@ -753,7 +753,7 @@ void menu_waveformMeasure(void *currXfb) {
 
 		}
 	}
-	printf( "\x1b[23;0H");
+	printf( "\x1b[25;0H");
 	printf("Current test: ");
 	switch (currentTest) {
 		case SNAPBACK:
@@ -810,7 +810,7 @@ void menu_2dPlot(void *currXfb) {
 		// TODO: move instructions under different prompt, so I don't have to keep messing with text placement
 
 		// print coordinates of last drawn point
-		printf( "\x1b[22;0H");
+		printf( "\x1b[24;0H");
 		printf("Raw X: %04d | Raw Y: %04d   |   ", data.data[lastDrawPoint].ax, data.data[lastDrawPoint].ay);
 		printf("Melee X: ");
 
