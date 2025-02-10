@@ -642,9 +642,9 @@ void menu_waveformMeasure(void *currXfb) {
 				break;
 			case PIVOT:
 				bool pivotHit80 = false;
-				bool beforePivotHit80 = false;
+				bool prevPivotHit80 = false;
 				bool leftPivotRange = false;
-				bool beforeLeftPivotRange = false;
+				bool prevLeftPivotRange = false;
 				// start from the back of the list
 				for (int i = data.endPoint; i >= 0; i--) {
 					// check x coordinate for +-64
@@ -658,23 +658,23 @@ void menu_waveformMeasure(void *currXfb) {
 					// are we outside the pivot range and have already logged data of being in range
 					if (pollCount > 0 && data.data[i].ax < 64 && data.data[i].ax > -64) {
 						leftPivotRange = true;
-						if (beforeLeftPivotRange || !pivotHit80) {
+						if (prevLeftPivotRange || !pivotHit80) {
 							break;
 						}
 					}
 
 					// look for the initial input
 					if ( (data.data[i].ax >= 64 || data.data[i].ax <= -64) && leftPivotRange) {
-						beforeLeftPivotRange = true;
+						prevLeftPivotRange = true;
 						if (data.data[i].ax >= 80 || data.data[i].ax <= -80) {
-							beforePivotHit80 = true;
+							prevPivotHit80 = true;
 							break;
 						}
 					}
 				}
 
 				// phobvision doc says both sides need to hit 80 to succeed
-				if (beforePivotHit80 && pivotHit80) {
+				if (prevPivotHit80 && pivotHit80) {
 					float noTurnPercent = 0;
 					float pivotPercent = 0;
 					float dashbackPercent = 0;

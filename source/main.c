@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <gccore.h>
+#include <ogc/usbgecko.h>
 #include "menu.h"
 
 
@@ -17,6 +18,7 @@ int main(int argc, char **argv) {
 	// the only thing we're doing differently is a double buffer (because terminal weirdness on actual hardware)
 	VIDEO_Init();
 	PAD_Init();
+	PAD_ScanPads();
 
 	rmode = VIDEO_GetPreferredMode(NULL);
 
@@ -40,6 +42,78 @@ int main(int argc, char **argv) {
 	bool shouldExit = false;
 
 	void *currXfb = NULL;
+	
+	// check for usb gecko
+	// a lot pulled from https://github.com/DacoTaco/priiloader/blob/master/src/priiloader/source/gecko.cpp
+	// TODO: make this a header that any place can call
+	if (usb_isgeckoalive(EXI_CHANNEL_1)) {
+		usb_flush(EXI_CHANNEL_1);
+		char msg[100];
+		memset(msg, 0, sizeof(msg));
+		snprintf(msg, 100, "Hello USB Gecko!\r\n\0");
+		usb_sendbuffer(1, msg, 100);
+		usb_flush(EXI_CHANNEL_1);
+	}
+	
+	
+	// TODO: WIP Logic for forcing interlaced
+	// this needs much more logic than what's present
+	// mainly, using the correct tv mode instead of just doing ntsc
+	// probably will need testing from PAL users
+	/*
+	// wait a couple frames, inputs don't register initially???
+	PAD_ScanPads();
+	VIDEO_WaitVSync();
+	PAD_ScanPads();
+	VIDEO_WaitVSync();
+	PAD_ScanPads();
+	
+	u32 buttons = PAD_ButtonsHeld(0);
+	//u32 useless = 42069;
+	
+	// check if b is held and we are in progressive scan
+	if (buttons & PAD_BUTTON_B) {
+		char msg[500];
+		memset(msg, 0, sizeof(msg));
+		u32 scanMode = VIDEO_GetScanMode();
+		u32 tvMode = VIDEO_GetCurrentTvMode();
+		snprintf(msg, 500, "B held, Progressive scan: %d | TV Mode: %d\r\n\0", scanMode, tvMode);
+		usb_sendbuffer(1, msg, 500);
+		usb_flush(EXI_CHANNEL_1);
+		if (scanMode == 2) {
+			memset(msg, 0, sizeof(msg));
+			snprintf(msg, 500, "Progressive Scan detected, asking if user wants to force interlaced\n\0");
+			usb_sendbuffer(1, msg, 500);
+			usb_flush(EXI_CHANNEL_1);
+			
+			// force interlaced
+			VIDEO_Configure(&TVNtsc480IntDf);
+			
+			VIDEO_ClearFrameBuffer(rmode, xfb2, COLOR_BLACK);
+			CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+			currXfb = xfb2;
+			VIDEO_SetNextFramebuffer(xfb2);
+			
+			xfbSwitch = true;
+			
+			printf("\x1b[3;0H");
+			printf("Press A to enable progressive scan, press B to disable\n");
+			while (true) {
+				VIDEO_Flush();
+				VIDEO_WaitVSync();
+				PAD_ScanPads();
+				buttons = PAD_ButtonsDown(0);
+				if (buttons & PAD_BUTTON_A) {
+					VIDEO_Configure(&TVNtsc480Prog);
+					break;
+				}
+				if (buttons & PAD_BUTTON_B) {
+					break;
+				}
+			}
+		}
+	}
+	*/
 
 	// main loop of the program
 	while (true) {
