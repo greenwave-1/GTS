@@ -122,7 +122,7 @@ bool menu_runMenu(void *currXfb) {
 	held = PAD_ButtonsHeld(0);
 
 	// reset console cursor position
-	printf("\x1b[1;0H");
+	printf("\x1b[3;0H");
 	printf("FossScope (Working Title)");
 	if (data.isDataReady) {
 		printf("                    Measure Ready!");

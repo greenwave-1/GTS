@@ -23,8 +23,8 @@ int main(int argc, char **argv) {
 	xfb1 = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 	xfb2 = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 
-	console_init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-	console_init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+	CON_Init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+	CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 
 	VIDEO_Configure(rmode);
 
@@ -50,11 +50,11 @@ int main(int argc, char **argv) {
 		// check which framebuffer is next
 		if (xfbSwitch) {
 			VIDEO_ClearFrameBuffer(rmode, xfb1, COLOR_BLACK);
-			console_init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+			CON_Init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 			currXfb = xfb1;
 		} else {
 			VIDEO_ClearFrameBuffer(rmode, xfb2, COLOR_BLACK);
-			console_init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+			CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 			currXfb = xfb2;
 		}
 
