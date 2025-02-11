@@ -136,7 +136,7 @@ bool menu_runMenu(void *currXfb) {
 			menu_mainMenu();
 			break;
 		case CONTROLLER_TEST:
-			menu_controllerTest();
+			menu_controllerTest(currXfb);
 			break;
 		case WAVEFORM:
 			if (displayInstructions) {
@@ -303,7 +303,7 @@ void menu_mainMenu() {
 	}
 }
 
-void menu_controllerTest() {
+void menu_controllerTest(void *currXfb) {
 	// melee stick coordinates stuff
 	// a lot of this comes from github.com/phobgcc/phobconfigtool
 
@@ -316,59 +316,66 @@ void menu_controllerTest() {
 
 	// get converted stick values
 	stickCoordinatesMelee = convertStickValues(&stickCoordinatesRaw);
-
+	
 	// print raw stick coordinates
-	printf("Stick X: (raw)   %4d   |   (melee) ", stickCoordinatesRaw.ax);
+	printf("\x1b[24;0H");
+	printf("Stick Raw (X,Y): (%d,%d)", stickCoordinatesRaw.ax, stickCoordinatesRaw.ay);
+	printf("\x1b[24;40H");
+	printf("C-Stick Raw (X,Y): (%d,%d)", stickCoordinatesRaw.cx, stickCoordinatesRaw.cy);
 	
 	// print melee coordinates
+	printf("\x1b[25;0H");
+	printf("Stick Melee (X,Y): (");
 	// is the value negative?
 	if (stickCoordinatesRaw.ax < 0) {
 		printf("-");
 	}
 	// is this a 1.0 value?
 	if (stickCoordinatesMelee.ax == 10000) {
-		printf("1.0\n");
+		printf("1.0");
 	} else {
-		printf("0.%04d\n", stickCoordinatesMelee.ax);
+		printf("0.%04d", stickCoordinatesMelee.ax);
 	}
+	printf(",");
 	
-	// print raw stick coordinates
-	printf("Stick Y: (raw)   %4d   |   (melee) ", stickCoordinatesRaw.ay);
-	
-	// print melee coordinates
 	// is the value negative?
 	if (stickCoordinatesRaw.ay < 0) {
 		printf("-");
 	}
 	// is this a 1.0 value?
 	if (stickCoordinatesMelee.ay == 10000) {
-		printf("1.0\n");
+		printf("1.0");
 	} else {
-		printf("0.%04d\n", stickCoordinatesMelee.ay);
+		printf("0.%04d", stickCoordinatesMelee.ay);
 	}
-
-	printf("C-Stick X: (raw) %4d   |   (melee) ", stickCoordinatesRaw.cx);
+	printf(")");
+	
+	printf("\x1b[25;40H");
+	printf("C-Stick Melee (X,Y): (");
 	// is the value negative?
 	if (stickCoordinatesRaw.cx < 0) {
 		printf("-");
 	}
 	// is this a 1.0 value?
 	if (stickCoordinatesMelee.cx == 10000) {
-		printf("1.0\n");
+		printf("1.0");
 	} else {
-		printf("0.%04d\n", stickCoordinatesMelee.cx);
+		printf("0.%04d", stickCoordinatesMelee.cx);
 	}
-	printf("C-Stick Y: (raw) %4d   |   (melee) ", stickCoordinatesRaw.cy);
+	printf(",");
 	// is the value negative?
 	if (stickCoordinatesRaw.cy < 0) {
 		printf("-");
 	}
 	// is this a 1.0 value?
 	if (stickCoordinatesMelee.cy == 10000) {
-		printf("1.0\n");
+		printf("1.0");
 	} else {
-		printf("0.%04d\n", stickCoordinatesMelee.cy);
+		printf("0.%04d", stickCoordinatesMelee.cy);
 	}
+	printf(")");
+	
+	/*
 
 	printf("Analog L: %d\n", PAD_TriggerL(0));
 	printf("Analog R: %d\n", PAD_TriggerR(0));
@@ -424,7 +431,40 @@ void menu_controllerTest() {
 	if (held & PAD_BUTTON_RIGHT) {
 		printf("Pressed");
 	}
-
+	 */
+	
+	// visual stuff
+	// Analog L Slider
+	DrawBox(23, 69, 36, 326, COLOR_WHITE, currXfb);
+	if (held & PAD_TRIGGER_L) {
+		DrawFilledBox(25, 70 + (255 - PAD_TriggerL(0)), 35, 325, COLOR_BLUE, currXfb);
+	} else {
+		DrawFilledBox(25, 70 + (255 - PAD_TriggerL(0)), 35, 325, COLOR_RED, currXfb);
+	}
+	
+	printf( "\x1b[21;0H");
+	printf("Analog L: %d", PAD_TriggerL(0));
+	if (held & PAD_TRIGGER_L) {
+		printf("\x1b[22;0H");
+		printf("Digital L Pressed");
+	}
+	
+	printf( "\x1b[21;50H");
+	printf("Analog R: %d", PAD_TriggerR(0));
+	if (held & PAD_TRIGGER_R) {
+		printf("\x1b[22;50H");
+		printf("Digital R Pressed");
+	}
+	
+	// Analog R Slider
+	DrawBox(603, 69, 616, 326, COLOR_WHITE, currXfb);
+	if (held & PAD_TRIGGER_R) {
+		DrawFilledBox(605, 70 + (255 - PAD_TriggerR(0)), 615, 325, COLOR_BLUE, currXfb);
+	} else {
+		DrawFilledBox(605, 70 + (255 - PAD_TriggerR(0)), 615, 325, COLOR_RED, currXfb);
+	}
+	
+	
 }
 
 void menu_waveformMeasure(void *currXfb) {
