@@ -319,9 +319,9 @@ void menu_controllerTest(void *currXfb) {
 	
 	// print raw stick coordinates
 	printf("\x1b[24;0H");
-	printf("Stick Raw (X,Y): (%d,%d)", stickCoordinatesRaw.ax, stickCoordinatesRaw.ay);
+	printf("Stick Raw (X,Y): (%04d,%04d)", stickCoordinatesRaw.ax, stickCoordinatesRaw.ay);
 	printf("\x1b[24;40H");
-	printf("C-Stick Raw (X,Y): (%d,%d)", stickCoordinatesRaw.cx, stickCoordinatesRaw.cy);
+	printf("C-Stick Raw (X,Y): (%04d,%04d)", stickCoordinatesRaw.cx, stickCoordinatesRaw.cy);
 	
 	// print melee coordinates
 	printf("\x1b[25;0H");
@@ -432,8 +432,64 @@ void menu_controllerTest(void *currXfb) {
 		printf("Pressed");
 	}
 	 */
-	
+
 	// visual stuff
+	// Buttons
+
+    // A
+	printf("\x1b[10;60H");
+	if (held & PAD_BUTTON_A) {
+		DrawFilledBox(467, 153, 498, 184, COLOR_WHITE, currXfb);
+	} else {
+		DrawBox(467, 153, 498, 184, COLOR_WHITE, currXfb);
+    }
+    printf("A");
+
+    // B
+	printf("\x1b[11;55H");
+	if (held & PAD_BUTTON_B) {
+		DrawFilledBox(433, 171, 455, 193, COLOR_WHITE, currXfb);
+	} else {
+		DrawBox(433, 171, 455, 193, COLOR_WHITE, currXfb);
+	}
+	printf("B");
+
+	// X
+	printf("\x1b[10;65H");
+	if (held & PAD_BUTTON_X) {
+		DrawFilledBox(512, 153, 532, 184, COLOR_WHITE, currXfb);
+	} else {
+		DrawBox(512, 153, 532, 184, COLOR_WHITE, currXfb);
+	}
+	printf("X");
+
+	// Y
+	printf("\x1b[8;60H");
+	if (held & PAD_BUTTON_Y) {
+		DrawFilledBox(467, 125, 498, 145, COLOR_WHITE, currXfb);
+	} else {
+		DrawBox(467, 125, 498, 145, COLOR_WHITE, currXfb);
+	}
+	printf("Y");
+
+    // Z
+	printf("\x1b[8;65H");
+	if (held & PAD_TRIGGER_Z) {
+		DrawFilledBox(510, 125, 532, 145, COLOR_WHITE, currXfb);
+	} else {
+		DrawBox(510, 125, 532, 145, COLOR_WHITE, currXfb);
+	}
+	printf("Z");
+
+	// Start
+	printf("\x1b[12;38H");
+	if (held & PAD_BUTTON_START) {
+		DrawFilledBox(295, 187, 350, 210, COLOR_WHITE, currXfb);
+	} else {
+		DrawBox(295, 187, 350, 210, COLOR_WHITE, currXfb);
+	}
+	printf("START");
+
 	// Analog L Slider
 	DrawBox(23, 69, 36, 326, COLOR_WHITE, currXfb);
 	if (held & PAD_TRIGGER_L) {
@@ -441,7 +497,8 @@ void menu_controllerTest(void *currXfb) {
 	} else {
 		DrawFilledBox(25, 70 + (255 - PAD_TriggerL(0)), 35, 325, COLOR_RED, currXfb);
 	}
-	
+
+
 	printf( "\x1b[21;0H");
 	printf("Analog L: %d", PAD_TriggerL(0));
 	if (held & PAD_TRIGGER_L) {
