@@ -2,8 +2,8 @@
 
 #include <stdio.h>
 #include <gccore.h>
-#include <ogc/usbgecko.h>
 #include "menu.h"
+#include "gecko.h"
 
 
 // basic stuff from the template
@@ -43,17 +43,10 @@ int main(int argc, char **argv) {
 
 	void *currXfb = NULL;
 	
-	// check for usb gecko
-	// a lot pulled from https://github.com/DacoTaco/priiloader/blob/master/src/priiloader/source/gecko.cpp
-	// TODO: make this a header that any place can call
-	if (usb_isgeckoalive(EXI_CHANNEL_1)) {
-		usb_flush(EXI_CHANNEL_1);
-		char msg[100];
-		memset(msg, 0, sizeof(msg));
-		snprintf(msg, 100, "Hello USB Gecko!\r\n\0");
-		usb_sendbuffer(1, msg, 100);
-		usb_flush(EXI_CHANNEL_1);
-	}
+	// there is a makefile target that will enable this
+	#ifdef DEBUG
+	sendMessage("USB Gecko Debug output enabled", 100);
+	#endif
 	
 	
 	// TODO: WIP Logic for forcing interlaced

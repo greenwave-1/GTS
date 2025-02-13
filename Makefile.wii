@@ -26,6 +26,12 @@ INCLUDES	:=
 #---------------------------------------------------------------------------------
 
 CFLAGS	= -g -O2 -Wall $(MACHDEP) $(INCLUDE)
+
+DEBUG ?= 0
+ifeq ($(DEBUG), 1)
+	CFLAGS += -DDEBUG
+endif
+
 CXXFLAGS	=	$(CFLAGS)
 
 LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map

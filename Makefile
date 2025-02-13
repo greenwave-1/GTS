@@ -34,3 +34,6 @@ gc-clean:
 wii-clean:
 	$(MAKE) -f Makefile.wii clean
 
+debug:
+	$(MAKE) -f Makefile.gc DEBUG=1
+	$(MAKE) -f Makefile.wii DEBUG=1
