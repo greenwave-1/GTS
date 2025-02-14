@@ -11,12 +11,9 @@
 #include "waveform.h"
 #include "images/stickmaps.h"
 #include "images/custom_colors.h"
+#include "draw_constants.h"
 #include "export.h"
 
-// center of screen, 640x480
-// TODO: replace this with a function call that takes into account other tv modes (pal)
-#define SCREEN_POS_CENTER_X 320
-#define SCREEN_POS_CENTER_Y 240
 
 #define MENUITEMS_LEN 5
 #define TEST_LEN 5
@@ -70,6 +67,7 @@ static int dataScrollOffset = 0;
 // most of this is taken from
 // https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
 // TODO: move this to another file, this file is getting big enough...
+// TODO: this seems to use a lot of cycles, not sure if it can be optimized...
 static void drawImage(void *currXfb, const unsigned char image[], const unsigned char colorIndex[8], u16 offsetX, u16 offsetY) {
 	// get information on the image to be drawn
 	u32 width = image[0] << 8 | image[1];
@@ -375,153 +373,218 @@ void menu_controllerTest(void *currXfb) {
 	}
 	printf(")");
 	
-	/*
-
-	printf("Analog L: %d\n", PAD_TriggerL(0));
-	printf("Analog R: %d\n", PAD_TriggerR(0));
-
-	// print all the digital inputs
-	// this is ugly, but I'm not sure of a better way to do this currently
-	// this will get redone when stuff isn't just printed to console
-	printf("A: ");
-	if (held & PAD_BUTTON_A) {
-		printf("Pressed");
-	}
-	printf("\nB: ");
-	if (held & PAD_BUTTON_B) {
-		printf("Pressed");
-	}
-	printf("\nX: ");
-	if (held & PAD_BUTTON_X) {
-		printf("Pressed");
-	}
-	printf("\nY: ");
-	if (held & PAD_BUTTON_Y) {
-		printf("Pressed");
-	}
-	printf("\nZ: ");
-	if (held & PAD_TRIGGER_Z) {
-		printf("Pressed");
-	}
-	printf("\nStart: ");
-	if (held & PAD_BUTTON_START) {
-		printf("Pressed");
-	}
-	printf("\nDigital L: ");
-	if (held & PAD_TRIGGER_L) {
-		printf("Pressed");
-	}
-	printf("\nDigital R: ");
-	if (held & PAD_TRIGGER_R) {
-		printf("Pressed");
-	}
-	printf("\nDPAD Up: ");
-	if (held & PAD_BUTTON_UP) {
-		printf("Pressed");
-	}
-	printf("\nDPAD Down: ");
-	if (held & PAD_BUTTON_DOWN) {
-		printf("Pressed");
-	}
-	printf("\nDPAD Left: ");
-	if (held & PAD_BUTTON_LEFT) {
-		printf("Pressed");
-	}
-	printf("\nDPAD Right: ");
-	if (held & PAD_BUTTON_RIGHT) {
-		printf("Pressed");
-	}
-	 */
 
 	// visual stuff
 	// Buttons
 
     // A
-	printf("\x1b[10;60H");
 	if (held & PAD_BUTTON_A) {
-		DrawFilledBox(467, 153, 498, 184, COLOR_WHITE, currXfb);
+		DrawFilledBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_A_Y1,
+					  CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_A_SIZE, CONT_TEST_BUTTON_A_Y1 + CONT_TEST_BUTTON_A_SIZE,
+					  COLOR_WHITE, currXfb);
 	} else {
-		DrawBox(467, 153, 498, 184, COLOR_WHITE, currXfb);
+		DrawBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_A_Y1,
+		        CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_A_SIZE, CONT_TEST_BUTTON_A_Y1 + CONT_TEST_BUTTON_A_SIZE,
+		        COLOR_WHITE, currXfb);
     }
-    printf("A");
+	printf("\x1b[10;54H");
+	printf("A");
 
     // B
-	printf("\x1b[11;55H");
 	if (held & PAD_BUTTON_B) {
-		DrawFilledBox(433, 171, 455, 193, COLOR_WHITE, currXfb);
+		DrawFilledBox(CONT_TEST_BUTTON_B_X1, CONT_TEST_BUTTON_B_Y1,
+		              CONT_TEST_BUTTON_B_X1 + CONT_TEST_BUTTON_B_SIZE, CONT_TEST_BUTTON_B_Y1 + CONT_TEST_BUTTON_B_SIZE,
+		              COLOR_WHITE, currXfb);
 	} else {
-		DrawBox(433, 171, 455, 193, COLOR_WHITE, currXfb);
+		DrawBox(CONT_TEST_BUTTON_B_X1, CONT_TEST_BUTTON_B_Y1,
+		        CONT_TEST_BUTTON_B_X1 + CONT_TEST_BUTTON_B_SIZE, CONT_TEST_BUTTON_B_Y1 + CONT_TEST_BUTTON_B_SIZE,
+		        COLOR_WHITE, currXfb);
 	}
+	printf("\x1b[11;49H");
 	printf("B");
 
 	// X
-	printf("\x1b[10;65H");
 	if (held & PAD_BUTTON_X) {
-		DrawFilledBox(512, 153, 532, 184, COLOR_WHITE, currXfb);
+		DrawFilledBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_X_Y1,
+		              CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_X_Y1 + CONT_TEST_BUTTON_XY_LONG,
+		              COLOR_WHITE, currXfb);
 	} else {
-		DrawBox(512, 153, 532, 184, COLOR_WHITE, currXfb);
+		DrawBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_X_Y1,
+		        CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_X_Y1 + CONT_TEST_BUTTON_XY_LONG,
+		        COLOR_WHITE, currXfb);
 	}
+	printf("\x1b[10;59H");
 	printf("X");
 
 	// Y
-	printf("\x1b[8;60H");
 	if (held & PAD_BUTTON_Y) {
-		DrawFilledBox(467, 125, 498, 145, COLOR_WHITE, currXfb);
+		DrawFilledBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_Y_Y1,
+		              CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_XY_LONG, CONT_TEST_BUTTON_Y_Y1 + CONT_TEST_BUTTON_XY_SHORT,
+		              COLOR_WHITE, currXfb);
 	} else {
-		DrawBox(467, 125, 498, 145, COLOR_WHITE, currXfb);
+		DrawBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_Y_Y1,
+		        CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_XY_LONG, CONT_TEST_BUTTON_Y_Y1 + CONT_TEST_BUTTON_XY_SHORT,
+		        COLOR_WHITE, currXfb);
 	}
+	printf("\x1b[8;54H");
 	printf("Y");
 
     // Z
-	printf("\x1b[8;65H");
 	if (held & PAD_TRIGGER_Z) {
-		DrawFilledBox(510, 125, 532, 145, COLOR_WHITE, currXfb);
+		DrawFilledBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_Z_Y1,
+		              CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_Z_Y1 + CONT_TEST_BUTTON_XY_SHORT,
+		              COLOR_WHITE, currXfb);
 	} else {
-		DrawBox(510, 125, 532, 145, COLOR_WHITE, currXfb);
+		DrawBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_Z_Y1,
+		        CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_Z_Y1 + CONT_TEST_BUTTON_XY_SHORT,
+		        COLOR_WHITE, currXfb);
 	}
+	printf("\x1b[8;59H");
 	printf("Z");
 
 	// Start
-	printf("\x1b[12;38H");
 	if (held & PAD_BUTTON_START) {
-		DrawFilledBox(295, 187, 350, 210, COLOR_WHITE, currXfb);
+		DrawFilledBox(CONT_TEST_BUTTON_START_X1, CONT_TEST_BUTTON_START_Y1,
+		              CONT_TEST_BUTTON_START_X1 + CONT_TEST_BUTTON_START_LEN, CONT_TEST_BUTTON_START_Y1 + CONT_TEST_BUTTON_START_WIDTH,
+		              COLOR_WHITE, currXfb);
 	} else {
-		DrawBox(295, 187, 350, 210, COLOR_WHITE, currXfb);
+		DrawBox(CONT_TEST_BUTTON_START_X1, CONT_TEST_BUTTON_START_Y1,
+		        CONT_TEST_BUTTON_START_X1 + CONT_TEST_BUTTON_START_LEN, CONT_TEST_BUTTON_START_Y1 + CONT_TEST_BUTTON_START_WIDTH,
+		        COLOR_WHITE, currXfb);
 	}
+	printf("\x1b[8;38H");
 	printf("START");
-
-	// Analog L Slider
-	DrawBox(23, 69, 36, 326, COLOR_WHITE, currXfb);
-	if (held & PAD_TRIGGER_L) {
-		DrawFilledBox(25, 70 + (255 - PAD_TriggerL(0)), 35, 325, COLOR_BLUE, currXfb);
+	
+	// DPad
+	// up
+	if (held & PAD_BUTTON_UP) {
+		DrawFilledBox(CONT_TEST_DPAD_UP_X1, CONT_TEST_DPAD_UP_Y1,
+		        CONT_TEST_DPAD_UP_X1 + CONT_TEST_DPAD_SHORT, CONT_TEST_DPAD_UP_Y1 + CONT_TEST_DPAD_LONG,
+		        COLOR_WHITE, currXfb);
 	} else {
-		DrawFilledBox(25, 70 + (255 - PAD_TriggerL(0)), 35, 325, COLOR_RED, currXfb);
+		DrawBox(CONT_TEST_DPAD_UP_X1, CONT_TEST_DPAD_UP_Y1,
+		        CONT_TEST_DPAD_UP_X1 + CONT_TEST_DPAD_SHORT, CONT_TEST_DPAD_UP_Y1 + CONT_TEST_DPAD_LONG,
+		        COLOR_WHITE, currXfb);
+	}
+	
+	// down
+	if (held & PAD_BUTTON_DOWN) {
+		DrawFilledBox(CONT_TEST_DPAD_UP_X1, CONT_TEST_DPAD_DOWN_Y1,
+		              CONT_TEST_DPAD_UP_X1 + CONT_TEST_DPAD_SHORT, CONT_TEST_DPAD_DOWN_Y1 + CONT_TEST_DPAD_LONG,
+		              COLOR_WHITE, currXfb);
+	} else {
+		DrawBox(CONT_TEST_DPAD_UP_X1, CONT_TEST_DPAD_DOWN_Y1,
+		        CONT_TEST_DPAD_UP_X1 + CONT_TEST_DPAD_SHORT, CONT_TEST_DPAD_DOWN_Y1 + CONT_TEST_DPAD_LONG,
+		        COLOR_WHITE, currXfb);
+	}
+	
+	
+	//left
+	if (held & PAD_BUTTON_LEFT) {
+		DrawFilledBox(CONT_TEST_DPAD_LEFT_X1, CONT_TEST_DPAD_LEFT_Y1,
+		              CONT_TEST_DPAD_LEFT_X1 + CONT_TEST_DPAD_LONG, CONT_TEST_DPAD_LEFT_Y1 + CONT_TEST_DPAD_SHORT,
+		              COLOR_WHITE, currXfb);
+	} else {
+		DrawBox(CONT_TEST_DPAD_LEFT_X1, CONT_TEST_DPAD_LEFT_Y1,
+		        CONT_TEST_DPAD_LEFT_X1 + CONT_TEST_DPAD_LONG, CONT_TEST_DPAD_LEFT_Y1 + CONT_TEST_DPAD_SHORT,
+		        COLOR_WHITE, currXfb);
+	}
+	
+	// right
+	if (held & PAD_BUTTON_RIGHT) {
+		DrawFilledBox(CONT_TEST_DPAD_RIGHT_X1, CONT_TEST_DPAD_LEFT_Y1,
+					  CONT_TEST_DPAD_RIGHT_X1 + CONT_TEST_DPAD_LONG, CONT_TEST_DPAD_LEFT_Y1 + CONT_TEST_DPAD_SHORT,
+		              COLOR_WHITE, currXfb);
+	} else {
+		DrawBox(CONT_TEST_DPAD_RIGHT_X1, CONT_TEST_DPAD_LEFT_Y1,
+				CONT_TEST_DPAD_RIGHT_X1 + CONT_TEST_DPAD_LONG, CONT_TEST_DPAD_LEFT_Y1 + CONT_TEST_DPAD_SHORT,
+		        COLOR_WHITE, currXfb);
+	}
+	
+	 
+	// Analog L Slider
+	//DrawBox(53, 69, 66, 326, COLOR_WHITE, currXfb);
+	DrawBox(CONT_TEST_TRIGGER_L_X1, CONT_TEST_TRIGGER_Y1,
+			CONT_TEST_TRIGGER_L_X1 + CONT_TEST_TRIGGER_WIDTH + 1, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN + 1,
+			COLOR_WHITE, currXfb);
+	if (held & PAD_TRIGGER_L) {
+		DrawFilledBox(CONT_TEST_TRIGGER_L_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerL(0)),
+		              CONT_TEST_TRIGGER_L_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
+		              COLOR_BLUE, currXfb);
+	} else {
+		DrawFilledBox(CONT_TEST_TRIGGER_L_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerL(0)),
+				CONT_TEST_TRIGGER_L_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
+				COLOR_RED, currXfb);
 	}
 
 
-	printf( "\x1b[21;0H");
+	printf( "\x1b[21;5H");
 	printf("Analog L: %d", PAD_TriggerL(0));
 	if (held & PAD_TRIGGER_L) {
-		printf("\x1b[22;0H");
+		printf("\x1b[22;5H");
 		printf("Digital L Pressed");
 	}
 	
-	printf( "\x1b[21;50H");
+	printf( "\x1b[21;60H");
 	printf("Analog R: %d", PAD_TriggerR(0));
 	if (held & PAD_TRIGGER_R) {
-		printf("\x1b[22;50H");
+		printf("\x1b[22;56H");
 		printf("Digital R Pressed");
 	}
 	
 	// Analog R Slider
-	DrawBox(603, 69, 616, 326, COLOR_WHITE, currXfb);
+	DrawBox(CONT_TEST_TRIGGER_R_X1, CONT_TEST_TRIGGER_Y1,
+	        CONT_TEST_TRIGGER_R_X1 + CONT_TEST_TRIGGER_WIDTH + 1, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN + 1,
+	        COLOR_WHITE, currXfb);
 	if (held & PAD_TRIGGER_R) {
-		DrawFilledBox(605, 70 + (255 - PAD_TriggerR(0)), 615, 325, COLOR_BLUE, currXfb);
+		DrawFilledBox(CONT_TEST_TRIGGER_R_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerR(0)),
+		              CONT_TEST_TRIGGER_R_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
+		              COLOR_BLUE, currXfb);
 	} else {
-		DrawFilledBox(605, 70 + (255 - PAD_TriggerR(0)), 615, 325, COLOR_RED, currXfb);
+		DrawFilledBox(CONT_TEST_TRIGGER_R_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerR(0)),
+		              CONT_TEST_TRIGGER_R_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
+		              COLOR_RED, currXfb);
 	}
+
+	// Analog Stick
+	// calculate screen coordinates for stick position drawing
+	int xfbCoordX = (stickCoordinatesMelee.ax / 250);
+	if (stickCoordinatesRaw.ax < 0) {
+		xfbCoordX *= -1;
+	}
+	xfbCoordX += CONT_TEST_STICK_CENTER_X;
 	
+	int xfbCoordY = (stickCoordinatesMelee.ay / 250);
+	if (stickCoordinatesRaw.ay > 0) {
+		xfbCoordY *= -1;
+	}
+	xfbCoordY += CONT_TEST_STICK_CENTER_Y;
 	
+	int xfbCoordCX = (stickCoordinatesMelee.cx / 250);
+	if (stickCoordinatesRaw.cx < 0) {
+		xfbCoordCX *= -1;
+	}
+	xfbCoordCX += CONT_TEST_CSTICK_CENTER_X;
+	
+	int xfbCoordCY = (stickCoordinatesMelee.cy / 250);
+	if (stickCoordinatesRaw.cy > 0) {
+		xfbCoordCY *= -1;
+	}
+	xfbCoordCY += CONT_TEST_CSTICK_CENTER_Y;
+	
+	// analog stick
+	DrawCircle(CONT_TEST_STICK_CENTER_X, CONT_TEST_STICK_CENTER_Y, CONT_TEST_STICK_RAD,
+			   COLOR_GRAY, currXfb); // perimeter
+	DrawLine(CONT_TEST_STICK_CENTER_X, CONT_TEST_STICK_CENTER_Y,
+			 xfbCoordX, xfbCoordY, COLOR_SILVER, currXfb); // line from center
+	DrawFilledCircle(xfbCoordX, xfbCoordY, CONT_TEST_STICK_RAD / 2, 5, COLOR_WHITE, currXfb); // smaller circle
+	
+	// c-stick
+	DrawCircle(CONT_TEST_CSTICK_CENTER_X, CONT_TEST_CSTICK_CENTER_Y, CONT_TEST_STICK_RAD,
+	           COLOR_GRAY, currXfb); // perimeter
+	DrawLine(CONT_TEST_CSTICK_CENTER_X, CONT_TEST_CSTICK_CENTER_Y,
+	         xfbCoordCX, xfbCoordCY, COLOR_MEDGRAY, currXfb); // line from center
+	DrawFilledCircle(xfbCoordCX, xfbCoordCY, CONT_TEST_STICK_RAD / 2, 1, COLOR_YELLOW, currXfb);
 }
 
 void menu_waveformMeasure(void *currXfb) {
@@ -1142,21 +1205,7 @@ void menu_coordinateViewer(void *currXfb) {
 	xfbCoordCY += SCREEN_POS_CENTER_Y;
 	
 	// draw stickbox bounds
-	// TODO: this is dumb, do this a different way at some point
-	for (int i = 0; i < 70; i++) {
-		DrawFilledBox(SCREEN_POS_CENTER_X - STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y - STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_X - STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y - STICK_BOUNDS[(i * 2) + 1], COLOR_WHITE, currXfb);
-		DrawFilledBox(SCREEN_POS_CENTER_X - STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y - STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_X - STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y - STICK_BOUNDS[i * 2], COLOR_WHITE, currXfb);
-		
-		DrawFilledBox(SCREEN_POS_CENTER_X + STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y - STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_X + STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y - STICK_BOUNDS[(i * 2) + 1], COLOR_WHITE, currXfb);
-		DrawFilledBox(SCREEN_POS_CENTER_X + STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y - STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_X + STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y - STICK_BOUNDS[i * 2], COLOR_WHITE, currXfb);
-		
-		DrawFilledBox(SCREEN_POS_CENTER_X - STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y + STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_X - STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y + STICK_BOUNDS[(i * 2) + 1], COLOR_WHITE, currXfb);
-		DrawFilledBox(SCREEN_POS_CENTER_X - STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y + STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_X - STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y + STICK_BOUNDS[i * 2], COLOR_WHITE, currXfb);
-		
-		DrawFilledBox(SCREEN_POS_CENTER_X + STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y + STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_X + STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_Y + STICK_BOUNDS[(i * 2) + 1], COLOR_WHITE, currXfb);
-		DrawFilledBox(SCREEN_POS_CENTER_X + STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y + STICK_BOUNDS[i * 2], SCREEN_POS_CENTER_X + STICK_BOUNDS[(i * 2) + 1], SCREEN_POS_CENTER_Y + STICK_BOUNDS[i * 2], COLOR_WHITE, currXfb);
-		
-	}
+	DrawCircle(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, 160, COLOR_WHITE, currXfb);
 
 	// draw analog stick line
 	DrawLine(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordX, xfbCoordY, COLOR_SILVER, currXfb);

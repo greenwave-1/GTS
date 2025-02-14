@@ -5,6 +5,10 @@
 #include "menu.h"
 #include "gecko.h"
 
+#ifdef DEBUG
+#include <ogc/lwp_watchdog.h>
+#endif
+
 
 // basic stuff from the template
 static void *xfb1 = NULL;
@@ -107,9 +111,27 @@ int main(int argc, char **argv) {
 		}
 	}
 	*/
+	
+	/*
+	#ifdef DEBUG
+	int minUs = 0;
+	int maxUs = 0;
+	int avgUs = 0;
+	int counter = 0;
+	long long unsigned int time = 0;
+	int us = 0;
+	#endif
+	 */
 
 	// main loop of the program
 	while (true) {
+		/*
+		#ifdef DEBUG
+		counter++;
+		time = gettime();
+		#endif
+		 */
+		
 		if (shouldExit) {
 			break;
 		}
@@ -135,6 +157,16 @@ int main(int argc, char **argv) {
 			VIDEO_SetNextFramebuffer(xfb2);
 		}
 		xfbSwitch = !xfbSwitch;
+		
+		/*
+		#ifdef DEBUG
+		us = ticks_to_microsecs(gettime() - time);
+		char msg[100];
+		sprintf(msg, "Microseconds taken in loop: %d", us);
+		sendMessage(msg, 100);
+		#endif
+		 */
+		
 
 		// Wait for the next frame
 		VIDEO_Flush();

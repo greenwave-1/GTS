@@ -7,12 +7,16 @@
 #include <gccore.h>
 #include <math.h>
 #include <ogc/lwp_watchdog.h>
+#include "gecko.h"
 
+#ifdef DEBUG
+#include <string.h>
+#endif
 
 #define STICK_MOVEMENT_THRESHOLD 5
 #define STICK_ORIGIN_THRESHOLD 3
 
-//
+
 void measureWaveform(WaveformData *data) {
 	// set sampling rate high
 	SI_SetSamplingRate(1);
@@ -113,6 +117,7 @@ void measureWaveform(WaveformData *data) {
 	SI_SetSamplingRate(0);
 }
 
+
 // a lot of this comes from github.com/phobgcc/phobconfigtool
 WaveformDatapoint convertStickValues(WaveformDatapoint *data) {
 	WaveformDatapoint retData;
@@ -156,6 +161,8 @@ WaveformDatapoint convertStickValues(WaveformDatapoint *data) {
 }
 
 
+// TODO: move all of this to another file
+
 // taken from github.com/phobgcc/phobconfigtool
 // should probably replace this with something gl based at some point
 /*
@@ -172,6 +179,7 @@ void DrawHLine (int x1, int x2, int y, int color, void *xfb) {
 	}
 }
 
+
 /*
 * takes in values to draw a vertical line of a given color
 */
@@ -184,6 +192,7 @@ void DrawVLine (int x, int y1, int y2, int color, void *xfb) {
 	}
 }
 
+
 /*
 * takes in values to draw a box of a given color
 */
@@ -193,6 +202,7 @@ void DrawBox (int x1, int y1, int x2, int y2, int color, void *xfb) {
 	DrawVLine (x1, y1, y2, color, xfb);
 	DrawVLine (x2, y1, y2, color, xfb);
 }
+
 
 void DrawFilledBox (int x1, int y1, int x2, int y2, int color, void *xfb) {
 	for (int i = x1; i < x2 + 1; i++) {
@@ -245,5 +255,63 @@ void DrawLine(int x1, int y1, int x2, int y2, int color, void *xfb) {
 			}
 			delta += (2 * distanceX);
 		}
+	}
+}
+
+
+void DrawDot (int x, int y, int color, void *xfb) {
+	x >>= 1;
+	u32 *tmpfb = xfb;
+	tmpfb[x + (640 * y) / 2] = color;
+}
+
+
+// mostly taken from https://www.geeksforgeeks.org/mid-point-circle-drawing-algorithm/
+void DrawCircle (int cx, int cy, int r, int color, void *xfb) {
+	u32 *tmpfb = xfb;
+
+	int x = r, y = 0;
+	
+	if (r > 0) {
+		DrawDot(cx + x, cy - y, color, xfb);
+		DrawDot(cx - x, cy + y, color, xfb);
+		DrawDot(cx + y, cy + x, color, xfb);
+		DrawDot(cx - y, cy + x, color, xfb);
+	}
+	
+	int delta = 1 - r;
+	
+	while (x > y) {
+		y++;
+		
+		if (delta <= 0) {
+			delta = delta + 2*y + 1;
+		} else {
+			x--;
+			delta = delta + 2 * y - 2 * x + 1;
+		}
+		
+		if (x < y) {
+			break;
+		}
+		
+		DrawDot(cx + x, cy + y, color, xfb);
+		DrawDot(cx - x, cy - y, color, xfb);
+		DrawDot(cx + x, cy - y, color, xfb);
+		DrawDot(cx - x, cy + y, color, xfb);
+		
+		if (x != y) {
+			DrawDot(cx + y, cy + x, color, xfb);
+			DrawDot(cx - y, cy + x, color, xfb);
+			DrawDot(cx + y, cy - x, color, xfb);
+			DrawDot(cx - y, cy - x, color, xfb);
+		}
+	}
+}
+
+
+void DrawFilledCircle(int cx, int cy, int r, int interval, int color, void *xfb) {
+	for (int i = r; i > 0; i -= interval) {
+		DrawCircle(cx, cy, i, color, xfb);
 	}
 }
