@@ -63,6 +63,7 @@ static bool fileIOSuccess = false;
 
 static int lastDrawPoint = -1;
 static int dataScrollOffset = 0;
+static int waveformScaleFactor = 1;
 
 // most of this is taken from
 // https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
@@ -635,140 +636,63 @@ void menu_waveformMeasure(void *currXfb) {
 
 
 		// draw waveform
-		// TODO: this needs to be gutted and replaced, this is not good code
-		// y and x are drawn in separate loops because when it was together y would sometimes show over x
-		// this is probably because of bad code but this just needs to be replaced anyway, ie for scaling
-
+		// i think this is better than what was here before?
 		if (data.endPoint < 500) {
-			int prevX = data.data[0].ax;
-			int prevY = data.data[0].ay;
-
-			// initialize stat values
-			minX = prevX;
-			maxX = prevX;
-			minY = prevY;
-			maxY = prevY;
-
-			// draw first point
-			DrawBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - prevY, SCREEN_TIMEPLOT_START,
-					SCREEN_POS_CENTER_Y - prevY, COLOR_BLUE, currXfb);
-
-			// y is first so that x shows on top
-			for (int i = 1; i < data.endPoint; i++) {
-				// check if our x1 should be the previous point or our current data
-				if (prevY > data.data[i].ay) {
-					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevY,
-							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i].ay,
-							COLOR_BLUE, currXfb);
-				} else {
-					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i].ay,
-							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevY,
-							COLOR_BLUE, currXfb);
-				}
-
-				prevY = data.data[i].ay;
-
-				// update stat values
-				if (minY > prevY) {
-					minY = prevY;
-				}
-				if (maxY < prevY) {
-					maxY = prevY;
-				}
+			dataScrollOffset = 0;
+		}
+		
+		int prevX = data.data[dataScrollOffset].ax;
+		int prevY = data.data[dataScrollOffset].ay;
+		
+		// initialize stat values to first point
+		minX = prevX;
+		maxX = prevX;
+		minY = prevY;
+		maxY = prevY;
+		
+		int waveformPrevXPos = 0;
+		int waveformXPos = waveformScaleFactor;
+		
+		// draw 500 datapoints from the scroll offset
+		for (int i = dataScrollOffset + 1; i < dataScrollOffset + 500; i++) {
+			// make sure we haven't gone outside our bounds
+			if (i == data.endPoint || waveformXPos >= 500) {
+				break;
 			}
-
-			// draw first point
-			DrawBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - prevX, SCREEN_TIMEPLOT_START,
-					SCREEN_POS_CENTER_Y - prevX, COLOR_BLUE, currXfb);
 			
-			// x
-			for (int i = 1; i < data.endPoint; i++) {
-				if (prevX > data.data[i].ax) {
-					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevX,
-							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i].ax,
-							COLOR_RED, currXfb);
-				} else {
-					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i].ax,
-							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevX,
-							COLOR_RED, currXfb);
-				}
-
-				prevX = data.data[i].ax;
-				// update stat values
-				if (minX > prevX) {
-					minX = prevX;
-				}
-				if (maxX < prevX) {
-					maxX = prevX;
-				}
+			// y first
+			DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevY,
+			         SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - data.data[i].ay,
+					 COLOR_BLUE, currXfb);
+			prevY = data.data[i].ay;
+			// then x
+			DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevX,
+			         SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - data.data[i].ax,
+			         COLOR_RED, currXfb);
+			prevX = data.data[i].ax;
+			
+			// update stat values
+			if (minX > prevX) {
+				minX = prevX;
 			}
-		} else {
-			int prevX = data.data[dataScrollOffset].ax;
-			int prevY = data.data[dataScrollOffset].ay;
-
-			// initialize stat values
-			minX = prevX;
-			maxX = prevX;
-			minY = prevY;
-			maxY = prevY;
-
-			// draw first point
-			DrawBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - prevY, SCREEN_TIMEPLOT_START,
-					SCREEN_POS_CENTER_Y - prevY, COLOR_BLUE, currXfb);
-
-			// y is first so that x shows on top
-			for (int i = 1; i < 500; i++) {
-				// check if our x1 should be the previous point or our current data
-				if (prevY > data.data[i + dataScrollOffset].ay) {
-					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevY,
-							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i + dataScrollOffset].ay,
-							COLOR_BLUE, currXfb);
-				} else {
-					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i + dataScrollOffset].ay,
-							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevY,
-							COLOR_BLUE, currXfb);
-				}
-				prevY = data.data[i + dataScrollOffset].ay;
-
-				// update stat values
-				if (minY > prevY) {
-					minY = prevY;
-				}
-				if (maxY < prevY) {
-					maxY = prevY;
-				}
+			if (maxX < prevX) {
+				maxX = prevX;
 			}
-
-			// draw first point
-			DrawBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - prevX, SCREEN_TIMEPLOT_START,
-					SCREEN_POS_CENTER_Y - prevX, COLOR_BLUE, currXfb);
-
-			// x
-			for (int i = 0; i < 500; i++) {
-				if (prevX > data.data[i + dataScrollOffset].ax) {
-					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevX,
-							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i + dataScrollOffset].ax,
-							COLOR_RED, currXfb);
-				} else {
-					DrawBox(SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - data.data[i + dataScrollOffset].ax,
-							SCREEN_TIMEPLOT_START + i, SCREEN_POS_CENTER_Y - prevX,
-							COLOR_RED, currXfb);
-				}
-
-				prevX = data.data[i + dataScrollOffset].ax;
-
-				// update stat values
-				if (minX > prevX) {
-					minX = prevX;
-				}
-				if (maxX < prevX) {
-					maxX = prevX;
-				}
+			if (minY > prevY) {
+				minY = prevY;
 			}
+			if (maxY < prevY) {
+				maxY = prevY;
+			}
+			
+			// update scaling factor
+			waveformPrevXPos = waveformXPos;
+			waveformXPos += waveformScaleFactor;
 		}
 
 		// do we have enough data to enable scrolling?
-		if (data.endPoint >= 500) {
+		// TODO: enable scrolling when scaled
+		if (data.endPoint >= 500 ) {
 			// does the user want to scroll the waveform?
 			if (held & PAD_BUTTON_RIGHT) {
 				if (held & PAD_TRIGGER_R) {
@@ -954,6 +878,12 @@ void menu_waveformMeasure(void *currXfb) {
 		if (currentTest == TEST_LEN) {
 			currentTest = SNAPBACK;
 		}
+	// adjust scaling factor
+	//} else if (pressed & PAD_BUTTON_Y) {
+	//	waveformScaleFactor++;
+	//	if (waveformScaleFactor > 5) {
+	//		waveformScaleFactor = 1;
+	//	}
 	}
 }
 
