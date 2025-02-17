@@ -25,6 +25,16 @@ method
 - A lot of logic that shouldn't be in menu.c is, needs to be moved to other files, maybe one header per-screen?
 - Other things I can't think of right now...
 
+## Building:
+- Install devkitpro
+  - Install devkitpro from [here](https://devkitpro.org/wiki/devkitPro_pacman)
+- Install libogc2
+  - Add repo from [here](https://github.com/extremscorner/pacman-packages#readme)
+- Run ```sudo (dkp-)pacman -S libogc2 libogc2-libfat-git```
+  - The ```(dkp-)``` is for systems that don't normally have pacman. On those systems, any command should use ```dkp-pacman```
+  - Systems that normally use pacman should run ```pacman```
+- Run ```make``` in the root of the project
+
 ## Why?
 When I started making this I didn't realize that an updated SmashScope was supposedly in the works, so I guess this was
 more of an experiment for myself. I'll keep updating it if interest is there but if a second SmashScope is incoming
