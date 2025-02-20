@@ -18,8 +18,9 @@
 
 
 void measureWaveform(WaveformData *data) {
-	// set sampling rate high
-	SI_SetSamplingRate(1);
+	// set SI Polling rate
+	// poll 17 times per frame, every 31 horizontal lines
+	SI_SetXY(31,17);
 
 	// we need a way to determine if the stick has stopped moving, this is a basic way to do so.
 	// initial value is arbitrary, but not close enough to 0 so that the rest of the code continues to work.
@@ -112,9 +113,6 @@ void measureWaveform(WaveformData *data) {
 		while (ticks_to_millisecs(gettime() - startTime) < 1);
 	}
 	data->isDataReady = true;
-
-	//return sampling rate to normal
-	SI_SetSamplingRate(0);
 }
 
 
