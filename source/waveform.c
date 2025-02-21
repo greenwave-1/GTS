@@ -8,6 +8,7 @@
 #include <math.h>
 #include <ogc/lwp_watchdog.h>
 #include "gecko.h"
+#include "polling.h"
 
 #ifdef DEBUG
 #include <string.h>
@@ -20,8 +21,12 @@
 void measureWaveform(WaveformData *data) {
 	// set SI Polling rate
 	// poll 17 times per frame, every 31 horizontal lines
-	SI_SetXY(31,17);
-
+	//SI_SetXY(31,17); // normal 985, vblank 920
+	
+	//SI_SetXY(11, 24); // normal 698, then 604, then 667, then back
+	setSamplingRateHigh();
+	
+	
 	// we need a way to determine if the stick has stopped moving, this is a basic way to do so.
 	// initial value is arbitrary, but not close enough to 0 so that the rest of the code continues to work.
 	int prevPollDiffX = 10;
@@ -113,6 +118,7 @@ void measureWaveform(WaveformData *data) {
 		while (ticks_to_millisecs(gettime() - startTime) < 1);
 	}
 	data->isDataReady = true;
+	// polling rate gets reset by main loop, no need to do it here
 }
 
 

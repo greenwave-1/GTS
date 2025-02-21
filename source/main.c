@@ -2,8 +2,11 @@
 
 #include <stdio.h>
 #include <gccore.h>
+#include <ogc/lwp_watchdog.h>
 #include "menu.h"
 #include "gecko.h"
+#include "polling.h"
+
 
 #ifdef DEBUG
 #include <ogc/lwp_watchdog.h>
@@ -28,9 +31,9 @@ int main(int argc, char **argv) {
 
 	xfb1 = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 	xfb2 = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
-
-	CON_Init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+	
 	CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+	CON_Init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 
 	VIDEO_Configure(rmode);
 
@@ -129,7 +132,15 @@ int main(int argc, char **argv) {
 		// poll 2 times every frame, every 240 horizontal lines
 		// no idea why this has to be here, it gets reset after every run of this loop,
 		// probably something to do with re-initialising the framebuffers and stuff
-		SI_SetXY(240, 2);
+		setSamplingRateNormal();
+		if (isUnsupportedMode()) {
+			printf("\n\nUnsupported Video Mode\nPlease set your system to use NTSC/EuRGB60\n");
+			VIDEO_WaitVSync();
+			u64 timer = gettime();
+			while (ticks_to_secs(gettime() - timer) < 5) ;
+			break;
+		}
+		//SI_SetXY(240, 2);
 		
 		/*
 		#ifdef DEBUG
