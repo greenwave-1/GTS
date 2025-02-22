@@ -96,7 +96,7 @@ static void drawImage(void *currXfb, const unsigned char image[], const unsigned
 		for (int column = offsetX; column < imageEndpointX; column++) {
 			// is there a pixel to actually draw? (0-4 is transparency)
 			if (color >= 5) {
-				DrawBox(column, row, column, row, CUSTOM_COLORS[color - 5], currXfb);
+				DrawDot(column, row, CUSTOM_COLORS[color - 5], currXfb);
 			}
 
 			runIndex++;
