@@ -7,6 +7,9 @@
 #include <ogc/video_types.h>
 #include <ogc/si.h>
 
+#ifdef DEBUG
+#include "gecko.h"
+#endif
 
 static bool unsupportedMode = false;
 static bool firstRun = true;
@@ -21,16 +24,25 @@ void __setStaticXYValues() {
 		case VI_INTERLACE:
 			xLineCountNormal = 120;
 			xLineCountHigh = 11;
+#ifdef DEBUG
+			sendMessage("Video scan mode is interlaced", 100);
+#endif
 			break;
 		case VI_PROGRESSIVE:
 			xLineCountNormal = 240;
 			xLineCountHigh = 22;
+#ifdef DEBUG
+			sendMessage("Video scan mode is progressive", 100);
+#endif
 			break;
 		case VI_NON_INTERLACE:
 		default:
 			xLineCountNormal = 240;
 			xLineCountHigh = 240;
 			unsupportedMode = true;
+#ifdef DEBUG
+			sendMessage("Video scan mode is unsupported", 100);
+#endif
 	}
 	firstRun = false;
 }
