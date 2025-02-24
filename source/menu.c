@@ -380,6 +380,7 @@ void menu_controllerTest(void *currXfb) {
 
     // A
 	if (held & PAD_BUTTON_A) {
+		printf("\x1b[30;0m\x1b[47;1m");
 		DrawFilledBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_A_Y1,
 					  CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_A_SIZE, CONT_TEST_BUTTON_A_Y1 + CONT_TEST_BUTTON_A_SIZE,
 					  COLOR_WHITE, currXfb);
@@ -390,9 +391,11 @@ void menu_controllerTest(void *currXfb) {
     }
 	printf("\x1b[10;54H");
 	printf("A");
-
+	printf("\x1b[37;1m\x1b[40;0m");
+	
     // B
 	if (held & PAD_BUTTON_B) {
+		printf("\x1b[30;0m\x1b[47;1m");
 		DrawFilledBox(CONT_TEST_BUTTON_B_X1, CONT_TEST_BUTTON_B_Y1,
 		              CONT_TEST_BUTTON_B_X1 + CONT_TEST_BUTTON_B_SIZE, CONT_TEST_BUTTON_B_Y1 + CONT_TEST_BUTTON_B_SIZE,
 		              COLOR_WHITE, currXfb);
@@ -403,9 +406,11 @@ void menu_controllerTest(void *currXfb) {
 	}
 	printf("\x1b[11;49H");
 	printf("B");
+	printf("\x1b[37;1m\x1b[40;0m");
 
 	// X
 	if (held & PAD_BUTTON_X) {
+		printf("\x1b[30;0m\x1b[47;1m");
 		DrawFilledBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_X_Y1,
 		              CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_X_Y1 + CONT_TEST_BUTTON_XY_LONG,
 		              COLOR_WHITE, currXfb);
@@ -416,9 +421,11 @@ void menu_controllerTest(void *currXfb) {
 	}
 	printf("\x1b[10;59H");
 	printf("X");
+	printf("\x1b[37;1m\x1b[40;0m");
 
 	// Y
 	if (held & PAD_BUTTON_Y) {
+		printf("\x1b[30;0m\x1b[47;1m");
 		DrawFilledBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_Y_Y1,
 		              CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_XY_LONG, CONT_TEST_BUTTON_Y_Y1 + CONT_TEST_BUTTON_XY_SHORT,
 		              COLOR_WHITE, currXfb);
@@ -429,9 +436,11 @@ void menu_controllerTest(void *currXfb) {
 	}
 	printf("\x1b[8;54H");
 	printf("Y");
+	printf("\x1b[37;1m\x1b[40;0m");
 
     // Z
 	if (held & PAD_TRIGGER_Z) {
+		printf("\x1b[30;0m\x1b[47;1m");
 		DrawFilledBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_Z_Y1,
 		              CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_Z_Y1 + CONT_TEST_BUTTON_XY_SHORT,
 		              COLOR_WHITE, currXfb);
@@ -442,9 +451,11 @@ void menu_controllerTest(void *currXfb) {
 	}
 	printf("\x1b[8;59H");
 	printf("Z");
+	printf("\x1b[37;1m\x1b[40;0m");
 
 	// Start
 	if (held & PAD_BUTTON_START) {
+		printf("\x1b[30;0m\x1b[47;1m");
 		DrawFilledBox(CONT_TEST_BUTTON_START_X1, CONT_TEST_BUTTON_START_Y1,
 		              CONT_TEST_BUTTON_START_X1 + CONT_TEST_BUTTON_START_LEN, CONT_TEST_BUTTON_START_Y1 + CONT_TEST_BUTTON_START_WIDTH,
 		              COLOR_WHITE, currXfb);
@@ -455,6 +466,7 @@ void menu_controllerTest(void *currXfb) {
 	}
 	printf("\x1b[8;38H");
 	printf("START");
+	printf("\x1b[37;1m\x1b[40;0m");
 	
 	// DPad
 	// up
@@ -874,6 +886,10 @@ void menu_waveformMeasure(void *currXfb) {
 	// does the user want to change the test?
 	} else if (pressed & PAD_BUTTON_X) {
 		currentTest++;
+		// hacky way to disable pivot tests for now
+		if (currentTest == PIVOT) {
+			currentTest++;
+		}
 		// check if we overrun our test length
 		if (currentTest == TEST_LEN) {
 			currentTest = SNAPBACK;
