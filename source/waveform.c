@@ -128,7 +128,13 @@ WaveformDatapoint convertStickValues(WaveformDatapoint *data) {
 
 	retData.ax = data->ax, retData.ay = data->ay;
 	retData.cx = data->cx, retData.cy = data->cy;
-
+	
+	// store whether x or y are negative
+	retData.isAXNegative = (retData.ax < 0) ? true : false;
+	retData.isAYNegative = (retData.ay < 0) ? true : false;
+	retData.isCXNegative = (retData.cx < 0) ? true : false;
+	retData.isCYNegative = (retData.cy < 0) ? true : false;
+	
 	float floatStickX = retData.ax, floatStickY = retData.ay;
 	float floatCStickX = retData.cx, floatCStickY = retData.cy;
 

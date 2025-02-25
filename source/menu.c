@@ -13,6 +13,7 @@
 #include "images/custom_colors.h"
 #include "draw_constants.h"
 #include "export.h"
+#include "stickmap_coordinates.h"
 
 
 #define MENUITEMS_LEN 5
@@ -36,6 +37,8 @@ static enum CURRENT_MENU previousMenu = MAIN_MENU;
 
 // enum for what image to draw in 2d plot
 static enum IMAGE selectedImage = SNAPBACK;
+
+static enum STICKMAP_LIST stickmapList = NONE;
 
 // main menu counter
 static u8 mainMenuSelection = 0;
@@ -64,6 +67,8 @@ static bool fileIOSuccess = false;
 static int lastDrawPoint = -1;
 static int dataScrollOffset = 0;
 static int waveformScaleFactor = 1;
+
+static u32 padsConnected = 0;
 
 // most of this is taken from
 // https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
@@ -115,19 +120,24 @@ static void drawImage(void *currXfb, const unsigned char image[], const unsigned
 // this also handles moving between menus and exiting
 bool menu_runMenu(void *currXfb) {
 	// read inputs
-	PAD_ScanPads();
-
-	// check for any buttons pressed/held
-	pressed = PAD_ButtonsDown(0);
-	held = PAD_ButtonsHeld(0);
+	padsConnected = PAD_ScanPads();
 
 	// reset console cursor position
 	printf("\x1b[3;0H");
 	printf("FossScope (Working Title)");
+	if ((padsConnected & 1) == 0) {
+		printf("                             Controller Disconnected!");
+		data.isDataReady = false;
+	}
 	if (data.isDataReady) {
 		printf("                      Oscilloscope capture in memory!");
 	}
 	printf("\n\n");
+	
+	
+	// check for any buttons pressed/held
+	pressed = PAD_ButtonsDown(0);
+	held = PAD_ButtonsHeld(0);
 
 	// determine what menu we are in
 	switch (currentMenu) {
@@ -141,19 +151,33 @@ bool menu_runMenu(void *currXfb) {
 			if (displayInstructions) {
 				printf("Press X to cycle the current test, results will show above the waveform.\n"
 					   "Use DPAD left/right to scroll waveform when it is larger than the\n"
-					   "displayed area, hold R to move faster.\n\n"
-					   "MODES:\n"
-					   "Snapback: Check the min/max value on a given axis depending on where your\n"
-					   "stick started. If you moved the stick left, check the Max value on a given\n"
-					   "axis. Snapback can occur when the max value is at or above 23. If right,\n"
-					   "then at or below -23\n\n"
-					   "Pivot: For a successful pivot, you want the stick's position to stay\n"
-					   "above/below +64/-64 for ~16.6ms (1 frame). Less, and you might get nothing,\n"
-					   "more, and you might get a dashback. You also need the stick to hit 80/-80 on\n"
-					   "both sides. Check the PhobVision docs for more info.\n\n"
-					   "Dashback: A (vanilla) dashback will be successful when the stick doesn't get\n"
-					   "polled between 23 and 64, or -23 and -64. Less time in this range is better,\n\n"
-					   "Full Measure: Will fill the input buffer always, useful for longer inputs.\n");
+					   "displayed area, hold R to move faster.\n\n");
+				printf("CURRENT TEST: ");
+				switch (currentTest) {
+					case SNAPBACK:
+						printf("SNAPBACK\nCheck the min/max value on a given axis depending on where your\n"
+						        "stick started. If you moved the stick left, check the Max value on a given\n"
+						        "axis. Snapback can occur when the max value is at or above 23. If right,\n"
+						        "then at or below -23.");
+						break;
+					case PIVOT:
+						printf("PIVOT\nFor a successful pivot, you want the stick's position to stay\n"
+						       "above/below +64/-64 for ~16.6ms (1 frame). Less, and you might get nothing,\n"
+						       "more, and you might get a dashback. You also need the stick to hit 80/-80 on\n"
+							   "both sides. Check the PhobVision docs for more info.");
+						break;
+					case DASHBACK:
+						printf("DASHBACK\nA (vanilla) dashback will be successful when the stick doesn't get\n"
+						"polled between 23 and 64, or -23 and -64. Less time in this range is better.");
+						break;
+					case FULL:
+						printf("FULL MEASURE\nNot an actual test.\nWill fill the input buffer always,"
+							   " useful for longer inputs.");
+						break;
+					default:
+						printf("NO TEST SELECTED");
+						break;
+				}
 			} else {
 				menu_waveformMeasure(currXfb);
 			}
@@ -175,7 +199,28 @@ bool menu_runMenu(void *currXfb) {
 			menu_waitingMeasure();
 			break;
 		case COORD_MAP:
-			menu_coordinateViewer(currXfb);
+			if (displayInstructions) {
+				printf("Press X to cycle the stickmap being tested, Melee Coordinates are shown\n"
+					   "in the top-left.\nThe white line with an unfilled box represents the analog stick.\n"
+					   "The yellow line with a filled box represents the c-stick.\n\n"
+					   "Current Stickmap: ");
+				switch (stickmapList) {
+					case FF_WD:
+						printf("Firefox / Wavedash\n");
+						printf("%s", STICKMAP_FF_WD_DESC);
+						break;
+					case SHIELDDROP:
+						printf("Shield Drop\n");
+						printf("%s", STICKMAP_SHIELDDROP_DESC);
+						break;
+					case NONE:
+					default:
+						printf("None");
+						break;
+				}
+			} else {
+				menu_coordinateViewer(currXfb);
+			}
 			break;
 		default:
 			printf("HOW DID WE END UP HERE?\n");
@@ -219,7 +264,7 @@ bool menu_runMenu(void *currXfb) {
 	} else {
 		// does the user want to display instructions?
 		if (pressed & PAD_TRIGGER_Z) {
-			if (currentMenu == WAVEFORM || currentMenu == PLOT_2D) {
+			if (currentMenu == WAVEFORM || currentMenu == PLOT_2D || currentMenu == COORD_MAP) {
 				displayInstructions = !displayInstructions;
 			}
 		}
@@ -615,6 +660,7 @@ void menu_waveformMeasure(void *currXfb) {
 		int maxX, maxY;
 
 		// draw guidelines based on selected test
+		DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
 		DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY, currXfb);
 		// lots of the specific values are taken from:
 		// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
@@ -730,7 +776,7 @@ void menu_waveformMeasure(void *currXfb) {
 		}
 
 		// print test data
-		printf( "\x1b[7;0H");
+		printf( "\x1b[24;0H");
 		u16 pollCount = 0;
 		switch (currentTest) {
 			case SNAPBACK:
@@ -1063,6 +1109,8 @@ void menu_coordinateViewer(void *currXfb) {
 	// melee stick coordinates stuff
 	// a lot of this comes from github.com/phobgcc/phobconfigtool
 	
+	printf("Press Z for instructions\n\n");
+	
 	static WaveformDatapoint stickCoordinatesRaw;
 	static WaveformDatapoint stickCoordinatesMelee;
 	
@@ -1100,7 +1148,7 @@ void menu_coordinateViewer(void *currXfb) {
 	}
 	
 	// print melee coordinates
-	printf("C-Stick X: ");
+	printf("\nC-Stick X: ");
 	// is the value negative?
 	if (stickCoordinatesRaw.cx < 0) {
 		printf("-");
@@ -1124,6 +1172,26 @@ void menu_coordinateViewer(void *currXfb) {
 	} else {
 		printf("0.%04d\n", stickCoordinatesMelee.cy);
 	}
+	
+	printf("\x1b[23;0H");
+	printf("\nStickmap: ");
+	int stickmapRetVal = isCoordValid(stickmapList, stickCoordinatesMelee);
+	switch (stickmapList) {
+		case FF_WD:
+			printf("Firefox/Wavedash\n");
+			printf("Result: %s%s", STICKMAP_FF_WD_RETCOLORS[stickmapRetVal], STICKMAP_FF_WD_RETVALS[stickmapRetVal]);
+			break;
+		case SHIELDDROP:
+			printf("Shield Drop\n");
+			printf("Result: %s%s", STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal], STICKMAP_SHIELDDROP_RETVALS[stickmapRetVal]);
+			break;
+		case NONE:
+		default:
+			printf("NONE");
+			break;
+	}
+	printf("\x1b[37;1m\x1b[40;0m");
+	
 	
 	// calculate screen coordinates for stick position drawing
 	int xfbCoordX = (stickCoordinatesMelee.ax / 125) * 2;
@@ -1151,13 +1219,33 @@ void menu_coordinateViewer(void *currXfb) {
 	xfbCoordCY += SCREEN_POS_CENTER_Y;
 	
 	// draw stickbox bounds
-	DrawCircle(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, 160, COLOR_WHITE, currXfb);
+	DrawCircle(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, 160, COLOR_MEDGRAY, currXfb);
+	
+	// draw stickmap area
+	// TODO
+	switch (stickmapList) {
+		case FF_WD:
+			//DrawFilledBox(toStickmap(STICKMAP_FF_WD_COORD_SAFE[0][0]) + SCREEN_POS_CENTER_X - 2, toStickmap(STICKMAP_FF_WD_COORD_SAFE[0][1]) + SCREEN_POS_CENTER_Y - 2,
+			//              toStickmap(STICKMAP_FF_WD_COORD_SAFE[0][0]) + SCREEN_POS_CENTER_X + 2, toStickmap(STICKMAP_FF_WD_COORD_SAFE[0][1]) + SCREEN_POS_CENTER_Y + 2,
+			//			  COLOR_LIME, currXfb);
+			//DrawLine(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, convertMeleeCoordToStickmap(STICKMAP_FF_WD_COORD_SAFE[0][0]) + SCREEN_POS_CENTER_X, convertMeleeCoordToStickmap(STICKMAP_FF_WD_COORD_SAFE[0][1]) + SCREEN_POS_CENTER_Y, COLOR_GREEN, currXfb);
+			break;
+		case SHIELDDROP:
+			break;
+	}
 
 	// draw analog stick line
-	DrawLine(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordX, xfbCoordY, COLOR_SILVER, currXfb);
+	DrawLine(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordX, xfbCoordY, COLOR_WHITE, currXfb);
 	DrawBox(xfbCoordX - 4, xfbCoordY - 4, xfbCoordX + 4, xfbCoordY + 4, COLOR_WHITE, currXfb);
 	
 	// draw c-stick line
-	DrawLine(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, COLOR_MEDGRAY, currXfb);
+	DrawLine(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, COLOR_YELLOW, currXfb);
 	DrawFilledBox(xfbCoordCX - 2, xfbCoordCY - 2, xfbCoordCX + 2, xfbCoordCY + 2, COLOR_YELLOW, currXfb);
+	
+	if (pressed & PAD_BUTTON_X) {
+		stickmapList++;
+		if (stickmapList == 3) {
+			stickmapList = 0;
+		}
+	}
 }

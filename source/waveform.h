@@ -16,10 +16,15 @@ typedef struct WaveformDatapoint {
 	// c stick
 	int cx;
 	int cy;
+	// for converted values
+	bool isAXNegative;
+	bool isAYNegative;
+	bool isCXNegative;
+	bool isCYNegative;
 } WaveformDatapoint;
 
 typedef struct WaveformData {
-	// sampling a 1ms, roughly 5 seconds
+	// sampling a 1ms
 	WaveformDatapoint data[WAVEFORM_SAMPLES];
 	unsigned int endPoint;
 
