@@ -741,6 +741,7 @@ void menu_waveformMeasure(void *currXfb) {
 				maxY = prevY;
 			}
 			
+			// adding time from drawn points, to show how long the current view is
 			drawnTicksUs += data.data[i].timeDiffUs;
 			
 			// update scaling factor

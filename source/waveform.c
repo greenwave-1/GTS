@@ -23,6 +23,7 @@ static u64 sampleCallbackTick = 0;
 
 static sampling_callback cb;
 
+// thank you extrems for pointing this out to me
 void samplingCallback() {
 	prevSampleCallbackTick = sampleCallbackTick;
 	sampleCallbackTick = gettime();
@@ -83,6 +84,7 @@ void measureWaveform(WaveformData *data) {
 		cb = PAD_SetSamplingCallback(samplingCallback);
 		while (!isReadReady) {
 			temp = gettime();
+			// sleep for 10 microseconds between checks
 			while (ticks_to_microsecs(gettime() - temp) > 10);
 		}
 		
@@ -135,6 +137,7 @@ void measureWaveform(WaveformData *data) {
 	data->isDataReady = true;
 	PAD_SetSamplingCallback(NULL);
 	
+	// calculate total read time
 	for (int i = 0; i < data->endPoint; i++) {
 		data->totalTimeUs += data->data[i].timeDiffUs;
 	}

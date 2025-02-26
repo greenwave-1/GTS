@@ -30,8 +30,7 @@ typedef struct WaveformData {
 	WaveformDatapoint data[WAVEFORM_SAMPLES];
 	unsigned int endPoint;
 
-	// stat values
-	// TODO: estimate poll rate?
+	// total time the read took
 	u64 totalTimeUs;
 	
 	bool isDataReady;
