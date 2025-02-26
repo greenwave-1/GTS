@@ -25,14 +25,14 @@ void __setStaticXYValues() {
 			xLineCountNormal = 120;
 			xLineCountHigh = 11;
 #ifdef DEBUG
-			sendMessage("Video scan mode is interlaced", 100);
+			sendMessage("Video scan mode is interlaced");
 #endif
 			break;
 		case VI_PROGRESSIVE:
 			xLineCountNormal = 240;
 			xLineCountHigh = 22;
 #ifdef DEBUG
-			sendMessage("Video scan mode is progressive", 100);
+			sendMessage("Video scan mode is progressive");
 #endif
 			break;
 		case VI_NON_INTERLACE:
@@ -41,7 +41,7 @@ void __setStaticXYValues() {
 			xLineCountHigh = 240;
 			unsupportedMode = true;
 #ifdef DEBUG
-			sendMessage("Video scan mode is unsupported", 100);
+			sendMessage("Video scan mode is unsupported");
 #endif
 	}
 	firstRun = false;

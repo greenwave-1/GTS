@@ -5,6 +5,6 @@
 #ifndef FOSSSCOPE_R2_GECKO_H
 #define FOSSSCOPE_R2_GECKO_H
 
-void sendMessage(char *msg, int len);
+void sendMessage(char *msg);
 
 #endif //FOSSSCOPE_R2_GECKO_H

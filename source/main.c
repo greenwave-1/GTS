@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 	
 	// there is a makefile target that will enable this
 	#ifdef DEBUG
-	sendMessage("USB Gecko Debug output enabled", 100);
+	sendMessage("USB Gecko Debug output enabled");
 	#endif
 	
 	
