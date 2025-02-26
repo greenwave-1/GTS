@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <gccore.h>
+#include <ogc/video.h>
 #include <ogc/lwp_watchdog.h>
 #include "menu.h"
 #include "gecko.h"
@@ -18,6 +19,12 @@ static void *xfb1 = NULL;
 static void *xfb2 = NULL;
 bool xfbSwitch = false;
 static GXRModeObj *rmode = NULL;
+
+static VIRetraceCallback cb;
+
+void retraceCallback() {
+	setSamplingRate();
+}
 
 int main(int argc, char **argv) {
 	// do basic initialization
@@ -44,6 +51,8 @@ int main(int argc, char **argv) {
 	VIDEO_Flush();
 
 	VIDEO_WaitVSync();
+	
+	cb = VIDEO_SetPostRetraceCallback(retraceCallback);
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
 
 	bool shouldExit = false;

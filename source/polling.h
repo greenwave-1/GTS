@@ -10,6 +10,8 @@
 void setSamplingRateHigh();
 void setSamplingRateNormal();
 
+void setSamplingRate();
+
 bool isUnsupportedMode();
 
 #endif //FOSSSCOPE_R2_POLLING_H

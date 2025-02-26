@@ -13,6 +13,7 @@
 
 static bool unsupportedMode = false;
 static bool firstRun = true;
+static bool readHigh = false;
 static int xLineCountNormal = 0;
 static int xLineCountHigh = 0;
 static int pollsPerFrameNormal = 2;
@@ -51,14 +52,24 @@ void setSamplingRateHigh() {
 	if (firstRun) {
 		__setStaticXYValues();
 	}
-	SI_SetXY(xLineCountHigh, pollsPerFrameHigh);
+	readHigh = true;
+	//SI_SetXY(xLineCountHigh, pollsPerFrameHigh);
 }
 
 void setSamplingRateNormal() {
 	if (firstRun) {
 		__setStaticXYValues();
 	}
-	SI_SetXY(xLineCountNormal, pollsPerFrameNormal);
+	readHigh = false;
+	//SI_SetXY(xLineCountNormal, pollsPerFrameNormal);
+}
+
+void setSamplingRate() {
+	if (readHigh) {
+		SI_SetXY(xLineCountHigh, pollsPerFrameHigh);
+	} else {
+		SI_SetXY(xLineCountNormal, pollsPerFrameNormal);
+	}
 }
 
 bool isUnsupportedMode() {
