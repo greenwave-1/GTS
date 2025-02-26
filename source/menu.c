@@ -70,6 +70,9 @@ static int waveformScaleFactor = 1;
 
 static u32 padsConnected = 0;
 
+static PADStatus origin[PAD_CHANMAX];
+static bool originRead = false;
+
 // most of this is taken from
 // https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
 // TODO: move this to another file, this file is getting big enough...
@@ -121,6 +124,12 @@ static void drawImage(void *currXfb, const unsigned char image[], const unsigned
 bool menu_runMenu(void *currXfb) {
 	// read inputs
 	padsConnected = PAD_ScanPads();
+	
+	// read origin if a controller is connected and we don't have the origin
+	if (!originRead && (padsConnected & 1) == 1 ) {
+		PAD_GetOrigin(origin);
+		originRead = true;
+	}
 
 	// reset console cursor position
 	printf("\x1b[3;0H");
@@ -128,6 +137,7 @@ bool menu_runMenu(void *currXfb) {
 	if ((padsConnected & 1) == 0) {
 		printf("                             Controller Disconnected!");
 		data.isDataReady = false;
+		originRead = false;
 	}
 	if (data.isDataReady) {
 		printf("                      Oscilloscope capture in memory!");
@@ -418,6 +428,13 @@ void menu_controllerTest(void *currXfb) {
 		printf("0.%04d", stickCoordinatesMelee.cy);
 	}
 	printf(")");
+	
+	if (originRead) {
+		printf("\x1b[26;0H");
+		printf("Stick Origin (X,Y): %04d, %04d", origin[0].stickX, origin[0].stickY);
+		printf("\x1b[26;40H");
+		printf("C-Stick Origin (X,Y): %04d, %04d", origin[0].substickX, origin[0].substickY);
+	}
 	
 
 	// visual stuff
