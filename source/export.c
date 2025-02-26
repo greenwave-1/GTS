@@ -75,7 +75,7 @@ bool exportData(WaveformData *data, bool exportAsMeleeValues) {
 	FILE *fptr = fopen(fileStr, "w");
 
 	// first row contains datetime, polling rate, and if its printing melee coordinates
-	fprintf(fptr, "%s,%u,%d\n", timeStr, data->pollingRate, exportAsMeleeValues);
+	//fprintf(fptr, "%s,%u,%d\n", timeStr, data->pollingRate, exportAsMeleeValues);
 	
 	// actual data
 	// prints x then y, then repeats

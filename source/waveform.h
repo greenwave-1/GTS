@@ -16,6 +16,8 @@ typedef struct WaveformDatapoint {
 	// c stick
 	int cx;
 	int cy;
+	// time from last datapoint
+	u64 timeDiffUs;
 	// for converted values
 	bool isAXNegative;
 	bool isAYNegative;
@@ -30,7 +32,7 @@ typedef struct WaveformData {
 
 	// stat values
 	// TODO: estimate poll rate?
-	u16 pollingRate;
+	u64 totalTimeUs;
 	
 	bool isDataReady;
 	

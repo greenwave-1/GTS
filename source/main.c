@@ -53,6 +53,11 @@ int main(int argc, char **argv) {
 	// there is a makefile target that will enable this
 	#ifdef DEBUG
 	sendMessage("USB Gecko Debug output enabled");
+	#ifdef HW_RVL
+	sendMessage("Running on Wii");
+	#elifdef HW_DOL
+	sendMessage("Running on GC");
+	#endif
 	#endif
 	
 	

@@ -17,12 +17,25 @@
 #define STICK_MOVEMENT_THRESHOLD 5
 #define STICK_ORIGIN_THRESHOLD 3
 
+static bool isReadReady = false;
+static u64 prevSampleCallbackTick = 0;
+static u64 sampleCallbackTick = 0;
+
+static sampling_callback cb;
+
+void samplingCallback() {
+	prevSampleCallbackTick = sampleCallbackTick;
+	sampleCallbackTick = gettime();
+	if (prevSampleCallbackTick == 0) {
+		prevSampleCallbackTick = sampleCallbackTick;
+	}
+	isReadReady = true;
+	
+	PAD_SetSamplingCallback(cb);
+	return;
+}
 
 void measureWaveform(WaveformData *data) {
-	// set SI Polling rate
-	// poll 17 times per frame, every 31 horizontal lines
-	//SI_SetXY(31,17); // normal 985, vblank 920
-	
 	//SI_SetXY(11, 24); // normal 698, then 604, then 667, then back
 	setSamplingRateHigh();
 	
@@ -34,9 +47,10 @@ void measureWaveform(WaveformData *data) {
 	unsigned int stickNotMovingCounter = 0;
 
 	data->endPoint = 0;
-
-	// timer var
-	long long unsigned int startTime = gettime();
+	data->totalTimeUs = 0;
+	
+	prevSampleCallbackTick = 0;
+	sampleCallbackTick = 0;
 
 	// set start point
 	int startPosX = PAD_StickX(0);
@@ -56,19 +70,22 @@ void measureWaveform(WaveformData *data) {
 		prevPollY = currPollY;
 	}
 
-	startTime = gettime();
+	//startTime = gettime();
 	// add the initial value
-	data->data[data->endPoint].ax = currPollX;
-	data->data[data->endPoint].ay = currPollY;
-	data->endPoint++;
+	//data->data[data->endPoint].ax = currPollX;
+	//data->data[data->endPoint].ay = currPollY;
+	//data->data[data->endPoint].timeDiffUs = 0;
+	//data->endPoint++;
 
-	// wait for 1ms to pass
-	while (ticks_to_millisecs(gettime() - startTime) < 1);
-
+	u64 temp;
 	while (true) {
-		// get time for polling
-		startTime = gettime();
-
+		// wait for poll
+		cb = PAD_SetSamplingCallback(samplingCallback);
+		while (!isReadReady) {
+			temp = gettime();
+			while (ticks_to_microsecs(gettime() - temp) > 10);
+		}
+		
 		// update stick values
 		PAD_ScanPads();
 
@@ -82,6 +99,7 @@ void measureWaveform(WaveformData *data) {
 		// add data
 		data->data[data->endPoint].ax = currPollX;
 		data->data[data->endPoint].ay = currPollY;
+		data->data[data->endPoint].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 		data->endPoint++;
 
 		// have we overrun our array?
@@ -112,12 +130,14 @@ void measureWaveform(WaveformData *data) {
 				stickNotMovingCounter = 0;
 			}
 		}
-
-		// slow down polling
-		// polling every ~1ms
-		while (ticks_to_millisecs(gettime() - startTime) < 1);
+		isReadReady = false;
 	}
 	data->isDataReady = true;
+	PAD_SetSamplingCallback(NULL);
+	
+	for (int i = 0; i < data->endPoint; i++) {
+		data->totalTimeUs += data->data[i].timeDiffUs;
+	}
 	// polling rate gets reset by main loop, no need to do it here
 }
 

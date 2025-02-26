@@ -653,9 +653,6 @@ void menu_waveformMeasure(void *currXfb) {
 
 	// do we have data that we can display?
 	if (data.isDataReady) {
-
-		printf("%u samples, drawing from sample %d\n", data.endPoint + 1, dataScrollOffset + 1);
-
 		int minX, minY;
 		int maxX, maxY;
 
@@ -710,6 +707,7 @@ void menu_waveformMeasure(void *currXfb) {
 		
 		int waveformPrevXPos = 0;
 		int waveformXPos = waveformScaleFactor;
+		u64 drawnTicksUs = 0;
 		
 		// draw 500 datapoints from the scroll offset
 		for (int i = dataScrollOffset + 1; i < dataScrollOffset + 500; i++) {
@@ -743,6 +741,8 @@ void menu_waveformMeasure(void *currXfb) {
 				maxY = prevY;
 			}
 			
+			drawnTicksUs += data.data[i].timeDiffUs;
+			
 			// update scaling factor
 			waveformPrevXPos = waveformXPos;
 			waveformXPos += waveformScaleFactor;
@@ -774,6 +774,10 @@ void menu_waveformMeasure(void *currXfb) {
 				}
 			}
 		}
+		
+		printf( "\x1b[6;0H");
+		// total time is stored in microseconds, divide by 1000 for milliseconds
+		printf("%u samples, %0.3f ms, starting sample: %d, visible time: %0.3f ms\n", data.endPoint + 1, (data.totalTimeUs / ((float) 1000)), dataScrollOffset + 1, (drawnTicksUs / ((float) 1000)));
 
 		// print test data
 		printf( "\x1b[24;0H");
@@ -958,7 +962,8 @@ void menu_2dPlot(void *currXfb) {
 	// do we have data that we can display?
 	if (data.isDataReady) {
 		convertedCoords = convertStickValues(&data.data[lastDrawPoint]);
-		printf("%u samples, last point is: %d\n", data.endPoint + 1, lastDrawPoint + 1);
+		printf("%04u samples, last point is: %04d, ", data.endPoint + 1, lastDrawPoint + 1);
+		printf("Microsecs from last poll: %05llu", data.data[lastDrawPoint].timeDiffUs);
 		// TODO: move instructions under different prompt, so I don't have to keep messing with text placement
 
 		// print coordinates of last drawn point
