@@ -25,6 +25,8 @@
 // macro for how far the stick has to go before it counts as a movement
 #define MENU_STICK_THRESHOLD 10
 
+const float frameTime = (1000.0 / 60.0);
+
 enum WAVEFORM_TEST { SNAPBACK, PIVOT, DASHBACK, FULL, NO_TEST };
 
 static enum WAVEFORM_TEST currentTest = SNAPBACK;
@@ -799,7 +801,6 @@ void menu_waveformMeasure(void *currXfb) {
 
 		// print test data
 		printf( "\x1b[24;0H");
-		u16 pollCount = 0;
 		switch (currentTest) {
 			case SNAPBACK:
 				printf("Min X: %04d | Min Y: %04d   |   ", minX, minY);
@@ -810,19 +811,28 @@ void menu_waveformMeasure(void *currXfb) {
 				bool prevPivotHit80 = false;
 				bool leftPivotRange = false;
 				bool prevLeftPivotRange = false;
+				int pivotStartIndex = -1, pivotEndIndex = -1;
+				int pivotStartSign = 0;
 				// start from the back of the list
 				for (int i = data.endPoint; i >= 0; i--) {
-					// check x coordinate for +-64
+					// check x coordinate for +-64 (dash threshold)
 					if (data.data[i].ax >= 64 || data.data[i].ax <= -64) {
+						if (pivotEndIndex == -1) {
+							pivotEndIndex = i;
+						}
+						// pivot input must hit 80 on both sides
 						if (data.data[i].ax >= 80 || data.data[i].ax <= -80) {
 							pivotHit80 = true;
 						}
-						pollCount++;
 					}
 
 					// are we outside the pivot range and have already logged data of being in range
-					if (pollCount > 0 && data.data[i].ax < 64 && data.data[i].ax > -64) {
+					if (pivotEndIndex != -1 && data.data[i].ax < 64 && data.data[i].ax > -64) {
 						leftPivotRange = true;
+						if (pivotStartIndex == -1) {
+							// need the "previous" poll since this one is out of the range
+							pivotStartIndex = i + 1;
+						}
 						if (prevLeftPivotRange || !pivotHit80) {
 							break;
 						}
@@ -830,6 +840,10 @@ void menu_waveformMeasure(void *currXfb) {
 
 					// look for the initial input
 					if ( (data.data[i].ax >= 64 || data.data[i].ax <= -64) && leftPivotRange) {
+						// used to ensure starting input is from the opposite side
+						if (pivotStartSign == 0) {
+							pivotStartSign = data.data[i].ax;
+						}
 						prevLeftPivotRange = true;
 						if (data.data[i].ax >= 80 || data.data[i].ax <= -80) {
 							prevPivotHit80 = true;
@@ -839,58 +853,94 @@ void menu_waveformMeasure(void *currXfb) {
 				}
 
 				// phobvision doc says both sides need to hit 80 to succeed
-				if (prevPivotHit80 && pivotHit80) {
+				// multiplication is to ensure signs are correct
+				if (prevPivotHit80 && pivotHit80 && (data.data[pivotEndIndex].ax * pivotStartSign < 0)) {
 					float noTurnPercent = 0;
 					float pivotPercent = 0;
 					float dashbackPercent = 0;
 
-					// (16.6 - polls) / 16.6
-					// gets amount of time that a no turn could occur, the get percentage
-					noTurnPercent = (((1000.0 / 60.0) - (pollCount)) / (1000.0 / 60.0)) * 100;
-					if (noTurnPercent < 0) {
-						noTurnPercent = 0;
+					u64 timeInPivotRangeUs = 0;
+					for (int i = pivotStartIndex; i <= pivotEndIndex; i++) {
+						timeInPivotRangeUs += data.data[i].timeDiffUs;
 					}
-
-					// no turn could occur, calculate normally
-					if ((pollCount)< 17) {
-						pivotPercent = ((float) (pollCount) / (1000.0 / 60.0)) * 100;
-					} else {
-						// 33.3 - polls
-						// opposite of the case above, we want the game to poll the second frame on a value below +-64
-						pivotPercent = (1000.0 / 30.0) - (pollCount) ;
-						// get percentage
-						pivotPercent = (pivotPercent / (1000.0 / 60.0)) * 100;
-						if (pivotPercent < 0) {
-							pivotPercent = 0;
-						}
-
-						// (polls - 16.6) / 16.6
-						// amount of time that a dashback would be registered, provided polls >= 17
-						dashbackPercent = (((float) (pollCount) - (1000.0 / 60.0)) / (1000.0 / 60.0)) * 100;
+					
+					// convert time to float in milliseconds
+					float timeInPivotRangeMs = (timeInPivotRangeUs / 1000.0);
+					
+					// TODO: i think the calculation can be simplified here...
+					// how many milliseconds could a poll occur that would cause a miss
+					float diffFrameTimePoll = frameTime - timeInPivotRangeMs;
+					
+					// negative time difference, dashback
+					if (diffFrameTimePoll < 0) {
+						dashbackPercent = ((diffFrameTimePoll * -1) / frameTime) * 100;
 						if (dashbackPercent > 100) {
 							dashbackPercent = 100;
 						}
+						pivotPercent = 100 - dashbackPercent;
+					// positive or 0 time diff, no turn
+					} else {
+						noTurnPercent = (diffFrameTimePoll / frameTime) * 100;
+						if (noTurnPercent > 100) {
+							noTurnPercent = 100;
+						}
+						pivotPercent = 100 - noTurnPercent;
 					}
-
-					printf("Polls in pivot range: %u, No turn: %2.0f%% | Empty Pivot: %2.0f%% | Dashback: %2.0f%%",
-						   pollCount, noTurnPercent, pivotPercent, dashbackPercent);
+					
+					printf("MS in range: %2.2f | No turn: %2.0f%% | Empty Pivot: %2.0f%% | Dashback: %2.0f%%",
+						   timeInPivotRangeMs, noTurnPercent, pivotPercent, dashbackPercent);
+					//printf("\nUS Total: %llu, Start index: %d, End index: %d", timeInPivotRangeUs, pivotStartIndex, pivotEndIndex);
 				} else {
 					printf("No pivot input detected.");
 				}
 				break;
 			case DASHBACK:
 				// go forward in list
+				int dashbackStartIndex = -1, dashbackEndIndex = -1;
+				u64 timeInRange = 0;
 				for (int i = 0; i < data.endPoint; i++) {
 					// is the stick in the range
 					if ((data.data[i].ax >= 23 && data.data[i].ax < 64) || (data.data[i].ax <= -23 && data.data[i].ax > -64)) {
-						pollCount++;
-					} else if (pollCount > 0) {
+						timeInRange += data.data[i].timeDiffUs;
+						if (dashbackStartIndex == -1) {
+							dashbackStartIndex = i;
+						}
+					} else if (dashbackStartIndex != -1) {
+						dashbackEndIndex = i - 1;
 						break;
 					}
 				}
-
-				float dashbackPercent = (((1000.0 / 60.0) - (pollCount)) / (1000.0 / 60.0)) * 100;
-				float ucfPercent = (((1000.0 / 30.0) - (pollCount)) / (1000.0 / 60.0)) * 100;
+				
+				// convert time in microseconds to float time in milliseconds
+				float timeInRangeMs = (timeInRange / 1000.0);
+				
+				float dashbackPercent = (1.0 - (timeInRangeMs / frameTime)) * 100;
+				float ucfPercent;
+				
+				// ucf dashback is a little more involved
+				u64 ucfTimeInRange = timeInRange;
+				for (int i = dashbackStartIndex; i <= dashbackEndIndex; i++) {
+					// we're gonna assume that the previous frame polled around the origin, because i cant be bothered
+					// it also makes the math easier
+					u64 usFromPoll = 0;
+					int nextPollIndex = i;
+					// we need the sample that would occur around 1f after
+					while (usFromPoll < 16666) {
+						nextPollIndex++;
+						usFromPoll += data.data[nextPollIndex].timeDiffUs;
+					}
+					// the two frames need to move more than 75 units for UCF to convert it
+					if (data.data[i].ax + data.data[nextPollIndex].ax > 75 || data.data[i].ax + data.data[nextPollIndex].ax < -75) {
+						ucfTimeInRange -= data.data[i].timeDiffUs;
+					}
+				}
+				
+				float ucfTimeInRangeMs = ucfTimeInRange / 1000.0;
+				if (ucfTimeInRangeMs <= 0) {
+					ucfPercent = 100;
+				} else {
+					ucfPercent = (1.0 - (ucfTimeInRangeMs / frameTime)) * 100;
+				}
 
 				// this shouldn't happen in theory, maybe on box?
 				if (dashbackPercent > 100) {
@@ -906,7 +956,7 @@ void menu_waveformMeasure(void *currXfb) {
 				if (ucfPercent < 0) {
 					ucfPercent = 0;
 				}
-				printf("Polls in fail range: %u | Vanilla Success: %2.0f%% | UCF Success: %2.0f%%", pollCount, dashbackPercent, ucfPercent);
+				printf("Vanilla Success: %2.0f%% | UCF Success: %2.0f%%", dashbackPercent, ucfPercent);
 				break;
 			case FULL:
 			case NO_TEST:
@@ -917,7 +967,7 @@ void menu_waveformMeasure(void *currXfb) {
 
 		}
 	}
-	printf( "\x1b[25;0H");
+	printf( "\x1b[26;0H");
 	printf("Current test: ");
 	switch (currentTest) {
 		case SNAPBACK:
@@ -956,7 +1006,7 @@ void menu_waveformMeasure(void *currXfb) {
 		currentTest++;
 		// hacky way to disable pivot tests for now
 		if (currentTest == PIVOT) {
-			currentTest++;
+			//currentTest++;
 		}
 		// check if we overrun our test length
 		if (currentTest == TEST_LEN) {
@@ -1254,6 +1304,9 @@ void menu_coordinateViewer(void *currXfb) {
 			//DrawLine(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, convertMeleeCoordToStickmap(STICKMAP_FF_WD_COORD_SAFE[0][0]) + SCREEN_POS_CENTER_X, convertMeleeCoordToStickmap(STICKMAP_FF_WD_COORD_SAFE[0][1]) + SCREEN_POS_CENTER_Y, COLOR_GREEN, currXfb);
 			break;
 		case SHIELDDROP:
+			break;
+		case NONE:
+		default:
 			break;
 	}
 

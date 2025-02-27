@@ -36,10 +36,16 @@ void samplingCallback() {
 	return;
 }
 
+// TODO: see if this can be replaced with manually polling the controller with a timer
+// idk if that's even something that can happen in hardware, but worth looking into
 void measureWaveform(WaveformData *data) {
-	//SI_SetXY(11, 24); // normal 698, then 604, then 667, then back
-	setSamplingRateHigh();
+	// reset old data
+	for (int i = 0; i < WAVEFORM_SAMPLES; i++) {
+		data->data[i] = (WaveformDatapoint) { .ax = 0, .ay = 0, .cx = 0, .cy = 0, .timeDiffUs = 0,
+						  .isAXNegative = false, .isAYNegative = false, .isCXNegative = false, .isCYNegative = false } ;
+	}
 	
+	setSamplingRateHigh();
 	
 	// we need a way to determine if the stick has stopped moving, this is a basic way to do so.
 	// initial value is arbitrary, but not close enough to 0 so that the rest of the code continues to work.
@@ -70,13 +76,6 @@ void measureWaveform(WaveformData *data) {
 		currPollY = PAD_StickY(0);
 		prevPollY = currPollY;
 	}
-
-	//startTime = gettime();
-	// add the initial value
-	//data->data[data->endPoint].ax = currPollX;
-	//data->data[data->endPoint].ay = currPollY;
-	//data->data[data->endPoint].timeDiffUs = 0;
-	//data->endPoint++;
 
 	u64 temp;
 	while (true) {
