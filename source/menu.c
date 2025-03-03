@@ -292,6 +292,8 @@ bool menu_runMenu(void *currXfb) {
 }
 
 void menu_mainMenu() {
+	// stop rumble if it didn't get stopped before
+	PAD_ControlMotor(0, PAD_MOTOR_STOP);
 	int stickY = PAD_StickY(0);
 
 	// flags which tell whether the stick is held in an up or down position
@@ -508,10 +510,16 @@ void menu_controllerTest(void *currXfb) {
 		DrawFilledBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_Z_Y1,
 		              CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_Z_Y1 + CONT_TEST_BUTTON_XY_SHORT,
 		              COLOR_WHITE, currXfb);
+		
+		// also enable rumble if z is held
+		PAD_ControlMotor(0, PAD_MOTOR_RUMBLE);
 	} else {
 		DrawBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_Z_Y1,
 		        CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_Z_Y1 + CONT_TEST_BUTTON_XY_SHORT,
 		        COLOR_WHITE, currXfb);
+		
+		// stop rumble if z is not held
+		PAD_ControlMotor(0, PAD_MOTOR_STOP);
 	}
 	printf("\x1b[8;59H");
 	printf("Z");
