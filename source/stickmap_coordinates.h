@@ -29,17 +29,18 @@ static const char* STICKMAP_FF_WD_RETCOLORS[] = { "", "\x1b[42;1m\x1b[30;0m", "\
 
 // enum for the two above
 enum STICKMAP_FF_WD_ENUM { FF_WD_MISS, FF_WD_SAFE, FF_WD_UNSAFE };
+static const int STICKMAP_FF_WD_ENUM_LEN = 3;
 
 // coordinate tuples
 // array of tuples is the best way to think of this
 // safe coordinates
 static const int STICKMAP_FF_WD_COORD_SAFE[][2] = { {9375, 3125},
-										   {9375, 3250} };
+													{9375, 3250} };
 static const int STICKMAP_FF_WD_COORD_SAFE_LEN = 2;
 
 // unsafe coordinates
 static const int STICKMAP_FF_WD_COORD_UNSAFE[][2] = { {9500, 3000},
-											 {9500, 2875} };
+													  {9500, 2875} };
 static const int STICKMAP_FF_WD_COORD_UNSAFE_LEN = 2;
 
 
@@ -58,6 +59,7 @@ static const char* STICKMAP_SHIELDDROP_RETVALS[] = { "MISS", "VANILLA", "UCF LOW
 static const char* STICKMAP_SHIELDDROP_RETCOLORS[] = { "", "\x1b[42;1m\x1b[30;0m", "\x1b[44;1m\x1b[37;1m", "\x1b[43;1m\x1b[30;0m"};
 
 enum STICKMAP_SHIELDDROP_ENUM { SHIELDDROP_MISS, SHIELDDROP_VANILLA, SHIELDDROP_UCF_LOWER, SHIELDDROP_UCF_UPPER };
+static const int STICKMAP_SHIELDDROP_ENUM_LEN = 4;
 
 static const int STICKMAP_SHIELDDROP_COORD_VANILLA[][2] = { { 6875, 6625},
                                                             { 6875, 6750},
@@ -77,8 +79,8 @@ static const int STICKMAP_SHIELDDROP_COORD_UCF_LOWER[][2] = { { 7000, 7000 },
                                                               { 6500, 7500 },
                                                               { 6250, 7625 },
                                                               { 6375, 7625 },
-                                                              { 6125, 7758 },
-                                                              { 6250, 7758},
+                                                              { 6125, 7785 },
+                                                              { 6250, 7785 },
                                                               { 6000, 7875 },
                                                               { 6125, 7875 } };
 static const int STICKMAP_SHIELDDROP_COORD_UCF_LOWER_LEN = 17;
@@ -88,8 +90,7 @@ static const int STICKMAP_SHIELDDROP_COORD_UCF_UPPER[][2] = { { 7625, 6250 },
                                                               { 7500, 6375 },
                                                               { 7625, 6375 },
                                                               { 7375, 6250 },
-                                                              { 7500, 6250 },
-															  };
+                                                              { 7500, 6250 } };
 static const int STICKMAP_SHIELDDROP_COORD_UCF_UPPER_LEN = 6;
 
 

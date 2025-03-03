@@ -73,26 +73,57 @@ bool exportData(WaveformData *data, bool exportAsMeleeValues) {
 	}
 	
 	FILE *fptr = fopen(fileStr, "w");
-
-	// first row contains datetime, polling rate, and if its printing melee coordinates
-	//fprintf(fptr, "%s,%u,%d\n", timeStr, data->pollingRate, exportAsMeleeValues);
+	
+	// first row is: datetime, number of polls, are the polls being exported as melee coords
+	fprintf(fptr, "%s,%u,%d\n", timeStr, data->endPoint, exportAsMeleeValues);
 	
 	// actual data
-	// prints x then y, then repeats
+	// second row is x coords, third row is y coords, fourth row is time from last poll
+	
+	// x
 	for (int i = 0; i < data->endPoint; i++) {
 		if (exportAsMeleeValues) {
 			WaveformDatapoint temp = convertStickValues(&(data->data[i]));
 			if (i == 0) {
-				fprintf(fptr, "%d,%d", temp.ax, temp.ay);
+				fprintf(fptr, "%d", temp.ax);
 			} else {
-				fprintf(fptr, ",%d,%d", temp.ax, temp.ay);
+				fprintf(fptr, ",%d", temp.ax);
 			}
 		} else {
 			if (i == 0) {
-				fprintf(fptr, "%d,%d", data->data[i].ax, data->data[i].ay);
+				fprintf(fptr, "%d", data->data[i].ax);
 			} else {
-				fprintf(fptr, ",%d,%d", data->data[i].ax, data->data[i].ay);
+				fprintf(fptr, ",%d", data->data[i].ax);
 			}
+		}
+	}
+	fprintf(fptr, "\n");
+	
+	// y
+	for (int i = 0; i < data->endPoint; i++) {
+		if (exportAsMeleeValues) {
+			WaveformDatapoint temp = convertStickValues(&(data->data[i]));
+			if (i == 0) {
+				fprintf(fptr, "%d", temp.ay);
+			} else {
+				fprintf(fptr, ",%d", temp.ay);
+			}
+		} else {
+			if (i == 0) {
+				fprintf(fptr, "%d", data->data[i].ay);
+			} else {
+				fprintf(fptr, ",%d", data->data[i].ay);
+			}
+		}
+	}
+	fprintf(fptr, "\n");
+	
+	// time between polls
+	for (int i = 0; i < data->endPoint; i++) {
+		if (i == 0) {
+			fprintf(fptr, "%llu", data->data[i].timeDiffUs);
+		} else {
+			fprintf(fptr, ",%llu", data->data[i].timeDiffUs);
 		}
 	}
 	fprintf(fptr, "\n");

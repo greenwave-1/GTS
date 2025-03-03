@@ -10,8 +10,7 @@
 #include <ogc/color.h>
 #include "waveform.h"
 #include "images/stickmaps.h"
-#include "images/custom_colors.h"
-#include "draw_constants.h"
+#include "draw.h"
 #include "export.h"
 #include "stickmap_coordinates.h"
 
@@ -40,7 +39,9 @@ static enum CURRENT_MENU previousMenu = MAIN_MENU;
 // enum for what image to draw in 2d plot
 static enum IMAGE selectedImage = SNAPBACK;
 
-static enum STICKMAP_LIST stickmapList = NONE;
+static enum STICKMAP_LIST selectedStickmap = NONE;
+// will be casted to whichever stickmap is selected
+static int selectedStickmapSub = 0;
 
 // main menu counter
 static u8 mainMenuSelection = 0;
@@ -75,50 +76,6 @@ static u32 padsConnected = 0;
 static PADStatus origin[PAD_CHANMAX];
 static bool originRead = false;
 
-// most of this is taken from
-// https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
-// TODO: move this to another file, this file is getting big enough...
-// TODO: this seems to use a lot of cycles, not sure if it can be optimized...
-static void drawImage(void *currXfb, const unsigned char image[], const unsigned char colorIndex[8], u16 offsetX, u16 offsetY) {
-	// get information on the image to be drawn
-	u32 width = image[0] << 8 | image[1];
-	u32 height = image[2] << 8 | image[3];
-
-	// where image drawing ends
-	// calculated in advance for use in the loop
-	u32 imageEndpointX = offsetX + width;
-	u32 imageEndpointY = offsetY + height;
-
-	// ensure image won't go out of bounds
-	if (imageEndpointX > 640 || imageEndpointY > 480) {
-		return;
-		//printf("Image with given parameters will write incorrectly\n");
-	}
-
-	u32 byte = 4;
-	u8 runIndex = 0;
-	// first five bits are runlength
-	u8 runLength = (image[byte] >> 3) + 1;
-	// last three bits are color, lookup color in index
-	u8 color = colorIndex[ image[byte] & 0b111];
-	// begin processing data
-	for (int row = offsetY; row < imageEndpointY; row++) {
-		for (int column = offsetX; column < imageEndpointX; column++) {
-			// is there a pixel to actually draw? (0-4 is transparency)
-			if (color >= 5) {
-				DrawDot(column, row, CUSTOM_COLORS[color - 5], currXfb);
-			}
-
-			runIndex++;
-			if (runIndex >= runLength) {
-				runIndex = 0;
-				byte++;
-				runLength = (image[byte] >> 3) + 1;
-				color = colorIndex[ image[byte] & 0b111];
-			}
-		}
-	}
-}
 
 // the "main" for the menus
 // other menu functions are called from here
@@ -190,9 +147,12 @@ bool menu_runMenu(void *currXfb) {
 						printf("NO TEST SELECTED");
 						break;
 				}
+				printf( "\x1b[25;0H");
+				printf("Press Z to close instructions.");
 			} else {
 				menu_waveformMeasure(currXfb);
 			}
+
 			break;
 		case PLOT_2D:
 			if (displayInstructions) {
@@ -200,6 +160,8 @@ bool menu_runMenu(void *currXfb) {
 					   "what the last point drawn is. Information on the last chosen point is\n"
 					   "displayed at the bottom. Hold R to add or remove points faster.\n"
 					   "Hold L to move one point at a time.");
+				printf( "\x1b[25;0H");
+				printf("Press Z to close instructions.");
 			} else {
 				menu_2dPlot(currXfb);
 			}
@@ -212,11 +174,12 @@ bool menu_runMenu(void *currXfb) {
 			break;
 		case COORD_MAP:
 			if (displayInstructions) {
-				printf("Press X to cycle the stickmap being tested, Melee Coordinates are shown\n"
-					   "in the top-left.\nThe white line with an unfilled box represents the analog stick.\n"
+				printf("Press X to cycle the stickmap being tested, and Y to cycle which\n"
+					   "category of points. Melee Coordinates are shown in the top-left.\n\n"
+					   "The white line with an unfilled box represents the analog stick.\n"
 					   "The yellow line with a filled box represents the c-stick.\n\n"
 					   "Current Stickmap: ");
-				switch (stickmapList) {
+				switch (selectedStickmap) {
 					case FF_WD:
 						printf("Firefox / Wavedash\n");
 						printf("%s", STICKMAP_FF_WD_DESC);
@@ -227,9 +190,11 @@ bool menu_runMenu(void *currXfb) {
 						break;
 					case NONE:
 					default:
-						printf("None");
+						printf("None\n");
 						break;
 				}
+				printf( "\x1b[25;0H");
+				printf("Press Z to close instructions.");
 			} else {
 				menu_coordinateViewer(currXfb);
 			}
@@ -918,51 +883,58 @@ void menu_waveformMeasure(void *currXfb) {
 						break;
 					}
 				}
-				
-				// convert time in microseconds to float time in milliseconds
-				float timeInRangeMs = (timeInRange / 1000.0);
-				
-				float dashbackPercent = (1.0 - (timeInRangeMs / frameTime)) * 100;
+				float dashbackPercent;
 				float ucfPercent;
 				
-				// ucf dashback is a little more involved
-				u64 ucfTimeInRange = timeInRange;
-				for (int i = dashbackStartIndex; i <= dashbackEndIndex; i++) {
-					// we're gonna assume that the previous frame polled around the origin, because i cant be bothered
-					// it also makes the math easier
-					u64 usFromPoll = 0;
-					int nextPollIndex = i;
-					// we need the sample that would occur around 1f after
-					while (usFromPoll < 16666) {
-						nextPollIndex++;
-						usFromPoll += data.data[nextPollIndex].timeDiffUs;
-					}
-					// the two frames need to move more than 75 units for UCF to convert it
-					if (data.data[i].ax + data.data[nextPollIndex].ax > 75 || data.data[i].ax + data.data[nextPollIndex].ax < -75) {
-						ucfTimeInRange -= data.data[i].timeDiffUs;
-					}
-				}
-				
-				float ucfTimeInRangeMs = ucfTimeInRange / 1000.0;
-				if (ucfTimeInRangeMs <= 0) {
-					ucfPercent = 100;
-				} else {
-					ucfPercent = (1.0 - (ucfTimeInRangeMs / frameTime)) * 100;
-				}
-
-				// this shouldn't happen in theory, maybe on box?
-				if (dashbackPercent > 100) {
-					dashbackPercent = 100;
-				}
-				if (ucfPercent > 100) {
-					ucfPercent = 100;
-				}
-				// this definitely can happen though
-				if (dashbackPercent < 0) {
+				if (dashbackEndIndex == -1) {
 					dashbackPercent = 0;
-				}
-				if (ucfPercent < 0) {
 					ucfPercent = 0;
+				} else {
+					// convert time in microseconds to float time in milliseconds
+					float timeInRangeMs = (timeInRange / 1000.0);
+					
+					dashbackPercent = (1.0 - (timeInRangeMs / frameTime)) * 100;
+					
+					// ucf dashback is a little more involved
+					u64 ucfTimeInRange = timeInRange;
+					for (int i = dashbackStartIndex; i <= dashbackEndIndex; i++) {
+						// we're gonna assume that the previous frame polled around the origin, because i cant be bothered
+						// it also makes the math easier
+						u64 usFromPoll = 0;
+						int nextPollIndex = i;
+						// we need the sample that would occur around 1f after
+						while (usFromPoll < 16666) {
+							nextPollIndex++;
+							usFromPoll += data.data[nextPollIndex].timeDiffUs;
+						}
+						// the two frames need to move more than 75 units for UCF to convert it
+						if (data.data[i].ax + data.data[nextPollIndex].ax > 75 ||
+						    data.data[i].ax + data.data[nextPollIndex].ax < -75) {
+							ucfTimeInRange -= data.data[i].timeDiffUs;
+						}
+					}
+					
+					float ucfTimeInRangeMs = ucfTimeInRange / 1000.0;
+					if (ucfTimeInRangeMs <= 0) {
+						ucfPercent = 100;
+					} else {
+						ucfPercent = (1.0 - (ucfTimeInRangeMs / frameTime)) * 100;
+					}
+					
+					// this shouldn't happen in theory, maybe on box?
+					if (dashbackPercent > 100) {
+						dashbackPercent = 100;
+					}
+					if (ucfPercent > 100) {
+						ucfPercent = 100;
+					}
+					// this definitely can happen though
+					if (dashbackPercent < 0) {
+						dashbackPercent = 0;
+					}
+					if (ucfPercent < 0) {
+						ucfPercent = 0;
+					}
 				}
 				printf("Vanilla Success: %2.0f%% | UCF Success: %2.0f%%", dashbackPercent, ucfPercent);
 				break;
@@ -975,7 +947,7 @@ void menu_waveformMeasure(void *currXfb) {
 
 		}
 	}
-	printf( "\x1b[26;0H");
+	printf( "\x1b[25;0H");
 	printf("Current test: ");
 	switch (currentTest) {
 		case SNAPBACK:
@@ -1167,7 +1139,25 @@ void menu_2dPlot(void *currXfb) {
 
 void menu_fileExport() {
 	printf("todo");
-	//fileIOSuccess = exportData(&data, false);
+	return;
+	
+	if (data.isDataReady) {
+		if (!data.exported) {
+			data.exported = exportData(&data, false);
+			if (!data.exported) {
+				printf("Failed to export data");
+				while (!(held & PAD_BUTTON_B)) {
+					PAD_ScanPads();
+					held = PAD_ButtonsHeld(0);
+					VIDEO_WaitVSync();
+				}
+			}
+		} else {
+			printf("Data already exported");
+		}
+	} else {
+		printf("No data to export, record an input using Oscilloscope or Plot");
+	}
 }
 
 
@@ -1254,16 +1244,28 @@ void menu_coordinateViewer(void *currXfb) {
 		printf("0.%04d\n", stickCoordinatesMelee.cy);
 	}
 	
-	printf("\x1b[23;0H");
+	printf("\x1b[22;0H");
 	printf("\nStickmap: ");
-	int stickmapRetVal = isCoordValid(stickmapList, stickCoordinatesMelee);
-	switch (stickmapList) {
+	int stickmapRetVal = isCoordValid(selectedStickmap, stickCoordinatesMelee);
+	switch (selectedStickmap) {
 		case FF_WD:
 			printf("Firefox/Wavedash\n");
+			printf("Visible Overlay: ");
+			if (selectedStickmapSub == 0) {
+				printf("ALL\n");
+			} else {
+				printf("%s\n", STICKMAP_FF_WD_RETVALS[selectedStickmapSub]);
+			}
 			printf("Result: %s%s", STICKMAP_FF_WD_RETCOLORS[stickmapRetVal], STICKMAP_FF_WD_RETVALS[stickmapRetVal]);
 			break;
 		case SHIELDDROP:
 			printf("Shield Drop\n");
+			printf("Visible Overlay: ");
+			if (selectedStickmapSub == 0) {
+				printf("ALL\n");
+			} else {
+				printf("%s\n", STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub]);
+			}
 			printf("Result: %s%s", STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal], STICKMAP_SHIELDDROP_RETVALS[stickmapRetVal]);
 			break;
 		case NONE:
@@ -1279,7 +1281,7 @@ void menu_coordinateViewer(void *currXfb) {
 	if (stickCoordinatesRaw.ax < 0) {
 		xfbCoordX *= -1;
 	}
-	xfbCoordX += SCREEN_POS_CENTER_X;
+	xfbCoordX += COORD_CIRCLE_CENTER_X;
 	
 	int xfbCoordY = (stickCoordinatesMelee.ay / 125) * 2;
 	if (stickCoordinatesRaw.ay > 0) {
@@ -1291,7 +1293,7 @@ void menu_coordinateViewer(void *currXfb) {
 	if (stickCoordinatesRaw.cx < 0) {
 		xfbCoordCX *= -1;
 	}
-	xfbCoordCX += SCREEN_POS_CENTER_X;
+	xfbCoordCX += COORD_CIRCLE_CENTER_X;
 	
 	int xfbCoordCY = (stickCoordinatesMelee.cy / 125) * 2;
 	if (stickCoordinatesRaw.cy > 0) {
@@ -1300,36 +1302,42 @@ void menu_coordinateViewer(void *currXfb) {
 	xfbCoordCY += SCREEN_POS_CENTER_Y;
 	
 	// draw stickbox bounds
-	DrawCircle(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, 160, COLOR_MEDGRAY, currXfb);
+	DrawCircle(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, 161, COLOR_MEDGRAY, currXfb);
 	
-	// draw stickmap area
-	// TODO
-	switch (stickmapList) {
-		case FF_WD:
-			//DrawFilledBox(toStickmap(STICKMAP_FF_WD_COORD_SAFE[0][0]) + SCREEN_POS_CENTER_X - 2, toStickmap(STICKMAP_FF_WD_COORD_SAFE[0][1]) + SCREEN_POS_CENTER_Y - 2,
-			//              toStickmap(STICKMAP_FF_WD_COORD_SAFE[0][0]) + SCREEN_POS_CENTER_X + 2, toStickmap(STICKMAP_FF_WD_COORD_SAFE[0][1]) + SCREEN_POS_CENTER_Y + 2,
-			//			  COLOR_LIME, currXfb);
-			//DrawLine(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, convertMeleeCoordToStickmap(STICKMAP_FF_WD_COORD_SAFE[0][0]) + SCREEN_POS_CENTER_X, convertMeleeCoordToStickmap(STICKMAP_FF_WD_COORD_SAFE[0][1]) + SCREEN_POS_CENTER_Y, COLOR_GREEN, currXfb);
-			break;
-		case SHIELDDROP:
-			break;
-		case NONE:
-		default:
-			break;
-	}
+	DrawStickmapOverlay(selectedStickmap, selectedStickmapSub, currXfb);
 
 	// draw analog stick line
-	DrawLine(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordX, xfbCoordY, COLOR_WHITE, currXfb);
+	DrawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordX, xfbCoordY, COLOR_WHITE, currXfb);
 	DrawBox(xfbCoordX - 4, xfbCoordY - 4, xfbCoordX + 4, xfbCoordY + 4, COLOR_WHITE, currXfb);
 	
 	// draw c-stick line
-	DrawLine(SCREEN_POS_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, COLOR_YELLOW, currXfb);
+	DrawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, COLOR_YELLOW, currXfb);
 	DrawFilledBox(xfbCoordCX - 2, xfbCoordCY - 2, xfbCoordCX + 2, xfbCoordCY + 2, COLOR_YELLOW, currXfb);
 	
 	if (pressed & PAD_BUTTON_X) {
-		stickmapList++;
-		if (stickmapList == 3) {
-			stickmapList = 0;
+		selectedStickmap++;
+		selectedStickmapSub = 0;
+		if (selectedStickmap == 3) {
+			selectedStickmap = 0;
+		}
+	}
+	if (pressed & PAD_BUTTON_Y) {
+		selectedStickmapSub++;
+		switch (selectedStickmap) {
+			case (FF_WD):
+				if (selectedStickmapSub == STICKMAP_FF_WD_ENUM_LEN) {
+					selectedStickmapSub = 0;
+				}
+				break;
+			case (SHIELDDROP):
+				if (selectedStickmapSub == STICKMAP_SHIELDDROP_ENUM_LEN) {
+					selectedStickmapSub = 0;
+				}
+				break;
+			case (NONE):
+			default:
+				selectedStickmapSub = 0;
+				break;
 		}
 	}
 }

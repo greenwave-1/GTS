@@ -2,13 +2,17 @@
 // Created on 2/14/25.
 //
 
-#ifndef FOSSSCOPE_R2_DRAW_CONSTANTS_H
-#define FOSSSCOPE_R2_DRAW_CONSTANTS_H
+#ifndef FOSSSCOPE_R2_DRAW_H
+#define FOSSSCOPE_R2_DRAW_H
+
+#include <gctypes.h>
+#include "stickmap_coordinates.h"
 
 // center of screen, 640x480
 // TODO: replace this with a function call that takes into account other tv modes (pal)
 #define SCREEN_POS_CENTER_X 320
 #define SCREEN_POS_CENTER_Y 240
+#define COORD_CIRCLE_CENTER_X 400
 
 // Controller Test coordinates
 // analog triggers
@@ -71,4 +75,24 @@
 #define CONT_TEST_CSTICK_CENTER_Y 260
 
 
-#endif //FOSSSCOPE_R2_DRAW_CONSTANTS_H
+// draw functions
+
+void drawImage(void *currXfb, const unsigned char image[], const unsigned char colorIndex[8], u16 offsetX, u16 offsetY);
+
+// drawing functions from phobconfigtool
+void DrawHLine (int x1, int x2, int y, int color, void *xfb);
+void DrawVLine (int x, int y1, int y2, int color, void *xfb);
+void DrawBox (int x1, int y1, int x2, int y2, int color, void *xfb);
+
+// expanded drawing functions
+void DrawFilledBox (int x1, int y1, int x2, int y2, int color, void *xfb);
+void DrawLine (int x1, int y1, int x2, int y2, int color, void *xfb);
+void DrawDot (int x, int y, int color, void *xfb);
+void DrawCircle (int cx, int cy, int r, int color, void *xfb);
+void DrawFilledCircle(int cx, int cy, int r, int interval, int color, void *xfb);
+void DrawFilledBoxCenter(int x, int y, int rad, int color, void *xfb);
+
+// draw for tests in coordinate viewer
+void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which, void *xfb);
+
+#endif //FOSSSCOPE_R2_DRAW_H

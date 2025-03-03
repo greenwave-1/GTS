@@ -33,7 +33,7 @@ adding more coordinates for testing
   - [Install devkitpro](https://devkitpro.org/wiki/devkitPro_pacman)
 - Install libogc2
   - [Add the extremscorner repo](https://github.com/extremscorner/pacman-packages#readme)
-- Run ```sudo (dkp-)pacman -S libogc2 libogc2-libfat-git```
+- Run ```sudo (dkp-)pacman -S libogc2 libogc2-libdvm-git```
   - The ```(dkp-)``` is for systems that don't normally have pacman. On those systems, any command should use ```dkp-pacman```
   - Systems that normally use pacman should run ```pacman```
 - Run ```make``` in the root of the project

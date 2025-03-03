@@ -37,24 +37,21 @@ typedef struct WaveformData {
 	
 	// set to true for logic to ignore stick movement stuff and just fill the array
 	bool fullMeasure;
+	
+	bool exported;
 
 } WaveformData;
 
+//enum CONTROLLER_STICKS_XY { A_STICK_X, A_STICK_Y, C_STICK_X, C_STICK_Y };
+
+// function that reads inputs at a high rate
 void measureWaveform(WaveformData *data);
 
 // converts raw input values to melee coordinates
 WaveformDatapoint convertStickValues(WaveformDatapoint *data);
 
-// drawing functions from phobconfigtool
-void DrawHLine (int x1, int x2, int y, int color, void *xfb);
-void DrawVLine (int x, int y1, int y2, int color, void *xfb);
-void DrawBox (int x1, int y1, int x2, int y2, int color, void *xfb);
+//char* meleeCoord(WaveformDatapoint data, enum CONTROLLER_STICKS_XY axis);
+//char* meleeCoord(int coord);
 
-// expanded drawing functions
-void DrawFilledBox (int x1, int y1, int x2, int y2, int color, void *xfb);
-void DrawLine (int x1, int y1, int x2, int y2, int color, void *xfb);
-void DrawDot (int x, int y, int color, void *xfb);
-void DrawCircle (int cx, int cy, int r, int color, void *xfb);
-void DrawFilledCircle(int cx, int cy, int r, int interval, int color, void *xfb);
 
 #endif //FOSSSCOPE_WAVEFORM_H
