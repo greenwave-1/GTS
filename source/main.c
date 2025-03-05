@@ -139,6 +139,40 @@ int main(int argc, char **argv) {
 	int us = 0;
 	#endif
 	 */
+	
+	switch (VIDEO_GetCurrentTvMode()) {
+		case VI_NTSC:
+		case VI_EURGB60:
+			#ifdef DEBUG
+			sendMessage("Video mode is NTSC/EURGB60");
+			#endif
+			break;
+		case VI_MPAL: // no idea if this should be a supported mode...
+			#ifdef DEBUG
+			sendMessage("Video mode is MPAL");
+			#endif
+			break;
+		case VI_PAL:
+			#ifdef DEBUG
+			sendMessage("Video mode is PAL");
+			#endif
+		default:
+			printf("\n\nUnsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n");
+			VIDEO_WaitVSync();
+			u64 timer = gettime();
+			while (ticks_to_secs(gettime() - timer) < 5) ;
+			return 0;
+			break; // unnecessary
+	}
+	
+	setSamplingRateNormal();
+	if (isUnsupportedMode()) { // unsupported mode is probably 240p? no idea
+		printf("\n\nUnsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n");
+		VIDEO_WaitVSync();
+		u64 timer = gettime();
+		while (ticks_to_secs(gettime() - timer) < 5) ;
+		return 0;
+	}
 
 	// main loop of the program
 	while (true) {
@@ -147,13 +181,6 @@ int main(int argc, char **argv) {
 		// no idea why this has to be here, it gets reset after every run of this loop,
 		// probably something to do with re-initialising the framebuffers and stuff
 		setSamplingRateNormal();
-		if (isUnsupportedMode()) {
-			printf("\n\nUnsupported Video Mode\nPlease set your system to use NTSC/EuRGB60\n");
-			VIDEO_WaitVSync();
-			u64 timer = gettime();
-			while (ticks_to_secs(gettime() - timer) < 5) ;
-			break;
-		}
 		//SI_SetXY(240, 2);
 		
 		/*

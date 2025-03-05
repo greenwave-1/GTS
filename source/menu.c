@@ -236,6 +236,8 @@ bool menu_runMenu(void *currXfb) {
 			currentMenu = MAIN_MENU;
 			displayInstructions = false;
 			bHeldCounter = 0;
+			// stop rumble if it didn't get stopped before
+			PAD_ControlMotor(0, PAD_MOTOR_STOP);
 		}
 
 	} else {
@@ -257,8 +259,6 @@ bool menu_runMenu(void *currXfb) {
 }
 
 void menu_mainMenu() {
-	// stop rumble if it didn't get stopped before
-	PAD_ControlMotor(0, PAD_MOTOR_STOP);
 	int stickY = PAD_StickY(0);
 
 	// flags which tell whether the stick is held in an up or down position

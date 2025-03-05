@@ -17,7 +17,6 @@ void sendMessage(char *msg) {
 	}
 	
 	// a lot pulled from https://github.com/DacoTaco/priiloader/blob/master/src/priiloader/source/gecko.cpp
-	// TODO: there's probably something weird that can happen with strncpy and such here...
 	if (usb_isgeckoalive(EXI_CHANNEL_1) && tmp != sum) {
 		sum = tmp;
 		usb_flush(EXI_CHANNEL_1);

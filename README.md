@@ -30,7 +30,7 @@ adding more coordinates for testing
 
 ## Building:
 - Install devkitpro
-  - [Install devkitpro](https://devkitpro.org/wiki/devkitPro_pacman)
+  - [Follow the instructions for your device from here](https://devkitpro.org/wiki/devkitPro_pacman)
 - Install libogc2
   - [Add the extremscorner repo](https://github.com/extremscorner/pacman-packages#readme)
 - Run ```sudo (dkp-)pacman -S libogc2 libogc2-libdvm-git```
