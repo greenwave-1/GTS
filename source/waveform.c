@@ -105,7 +105,7 @@ void measureWaveform(WaveformData *data) {
 		data->endPoint++;
 
 		// have we overrun our array?
-		if (data->endPoint == WAVEFORM_SAMPLES - 1) {
+		if (data->endPoint == WAVEFORM_SAMPLES) {
 			break;
 		}
 

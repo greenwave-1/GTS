@@ -38,6 +38,7 @@ static enum CURRENT_MENU previousMenu = MAIN_MENU;
 
 // enum for what image to draw in 2d plot
 static enum IMAGE selectedImage = SNAPBACK;
+static int map2dStartIndex = 0;
 
 static enum STICKMAP_LIST selectedStickmap = NONE;
 // will be casted to whichever stickmap is selected
@@ -770,7 +771,7 @@ void menu_waveformMeasure(void *currXfb) {
 		
 		printf( "\x1b[6;0H");
 		// total time is stored in microseconds, divide by 1000 for milliseconds
-		printf("%u samples, %0.3f ms, starting sample: %d, visible time: %0.3f ms\n", data.endPoint + 1, (data.totalTimeUs / ((float) 1000)), dataScrollOffset + 1, (drawnTicksUs / ((float) 1000)));
+		printf("%u samples, %0.3f ms, starting sample: %d, visible time: %0.3f ms\n", data.endPoint, (data.totalTimeUs / ((float) 1000)), dataScrollOffset + 1, (drawnTicksUs / ((float) 1000)));
 
 		// print test data
 		printf( "\x1b[24;0H");
@@ -1010,10 +1011,20 @@ void menu_2dPlot(void *currXfb) {
 	// do we have data that we can display?
 	if (data.isDataReady) {
 		convertedCoords = convertStickValues(&data.data[lastDrawPoint]);
-		printf("%04u samples, last point is: %04d, ", data.endPoint + 1, lastDrawPoint + 1);
-		printf("Microsecs from last poll: %05llu", data.data[lastDrawPoint].timeDiffUs);
+		printf("%04u total samples", data.endPoint);
 		// TODO: move instructions under different prompt, so I don't have to keep messing with text placement
-
+		
+		printf("\x1b[8;0H");
+		printf("Start sample: %04u\n", map2dStartIndex + 1);
+		printf("End sample: %04u\n", lastDrawPoint + 1);
+		u64 timeFromStart = 0;
+		for (int i = map2dStartIndex; i <= lastDrawPoint; i++) {
+			timeFromStart += data.data[i].timeDiffUs;
+		}
+		float timeFromStartMs = timeFromStart / 1000.0;
+		printf("Total MS: %6.2f\n", timeFromStartMs);
+		printf("Total frames: %2.2f", timeFromStartMs / frameTime);
+		
 		// print coordinates of last drawn point
 		printf( "\x1b[24;0H");
 		printf("Raw X: %04d | Raw Y: %04d   |   ", data.data[lastDrawPoint].ax, data.data[lastDrawPoint].ay);
@@ -1046,27 +1057,27 @@ void menu_2dPlot(void *currXfb) {
 		switch (selectedImage) {
 			case A_WAIT:
 				printf("Wait Attacks");
-				drawImage(currXfb, await_image, await_indexes, SCREEN_POS_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
+				drawImage(currXfb, await_image, await_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 				break;
 			case CROUCH:
 				printf("Crouch");
-				drawImage(currXfb, crouch_image, crouch_indexes, SCREEN_POS_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
+				drawImage(currXfb, crouch_image, crouch_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 				break;
 			case DEADZONE:
 				printf("Deadzones");
-				drawImage(currXfb, deadzone_image, deadzone_indexes, SCREEN_POS_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
+				drawImage(currXfb, deadzone_image, deadzone_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 				break;
 			case LEDGE_L:
 				printf("Left Ledge");
-				drawImage(currXfb, ledgeL_image, ledgeL_indexes, SCREEN_POS_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
+				drawImage(currXfb, ledgeL_image, ledgeL_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 				break;
 			case LEDGE_R:
 				printf("Right Ledge");
-				drawImage(currXfb, ledgeR_image, ledgeR_indexes, SCREEN_POS_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
+				drawImage(currXfb, ledgeR_image, ledgeR_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 				break;
 			case MOVE_WAIT:
 				printf("Wait Movement");
-				drawImage(currXfb, movewait_image, movewait_indexes, SCREEN_POS_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
+				drawImage(currXfb, movewait_image, movewait_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 				break;
 			case NO_IMAGE:
 				printf("None");
@@ -1074,46 +1085,107 @@ void menu_2dPlot(void *currXfb) {
 				break;
 		}
 		printf("\n");
-
+		
+		// draw box around plot area
+		DrawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
+				COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
+				COLOR_WHITE, currXfb);
+		
+		
 		// draw plot
 		// y is negated because of how the graph is drawn
 		// TODO: why does this need to be <= to avoid an off-by-one? step through logic later this is bugging me
 		for (int i = 0; i <= lastDrawPoint; i++) {
-			DrawBox(SCREEN_POS_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
-					SCREEN_POS_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
-					COLOR_WHITE, currXfb);
+			if (i >= map2dStartIndex) {
+				DrawBox(COORD_CIRCLE_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
+				        COORD_CIRCLE_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
+				        COLOR_WHITE, currXfb);
+			} else {
+				DrawBox(COORD_CIRCLE_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
+				        COORD_CIRCLE_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
+				        COLOR_GRAY, currXfb);
+			}
 		}
 
+		// TODO: refactor this, its a mess
 		// does the user want to change what data is drawn?
 		// single movements with L
 		if (held & PAD_TRIGGER_L) {
 			if (pressed & PAD_BUTTON_RIGHT) {
-				if (lastDrawPoint + 1 < data.endPoint) {
-					lastDrawPoint++;
+				if (held & PAD_BUTTON_Y) {
+					if (map2dStartIndex + 1 < lastDrawPoint) {
+						map2dStartIndex++;
+					} else {
+						map2dStartIndex = lastDrawPoint;
+					}
+				} else {
+					if (lastDrawPoint + 1 < data.endPoint) {
+						lastDrawPoint++;
+					} else {
+						lastDrawPoint = data.endPoint - 1;
+					}
 				}
 			} else if (pressed & PAD_BUTTON_LEFT) {
-				if (lastDrawPoint - 1 >= 0) {
-					lastDrawPoint--;
+				if (held & PAD_BUTTON_Y) {
+					if (map2dStartIndex - 1 >= 0) {
+						map2dStartIndex--;
+					}
+				} else {
+					if (lastDrawPoint - 1 >= 0) {
+						lastDrawPoint--;
+					}
 				}
 			}
 		} else if (held & PAD_BUTTON_RIGHT) {
 			if (held & PAD_TRIGGER_R) {
-				if (lastDrawPoint + 5 < data.endPoint) {
-					lastDrawPoint += 5;
+				if (held & PAD_BUTTON_Y) {
+					if (map2dStartIndex + 5 < lastDrawPoint) {
+						map2dStartIndex += 5;
+					} else {
+						map2dStartIndex = lastDrawPoint;
+					}
+				} else {
+					if (lastDrawPoint + 5 < data.endPoint) {
+						lastDrawPoint += 5;
+					} else {
+						lastDrawPoint = data.endPoint - 1;
+					}
 				}
 			} else {
-				if (lastDrawPoint + 1 < data.endPoint) {
-					lastDrawPoint++;
+				if (held & PAD_BUTTON_Y) {
+					if (map2dStartIndex + 1 < lastDrawPoint) {
+						map2dStartIndex++;
+					}
+				} else {
+					if (lastDrawPoint + 1 < data.endPoint) {
+						lastDrawPoint++;
+					}
 				}
 			}
 		} else if (held & PAD_BUTTON_LEFT) {
 			if (held & PAD_TRIGGER_R) {
-				if (lastDrawPoint - 5 >= 0) {
-					lastDrawPoint -= 5;
+				if (held & PAD_BUTTON_Y) {
+					if (map2dStartIndex - 5 >= 0) {
+						map2dStartIndex -= 5;
+					} else {
+						map2dStartIndex = 0;
+					}
+				} else {
+					if (lastDrawPoint - 5 >= 0) {
+						lastDrawPoint -= 5;
+					} else {
+						lastDrawPoint = 0;
+					}
 				}
 			} else {
-				if (lastDrawPoint - 1 >= 0) {
-					lastDrawPoint--;
+				if (held & PAD_BUTTON_Y) {
+					if (map2dStartIndex - 1 >= 0) {
+						map2dStartIndex--;
+					}
+				} else {
+					if (lastDrawPoint - 1 >= 0) {
+						lastDrawPoint--;
+					}
 				}
 			}
 		}
@@ -1169,7 +1241,8 @@ void menu_waitingMeasure() {
 	}
 	measureWaveform(&data);
 	dataScrollOffset = 0;
-	lastDrawPoint = data.endPoint;
+	lastDrawPoint = data.endPoint - 1;
+	map2dStartIndex = 0;
 	assert(data.endPoint < 5000);
 	currentMenu = previousMenu;
 	displayedWaitingInputMessage = false;

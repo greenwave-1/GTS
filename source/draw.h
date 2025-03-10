@@ -2,8 +2,8 @@
 // Created on 2/14/25.
 //
 
-#ifndef FOSSSCOPE_R2_DRAW_H
-#define FOSSSCOPE_R2_DRAW_H
+#ifndef FOSSSCOPE_DRAW_H
+#define FOSSSCOPE_DRAW_H
 
 #include <gctypes.h>
 #include "stickmap_coordinates.h"
@@ -95,4 +95,4 @@ void DrawFilledBoxCenter(int x, int y, int rad, int color, void *xfb);
 // draw for tests in coordinate viewer
 void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which, void *xfb);
 
-#endif //FOSSSCOPE_R2_DRAW_H
+#endif //FOSSSCOPE_DRAW_H
