@@ -1011,10 +1011,10 @@ void menu_2dPlot(void *currXfb) {
 	// do we have data that we can display?
 	if (data.isDataReady) {
 		convertedCoords = convertStickValues(&data.data[lastDrawPoint]);
-		printf("%04u total samples", data.endPoint);
 		// TODO: move instructions under different prompt, so I don't have to keep messing with text placement
 		
-		printf("\x1b[8;0H");
+		printf("\x1b[7;0H");
+		printf("%04u total samples\n", data.endPoint);
 		printf("Start sample: %04u\n", map2dStartIndex + 1);
 		printf("End sample: %04u\n", lastDrawPoint + 1);
 		u64 timeFromStart = 0;
@@ -1026,10 +1026,11 @@ void menu_2dPlot(void *currXfb) {
 		printf("Total frames: %2.2f", timeFromStartMs / frameTime);
 		
 		// print coordinates of last drawn point
-		printf( "\x1b[24;0H");
-		printf("Raw X: %04d | Raw Y: %04d   |   ", data.data[lastDrawPoint].ax, data.data[lastDrawPoint].ay);
-		printf("Melee X: ");
-
+		printf( "\x1b[23;0H");
+		// print raw stick coordinates
+		printf("Stick Raw (X,Y): (%04d,%04d)\n", data.data[lastDrawPoint].ax, data.data[lastDrawPoint].ay);
+		//printf("Raw X: %04d | Raw Y: %04d   |   ", data.data[lastDrawPoint].ax, data.data[lastDrawPoint].ay);
+		printf("Stick Melee (X,Y): (");
 		// is the value negative?
 		if (data.data[lastDrawPoint].ax < 0) {
 			printf("-");
@@ -1040,17 +1041,20 @@ void menu_2dPlot(void *currXfb) {
 		} else {
 			printf("0.%04d", convertedCoords.ax);
 		}
-		printf(" | Melee Y: ");
+		printf(",");
+		
 		// is the value negative?
 		if (data.data[lastDrawPoint].ay < 0) {
 			printf("-");
 		}
 		// is this a 1.0 value?
 		if (convertedCoords.ay == 10000) {
-			printf("1.0\n");
+			printf("1.0");
 		} else {
-			printf("0.%04d\n", convertedCoords.ay);
+			printf("0.%04d", convertedCoords.ay);
 		}
+		printf(")");
+		printf( "\x1b[26;0H");
 		printf("Currently selected stickmap: ");
 
 		// draw image below 2d plot, and print while we're at it
@@ -1175,6 +1179,7 @@ void menu_2dPlot(void *currXfb) {
 						lastDrawPoint -= 5;
 					} else {
 						lastDrawPoint = 0;
+						map2dStartIndex = 0;
 					}
 				}
 			} else {
@@ -1188,6 +1193,12 @@ void menu_2dPlot(void *currXfb) {
 					}
 				}
 			}
+		}
+		
+		// hacky fix to make sure start isn't after end
+		// TODO: this should be fixed when the above is refactored
+		if (lastDrawPoint <= map2dStartIndex && lastDrawPoint != 0) {
+			map2dStartIndex = lastDrawPoint - 1;
 		}
 
 		// does the user want to change what stickmap is displayed?
