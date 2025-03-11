@@ -61,9 +61,9 @@ static const char* STICKMAP_SHIELDDROP_RETCOLORS[] = { "", "\x1b[42;1m\x1b[30;0m
 enum STICKMAP_SHIELDDROP_ENUM { SHIELDDROP_MISS, SHIELDDROP_VANILLA, SHIELDDROP_UCF_LOWER, SHIELDDROP_UCF_UPPER };
 static const int STICKMAP_SHIELDDROP_ENUM_LEN = 4;
 
-static const int STICKMAP_SHIELDDROP_COORD_VANILLA[][2] = { { 6875, 6625},
-                                                            { 6875, 6750},
-                                                            { 6875, 6875} };
+static const int STICKMAP_SHIELDDROP_COORD_VANILLA[][2] = { { 7375, 6625},
+                                                            { 7375, 6750},
+                                                            { 7250, 6875} };
 static const int STICKMAP_SHIELDDROP_COORD_VANILLA_LEN = 3;
 
 static const int STICKMAP_SHIELDDROP_COORD_UCF_LOWER[][2] = { { 7000, 7000 },

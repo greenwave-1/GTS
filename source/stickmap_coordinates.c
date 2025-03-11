@@ -32,10 +32,8 @@ int isCoordValid(enum STICKMAP_LIST test, WaveformDatapoint coords) {
 			if (coords.isAYNegative) {
 				// vanilla
 				for (int i = 0; i < STICKMAP_SHIELDDROP_COORD_VANILLA_LEN; i++) {
-					if ((coords.ax == STICKMAP_SHIELDDROP_COORD_VANILLA[i][0] &&
-					     coords.ay == STICKMAP_SHIELDDROP_COORD_VANILLA[i][1]) ||
-					    ((coords.ax * -1) == STICKMAP_SHIELDDROP_COORD_VANILLA[i][0] &&
-					     coords.ay == STICKMAP_SHIELDDROP_COORD_VANILLA[i][1])) {
+					if (coords.ay == STICKMAP_SHIELDDROP_COORD_VANILLA[i][1] ||
+					    (coords.ay * -1) == STICKMAP_SHIELDDROP_COORD_VANILLA[i][1]) {
 						ret = 1;
 						break;
 					}

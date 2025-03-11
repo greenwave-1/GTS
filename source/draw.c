@@ -306,16 +306,6 @@ void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which, void *currXfb) 
 					break;
 			}
 			
-			if (drawVanilla) {
-				for (int i = 0; i < STICKMAP_SHIELDDROP_COORD_VANILLA_LEN; i++) {
-					DrawFilledBoxCenter(toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][0]) + COORD_CIRCLE_CENTER_X,
-					                    toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][1]) + SCREEN_POS_CENTER_Y,
-					                    2, COLOR_LIME, currXfb);
-					DrawFilledBoxCenter(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][0]),
-					                    toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][1]) + SCREEN_POS_CENTER_Y,
-					                    2, COLOR_LIME, currXfb);
-				}
-			}
 			if (drawUCFUpper) {
 				for (int i = 0; i < STICKMAP_SHIELDDROP_COORD_UCF_UPPER_LEN; i++) {
 					DrawFilledBoxCenter(toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_UPPER[i][0]) + COORD_CIRCLE_CENTER_X,
@@ -334,6 +324,16 @@ void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which, void *currXfb) 
 					DrawFilledBoxCenter(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_LOWER[i][0]),
 					                    toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_LOWER[i][1]) + SCREEN_POS_CENTER_Y,
 					                    2, COLOR_BLUE, currXfb);
+				}
+			}
+			if (drawVanilla) {
+				for (int i = 0; i < STICKMAP_SHIELDDROP_COORD_VANILLA_LEN; i++) {
+					DrawHLine(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][0]) - 1,
+					          toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][0]) + COORD_CIRCLE_CENTER_X + 1,
+					          toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][1]) + SCREEN_POS_CENTER_Y, COLOR_LIME, currXfb);
+					DrawHLine(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][0]) - 1,
+					          toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][0]) + COORD_CIRCLE_CENTER_X + 1,
+					          toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][1]) + SCREEN_POS_CENTER_Y + 1, COLOR_LIME, currXfb);
 				}
 			}
 			break;
