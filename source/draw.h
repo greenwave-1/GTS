@@ -60,7 +60,7 @@
 #define CONT_TEST_DPAD_LONG 25
 #define CONT_TEST_DPAD_SHORT 10
 #define CONT_TEST_DPAD_UP_X1 250
-#define CONT_TEST_DPAD_UP_Y1 230
+#define CONT_TEST_DPAD_UP_Y1 250
 #define CONT_TEST_DPAD_DOWN_Y1 (CONT_TEST_DPAD_UP_Y1 + CONT_TEST_DPAD_LONG + CONT_TEST_DPAD_SHORT) // up and down share x1
 #define CONT_TEST_DPAD_LEFT_X1 (CONT_TEST_DPAD_UP_X1 - CONT_TEST_DPAD_LONG)
 #define CONT_TEST_DPAD_LEFT_Y1 (CONT_TEST_DPAD_UP_Y1 + CONT_TEST_DPAD_LONG)
@@ -69,10 +69,10 @@
 // Sticks
 // Analog Stick
 #define CONT_TEST_STICK_RAD 40 // analog and c stick
-#define CONT_TEST_STICK_CENTER_X 150
+#define CONT_TEST_STICK_CENTER_X 180
 #define CONT_TEST_STICK_CENTER_Y 150
-#define CONT_TEST_CSTICK_CENTER_X 360
-#define CONT_TEST_CSTICK_CENTER_Y 260
+#define CONT_TEST_CSTICK_CENTER_X 380
+#define CONT_TEST_CSTICK_CENTER_Y 280
 
 
 // draw functions
@@ -91,6 +91,7 @@ void DrawDot (int x, int y, int color, void *xfb);
 void DrawCircle (int cx, int cy, int r, int color, void *xfb);
 void DrawFilledCircle(int cx, int cy, int r, int interval, int color, void *xfb);
 void DrawFilledBoxCenter(int x, int y, int rad, int color, void *xfb);
+void DrawOctagonalGate(int x, int y, int scale, int color, void *xfb);
 
 // draw for tests in coordinate viewer
 void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which, void *xfb);

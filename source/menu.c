@@ -624,18 +624,20 @@ void menu_controllerTest(void *currXfb) {
 	xfbCoordCY += CONT_TEST_CSTICK_CENTER_Y;
 	
 	// analog stick
-	DrawCircle(CONT_TEST_STICK_CENTER_X, CONT_TEST_STICK_CENTER_Y, CONT_TEST_STICK_RAD,
-			   COLOR_GRAY, currXfb); // perimeter
+	DrawOctagonalGate(CONT_TEST_STICK_CENTER_X, CONT_TEST_STICK_CENTER_Y, 2, COLOR_GRAY, currXfb); // perimeter
 	DrawLine(CONT_TEST_STICK_CENTER_X, CONT_TEST_STICK_CENTER_Y,
-			 xfbCoordX, xfbCoordY, COLOR_SILVER, currXfb); // line from center
-	DrawFilledCircle(xfbCoordX, xfbCoordY, CONT_TEST_STICK_RAD / 2, 5, COLOR_WHITE, currXfb); // smaller circle
+	         CONT_TEST_STICK_CENTER_X + (stickCoordinatesRaw.ax / 2), CONT_TEST_STICK_CENTER_Y - (stickCoordinatesRaw.ay / 2),
+			 COLOR_SILVER, currXfb); // line from center
+	DrawFilledCircle(CONT_TEST_STICK_CENTER_X + (stickCoordinatesRaw.ax / 2), CONT_TEST_STICK_CENTER_Y - (stickCoordinatesRaw.ay / 2),
+					 CONT_TEST_STICK_RAD / 2, 5, COLOR_WHITE, currXfb); // smaller circle
 	
 	// c-stick
-	DrawCircle(CONT_TEST_CSTICK_CENTER_X, CONT_TEST_CSTICK_CENTER_Y, CONT_TEST_STICK_RAD,
-	           COLOR_GRAY, currXfb); // perimeter
+	DrawOctagonalGate(CONT_TEST_CSTICK_CENTER_X, CONT_TEST_CSTICK_CENTER_Y, 2, COLOR_GRAY, currXfb); // perimeter
 	DrawLine(CONT_TEST_CSTICK_CENTER_X, CONT_TEST_CSTICK_CENTER_Y,
-	         xfbCoordCX, xfbCoordCY, COLOR_MEDGRAY, currXfb); // line from center
-	DrawFilledCircle(xfbCoordCX, xfbCoordCY, CONT_TEST_STICK_RAD / 2, 1, COLOR_YELLOW, currXfb);
+	         CONT_TEST_CSTICK_CENTER_X + (stickCoordinatesRaw.cx / 2), CONT_TEST_CSTICK_CENTER_Y - (stickCoordinatesRaw.cy / 2),
+	         COLOR_MEDGRAY, currXfb); // line from center
+	DrawFilledCircle(CONT_TEST_CSTICK_CENTER_X + (stickCoordinatesRaw.cx / 2), CONT_TEST_CSTICK_CENTER_Y - (stickCoordinatesRaw.cy / 2),
+	                 CONT_TEST_STICK_RAD / 2, 1, COLOR_YELLOW, currXfb); // smaller circle
 }
 
 void menu_waveformMeasure(void *currXfb) {

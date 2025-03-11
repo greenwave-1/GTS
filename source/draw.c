@@ -207,6 +207,36 @@ void DrawFilledBoxCenter(int x, int y, int rad, int color, void *xfb) {
 	DrawFilledBox(topLeftX, topLeftY, x + rad, y + rad, color, xfb);
 }
 
+void DrawOctagonalGate(int x, int y, int scale, int color, void *xfb) {
+	const int CARDINAL_MAX = 100 / scale;
+	const int DIAGONAL_MAX = 74 / scale;
+	// analog stick
+	DrawLine(x - CARDINAL_MAX, y,
+	         x - DIAGONAL_MAX, y - DIAGONAL_MAX,
+	         color, xfb);
+	DrawLine(x - DIAGONAL_MAX, y - DIAGONAL_MAX,
+	         x, y - CARDINAL_MAX,
+	         color, xfb);
+	DrawLine(x, y - CARDINAL_MAX,
+	         x + DIAGONAL_MAX, y - DIAGONAL_MAX,
+	         color, xfb);
+	DrawLine(x + DIAGONAL_MAX, y - DIAGONAL_MAX,
+	         x + CARDINAL_MAX, y,
+	         color, xfb);
+	DrawLine(x - CARDINAL_MAX, y,
+	         x - DIAGONAL_MAX, y + DIAGONAL_MAX,
+	         color, xfb);
+	DrawLine(x - DIAGONAL_MAX, y + DIAGONAL_MAX,
+	         x, y + CARDINAL_MAX,
+	         color, xfb);
+	DrawLine(x, y + CARDINAL_MAX,
+	         x + DIAGONAL_MAX, y + DIAGONAL_MAX,
+	         color, xfb);
+	DrawLine(x + DIAGONAL_MAX, y + DIAGONAL_MAX,
+	         x + CARDINAL_MAX, y,
+	         color, xfb);
+}
+
 void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which, void *currXfb) {
 	switch (stickmap) {
 		case (FF_WD):
