@@ -11,6 +11,7 @@
 #include "waveform.h"
 #include "images/stickmaps.h"
 #include "draw.h"
+#include "print.h"
 #include "export.h"
 #include "stickmap_coordinates.h"
 
@@ -77,11 +78,15 @@ static u32 padsConnected = 0;
 static PADStatus origin[PAD_CHANMAX];
 static bool originRead = false;
 
+// buffer for strings with numbers and stuff
+static char strBuffer[100];
 
 // the "main" for the menus
 // other menu functions are called from here
 // this also handles moving between menus and exiting
 bool menu_runMenu(void *currXfb) {
+	memset(strBuffer, '\0', sizeof(strBuffer));
+	resetCursor();
 	// read inputs
 	padsConnected = PAD_ScanPads();
 	
@@ -90,20 +95,19 @@ bool menu_runMenu(void *currXfb) {
 		PAD_GetOrigin(origin);
 		originRead = true;
 	}
-
-	// reset console cursor position
-	printf("\x1b[3;0H");
-	printf("FossScope (Working Title)");
+	
+	printStr("FossScope (Working Title)", currXfb);
 	if ((padsConnected & 1) == 0) {
-		printf("                             Controller Disconnected!");
+		setCursorPos(0, 38);
+		printStr("Controller Disconnected!", currXfb);
 		data.isDataReady = false;
 		originRead = false;
 	}
 	if (data.isDataReady) {
-		printf("                      Oscilloscope capture in memory!");
+		setCursorPos(0, 31);
+		printStr("Oscilloscope Capture in memory!", currXfb);
 	}
-	printf("\n\n");
-	
+	setCursorPos(2, 0);
 	
 	// check for any buttons pressed/held
 	pressed = PAD_ButtonsDown(0);
@@ -112,44 +116,42 @@ bool menu_runMenu(void *currXfb) {
 	// determine what menu we are in
 	switch (currentMenu) {
 		case MAIN_MENU:
-			menu_mainMenu();
+			menu_mainMenu(currXfb);
 			break;
 		case CONTROLLER_TEST:
 			menu_controllerTest(currXfb);
 			break;
 		case WAVEFORM:
 			if (displayInstructions) {
-				printf("Press X to cycle the current test, results will show above the waveform.\n"
-					   "Use DPAD left/right to scroll waveform when it is larger than the\n"
-					   "displayed area, hold R to move faster.\n\n");
-				printf("CURRENT TEST: ");
+				printStr("Press X to cycle the current test, results will show above the waveform. "
+					   "Use DPAD left/right to scroll waveform when it is\nlarger than the "
+					   "displayed area, hold R to move faster.", currXfb);
+				printStr("\n\nCURRENT TEST: ", currXfb);
 				switch (currentTest) {
 					case SNAPBACK:
-						printf("SNAPBACK\nCheck the min/max value on a given axis depending on where your\n"
-						        "stick started. If you moved the stick left, check the Max value on a given\n"
-						        "axis. Snapback can occur when the max value is at or above 23. If right,\n"
-						        "then at or below -23.");
+						printStr("SNAPBACK\nCheck the min/max value on a given axis depending on where\nyour "
+						        "stick started. If you moved the stick left, check the\nMax value on a given "
+						        "axis. Snapback can occur when the\nmax value is at or above 23. If right, "
+						        "then at or below -23.", currXfb);
 						break;
 					case PIVOT:
-						printf("PIVOT\nFor a successful pivot, you want the stick's position to stay\n"
-						       "above/below +64/-64 for ~16.6ms (1 frame). Less, and you might get nothing,\n"
-						       "more, and you might get a dashback. You also need the stick to hit 80/-80 on\n"
-							   "both sides. Check the PhobVision docs for more info.");
+						printStr("PIVOT\nFor a successful pivot, you want the stick's position to stay "
+						       "above/below +64/-64 for ~16.6ms (1 frame). Less, and you might get nothing, "
+						       "more, and you might get a dashback. You also need the stick to hit 80/-80 on "
+							   "both sides.\nCheck the PhobVision docs for more info.", currXfb);
 						break;
 					case DASHBACK:
-						printf("DASHBACK\nA (vanilla) dashback will be successful when the stick doesn't get\n"
-						"polled between 23 and 64, or -23 and -64. Less time in this range is better.");
+						printStr("DASHBACK\nA (vanilla) dashback will be successful when the stick doesn't get "
+						"polled between 23 and 64, or -23 and -64.\nLess time in this range is better.", currXfb);
 						break;
 					case FULL:
-						printf("FULL MEASURE\nNot an actual test.\nWill fill the input buffer always,"
-							   " useful for longer inputs.");
+						printStr("FULL MEASURE\nNot an actual test.\nWill fill the input buffer always,"
+							   " useful for longer inputs.", currXfb);
 						break;
 					default:
-						printf("NO TEST SELECTED");
+						printStr("NO TEST SELECTED", currXfb);
 						break;
 				}
-				printf( "\x1b[25;0H");
-				printf("Press Z to close instructions.");
 			} else {
 				menu_waveformMeasure(currXfb);
 			}
@@ -157,60 +159,61 @@ bool menu_runMenu(void *currXfb) {
 			break;
 		case PLOT_2D:
 			if (displayInstructions) {
-				printf("Press X to cycle the stickmap background. Use DPAD left/right to change\n"
-					   "what the last point drawn is. Information on the last chosen point is\n"
-					   "displayed at the bottom. Hold R to add or remove points faster.\n"
-					   "Hold L to move one point at a time.");
-				printf( "\x1b[25;0H");
-				printf("Press Z to close instructions.");
+				printStr("Press X to cycle the stickmap background. Use DPAD\nleft/right to change "
+					   "what the last point drawn is.\nInformation on the last chosen point is "
+					   "displayed\nat the bottom. Hold R to add or remove points faster.\n"
+					   "Hold L to move one point at a time.\n\nHold Y to move the \"starting sample\" with the\n"
+					   "same controls as above. Information for the selected\nrange is shown on the left.", currXfb);
 			} else {
 				menu_2dPlot(currXfb);
 			}
 			break;
 		case FILE_EXPORT:
-			menu_fileExport();
+			menu_fileExport(currXfb);
 			break;
 		case WAITING_MEASURE:
-			menu_waitingMeasure();
+			menu_waitingMeasure(currXfb);
 			break;
 		case COORD_MAP:
 			if (displayInstructions) {
-				printf("Press X to cycle the stickmap being tested, and Y to cycle which\n"
-					   "category of points. Melee Coordinates are shown in the top-left.\n\n"
-					   "The white line with an unfilled box represents the analog stick.\n"
-					   "The yellow line with a filled box represents the c-stick.\n\n"
-					   "Current Stickmap: ");
+				printStr("Press X to cycle the stickmap being tested, and Y to cycle\nwhich "
+					   "category of points.\nMelee Coordinates are shown in thetop-left.\n\n"
+					   "The white line represents the analog stick.\n"
+					   "The yellow line represents the c-stick.\n\n"
+					   "Current Stickmap: ", currXfb);
 				switch (selectedStickmap) {
 					case FF_WD:
-						printf("Firefox / Wavedash\n");
-						printf("%s", STICKMAP_FF_WD_DESC);
+						printStr("Firefox / Wavedash\n", currXfb);
+						printStr(STICKMAP_FF_WD_DESC, currXfb);
 						break;
 					case SHIELDDROP:
-						printf("Shield Drop\n");
-						printf("%s", STICKMAP_SHIELDDROP_DESC);
+						printStr("Shield Drop\n", currXfb);
+						printStr(STICKMAP_SHIELDDROP_DESC, currXfb);
 						break;
 					case NONE:
 					default:
-						printf("None\n");
+						printStr("None\n", currXfb);
 						break;
 				}
-				printf( "\x1b[25;0H");
-				printf("Press Z to close instructions.");
 			} else {
 				menu_coordinateViewer(currXfb);
 			}
 			break;
 		default:
-			printf("HOW DID WE END UP HERE?\n");
+			printStr("HOW DID WE END UP HERE?\n", currXfb);
 			break;
+	}
+	if (displayInstructions) {
+		setCursorPos(21, 0);
+		printStr("Press Z to close instructions.", currXfb);
 	}
 
 	// move cursor to bottom left
-	printf( "\x1b[27;0H");
+	setCursorPos(23, 0);
 
 	// exit the program if start is pressed
 	if (pressed & PAD_BUTTON_START && currentMenu == MAIN_MENU) {
-		printf("Exiting...");
+		printStr("Exiting...", currXfb);
 		return true;
 	}
 
@@ -219,17 +222,15 @@ bool menu_runMenu(void *currXfb) {
 		bHeldCounter++;
 
 		// give user feedback that they are holding the button
-		printf("Moving back to main menu");
+		printStr("Moving back to main menu", currXfb);
 
 		// TODO: I know there's a better way to do this but I can't think of it right now...
 		if (bHeldCounter > 15) {
-			printf(".");
-		}
-		if (bHeldCounter > 30) {
-			printf(".");
-		}
-		if (bHeldCounter > 45) {
-			printf(".");
+			printStr(".", currXfb);
+		} else if (bHeldCounter > 30) {
+			printStr(".", currXfb);
+		} else if (bHeldCounter > 45) {
+			printStr(".", currXfb);
 		}
 
 		// has the button been held long enough?
@@ -249,9 +250,9 @@ bool menu_runMenu(void *currXfb) {
 			}
 		}
 		if (currentMenu != MAIN_MENU) {
-			printf("Hold B to return to main menu.");
+			printStr("Hold B to return to main menu.", currXfb);
 		} else {
-			printf("Press Start to exit.");
+			printStr("Press Start to exit.", currXfb);
 		}
 		bHeldCounter = 0;
 	}
@@ -259,7 +260,7 @@ bool menu_runMenu(void *currXfb) {
 	return false;
 }
 
-void menu_mainMenu() {
+void menu_mainMenu(void *currXfb) {
 	int stickY = PAD_StickY(0);
 
 	// flags which tell whether the stick is held in an up or down position
@@ -271,19 +272,15 @@ void menu_mainMenu() {
 	
 	// iterate over the menu items array as defined in menu.c
 	for (int i = 0; i < MENUITEMS_LEN; i++) {
+		setCursorPos(2 + i, 0);
 		// is the item we're about to print the currently selected menu?
 		if (mainMenuSelection == i) {
-			printf(" > ");
+			printStr("> ", currXfb);
 		} else {
-			printf("   ");
+			setCursorPos(2 + i, 2);
 		}
+		printStr(menuItems[i], currXfb);
 
-		//iterate over an individual string from the array
-		const int len = strlen(menuItems[i]);
-		for (int j = 0; j < len; j++) {
-			printf("%c", menuItems[i][j]);
-		}
-		printf("\n");
 	}
 
 	// does the user move the cursor?
@@ -342,68 +339,86 @@ void menu_controllerTest(void *currXfb) {
 	stickCoordinatesMelee = convertStickValues(&stickCoordinatesRaw);
 	
 	// print raw stick coordinates
-	printf("\x1b[24;0H");
-	printf("Stick Raw (X,Y): (%04d,%04d)", stickCoordinatesRaw.ax, stickCoordinatesRaw.ay);
-	printf("\x1b[24;40H");
-	printf("C-Stick Raw (X,Y): (%04d,%04d)", stickCoordinatesRaw.cx, stickCoordinatesRaw.cy);
+	setCursorPos(20, 0);
+	sprintf(strBuffer, "Raw XY: (%04d,%04d)", stickCoordinatesRaw.ax, stickCoordinatesRaw.ay);
+	printStr(strBuffer, currXfb);
+	setCursorPos(20, 38);
+	sprintf(strBuffer, "C-Raw XY: (%04d,%04d)", stickCoordinatesRaw.cx, stickCoordinatesRaw.cy);
+	printStr(strBuffer, currXfb);
 	
 	// print melee coordinates
-	printf("\x1b[25;0H");
-	printf("Stick Melee (X,Y): (");
+	setCursorPos(21, 0);
+	printStr("Melee: (", currXfb);
 	// is the value negative?
 	if (stickCoordinatesRaw.ax < 0) {
-		printf("-");
+		printStr("-", currXfb);
+	} else {
+		printStr("0", currXfb);
 	}
 	// is this a 1.0 value?
 	if (stickCoordinatesMelee.ax == 10000) {
-		printf("1.0");
+		printStr("1.0000", currXfb);
 	} else {
-		printf("0.%04d", stickCoordinatesMelee.ax);
+		sprintf(strBuffer, "0.%04d", stickCoordinatesMelee.ax);
+		printStr(strBuffer, currXfb);
 	}
-	printf(",");
+	printStr(",", currXfb);
 	
 	// is the value negative?
 	if (stickCoordinatesRaw.ay < 0) {
-		printf("-");
+		printStr("-", currXfb);
+	} else {
+		printStr("0", currXfb);
 	}
 	// is this a 1.0 value?
 	if (stickCoordinatesMelee.ay == 10000) {
-		printf("1.0");
+		printStr("1.0000", currXfb);
 	} else {
-		printf("0.%04d", stickCoordinatesMelee.ay);
+		sprintf(strBuffer, "0.%04d", stickCoordinatesMelee.ay);
+		printStr(strBuffer, currXfb);
 	}
-	printf(")");
+	printStr(")", currXfb);
 	
-	printf("\x1b[25;40H");
-	printf("C-Stick Melee (X,Y): (");
+	setCursorPos(21, 33);
+	sprintf(strBuffer, "C-Melee: (");
+	printStr(strBuffer, currXfb);
 	// is the value negative?
 	if (stickCoordinatesRaw.cx < 0) {
-		printf("-");
+		printStr("-", currXfb);
+	} else {
+		printStr("0", currXfb);
 	}
 	// is this a 1.0 value?
 	if (stickCoordinatesMelee.cx == 10000) {
-		printf("1.0");
+		printStr("1.0000", currXfb);
 	} else {
-		printf("0.%04d", stickCoordinatesMelee.cx);
+		sprintf(strBuffer, "0.%04d", stickCoordinatesMelee.cx);
+		printStr(strBuffer, currXfb);
 	}
-	printf(",");
+	printStr(",", currXfb);
+	
 	// is the value negative?
 	if (stickCoordinatesRaw.cy < 0) {
-		printf("-");
+		printStr("-", currXfb);
+	} else {
+		printStr("0", currXfb);
 	}
 	// is this a 1.0 value?
 	if (stickCoordinatesMelee.cy == 10000) {
-		printf("1.0");
+		printStr("1.0000", currXfb);
 	} else {
-		printf("0.%04d", stickCoordinatesMelee.cy);
+		sprintf(strBuffer, "0.%04d", stickCoordinatesMelee.cy);
+		printStr(strBuffer, currXfb);
 	}
-	printf(")");
+	printStr(")", currXfb);
 	
 	if (originRead) {
-		printf("\x1b[26;0H");
-		printf("Stick Origin (X,Y): %04d, %04d", origin[0].stickX, origin[0].stickY);
-		printf("\x1b[26;40H");
-		printf("C-Stick Origin (X,Y): %04d, %04d", origin[0].substickX, origin[0].substickY);
+		setCursorPos(22, 0);
+		sprintf(strBuffer, "Origin XY: (%04d,%04d)", origin[0].stickX, origin[0].stickY);
+		printStr(strBuffer, currXfb);
+		setCursorPos(22, 35);
+		sprintf(strBuffer, "C-Origin XY: (%04d,%04d)", origin[0].substickX, origin[0].substickY);
+		printStr(strBuffer, currXfb);
 	}
 	
 
@@ -412,99 +427,94 @@ void menu_controllerTest(void *currXfb) {
 
     // A
 	if (held & PAD_BUTTON_A) {
-		printf("\x1b[30;0m\x1b[47;1m");
 		DrawFilledBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_A_Y1,
 					  CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_A_SIZE, CONT_TEST_BUTTON_A_Y1 + CONT_TEST_BUTTON_A_SIZE,
 					  COLOR_WHITE, currXfb);
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_A_X1 + 12, CONT_TEST_BUTTON_A_Y1 + 8, COLOR_BLACK, 'A');
 	} else {
 		DrawBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_A_Y1,
 		        CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_A_SIZE, CONT_TEST_BUTTON_A_Y1 + CONT_TEST_BUTTON_A_SIZE,
 		        COLOR_WHITE, currXfb);
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_A_X1 + 12, CONT_TEST_BUTTON_A_Y1 + 8, COLOR_WHITE, 'A');
     }
-	printf("\x1b[10;54H");
-	printf("A");
-	printf("\x1b[37;1m\x1b[40;0m");
 	
     // B
 	if (held & PAD_BUTTON_B) {
-		printf("\x1b[30;0m\x1b[47;1m");
 		DrawFilledBox(CONT_TEST_BUTTON_B_X1, CONT_TEST_BUTTON_B_Y1,
 		              CONT_TEST_BUTTON_B_X1 + CONT_TEST_BUTTON_B_SIZE, CONT_TEST_BUTTON_B_Y1 + CONT_TEST_BUTTON_B_SIZE,
 		              COLOR_WHITE, currXfb);
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_B_X1 + 8, CONT_TEST_BUTTON_B_Y1 + 5, COLOR_BLACK, 'B');
 	} else {
 		DrawBox(CONT_TEST_BUTTON_B_X1, CONT_TEST_BUTTON_B_Y1,
 		        CONT_TEST_BUTTON_B_X1 + CONT_TEST_BUTTON_B_SIZE, CONT_TEST_BUTTON_B_Y1 + CONT_TEST_BUTTON_B_SIZE,
 		        COLOR_WHITE, currXfb);
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_B_X1 + 8, CONT_TEST_BUTTON_B_Y1 + 5, COLOR_WHITE, 'B');
 	}
-	printf("\x1b[11;49H");
-	printf("B");
-	printf("\x1b[37;1m\x1b[40;0m");
 
 	// X
 	if (held & PAD_BUTTON_X) {
-		printf("\x1b[30;0m\x1b[47;1m");
 		DrawFilledBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_X_Y1,
 		              CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_X_Y1 + CONT_TEST_BUTTON_XY_LONG,
 		              COLOR_WHITE, currXfb);
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_Z_X1 + 7, CONT_TEST_BUTTON_X_Y1 + 8, COLOR_BLACK, 'X');
 	} else {
 		DrawBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_X_Y1,
 		        CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_X_Y1 + CONT_TEST_BUTTON_XY_LONG,
 		        COLOR_WHITE, currXfb);
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_Z_X1 + 7, CONT_TEST_BUTTON_X_Y1 + 8, COLOR_WHITE, 'X');
 	}
-	printf("\x1b[10;59H");
-	printf("X");
-	printf("\x1b[37;1m\x1b[40;0m");
 
 	// Y
 	if (held & PAD_BUTTON_Y) {
-		printf("\x1b[30;0m\x1b[47;1m");
 		DrawFilledBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_Y_Y1,
 		              CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_XY_LONG, CONT_TEST_BUTTON_Y_Y1 + CONT_TEST_BUTTON_XY_SHORT,
 		              COLOR_WHITE, currXfb);
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_A_X1 + 12, CONT_TEST_BUTTON_Y_Y1 + 4, COLOR_BLACK, 'Y');
 	} else {
 		DrawBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_Y_Y1,
 		        CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_XY_LONG, CONT_TEST_BUTTON_Y_Y1 + CONT_TEST_BUTTON_XY_SHORT,
 		        COLOR_WHITE, currXfb);
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_A_X1 + 12, CONT_TEST_BUTTON_Y_Y1 + 4, COLOR_WHITE, 'Y');
 	}
-	printf("\x1b[8;54H");
-	printf("Y");
-	printf("\x1b[37;1m\x1b[40;0m");
 
     // Z
 	if (held & PAD_TRIGGER_Z) {
-		printf("\x1b[30;0m\x1b[47;1m");
 		DrawFilledBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_Z_Y1,
 		              CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_Z_Y1 + CONT_TEST_BUTTON_XY_SHORT,
 		              COLOR_WHITE, currXfb);
-		
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_Z_X1 + 7, CONT_TEST_BUTTON_Z_Y1 + 4, COLOR_BLACK, 'Z');
 		// also enable rumble if z is held
 		PAD_ControlMotor(0, PAD_MOTOR_RUMBLE);
 	} else {
 		DrawBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_Z_Y1,
 		        CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_Z_Y1 + CONT_TEST_BUTTON_XY_SHORT,
 		        COLOR_WHITE, currXfb);
-		
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_Z_X1 + 7, CONT_TEST_BUTTON_Z_Y1 + 4, COLOR_WHITE, 'Z');
 		// stop rumble if z is not held
 		PAD_ControlMotor(0, PAD_MOTOR_STOP);
 	}
-	printf("\x1b[8;59H");
-	printf("Z");
-	printf("\x1b[37;1m\x1b[40;0m");
 
 	// Start
 	if (held & PAD_BUTTON_START) {
-		printf("\x1b[30;0m\x1b[47;1m");
 		DrawFilledBox(CONT_TEST_BUTTON_START_X1, CONT_TEST_BUTTON_START_Y1,
 		              CONT_TEST_BUTTON_START_X1 + CONT_TEST_BUTTON_START_LEN, CONT_TEST_BUTTON_START_Y1 + CONT_TEST_BUTTON_START_WIDTH,
 		              COLOR_WHITE, currXfb);
+		// TODO: this is ugly
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 7, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'S');
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 17, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'T');
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 27, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'A');
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 37, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'R');
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 47, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'T');
 	} else {
 		DrawBox(CONT_TEST_BUTTON_START_X1, CONT_TEST_BUTTON_START_Y1,
 		        CONT_TEST_BUTTON_START_X1 + CONT_TEST_BUTTON_START_LEN, CONT_TEST_BUTTON_START_Y1 + CONT_TEST_BUTTON_START_WIDTH,
 		        COLOR_WHITE, currXfb);
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 7, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'S');
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 17, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'T');
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 27, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'A');
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 37, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'R');
+		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 47, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'T');
 	}
-	printf("\x1b[8;38H");
-	printf("START");
-	printf("\x1b[37;1m\x1b[40;0m");
 	
 	// DPad
 	// up
@@ -567,20 +577,22 @@ void menu_controllerTest(void *currXfb) {
 				CONT_TEST_TRIGGER_L_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
 				COLOR_RED, currXfb);
 	}
-
-
-	printf( "\x1b[21;5H");
-	printf("Analog L: %d", PAD_TriggerL(0));
+	
+	
+	setCursorPos(17,2);
+	sprintf(strBuffer, "Analog L: %d", PAD_TriggerL(0));
+	printStr(strBuffer, currXfb);
 	if (held & PAD_TRIGGER_L) {
-		printf("\x1b[22;5H");
-		printf("Digital L Pressed");
+		setCursorPos(18, 2);
+		printStr("Digital L Pressed", currXfb);
 	}
 	
-	printf( "\x1b[21;60H");
-	printf("Analog R: %d", PAD_TriggerR(0));
+	setCursorPos(17,44);
+	sprintf(strBuffer, "Analog R: %d", PAD_TriggerR(0));
+	printStr(strBuffer, currXfb);
 	if (held & PAD_TRIGGER_R) {
-		printf("\x1b[22;56H");
-		printf("Digital R Pressed");
+		setCursorPos(18, 40);
+		printStr("Digital R Pressed", currXfb);
 	}
 	
 	// Analog R Slider
@@ -628,8 +640,9 @@ void menu_controllerTest(void *currXfb) {
 	DrawLine(CONT_TEST_STICK_CENTER_X, CONT_TEST_STICK_CENTER_Y,
 	         CONT_TEST_STICK_CENTER_X + (stickCoordinatesRaw.ax / 2), CONT_TEST_STICK_CENTER_Y - (stickCoordinatesRaw.ay / 2),
 			 COLOR_SILVER, currXfb); // line from center
-	DrawFilledCircle(CONT_TEST_STICK_CENTER_X + (stickCoordinatesRaw.ax / 2), CONT_TEST_STICK_CENTER_Y - (stickCoordinatesRaw.ay / 2),
-					 CONT_TEST_STICK_RAD / 2, 5, COLOR_WHITE, currXfb); // smaller circle
+	for (int i = CONT_TEST_STICK_RAD / 2; i > 0; i -= 5) {
+		DrawCircle(CONT_TEST_STICK_CENTER_X + (stickCoordinatesRaw.ax / 2), CONT_TEST_STICK_CENTER_Y - (stickCoordinatesRaw.ay / 2), i, COLOR_WHITE, currXfb);
+	} // smaller circle
 	
 	// c-stick
 	DrawOctagonalGate(CONT_TEST_CSTICK_CENTER_X, CONT_TEST_CSTICK_CENTER_Y, 2, COLOR_GRAY, currXfb); // perimeter
@@ -637,14 +650,14 @@ void menu_controllerTest(void *currXfb) {
 	         CONT_TEST_CSTICK_CENTER_X + (stickCoordinatesRaw.cx / 2), CONT_TEST_CSTICK_CENTER_Y - (stickCoordinatesRaw.cy / 2),
 	         COLOR_MEDGRAY, currXfb); // line from center
 	DrawFilledCircle(CONT_TEST_CSTICK_CENTER_X + (stickCoordinatesRaw.cx / 2), CONT_TEST_CSTICK_CENTER_Y - (stickCoordinatesRaw.cy / 2),
-	                 CONT_TEST_STICK_RAD / 2, 1, COLOR_YELLOW, currXfb); // smaller circle
+	                 CONT_TEST_STICK_RAD / 2, COLOR_YELLOW, currXfb); // smaller circle
 }
 
 void menu_waveformMeasure(void *currXfb) {
 	// TODO: I would bet that there's an off-by-one in here somewhere...
 
 	// display instructions and data for user
-	printf("Press A to start read, press Z for instructions\n");
+	printStr("Press A to start read, press Z for instructions\n", currXfb);
 
 	// do we have data that we can display?
 	if (data.isDataReady) {
@@ -660,26 +673,26 @@ void menu_waveformMeasure(void *currXfb) {
 			case PIVOT:
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
-				printf( "\x1b[11;0H");
-				printf("+64");
-				printf( "\x1b[19;0H");
-				printf("-64");
+				setCursorPos(8, 0);
+				printStr("+64", currXfb);
+				setCursorPos(15, 0);
+				printStr("-64", currXfb);
 				break;
 			case FULL:
 			case DASHBACK:
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
-				printf( "\x1b[11;0H");
-				printf("+64");
-				printf( "\x1b[19;0H");
-				printf("-64");
+				setCursorPos(8, 0);
+				printStr("+64", currXfb);
+				setCursorPos(15, 0);
+				printStr("-64", currXfb);
 			case SNAPBACK:
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, COLOR_GREEN, currXfb);
 				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, COLOR_GREEN, currXfb);
-				printf( "\x1b[14;0H");
-				printf("+23");
-				printf( "\x1b[17;0H");
-				printf("-23");
+				setCursorPos(10, 0);
+				printStr("+23", currXfb);
+				setCursorPos(13, 0);
+				printStr("-23", currXfb);
 			default:
 				break;
 		}
@@ -771,16 +784,19 @@ void menu_waveformMeasure(void *currXfb) {
 			}
 		}
 		
-		printf( "\x1b[6;0H");
+		setCursorPos(3, 0);
 		// total time is stored in microseconds, divide by 1000 for milliseconds
-		printf("%u samples, %0.3f ms, starting sample: %d, visible time: %0.3f ms\n", data.endPoint, (data.totalTimeUs / ((float) 1000)), dataScrollOffset + 1, (drawnTicksUs / ((float) 1000)));
+		sprintf(strBuffer, "Total: %u, %0.3f ms | Start: %d, Shown: %0.3f ms\n", data.endPoint, (data.totalTimeUs / ((float) 1000)), dataScrollOffset + 1, (drawnTicksUs / ((float) 1000)));
+		printStr(strBuffer, currXfb);
 
 		// print test data
-		printf( "\x1b[24;0H");
+		setCursorPos(20, 0);
 		switch (currentTest) {
 			case SNAPBACK:
-				printf("Min X: %04d | Min Y: %04d   |   ", minX, minY);
-				printf("Max X: %04d | Max Y: %04d\n", maxX, maxY);
+				sprintf(strBuffer, "Min X: %04d | Min Y: %04d   |   ", minX, minY);
+				printStr(strBuffer, currXfb);
+				sprintf(strBuffer, "Max X: %04d | Max Y: %04d\n", maxX, maxY);
+				printStr(strBuffer, currXfb);
 				break;
 			case PIVOT:
 				bool pivotHit80 = false;
@@ -863,11 +879,12 @@ void menu_waveformMeasure(void *currXfb) {
 						pivotPercent = 100 - noTurnPercent;
 					}
 					
-					printf("MS in range: %2.2f | No turn: %2.0f%% | Empty Pivot: %2.0f%% | Dashback: %2.0f%%",
+					sprintf(strBuffer, "MS: %2.2f | No turn: %2.0f%% | Pivot: %2.0f%% | Dashback: %2.0f%%",
 						   timeInPivotRangeMs, noTurnPercent, pivotPercent, dashbackPercent);
+					printStr(strBuffer, currXfb);
 					//printf("\nUS Total: %llu, Start index: %d, End index: %d", timeInPivotRangeUs, pivotStartIndex, pivotEndIndex);
 				} else {
-					printf("No pivot input detected.");
+					printStr("No pivot input detected.", currXfb);
 				}
 				break;
 			case DASHBACK:
@@ -939,40 +956,40 @@ void menu_waveformMeasure(void *currXfb) {
 						ucfPercent = 0;
 					}
 				}
-				printf("Vanilla Success: %2.0f%% | UCF Success: %2.0f%%", dashbackPercent, ucfPercent);
+				sprintf(strBuffer, "Vanilla Success: %2.0f%% | UCF Success: %2.0f%%", dashbackPercent, ucfPercent);
+				printStr(strBuffer, currXfb);
 				break;
 			case FULL:
 			case NO_TEST:
 				break;
 			default:
-				printf("Error?");
+				printStr("Error?", currXfb);
 				break;
 
 		}
 	}
-	printf( "\x1b[25;0H");
-	printf("Current test: ");
+	setCursorPos(21,0);
+	printStr("Current test: ", currXfb);
 	switch (currentTest) {
 		case SNAPBACK:
-			printf("Snapback");
+			printStr("Snapback", currXfb);
 			break;
 		case PIVOT:
-			printf("Pivot");
+			printStr("Pivot", currXfb);
 			break;
 		case DASHBACK:
-			printf("Dashback");
+			printStr("Dashback", currXfb);
 			break;
 		case NO_TEST:
-			printf("None");
+			printStr("None", currXfb);
 			break;
 		case FULL:
-			printf("Full Measure");
+			printStr("Full Measure", currXfb);
 			break;
 		default:
-			printf("Error");
+			printStr("Error", currXfb);
 			break;
 	}
-	printf("\n");
 
 	// only start reading if A is pressed
 	// TODO: figure out if this can be removed without having to gut the current poll logic, would be better for the user to not have to do this
@@ -1008,89 +1025,99 @@ void menu_2dPlot(void *currXfb) {
 	static WaveformDatapoint convertedCoords;
 
 	// display instructions and data for user
-	printf("Press A to start read, press Z for instructions\n");
+	printStr("Press A to start read, press Z for instructions", currXfb);
 
 	// do we have data that we can display?
 	if (data.isDataReady) {
 		convertedCoords = convertStickValues(&data.data[lastDrawPoint]);
 		// TODO: move instructions under different prompt, so I don't have to keep messing with text placement
 		
-		printf("\x1b[7;0H");
-		printf("%04u total samples\n", data.endPoint);
-		printf("Start sample: %04u\n", map2dStartIndex + 1);
-		printf("End sample: %04u\n", lastDrawPoint + 1);
+		setCursorPos(5, 0);
+		sprintf(strBuffer, "Total samples: %04u\n", data.endPoint);
+		printStr(strBuffer, currXfb);
+		sprintf(strBuffer, "Start sample: %04u\n", map2dStartIndex + 1);
+		printStr(strBuffer, currXfb);
+		sprintf(strBuffer, "End sample: %04u\n", lastDrawPoint + 1);
+		printStr(strBuffer, currXfb);
+		
 		u64 timeFromStart = 0;
 		for (int i = map2dStartIndex; i <= lastDrawPoint; i++) {
 			timeFromStart += data.data[i].timeDiffUs;
 		}
 		float timeFromStartMs = timeFromStart / 1000.0;
-		printf("Total MS: %6.2f\n", timeFromStartMs);
-		printf("Total frames: %2.2f", timeFromStartMs / frameTime);
+		sprintf(strBuffer, "Total MS: %6.2f\n", timeFromStartMs);
+		printStr(strBuffer, currXfb);
+		sprintf(strBuffer, "Total frames: %2.2f", timeFromStartMs / frameTime);
+		printStr(strBuffer, currXfb);
 		
 		// print coordinates of last drawn point
-		printf( "\x1b[23;0H");
-		// print raw stick coordinates
-		printf("Stick Raw (X,Y): (%04d,%04d)\n", data.data[lastDrawPoint].ax, data.data[lastDrawPoint].ay);
-		//printf("Raw X: %04d | Raw Y: %04d   |   ", data.data[lastDrawPoint].ax, data.data[lastDrawPoint].ay);
-		printf("Stick Melee (X,Y): (");
+		// raw stick coordinates
+		setCursorPos(19, 0);
+		sprintf(strBuffer, "Raw XY: (%04d,%04d)\n", data.data[lastDrawPoint].ax, data.data[lastDrawPoint].ay);
+		printStr(strBuffer, currXfb);
+		printStr("Melee XY: (", currXfb);
 		// is the value negative?
 		if (data.data[lastDrawPoint].ax < 0) {
-			printf("-");
+			printStr("-", currXfb);
+		} else {
+			printStr("0", currXfb);
 		}
 		// is this a 1.0 value?
 		if (convertedCoords.ax == 10000) {
-			printf("1.0");
+			printStr("1.0000", currXfb);
 		} else {
-			printf("0.%04d", convertedCoords.ax);
+			sprintf(strBuffer, "0.%04d", convertedCoords.ax);
+			printStr(strBuffer, currXfb);
 		}
-		printf(",");
+		printStr(",", currXfb);
 		
 		// is the value negative?
 		if (data.data[lastDrawPoint].ay < 0) {
-			printf("-");
+			printStr("-", currXfb);
+		} else {
+			printStr("0", currXfb);
 		}
 		// is this a 1.0 value?
 		if (convertedCoords.ay == 10000) {
-			printf("1.0");
+			printStr("1.0000", currXfb);
 		} else {
-			printf("0.%04d", convertedCoords.ay);
+			sprintf(strBuffer, "0.%04d", convertedCoords.ay);
+			printStr(strBuffer, currXfb);
 		}
-		printf(")");
-		printf( "\x1b[26;0H");
-		printf("Currently selected stickmap: ");
+		printStr(")\n", currXfb);
+		printStr("Stickmap: ", currXfb);
 
 		// draw image below 2d plot, and print while we're at it
 		switch (selectedImage) {
 			case A_WAIT:
-				printf("Wait Attacks");
+				printStr("Wait Attacks", currXfb);
 				drawImage(currXfb, await_image, await_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 				break;
 			case CROUCH:
-				printf("Crouch");
+				printStr("Crouch", currXfb);
 				drawImage(currXfb, crouch_image, crouch_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 				break;
 			case DEADZONE:
-				printf("Deadzones");
+				printStr("Deadzones", currXfb);
 				drawImage(currXfb, deadzone_image, deadzone_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 				break;
 			case LEDGE_L:
-				printf("Left Ledge");
+				printStr("Left Ledge", currXfb);
 				drawImage(currXfb, ledgeL_image, ledgeL_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 				break;
 			case LEDGE_R:
-				printf("Right Ledge");
+				printStr("Right Ledge", currXfb);
 				drawImage(currXfb, ledgeR_image, ledgeR_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 				break;
 			case MOVE_WAIT:
-				printf("Wait Movement");
+				printStr("Wait Movement", currXfb);
 				drawImage(currXfb, movewait_image, movewait_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 				break;
 			case NO_IMAGE:
-				printf("None");
+				printStr("None", currXfb);
 			default:
 				break;
 		}
-		printf("\n");
 		
 		// draw box around plot area
 		DrawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
@@ -1103,13 +1130,9 @@ void menu_2dPlot(void *currXfb) {
 		// TODO: why does this need to be <= to avoid an off-by-one? step through logic later this is bugging me
 		for (int i = 0; i <= lastDrawPoint; i++) {
 			if (i >= map2dStartIndex) {
-				DrawBox(COORD_CIRCLE_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
-				        COORD_CIRCLE_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
-				        COLOR_WHITE, currXfb);
+				DrawDot(COORD_CIRCLE_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay, COLOR_WHITE, currXfb);
 			} else {
-				DrawBox(COORD_CIRCLE_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
-				        COORD_CIRCLE_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay,
-				        COLOR_GRAY, currXfb);
+				DrawDot(COORD_CIRCLE_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay, COLOR_GRAY, currXfb);
 			}
 		}
 
@@ -1222,8 +1245,8 @@ void menu_2dPlot(void *currXfb) {
 }
 
 
-void menu_fileExport() {
-	printf("todo");
+void menu_fileExport(void *currXfb) {
+	printStr("todo", currXfb);
 	return;
 	
 	if (data.isDataReady) {
@@ -1246,9 +1269,9 @@ void menu_fileExport() {
 }
 
 
-void menu_waitingMeasure() {
+void menu_waitingMeasure(void *currXfb) {
 	if (!displayedWaitingInputMessage) {
-		printf("\nWaiting for user input...");
+		printStr("\nWaiting for user input...", currXfb);
 		displayedWaitingInputMessage = true;
 		return;
 	}
@@ -1266,7 +1289,7 @@ void menu_coordinateViewer(void *currXfb) {
 	// melee stick coordinates stuff
 	// a lot of this comes from github.com/phobgcc/phobconfigtool
 	
-	printf("Press Z for instructions\n\n");
+	printStr("Press Z for instructions", currXfb);
 	
 	static WaveformDatapoint stickCoordinatesRaw;
 	static WaveformDatapoint stickCoordinatesMelee;
@@ -1279,87 +1302,95 @@ void menu_coordinateViewer(void *currXfb) {
 	stickCoordinatesMelee = convertStickValues(&stickCoordinatesRaw);
 	
 	// print melee coordinates
-	printf("Stick X: ");
+	setCursorPos(4, 0);
+	printStr("Stick X: ", currXfb);
 	// is the value negative?
 	if (stickCoordinatesRaw.ax < 0) {
-		printf("-");
+		printStr("-", currXfb);
 	}
 	// is this a 1.0 value?
 	if (stickCoordinatesMelee.ax == 10000) {
-		printf("1.0\n");
+		printStr("1.0\n", currXfb);
 	} else {
-		printf("0.%04d\n", stickCoordinatesMelee.ax);
+		sprintf(strBuffer, "0.%04d\n", stickCoordinatesMelee.ax);
+		printStr(strBuffer, currXfb);
 	}
 	
 	// print melee coordinates
-	printf("Stick Y: ");
+	printStr("Stick Y: ", currXfb);
 	// is the value negative?
 	if (stickCoordinatesRaw.ay < 0) {
-		printf("-");
+		printStr("-", currXfb);
 	}
 	// is this a 1.0 value?
 	if (stickCoordinatesMelee.ay == 10000) {
-		printf("1.0\n");
+		printStr("1.0\n", currXfb);
 	} else {
-		printf("0.%04d\n", stickCoordinatesMelee.ay);
+		sprintf(strBuffer, "0.%04d\n", stickCoordinatesMelee.ay);
+		printStr(strBuffer, currXfb);
 	}
 	
 	// print melee coordinates
-	printf("\nC-Stick X: ");
+	printStr("\nC-Stick X: ", currXfb);
 	// is the value negative?
 	if (stickCoordinatesRaw.cx < 0) {
-		printf("-");
+		printStr("-", currXfb);
 	}
 	// is this a 1.0 value?
 	if (stickCoordinatesMelee.cx == 10000) {
-		printf("1.0\n");
+		printStr("1.0\n", currXfb);
 	} else {
-		printf("0.%04d\n", stickCoordinatesMelee.cx);
+		sprintf(strBuffer, "0.%04d\n", stickCoordinatesMelee.cx);
+		printStr(strBuffer, currXfb);
 	}
 	
 	// print melee coordinates
-	printf("C-Stick Y: ");
+	printStr("C-Stick Y: ", currXfb);
 	// is the value negative?
 	if (stickCoordinatesRaw.cy < 0) {
-		printf("-");
+		printStr("-", currXfb);
 	}
 	// is this a 1.0 value?
 	if (stickCoordinatesMelee.cy == 10000) {
-		printf("1.0\n");
+		printStr("1.0\n", currXfb);
 	} else {
-		printf("0.%04d\n", stickCoordinatesMelee.cy);
+		sprintf(strBuffer, "0.%04d\n", stickCoordinatesMelee.cy);
+		printStr(strBuffer, currXfb);
 	}
 	
-	printf("\x1b[22;0H");
-	printf("\nStickmap: ");
+	setCursorPos(19, 0);
+	printStr("Stickmap: ", currXfb);
 	int stickmapRetVal = isCoordValid(selectedStickmap, stickCoordinatesMelee);
 	switch (selectedStickmap) {
 		case FF_WD:
-			printf("Firefox/Wavedash\n");
-			printf("Visible Overlay: ");
+			printStr("Firefox/Wavedash\n", currXfb);
+			printStr("Visible: ", currXfb);
 			if (selectedStickmapSub == 0) {
-				printf("ALL\n");
+				printStr("ALL\n", currXfb);
 			} else {
-				printf("%s\n", STICKMAP_FF_WD_RETVALS[selectedStickmapSub]);
+				sprintf(strBuffer, "%s\n", STICKMAP_FF_WD_RETVALS[selectedStickmapSub]);
+				printStr(strBuffer, currXfb);
 			}
-			printf("Result: %s%s", STICKMAP_FF_WD_RETCOLORS[stickmapRetVal], STICKMAP_FF_WD_RETVALS[stickmapRetVal]);
+			sprintf(strBuffer, "Result: %s", STICKMAP_FF_WD_RETVALS[stickmapRetVal]);
+			printStr(strBuffer, currXfb);
 			break;
 		case SHIELDDROP:
-			printf("Shield Drop\n");
-			printf("Visible Overlay: ");
+			printStr("Shield Drop\n", currXfb);
+			printStr("Visible: ", currXfb);
 			if (selectedStickmapSub == 0) {
-				printf("ALL\n");
+				printStr("ALL\n", currXfb);
 			} else {
-				printf("%s\n", STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub]);
+				sprintf(strBuffer, "%s\n", STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub]);
+				printStr(strBuffer, currXfb);
 			}
-			printf("Result: %s%s", STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal], STICKMAP_SHIELDDROP_RETVALS[stickmapRetVal]);
+			sprintf(strBuffer, "Result: %s", STICKMAP_SHIELDDROP_RETVALS[stickmapRetVal]);
+			printStr(strBuffer, currXfb);
 			break;
 		case NONE:
 		default:
-			printf("NONE");
+			printStr("NONE", currXfb);
 			break;
 	}
-	printf("\x1b[37;1m\x1b[40;0m");
 	
 	
 	// calculate screen coordinates for stick position drawing
@@ -1388,7 +1419,7 @@ void menu_coordinateViewer(void *currXfb) {
 	xfbCoordCY += SCREEN_POS_CENTER_Y;
 	
 	// draw stickbox bounds
-	DrawCircle(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, 161, COLOR_MEDGRAY, currXfb);
+	DrawCircle(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, 160, COLOR_MEDGRAY, currXfb);
 	
 	DrawStickmapOverlay(selectedStickmap, selectedStickmapSub, currXfb);
 

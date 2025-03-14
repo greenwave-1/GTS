@@ -7,6 +7,7 @@
 #include "menu.h"
 #include "gecko.h"
 #include "polling.h"
+#include "print.h"
 
 
 #ifdef DEBUG
@@ -39,8 +40,10 @@ int main(int argc, char **argv) {
 	xfb1 = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 	xfb2 = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 	
-	CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-	CON_Init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+	//CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+	//CON_Init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+	VIDEO_ClearFrameBuffer(rmode, xfb1, COLOR_BLACK);
+	VIDEO_ClearFrameBuffer(rmode, xfb2, COLOR_BLACK);
 
 	VIDEO_Configure(rmode);
 
@@ -157,7 +160,11 @@ int main(int argc, char **argv) {
 			sendMessage("Video mode is PAL");
 			#endif
 		default:
-			printf("\n\nUnsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n");
+			VIDEO_SetNextFramebuffer(xfb2);
+			VIDEO_Flush();
+			resetCursor();
+			printStr("\n\nUnsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n"
+					 "Program will exit in 5 seconds...", xfb2);
 			VIDEO_WaitVSync();
 			u64 timer = gettime();
 			while (ticks_to_secs(gettime() - timer) < 5) ;
@@ -167,13 +174,17 @@ int main(int argc, char **argv) {
 	
 	setSamplingRateNormal();
 	if (isUnsupportedMode()) { // unsupported mode is probably 240p? no idea
-		printf("\n\nUnsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n");
+		VIDEO_SetNextFramebuffer(xfb2);
+		VIDEO_Flush();
+		resetCursor();
+		printStr("\n\nUnsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n"
+				 "Program will exit in 5 seconds...", xfb2);
 		VIDEO_WaitVSync();
 		u64 timer = gettime();
 		while (ticks_to_secs(gettime() - timer) < 5) ;
 		return 0;
 	}
-
+	
 	// main loop of the program
 	while (true) {
 		// set si polling rate
@@ -197,11 +208,11 @@ int main(int argc, char **argv) {
 		// check which framebuffer is next
 		if (xfbSwitch) {
 			VIDEO_ClearFrameBuffer(rmode, xfb1, COLOR_BLACK);
-			CON_Init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+			//CON_Init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 			currXfb = xfb1;
 		} else {
 			VIDEO_ClearFrameBuffer(rmode, xfb2, COLOR_BLACK);
-			CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+			//CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 			currXfb = xfb2;
 		}
 

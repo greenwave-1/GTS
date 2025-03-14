@@ -51,9 +51,9 @@
 #define CONT_TEST_BUTTON_Z_Y1 125
 
 // Start
-#define CONT_TEST_BUTTON_START_LEN 55
+#define CONT_TEST_BUTTON_START_LEN 60
 #define CONT_TEST_BUTTON_START_WIDTH 23
-#define CONT_TEST_BUTTON_START_X1 295
+#define CONT_TEST_BUTTON_START_X1 290
 #define CONT_TEST_BUTTON_START_Y1 124
 
 // DPad
@@ -89,7 +89,7 @@ void DrawFilledBox (int x1, int y1, int x2, int y2, int color, void *xfb);
 void DrawLine (int x1, int y1, int x2, int y2, int color, void *xfb);
 void DrawDot (int x, int y, int color, void *xfb);
 void DrawCircle (int cx, int cy, int r, int color, void *xfb);
-void DrawFilledCircle(int cx, int cy, int r, int interval, int color, void *xfb);
+void DrawFilledCircle(int cx, int cy, int interval, int color, void *xfb);
 void DrawFilledBoxCenter(int x, int y, int rad, int color, void *xfb);
 void DrawOctagonalGate(int x, int y, int scale, int color, void *xfb);
 

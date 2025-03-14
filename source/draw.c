@@ -55,13 +55,8 @@ void drawImage(void *currXfb, const unsigned char image[], const unsigned char c
 * takes in values to draw a horizontal line of a given color
 */
 void DrawHLine (int x1, int x2, int y, int color, void *xfb) {
-	int i;
-	y = 320 * y;
-	x1 >>= 1;
-	x2 >>= 1;
-	for (i = x1; i <= x2; i++) {
-		u32 *tmpfb = xfb;
-		tmpfb[y+i] = color;
+	for (int i = x1; i <= x2; i++) {
+		DrawDot(i, y, color, xfb);
 	}
 }
 
@@ -70,11 +65,8 @@ void DrawHLine (int x1, int x2, int y, int color, void *xfb) {
 * takes in values to draw a vertical line of a given color
 */
 void DrawVLine (int x, int y1, int y2, int color, void *xfb) {
-	int i;
-	x >>= 1;
-	for (i = y1; i <= y2; i++) {
-		u32 *tmpfb = xfb;
-		tmpfb[x + (640 * i) / 2] = color;
+	for (int i = y1; i <= y2; i++) {
+		DrawDot(x, i, color, xfb);
 	}
 }
 
@@ -120,7 +112,8 @@ void DrawLine(int x1, int y1, int x2, int y2, int color, void *xfb) {
 		int currY = y1;
 		
 		for (int i = 0; i < distanceX; i++) {
-			tmpfb[((x1 + (i * xDir)) + (currY * 640)) / 2] = color;
+			DrawDot(x1 + (i * xDir), currY, color, xfb);
+			//tmpfb[((x1 + (i * xDir)) + (currY * 640)) / 2] = color;
 			if (delta > 0) {
 				currY += (1 * yDir);
 				delta -= (2 * distanceX);
@@ -133,7 +126,8 @@ void DrawLine(int x1, int y1, int x2, int y2, int color, void *xfb) {
 		int currX = x1;
 		
 		for (int i = 0; i < distanceY; i++) {
-			tmpfb[(((y1 + (i * yDir)) * 640) + currX) / 2] = color;
+			DrawDot(currX, (y1 + (i * yDir)), color, xfb);
+			//tmpfb[(((y1 + (i * yDir)) * 640) + currX) / 2] = color;
 			//tmpfb[((x1 + i) + (currY * 640)) / 2] = color;
 			if (delta > 0) {
 				currX += (1 * xDir);
@@ -144,12 +138,48 @@ void DrawLine(int x1, int y1, int x2, int y2, int color, void *xfb) {
 	}
 }
 
-
+/*
 void DrawDot (int x, int y, int color, void *xfb) {
 	x >>= 1;
 	u32 *tmpfb = xfb;
 	tmpfb[x + (640 * y) / 2] = color;
+}*/
+void DrawDot (int x, int y, int color, void *xfb) {
+	uint32_t *tmpfb = xfb;
+	int index = (x >> 1) + (640 * y) / 2;
+	uint32_t data = tmpfb[index];
+	
+	if (x % 2 == 1) {
+		if (data >> 24 == 0) {
+			// no data in left pixel, leave it as-is
+			tmpfb[index] = color & 0x00FFFFFF;
+		} else {
+			// preserve the left pixel luminance
+			uint32_t leftLuminance = data & 0xFF000000;
+			uint32_t rightLuminance = color & 0x0000FF00;
+			uint32_t cb, cr;
+			// mix cb and cr
+			cb = ( ((data & 0x00FF0000) >> 16) + ((color & 0x00FF0000) >> 16) ) / 2;
+			cr = ( (data & 0x000000FF) + (color & 0x000000FF) ) / 2;
+			tmpfb[index] = leftLuminance | (cb << 16) | rightLuminance | cr;
+		}
+	} else {
+		if ((data & 0xFFFF00FF) >> 8 == 0) {
+			// no data in right pixel, leave it as-is
+			tmpfb[index] = color & 0xFFFF00FF;
+		} else {
+			// preserve the right pixel luminance
+			uint32_t leftLuminance = color & 0xFF000000;
+			uint32_t rightLuminance = data & 0x0000FF00;
+			uint32_t cb, cr;
+			// mix cb and cr
+			cb = ( ((data & 0x00FF0000) >> 16) + ((color & 0x00FF0000) >> 16) ) / 2;
+			cr = ( (data & 0x000000FF) + (color & 0x000000FF) ) / 2;
+			tmpfb[index] = leftLuminance | (cb << 16) | rightLuminance | cr;
+		}
+	}
 }
+
 
 
 // mostly taken from https://www.geeksforgeeks.org/mid-point-circle-drawing-algorithm/
@@ -159,7 +189,7 @@ void DrawCircle (int cx, int cy, int r, int color, void *xfb) {
 	if (r > 0) {
 		DrawDot(cx + x, cy - y, color, xfb);
 		DrawDot(cx - x, cy + y, color, xfb);
-		DrawDot(cx + y, cy + x, color, xfb);
+		DrawDot(cx + y, cy - x, color, xfb);
 		DrawDot(cx - y, cy + x, color, xfb);
 	}
 	
@@ -193,10 +223,16 @@ void DrawCircle (int cx, int cy, int r, int color, void *xfb) {
 	}
 }
 
-
-void DrawFilledCircle(int cx, int cy, int r, int interval, int color, void *xfb) {
-	for (int i = r; i > 0; i -= interval) {
-		DrawCircle(cx, cy, i, color, xfb);
+// taken from
+// https://stackoverflow.com/questions/1201200/fast-algorithm-for-drawing-filled-circles
+// originally this just called DrawCircle for a smaller radius, but it broke when I fixed the DrawDot function.
+void DrawFilledCircle(int cx, int cy, int r, int color, void *xfb) {
+	for (int ty = (r * -1); ty <= r; ty++) {
+		for (int tx = (r * -1); tx <= r; tx++) {
+			if ( (tx * tx) + (ty * ty) <= (r * r)) {
+				DrawDot(cx + tx, cy + ty, color, xfb);
+			}
+		}
 	}
 }
 

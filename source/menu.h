@@ -12,12 +12,12 @@ enum CURRENT_MENU { MAIN_MENU, CONTROLLER_TEST, WAVEFORM, PLOT_2D, IMAGE_TEST, F
 
 // functions for drawing the individual menus
 bool menu_runMenu(void *currXfb);
-void menu_mainMenu();
+void menu_mainMenu(void *currXfb);
 void menu_controllerTest(void *currXfb);
 void menu_waveformMeasure(void *currXfb);
 void menu_2dPlot(void *currXfb);
-void menu_fileExport();
-void menu_waitingMeasure();
+void menu_fileExport(void *currXfb);
+void menu_waitingMeasure(void *currXfb);
 void menu_coordinateViewer(void *currXfb);
 
 

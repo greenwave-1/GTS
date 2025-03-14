@@ -14,7 +14,7 @@ enum STICKMAP_LIST { NONE, FF_WD, SHIELDDROP };
 // Firefox and Wavedash min/max
 
 // description string
-static const char* STICKMAP_FF_WD_DESC = "Min/Max coordinates for Firefox and Wavedash notches around cardinals\n\n"
+static const char* STICKMAP_FF_WD_DESC = "Min/Max coordinates for Firefox and Wavedash notches around\ncardinals\n\n"
 										 "SAFE / Green -> Ideal coordinates, aim here\n"
 										 "UNSAFE / Yellow -> Risks hitting deadzone, but works\n"
 										 "MISS -> Self explanatory";
@@ -46,7 +46,7 @@ static const int STICKMAP_FF_WD_COORD_UNSAFE_LEN = 2;
 
 // Shield drop coordinates
 static const char* STICKMAP_SHIELDDROP_DESC = "Coorinates for Vanilla and UCF Shield drops\n\n"
-											  "VANILLA / Green -> Coordinates that will work even without UCF\n"
+											  "VANILLA / Green -> Coordinates that will work without UCF\n"
 											  "UCF LOWER / Blue -> Lower coordinates (idk)\n"
 											  "UCF v0.84 UPPER / Yellow -> v0.84 upper coordinates (idk)";
 
