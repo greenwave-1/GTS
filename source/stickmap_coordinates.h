@@ -25,7 +25,9 @@ static const char* STICKMAP_FF_WD_RETVALS[] = {"MISS", "SAFE", "UNSAFE"};
 // 0 -> no color
 // 1 -> black text on green background
 // 2 -> black text on yellow background
-static const char* STICKMAP_FF_WD_RETCOLORS[] = { "", "\x1b[42;1m\x1b[30;0m", "\x1b[43;1m\x1b[30;0m"};
+static const u32 STICKMAP_FF_WD_RETCOLORS[][2] = { {COLOR_BLACK, COLOR_WHITE},
+												   {COLOR_LIME, COLOR_BLACK},
+												   {COLOR_YELLOW, COLOR_BLACK} };
 
 // enum for the two above
 enum STICKMAP_FF_WD_ENUM { FF_WD_MISS, FF_WD_SAFE, FF_WD_UNSAFE };
@@ -56,7 +58,10 @@ static const char* STICKMAP_SHIELDDROP_RETVALS[] = { "MISS", "VANILLA", "UCF LOW
 // 1 -> black text on green background
 // 2 -> white text on blue background
 // 3 -> black text on yellow background
-static const char* STICKMAP_SHIELDDROP_RETCOLORS[] = { "", "\x1b[42;1m\x1b[30;0m", "\x1b[44;1m\x1b[37;1m", "\x1b[43;1m\x1b[30;0m"};
+static const u32 STICKMAP_SHIELDDROP_RETCOLORS[][2] = { {COLOR_BLACK, COLOR_WHITE},
+                                                        {COLOR_LIME, COLOR_BLACK},
+                                                        {COLOR_BLUE, COLOR_WHITE},
+                                                        {COLOR_YELLOW, COLOR_BLACK} };
 
 enum STICKMAP_SHIELDDROP_ENUM { SHIELDDROP_MISS, SHIELDDROP_VANILLA, SHIELDDROP_UCF_LOWER, SHIELDDROP_UCF_UPPER };
 static const int STICKMAP_SHIELDDROP_ENUM_LEN = 4;

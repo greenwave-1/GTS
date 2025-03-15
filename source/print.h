@@ -28,7 +28,8 @@ void drawCharDirect(unsigned char bitmap[],
                const char character);
 
 void drawString(unsigned char bitmap[],
-                const unsigned int color,
+                const uint32_t bg_color,
+				const uint32_t fg_color,
                 const char string[]);
 
 void printStr(const char* str, void *xfb);

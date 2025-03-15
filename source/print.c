@@ -71,12 +71,18 @@ void drawCharDirect(unsigned char bitmap[],
 }
 
 void drawString(unsigned char bitmap[],
-                const unsigned int color,
+                const uint32_t bg_color,
+				const uint32_t fg_color,
                 const char string[]) {
 	uint16_t i = 0;
 	const char nullChar[] = "";
 	while(string[i] != nullChar[0]) {
-		drawChar(bitmap, color, string[i]);
+		if (bg_color != COLOR_BLACK) {
+			DrawFilledBox(currX + PRINT_PADDING_HORIZONTAL - 2, currY + PRINT_PADDING_VERTICAL - 2,
+			              currX + PRINT_PADDING_HORIZONTAL + 10, currY + PRINT_PADDING_VERTICAL + 15,
+			              bg_color, bitmap);
+		}
+		drawChar(bitmap, fg_color, string[i]);
 		i++;
 	}
 }
@@ -86,7 +92,7 @@ void printStr(const char* str, void *xfb) {
 }
 
 void printStrColor(const char* str, void *xfb, const uint32_t bg_color, const uint32_t fg_color) {
-	drawString(xfb, fg_color, str);
+	drawString(xfb, bg_color, fg_color, str);
 }
 
 void resetCursor() {

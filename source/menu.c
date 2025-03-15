@@ -1366,25 +1366,31 @@ void menu_coordinateViewer(void *currXfb) {
 			printStr("Firefox/Wavedash\n", currXfb);
 			printStr("Visible: ", currXfb);
 			if (selectedStickmapSub == 0) {
-				printStr("ALL\n", currXfb);
+				printStr("ALL", currXfb);
 			} else {
-				sprintf(strBuffer, "%s\n", STICKMAP_FF_WD_RETVALS[selectedStickmapSub]);
-				printStr(strBuffer, currXfb);
+				printStrColor(STICKMAP_FF_WD_RETVALS[selectedStickmapSub], currXfb,
+							  STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][0], STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][1]);
+				//sprintf(strBuffer, "%s\n", );
+				//printStr(strBuffer, currXfb);
 			}
-			sprintf(strBuffer, "Result: %s", STICKMAP_FF_WD_RETVALS[stickmapRetVal]);
-			printStr(strBuffer, currXfb);
+			printStr("\nResult: ", currXfb);
+			printStrColor(STICKMAP_FF_WD_RETVALS[stickmapRetVal], currXfb,
+						  STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][0], STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][1]);
 			break;
 		case SHIELDDROP:
 			printStr("Shield Drop\n", currXfb);
 			printStr("Visible: ", currXfb);
 			if (selectedStickmapSub == 0) {
-				printStr("ALL\n", currXfb);
+				printStr("ALL", currXfb);
 			} else {
-				sprintf(strBuffer, "%s\n", STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub]);
-				printStr(strBuffer, currXfb);
+				//sprintf(strBuffer, "%s\n", STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub]);
+				//printStr(strBuffer, currXfb);
+				printStrColor(STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub], currXfb,
+				              STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][0], STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][1]);
 			}
-			sprintf(strBuffer, "Result: %s", STICKMAP_SHIELDDROP_RETVALS[stickmapRetVal]);
-			printStr(strBuffer, currXfb);
+			printStr("\nResult: ", currXfb);
+			printStrColor(STICKMAP_SHIELDDROP_RETVALS[stickmapRetVal], currXfb,
+						  STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][0], STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][1]);
 			break;
 		case NONE:
 		default:
