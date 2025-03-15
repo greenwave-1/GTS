@@ -8,6 +8,8 @@
 
 // most of this is taken from
 // https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
+// TODO: this is easily the most costly function in here. single main loop goes from 4ms to 10 ms from calling this,
+// TODO: see if this can be improved
 void drawImage(void *currXfb, const unsigned char image[], const unsigned char colorIndex[8], u16 offsetX, u16 offsetY) {
 	// get information on the image to be drawn
 	u32 width = image[0] << 8 | image[1];

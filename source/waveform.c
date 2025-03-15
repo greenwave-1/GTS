@@ -36,8 +36,6 @@ void samplingCallback() {
 	return;
 }
 
-// TODO: see if this can be replaced with manually polling the controller with a timer
-// idk if that's even something that can happen in hardware, but worth looking into
 void measureWaveform(WaveformData *data) {
 	// reset old data
 	for (int i = 0; i < WAVEFORM_SAMPLES; i++) {

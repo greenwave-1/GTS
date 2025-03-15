@@ -232,7 +232,7 @@ int main(int argc, char **argv) {
 		us = ticks_to_microsecs(gettime() - time);
 		char msg[100];
 		sprintf(msg, "Microseconds taken in loop: %d", us);
-		sendMessage(msg, 100);
+		sendMessage(msg);
 		#endif
 		 */
 		
