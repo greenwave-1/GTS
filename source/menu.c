@@ -78,6 +78,9 @@ static u32 padsConnected = 0;
 static PADStatus origin[PAD_CHANMAX];
 static bool originRead = false;
 
+static const uint32_t COLOR_RED_C = 0x846084d7;
+static const uint32_t COLOR_BLUE_C = 0x6dd26d72;
+
 // buffer for strings with numbers and stuff
 static char strBuffer[100];
 
@@ -727,12 +730,12 @@ void menu_waveformMeasure(void *currXfb) {
 			// y first
 			DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevY,
 			         SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - data.data[i].ay,
-					 COLOR_BLUE, currXfb);
+			         COLOR_BLUE_C, currXfb);
 			prevY = data.data[i].ay;
 			// then x
 			DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevX,
 			         SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - data.data[i].ax,
-			         COLOR_RED, currXfb);
+			         COLOR_RED_C, currXfb);
 			prevX = data.data[i].ax;
 			
 			// update stat values

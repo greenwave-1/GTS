@@ -93,6 +93,23 @@ void DrawFilledBox (int x1, int y1, int x2, int y2, int color, void *xfb) {
 
 // draw a line given two coordinates, using Bresenham's line-drawing algorithm
 void DrawLine(int x1, int y1, int x2, int y2, int color, void *xfb) {
+	// use simpler algorithm if line is horizontal or vertical
+	if (x1 == x2) {
+		if (y1 < y2) {
+			DrawVLine(x1, y1, y2, color, xfb);
+		} else {
+			DrawVLine(x1, y2, y1, color, xfb);
+		}
+		return;
+	}
+	if (y1 == y2) {
+		if (x1 < x2) {
+			DrawHLine(x1, x2, y1, color, xfb);
+		} else {
+			DrawHLine(x2, x1, y1, color, xfb);
+		}
+		return;
+	}
 	int distanceX = x2 - x1, distanceY = y2 - y1;
 	u32 *tmpfb = xfb;
 	// used for when one coordinate goes negative
