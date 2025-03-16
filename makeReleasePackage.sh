@@ -12,7 +12,7 @@ fi
 FILENAME=`basename "$PWD"`
 DATE=`date -I`
 
-make all
+make release version=$1
 
 mkdir -p release/wii/apps/FossScope
 cp wii-homebrew-channel-data/meta.xml release/wii/apps/FossScope/

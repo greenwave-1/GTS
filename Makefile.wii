@@ -32,6 +32,13 @@ ifeq ($(DEBUG), 1)
 	CFLAGS += -DDEBUG
 endif
 
+ifdef version
+	CFLAGS += -DVERSION_NUMBER=\"$(version)\"
+else
+	datever := $(date '+%F_%H:%M:%S')
+	CFLAGS += -DVERSION_NUMBER=\"`date '+%F_%H:%M:%S'`\ DEV\"
+endif
+
 CXXFLAGS	=	$(CFLAGS)
 
 LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map

@@ -22,7 +22,7 @@ clean: gc-clean wii-clean
 all: gc wii
 
 wii:
-	$(MAKE) -f Makefile.wii 
+	$(MAKE) -f Makefile.wii
 
 gc:
 	$(MAKE) -f Makefile.gc 
@@ -48,3 +48,7 @@ wii-clean:
 debug:
 	$(MAKE) -f Makefile.gc DEBUG=1
 	$(MAKE) -f Makefile.wii DEBUG=1
+
+release:
+	$(MAKE) -f Makefile.gc version=$(version)
+	$(MAKE) -f Makefile.wii version=$(version)

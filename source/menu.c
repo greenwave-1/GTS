@@ -15,6 +15,9 @@
 #include "export.h"
 #include "stickmap_coordinates.h"
 
+#ifndef VERSION_NUMBER
+#define VERSION_NUMBER "NOVERS_DEV"
+#endif
 
 #define MENUITEMS_LEN 5
 #define TEST_LEN 5
@@ -256,6 +259,12 @@ bool menu_runMenu(void *currXfb) {
 			printStr("Hold B to return to main menu.", currXfb);
 		} else {
 			printStr("Press Start to exit.", currXfb);
+			int col = 55 - (sizeof(VERSION_NUMBER));
+			if (col > 25) {
+				setCursorPos(23, col);
+				printStr("Ver: ", currXfb);
+				printStr(VERSION_NUMBER, currXfb);
+			}
 		}
 		bHeldCounter = 0;
 	}
