@@ -88,6 +88,7 @@ static const uint32_t COLOR_RED_C = 0x846084d7;
 static const uint32_t COLOR_BLUE_C = 0x6dd26d72;
 
 static bool seededRandom = false;
+static bool userMessageSeen = false;
 
 // buffer for strings with numbers and stuff
 static char strBuffer[100];
@@ -262,6 +263,7 @@ bool menu_runMenu(void *currXfb) {
 
 		// has the button been held long enough?
 		if (bHeldCounter > 46) {
+			userMessageSeen = false;
 			currentMenu = MAIN_MENU;
 			displayInstructions = false;
 			bHeldCounter = 0;
