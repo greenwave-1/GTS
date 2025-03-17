@@ -83,7 +83,7 @@ void measureWaveform(WaveformData *data) {
 		while (!isReadReady) {
 			temp = gettime();
 			// sleep for 10 microseconds between checks
-			while (ticks_to_microsecs(gettime() - temp) > 10);
+			while (ticks_to_microsecs(gettime() - temp) < 10);
 		}
 		
 		// update stick values

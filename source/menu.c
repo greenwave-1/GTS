@@ -4,22 +4,25 @@
 
 #include "menu.h"
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <ogc/color.h>
+#include <ogc/lwp_watchdog.h>
 #include "waveform.h"
 #include "images/stickmaps.h"
 #include "draw.h"
 #include "print.h"
 #include "export.h"
 #include "stickmap_coordinates.h"
+#include "polling.h"
 
 #ifndef VERSION_NUMBER
 #define VERSION_NUMBER "NOVERS_DEV"
 #endif
 
-#define MENUITEMS_LEN 5
+#define MENUITEMS_LEN 6
 #define TEST_LEN 5
 
 // 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
@@ -65,7 +68,7 @@ static u32 held = 0;
 static u8 stickheld = 0;
 
 // menu item strings
-static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Coordinate Viewer", "2D Plot", "Export Data" };
+static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Coordinate Viewer", "2D Plot", "Export Data", "Reaction Test" };
 
 static bool displayedWaitingInputMessage = false;
 
@@ -84,6 +87,9 @@ static bool originRead = false;
 static const uint32_t COLOR_RED_C = 0x846084d7;
 static const uint32_t COLOR_BLUE_C = 0x6dd26d72;
 
+static bool seededRandom = false;
+static bool userMessageSeen = false;
+
 // buffer for strings with numbers and stuff
 static char strBuffer[100];
 
@@ -91,6 +97,10 @@ static char strBuffer[100];
 // other menu functions are called from here
 // this also handles moving between menus and exiting
 bool menu_runMenu(void *currXfb) {
+	if (!seededRandom) {
+		srand( time(NULL) );
+		seededRandom = true;
+	}
 	memset(strBuffer, '\0', sizeof(strBuffer));
 	resetCursor();
 	// read inputs
@@ -205,6 +215,18 @@ bool menu_runMenu(void *currXfb) {
 				menu_coordinateViewer(currXfb);
 			}
 			break;
+		case REACTION_TEST_PRE:
+			menu_reactionTestPre(currXfb);
+			break;
+		case REACTION_TEST_INPUT:
+			menu_reactionTestInput(currXfb);
+			break;
+		case REACTION_TEST_POST:
+			menu_reactionTestPost(currXfb);
+			break;
+		case REACTION_TEST:
+			menu_reactionTest(currXfb);
+			break;
 		default:
 			printStr("HOW DID WE END UP HERE?\n", currXfb);
 			break;
@@ -241,6 +263,7 @@ bool menu_runMenu(void *currXfb) {
 
 		// has the button been held long enough?
 		if (bHeldCounter > 46) {
+			userMessageSeen = false;
 			currentMenu = MAIN_MENU;
 			displayInstructions = false;
 			bHeldCounter = 0;
@@ -324,6 +347,9 @@ void menu_mainMenu(void *currXfb) {
 				break;
 			case 4:
 				currentMenu = FILE_EXPORT;
+				break;
+			case 5:
+				currentMenu = REACTION_TEST_PRE;
 				break;
 		}
 	}
@@ -1475,4 +1501,70 @@ void menu_coordinateViewer(void *currXfb) {
 				break;
 		}
 	}
+}
+
+bool pressedEarly = false;
+void menu_reactionTestPre(void *currXfb) {
+	if (held == 0) {
+		printStr("Get ready...", currXfb);
+		currentMenu = REACTION_TEST;
+	} else {
+		printStr("Release all buttons...", currXfb);
+	}
+}
+
+static u64 reactionTime = 0;
+void menu_reactionTestInput(void *currXfb) {
+	setSamplingRateHigh();
+	setSamplingRate();
+	if (!pressedEarly) {
+		u64 startTime = gettime();
+		while (pressed == 0) {
+			// wait
+			PAD_ScanPads();
+			pressed = PAD_ButtonsDown(0);
+		}
+		reactionTime = ticks_to_millisecs(gettime() - startTime);
+	}
+	currentMenu = REACTION_TEST_POST;
+	while (held != 0) {
+		PAD_ScanPads();
+		held = PAD_ButtonsHeld(0);
+	}
+	setSamplingRateNormal();
+}
+
+void menu_reactionTestPost(void *currXfb) {
+	if (pressedEarly) {
+		printStr("You didn't wait for GO!", currXfb);
+	} else {
+		sprintf(strBuffer, "Reaction time: %llu\nFrames: %2.2f", reactionTime, (reactionTime / frameTime));
+		printStr(strBuffer, currXfb);
+	}
+	if (pressed & PAD_BUTTON_A) {
+		pressedEarly = false;
+		currentMenu = REACTION_TEST_PRE;
+	}
+	setCursorPos(21, 0);
+	printStr("Press A to try again.", currXfb);
+}
+
+void menu_reactionTest(void *currXfb) {
+	setSamplingRateHigh();
+	setSamplingRate();
+	printStr("GO!", currXfb);
+	DrawFilledBoxCenter(320, 240, 100, COLOR_WHITE, currXfb);
+	int frames = (rand() % 300) + 120;
+	u64 startTime = gettime();
+	while (ticks_to_millisecs(gettime() - startTime) < frames * frameTime) {
+		PAD_ScanPads();
+		pressed = PAD_ButtonsDown(0);
+		if (pressed != 0) {
+			pressedEarly = true;
+			break;
+		}
+		//u64 temp = gettime();
+		//while (ticks_to_millisecs(gettime() - temp) < 1);
+	}
+	currentMenu = REACTION_TEST_INPUT;
 }
