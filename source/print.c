@@ -30,7 +30,7 @@ void drawChar(unsigned char bitmap[],
 		return;
 	}
 	// stop drawing altogether if row is too far
-	if (currY > (480 - PRINT_PADDING_VERTICAL)) {
+	if ((currY + 15) >= (479 - (PRINT_PADDING_VERTICAL * 2))) {
 		return;
 	}
 

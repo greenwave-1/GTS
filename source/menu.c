@@ -215,7 +215,7 @@ bool menu_runMenu(void *currXfb) {
 	}
 
 	// move cursor to bottom left
-	setCursorPos(23, 0);
+	setCursorPos(22, 0);
 
 	// exit the program if start is pressed
 	if (pressed & PAD_BUTTON_START && currentMenu == MAIN_MENU) {
@@ -261,7 +261,7 @@ bool menu_runMenu(void *currXfb) {
 			printStr("Press Start to exit.", currXfb);
 			int col = 55 - (sizeof(VERSION_NUMBER));
 			if (col > 25) {
-				setCursorPos(23, col);
+				setCursorPos(22, col);
 				printStr("Ver: ", currXfb);
 				printStr(VERSION_NUMBER, currXfb);
 			}
@@ -351,15 +351,15 @@ void menu_controllerTest(void *currXfb) {
 	stickCoordinatesMelee = convertStickValues(&stickCoordinatesRaw);
 	
 	// print raw stick coordinates
-	setCursorPos(20, 0);
+	setCursorPos(19, 0);
 	sprintf(strBuffer, "Raw XY: (%04d,%04d)", stickCoordinatesRaw.ax, stickCoordinatesRaw.ay);
 	printStr(strBuffer, currXfb);
-	setCursorPos(20, 38);
+	setCursorPos(19, 38);
 	sprintf(strBuffer, "C-Raw XY: (%04d,%04d)", stickCoordinatesRaw.cx, stickCoordinatesRaw.cy);
 	printStr(strBuffer, currXfb);
 	
 	// print melee coordinates
-	setCursorPos(21, 0);
+	setCursorPos(20, 0);
 	printStr("Melee: (", currXfb);
 	// is the value negative?
 	if (stickCoordinatesRaw.ax < 0) {
@@ -391,7 +391,7 @@ void menu_controllerTest(void *currXfb) {
 	}
 	printStr(")", currXfb);
 	
-	setCursorPos(21, 33);
+	setCursorPos(20, 33);
 	sprintf(strBuffer, "C-Melee: (");
 	printStr(strBuffer, currXfb);
 	// is the value negative?
@@ -425,10 +425,10 @@ void menu_controllerTest(void *currXfb) {
 	printStr(")", currXfb);
 	
 	if (originRead) {
-		setCursorPos(22, 0);
+		setCursorPos(21, 0);
 		sprintf(strBuffer, "Origin XY: (%04d,%04d)", origin[0].stickX, origin[0].stickY);
 		printStr(strBuffer, currXfb);
-		setCursorPos(22, 35);
+		setCursorPos(21, 35);
 		sprintf(strBuffer, "C-Origin XY: (%04d,%04d)", origin[0].substickX, origin[0].substickY);
 		printStr(strBuffer, currXfb);
 	}
