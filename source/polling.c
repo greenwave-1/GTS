@@ -19,6 +19,7 @@ static int xLineCountHigh = 0;
 static int pollsPerFrameNormal = 2;
 static int pollsPerFrameHigh = 24;
 
+// values 9 and 18 are average 664us with low of 572
 // set xLineCount based on video mode
 void __setStaticXYValues() {
 	switch(VIDEO_GetScanMode()) {

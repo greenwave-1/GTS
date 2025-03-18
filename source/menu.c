@@ -233,9 +233,11 @@ bool menu_runMenu(void *currXfb) {
 		// TODO: I know there's a better way to do this but I can't think of it right now...
 		if (bHeldCounter > 15) {
 			printStr(".", currXfb);
-		} else if (bHeldCounter > 30) {
+		}
+		if (bHeldCounter > 30) {
 			printStr(".", currXfb);
-		} else if (bHeldCounter > 45) {
+		}
+		if (bHeldCounter > 45) {
 			printStr(".", currXfb);
 		}
 
