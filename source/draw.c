@@ -111,7 +111,6 @@ void DrawLine(int x1, int y1, int x2, int y2, int color, void *xfb) {
 		return;
 	}
 	int distanceX = x2 - x1, distanceY = y2 - y1;
-	u32 *tmpfb = xfb;
 	// used for when one coordinate goes negative
 	int xDir = 1, yDir = 1;
 	
@@ -132,7 +131,6 @@ void DrawLine(int x1, int y1, int x2, int y2, int color, void *xfb) {
 		
 		for (int i = 0; i < distanceX; i++) {
 			DrawDot(x1 + (i * xDir), currY, color, xfb);
-			//tmpfb[((x1 + (i * xDir)) + (currY * 640)) / 2] = color;
 			if (delta > 0) {
 				currY += (1 * yDir);
 				delta -= (2 * distanceX);
