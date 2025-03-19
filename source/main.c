@@ -27,7 +27,19 @@ void retraceCallback() {
 	setSamplingRate();
 }
 
+#if defined(HW_RVL)
+static bool powerButtonPressed = false;
+void powerButtonCallback() {
+	powerButtonPressed = true;
+}
+#endif
+
 int main(int argc, char **argv) {
+	// register power button handler if we're on wii
+	#if defined(HW_RVL)
+	SYS_SetPowerCallback(powerButtonCallback);
+	#endif
+	
 	// do basic initialization
 	// see the devkitpro wii template if you want an explanation of the following
 	// the only thing we're doing differently is a double buffer (because terminal weirdness on actual hardware)
@@ -187,6 +199,12 @@ int main(int argc, char **argv) {
 	
 	// main loop of the program
 	while (true) {
+		#if defined(HW_RVL)
+		if (powerButtonPressed) {
+			SYS_ResetSystem(SYS_POWEROFF, 0, 0);
+			break;
+		}
+		#endif
 		/*
 		#ifdef DEBUG
 		counter++;
