@@ -26,7 +26,6 @@ typedef struct WaveformDatapoint {
 } WaveformDatapoint;
 
 typedef struct WaveformData {
-	// sampling a 1ms
 	WaveformDatapoint data[WAVEFORM_SAMPLES];
 	unsigned int endPoint;
 

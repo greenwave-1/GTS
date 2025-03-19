@@ -17,7 +17,7 @@ include $(DEVKITPRO)/libogc2/gamecube_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	$(notdir $(CURDIR))_gc
 BUILD		:=	build_gc
-SOURCES		:=	source
+SOURCES		:=	source source/oscilloscope
 DATA		:=	data
 INCLUDES	:=
 

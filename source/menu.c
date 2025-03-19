@@ -8,6 +8,7 @@
 #include <string.h>
 #include <assert.h>
 #include <ogc/color.h>
+#include <ogc/lwp_watchdog.h>
 #include "waveform.h"
 #include "images/stickmaps.h"
 #include "draw.h"
@@ -15,11 +16,14 @@
 #include "export.h"
 #include "stickmap_coordinates.h"
 
+#include "oscilloscope/oscilloscope.h"
+#include "oscilloscope/continuous.h"
+
 #ifndef VERSION_NUMBER
 #define VERSION_NUMBER "NOVERS_DEV"
 #endif
 
-#define MENUITEMS_LEN 5
+#define MENUITEMS_LEN 6
 #define TEST_LEN 5
 
 // 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
@@ -29,10 +33,6 @@
 #define MENU_STICK_THRESHOLD 10
 
 const float frameTime = (1000.0 / 60.0);
-
-enum WAVEFORM_TEST { SNAPBACK, PIVOT, DASHBACK, FULL, NO_TEST };
-
-static enum WAVEFORM_TEST currentTest = SNAPBACK;
 
 // enum to keep track of what menu to display, and what logic to run
 static enum CURRENT_MENU currentMenu = MAIN_MENU;
@@ -55,7 +55,7 @@ static u8 mainMenuSelection = 0;
 static u8 bHeldCounter = 0;
 
 // data for drawing a waveform
-static WaveformData data = { { 0 }, 0, 500, false, false };
+static WaveformData data = { {{ 0 }}, 0, 500, false, false };
 
 // vars for what buttons are pressed or held
 static u32 pressed = 0;
@@ -65,36 +65,54 @@ static u32 held = 0;
 static u8 stickheld = 0;
 
 // menu item strings
-static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Coordinate Viewer", "2D Plot", "Export Data" };
+static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Coordinate Viewer", "2D Plot", "Export Data", "Continuous Waveform" };
 
 static bool displayedWaitingInputMessage = false;
 
 static bool displayInstructions = false;
-static bool fileIOSuccess = false;
+//static bool fileIOSuccess = false;
 
 static int lastDrawPoint = -1;
 static int dataScrollOffset = 0;
-static int waveformScaleFactor = 1;
 
 static u32 padsConnected = 0;
 
 static PADStatus origin[PAD_CHANMAX];
 static bool originRead = false;
 
-static const uint32_t COLOR_RED_C = 0x846084d7;
-static const uint32_t COLOR_BLUE_C = 0x6dd26d72;
-
 // buffer for strings with numbers and stuff
 static char strBuffer[100];
+
+static bool callbackSet = false;
+static sampling_callback cb;
+static u64 pressedTimer = 0;
+static bool pressLocked = false;
+static void menuSamplingCallback() {
+	padsConnected = PAD_ScanPads();
+	if (!pressLocked) {
+		pressed = PAD_ButtonsDown(0);
+		if (pressed != 0) {
+			pressLocked = true;
+			pressedTimer = gettime();
+		}
+	} else {
+		if (ticks_to_millisecs(gettime() - pressedTimer) > 5) {
+			pressLocked = false;
+		}
+	}
+	held = PAD_ButtonsHeld(0);
+}
 
 // the "main" for the menus
 // other menu functions are called from here
 // this also handles moving between menus and exiting
 bool menu_runMenu(void *currXfb) {
+	if (!callbackSet) {
+		cb = PAD_SetSamplingCallback(menuSamplingCallback);
+		callbackSet = true;
+	}
 	memset(strBuffer, '\0', sizeof(strBuffer));
 	resetCursor();
-	// read inputs
-	padsConnected = PAD_ScanPads();
 	
 	// read origin if a controller is connected and we don't have the origin
 	if (!originRead && (padsConnected & 1) == 1 ) {
@@ -114,10 +132,6 @@ bool menu_runMenu(void *currXfb) {
 		printStr("Oscilloscope Capture in memory!", currXfb);
 	}
 	setCursorPos(2, 0);
-	
-	// check for any buttons pressed/held
-	pressed = PAD_ButtonsDown(0);
-	held = PAD_ButtonsHeld(0);
 
 	// determine what menu we are in
 	switch (currentMenu) {
@@ -128,40 +142,7 @@ bool menu_runMenu(void *currXfb) {
 			menu_controllerTest(currXfb);
 			break;
 		case WAVEFORM:
-			if (displayInstructions) {
-				printStr("Press X to cycle the current test, results will show above the waveform. "
-					   "Use DPAD left/right to scroll waveform when it is\nlarger than the "
-					   "displayed area, hold R to move faster.", currXfb);
-				printStr("\n\nCURRENT TEST: ", currXfb);
-				switch (currentTest) {
-					case SNAPBACK:
-						printStr("SNAPBACK\nCheck the min/max value on a given axis depending on where\nyour "
-						        "stick started. If you moved the stick left, check the\nMax value on a given "
-						        "axis. Snapback can occur when the\nmax value is at or above 23. If right, "
-						        "then at or below -23.", currXfb);
-						break;
-					case PIVOT:
-						printStr("PIVOT\nFor a successful pivot, you want the stick's position to stay "
-						       "above/below +64/-64 for ~16.6ms (1 frame). Less, and you might get nothing, "
-						       "more, and you might get a dashback. You also need the stick to hit 80/-80 on "
-							   "both sides.\nCheck the PhobVision docs for more info.", currXfb);
-						break;
-					case DASHBACK:
-						printStr("DASHBACK\nA (vanilla) dashback will be successful when the stick doesn't get "
-						"polled between 23 and 64, or -23 and -64.\nLess time in this range is better.", currXfb);
-						break;
-					case FULL:
-						printStr("FULL MEASURE\nNot an actual test.\nWill fill the input buffer always,"
-							   " useful for longer inputs.", currXfb);
-						break;
-					default:
-						printStr("NO TEST SELECTED", currXfb);
-						break;
-				}
-			} else {
-				menu_waveformMeasure(currXfb);
-			}
-
+			menu_oscilloscope(currXfb, &pressed, &held);
 			break;
 		case PLOT_2D:
 			if (displayInstructions) {
@@ -205,6 +186,9 @@ bool menu_runMenu(void *currXfb) {
 				menu_coordinateViewer(currXfb);
 			}
 			break;
+		case CONTINUOUS_WAVEFORM:
+			menu_continuousWaveform(currXfb);
+			break;
 		default:
 			printStr("HOW DID WE END UP HERE?\n", currXfb);
 			break;
@@ -243,6 +227,14 @@ bool menu_runMenu(void *currXfb) {
 
 		// has the button been held long enough?
 		if (bHeldCounter > 46) {
+			// special exit stuff that needs to happen for certain menus
+			switch (currentMenu) {
+				case WAVEFORM:
+					menu_oscilloscopeEnd();
+					break;
+				default:
+					break;
+			}
 			currentMenu = MAIN_MENU;
 			displayInstructions = false;
 			bHeldCounter = 0;
@@ -253,7 +245,7 @@ bool menu_runMenu(void *currXfb) {
 	} else {
 		// does the user want to display instructions?
 		if (pressed & PAD_TRIGGER_Z) {
-			if (currentMenu == WAVEFORM || currentMenu == PLOT_2D || currentMenu == COORD_MAP) {
+			if (currentMenu == PLOT_2D || currentMenu == COORD_MAP) {
 				displayInstructions = !displayInstructions;
 			}
 		}
@@ -326,6 +318,9 @@ void menu_mainMenu(void *currXfb) {
 				break;
 			case 4:
 				currentMenu = FILE_EXPORT;
+				break;
+			case 5:
+				currentMenu = CONTINUOUS_WAVEFORM;
 				break;
 		}
 	}
@@ -665,374 +660,6 @@ void menu_controllerTest(void *currXfb) {
 	         COLOR_MEDGRAY, currXfb); // line from center
 	DrawFilledCircle(CONT_TEST_CSTICK_CENTER_X + (stickCoordinatesRaw.cx / 2), CONT_TEST_CSTICK_CENTER_Y - (stickCoordinatesRaw.cy / 2),
 	                 CONT_TEST_STICK_RAD / 2, COLOR_YELLOW, currXfb); // smaller circle
-}
-
-void menu_waveformMeasure(void *currXfb) {
-	// TODO: I would bet that there's an off-by-one in here somewhere...
-
-	// display instructions and data for user
-	printStr("Press A to start read, press Z for instructions\n", currXfb);
-
-	// do we have data that we can display?
-	if (data.isDataReady) {
-		int minX, minY;
-		int maxX, maxY;
-
-		// draw guidelines based on selected test
-		DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
-		DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY, currXfb);
-		// lots of the specific values are taken from:
-		// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
-		switch (currentTest) {
-			case PIVOT:
-				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
-				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
-				setCursorPos(8, 0);
-				printStr("+64", currXfb);
-				setCursorPos(15, 0);
-				printStr("-64", currXfb);
-				break;
-			case FULL:
-			case DASHBACK:
-				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
-				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
-				setCursorPos(8, 0);
-				printStr("+64", currXfb);
-				setCursorPos(15, 0);
-				printStr("-64", currXfb);
-			case SNAPBACK:
-				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, COLOR_GREEN, currXfb);
-				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, COLOR_GREEN, currXfb);
-				setCursorPos(10, 0);
-				printStr("+23", currXfb);
-				setCursorPos(13, 0);
-				printStr("-23", currXfb);
-			default:
-				break;
-		}
-
-
-		// draw waveform
-		// i think this is better than what was here before?
-		if (data.endPoint < 500) {
-			dataScrollOffset = 0;
-		}
-		
-		int prevX = data.data[dataScrollOffset].ax;
-		int prevY = data.data[dataScrollOffset].ay;
-		
-		// initialize stat values to first point
-		minX = prevX;
-		maxX = prevX;
-		minY = prevY;
-		maxY = prevY;
-		
-		int waveformPrevXPos = 0;
-		int waveformXPos = waveformScaleFactor;
-		u64 drawnTicksUs = 0;
-		
-		// draw 500 datapoints from the scroll offset
-		for (int i = dataScrollOffset + 1; i < dataScrollOffset + 500; i++) {
-			// make sure we haven't gone outside our bounds
-			if (i == data.endPoint || waveformXPos >= 500) {
-				break;
-			}
-			
-			// y first
-			DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevY,
-			         SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - data.data[i].ay,
-			         COLOR_BLUE_C, currXfb);
-			prevY = data.data[i].ay;
-			// then x
-			DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevX,
-			         SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - data.data[i].ax,
-			         COLOR_RED_C, currXfb);
-			prevX = data.data[i].ax;
-			
-			// update stat values
-			if (minX > prevX) {
-				minX = prevX;
-			}
-			if (maxX < prevX) {
-				maxX = prevX;
-			}
-			if (minY > prevY) {
-				minY = prevY;
-			}
-			if (maxY < prevY) {
-				maxY = prevY;
-			}
-			
-			// adding time from drawn points, to show how long the current view is
-			drawnTicksUs += data.data[i].timeDiffUs;
-			
-			// update scaling factor
-			waveformPrevXPos = waveformXPos;
-			waveformXPos += waveformScaleFactor;
-		}
-
-		// do we have enough data to enable scrolling?
-		// TODO: enable scrolling when scaled
-		if (data.endPoint >= 500 ) {
-			// does the user want to scroll the waveform?
-			if (held & PAD_BUTTON_RIGHT) {
-				if (held & PAD_TRIGGER_R) {
-					if (dataScrollOffset + 510 < data.endPoint) {
-						dataScrollOffset += 10;
-					}
-				} else {
-					if (dataScrollOffset + 501 < data.endPoint) {
-						dataScrollOffset++;
-					}
-				}
-			} else if (held & PAD_BUTTON_LEFT) {
-				if (held & PAD_TRIGGER_R) {
-					if (dataScrollOffset - 10 >= 0) {
-						dataScrollOffset -= 10;
-					}
-				} else {
-					if (dataScrollOffset - 1 >= 0) {
-						dataScrollOffset--;
-					}
-				}
-			}
-		}
-		
-		setCursorPos(3, 0);
-		// total time is stored in microseconds, divide by 1000 for milliseconds
-		sprintf(strBuffer, "Total: %u, %0.3f ms | Start: %d, Shown: %0.3f ms\n", data.endPoint, (data.totalTimeUs / ((float) 1000)), dataScrollOffset + 1, (drawnTicksUs / ((float) 1000)));
-		printStr(strBuffer, currXfb);
-
-		// print test data
-		setCursorPos(20, 0);
-		switch (currentTest) {
-			case SNAPBACK:
-				sprintf(strBuffer, "Min X: %04d | Min Y: %04d   |   ", minX, minY);
-				printStr(strBuffer, currXfb);
-				sprintf(strBuffer, "Max X: %04d | Max Y: %04d\n", maxX, maxY);
-				printStr(strBuffer, currXfb);
-				break;
-			case PIVOT:
-				bool pivotHit80 = false;
-				bool prevPivotHit80 = false;
-				bool leftPivotRange = false;
-				bool prevLeftPivotRange = false;
-				int pivotStartIndex = -1, pivotEndIndex = -1;
-				int pivotStartSign = 0;
-				// start from the back of the list
-				for (int i = data.endPoint; i >= 0; i--) {
-					// check x coordinate for +-64 (dash threshold)
-					if (data.data[i].ax >= 64 || data.data[i].ax <= -64) {
-						if (pivotEndIndex == -1) {
-							pivotEndIndex = i;
-						}
-						// pivot input must hit 80 on both sides
-						if (data.data[i].ax >= 80 || data.data[i].ax <= -80) {
-							pivotHit80 = true;
-						}
-					}
-
-					// are we outside the pivot range and have already logged data of being in range
-					if (pivotEndIndex != -1 && data.data[i].ax < 64 && data.data[i].ax > -64) {
-						leftPivotRange = true;
-						if (pivotStartIndex == -1) {
-							// need the "previous" poll since this one is out of the range
-							pivotStartIndex = i + 1;
-						}
-						if (prevLeftPivotRange || !pivotHit80) {
-							break;
-						}
-					}
-
-					// look for the initial input
-					if ( (data.data[i].ax >= 64 || data.data[i].ax <= -64) && leftPivotRange) {
-						// used to ensure starting input is from the opposite side
-						if (pivotStartSign == 0) {
-							pivotStartSign = data.data[i].ax;
-						}
-						prevLeftPivotRange = true;
-						if (data.data[i].ax >= 80 || data.data[i].ax <= -80) {
-							prevPivotHit80 = true;
-							break;
-						}
-					}
-				}
-
-				// phobvision doc says both sides need to hit 80 to succeed
-				// multiplication is to ensure signs are correct
-				if (prevPivotHit80 && pivotHit80 && (data.data[pivotEndIndex].ax * pivotStartSign < 0)) {
-					float noTurnPercent = 0;
-					float pivotPercent = 0;
-					float dashbackPercent = 0;
-
-					u64 timeInPivotRangeUs = 0;
-					for (int i = pivotStartIndex; i <= pivotEndIndex; i++) {
-						timeInPivotRangeUs += data.data[i].timeDiffUs;
-					}
-					
-					// convert time to float in milliseconds
-					float timeInPivotRangeMs = (timeInPivotRangeUs / 1000.0);
-					
-					// TODO: i think the calculation can be simplified here...
-					// how many milliseconds could a poll occur that would cause a miss
-					float diffFrameTimePoll = frameTime - timeInPivotRangeMs;
-					
-					// negative time difference, dashback
-					if (diffFrameTimePoll < 0) {
-						dashbackPercent = ((diffFrameTimePoll * -1) / frameTime) * 100;
-						if (dashbackPercent > 100) {
-							dashbackPercent = 100;
-						}
-						pivotPercent = 100 - dashbackPercent;
-					// positive or 0 time diff, no turn
-					} else {
-						noTurnPercent = (diffFrameTimePoll / frameTime) * 100;
-						if (noTurnPercent > 100) {
-							noTurnPercent = 100;
-						}
-						pivotPercent = 100 - noTurnPercent;
-					}
-					
-					sprintf(strBuffer, "MS: %2.2f | No turn: %2.0f%% | Pivot: %2.0f%% | Dashback: %2.0f%%",
-						   timeInPivotRangeMs, noTurnPercent, pivotPercent, dashbackPercent);
-					printStr(strBuffer, currXfb);
-					//printf("\nUS Total: %llu, Start index: %d, End index: %d", timeInPivotRangeUs, pivotStartIndex, pivotEndIndex);
-				} else {
-					printStr("No pivot input detected.", currXfb);
-				}
-				break;
-			case DASHBACK:
-				// go forward in list
-				int dashbackStartIndex = -1, dashbackEndIndex = -1;
-				u64 timeInRange = 0;
-				for (int i = 0; i < data.endPoint; i++) {
-					// is the stick in the range
-					if ((data.data[i].ax >= 23 && data.data[i].ax < 64) || (data.data[i].ax <= -23 && data.data[i].ax > -64)) {
-						timeInRange += data.data[i].timeDiffUs;
-						if (dashbackStartIndex == -1) {
-							dashbackStartIndex = i;
-						}
-					} else if (dashbackStartIndex != -1) {
-						dashbackEndIndex = i - 1;
-						break;
-					}
-				}
-				float dashbackPercent;
-				float ucfPercent;
-				
-				if (dashbackEndIndex == -1) {
-					dashbackPercent = 0;
-					ucfPercent = 0;
-				} else {
-					// convert time in microseconds to float time in milliseconds
-					float timeInRangeMs = (timeInRange / 1000.0);
-					
-					dashbackPercent = (1.0 - (timeInRangeMs / frameTime)) * 100;
-					
-					// ucf dashback is a little more involved
-					u64 ucfTimeInRange = timeInRange;
-					for (int i = dashbackStartIndex; i <= dashbackEndIndex; i++) {
-						// we're gonna assume that the previous frame polled around the origin, because i cant be bothered
-						// it also makes the math easier
-						u64 usFromPoll = 0;
-						int nextPollIndex = i;
-						// we need the sample that would occur around 1f after
-						while (usFromPoll < 16666) {
-							nextPollIndex++;
-							usFromPoll += data.data[nextPollIndex].timeDiffUs;
-						}
-						// the two frames need to move more than 75 units for UCF to convert it
-						if (data.data[i].ax + data.data[nextPollIndex].ax > 75 ||
-						    data.data[i].ax + data.data[nextPollIndex].ax < -75) {
-							ucfTimeInRange -= data.data[i].timeDiffUs;
-						}
-					}
-					
-					float ucfTimeInRangeMs = ucfTimeInRange / 1000.0;
-					if (ucfTimeInRangeMs <= 0) {
-						ucfPercent = 100;
-					} else {
-						ucfPercent = (1.0 - (ucfTimeInRangeMs / frameTime)) * 100;
-					}
-					
-					// this shouldn't happen in theory, maybe on box?
-					if (dashbackPercent > 100) {
-						dashbackPercent = 100;
-					}
-					if (ucfPercent > 100) {
-						ucfPercent = 100;
-					}
-					// this definitely can happen though
-					if (dashbackPercent < 0) {
-						dashbackPercent = 0;
-					}
-					if (ucfPercent < 0) {
-						ucfPercent = 0;
-					}
-				}
-				sprintf(strBuffer, "Vanilla Success: %2.0f%% | UCF Success: %2.0f%%", dashbackPercent, ucfPercent);
-				printStr(strBuffer, currXfb);
-				break;
-			case FULL:
-			case NO_TEST:
-				break;
-			default:
-				printStr("Error?", currXfb);
-				break;
-
-		}
-	}
-	setCursorPos(21,0);
-	printStr("Current test: ", currXfb);
-	switch (currentTest) {
-		case SNAPBACK:
-			printStr("Snapback", currXfb);
-			break;
-		case PIVOT:
-			printStr("Pivot", currXfb);
-			break;
-		case DASHBACK:
-			printStr("Dashback", currXfb);
-			break;
-		case NO_TEST:
-			printStr("None", currXfb);
-			break;
-		case FULL:
-			printStr("Full Measure", currXfb);
-			break;
-		default:
-			printStr("Error", currXfb);
-			break;
-	}
-
-	// only start reading if A is pressed
-	// TODO: figure out if this can be removed without having to gut the current poll logic, would be better for the user to not have to do this
-	if (pressed & PAD_BUTTON_A) {
-		if (currentTest == FULL) {
-			data.fullMeasure = true;
-		} else {
-			data.fullMeasure = false;
-		}
-		previousMenu = WAVEFORM;
-		currentMenu = WAITING_MEASURE;
-	// does the user want to change the test?
-	} else if (pressed & PAD_BUTTON_X) {
-		currentTest++;
-		// hacky way to disable pivot tests for now
-		if (currentTest == PIVOT) {
-			//currentTest++;
-		}
-		// check if we overrun our test length
-		if (currentTest == TEST_LEN) {
-			currentTest = SNAPBACK;
-		}
-	// adjust scaling factor
-	//} else if (pressed & PAD_BUTTON_Y) {
-	//	waveformScaleFactor++;
-	//	if (waveformScaleFactor > 5) {
-	//		waveformScaleFactor = 1;
-	//	}
-	}
 }
 
 void menu_2dPlot(void *currXfb) {
