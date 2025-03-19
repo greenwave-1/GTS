@@ -187,13 +187,6 @@ int main(int argc, char **argv) {
 	
 	// main loop of the program
 	while (true) {
-		// set si polling rate
-		// poll 2 times every frame, every 240 horizontal lines
-		// no idea why this has to be here, it gets reset after every run of this loop,
-		// probably something to do with re-initialising the framebuffers and stuff
-		//setSamplingRateNormal();
-		//SI_SetXY(240, 2);
-		
 		/*
 		#ifdef DEBUG
 		counter++;
@@ -236,6 +229,14 @@ int main(int argc, char **argv) {
 		#endif
 		 */
 		
+		if (SYS_ResetButtonDown()) {
+			VIDEO_ClearFrameBuffer(rmode, currXfb, COLOR_BLACK);
+			setCursorPos(10, 15);
+			printStr("Reset button pressed, exiting...", currXfb);
+			VIDEO_Flush();
+			VIDEO_WaitVSync();
+			break;
+		}
 
 		// Wait for the next frame
 		VIDEO_Flush();
