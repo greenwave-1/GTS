@@ -157,7 +157,6 @@ static void setup(u32 *p, u32 *h) {
 
 // function called from outside
 void menu_oscilloscope(void *currXfb, u32 *p, u32 *h) {
-	//tPressed = *pressed;
 	switch (state) {
 		case OSC_SETUP:
 			setup(p, h);

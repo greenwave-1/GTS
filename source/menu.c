@@ -83,36 +83,14 @@ static bool originRead = false;
 // buffer for strings with numbers and stuff
 static char strBuffer[100];
 
-static bool callbackSet = false;
-static sampling_callback cb;
-static u64 pressedTimer = 0;
-static bool pressLocked = false;
-static void menuSamplingCallback() {
-	padsConnected = PAD_ScanPads();
-	if (!pressLocked) {
-		pressed = PAD_ButtonsDown(0);
-		if (pressed != 0) {
-			pressLocked = true;
-			pressedTimer = gettime();
-		}
-	} else {
-		if (ticks_to_millisecs(gettime() - pressedTimer) > 5) {
-			pressLocked = false;
-		}
-	}
-	held = PAD_ButtonsHeld(0);
-}
-
 // the "main" for the menus
 // other menu functions are called from here
 // this also handles moving between menus and exiting
 bool menu_runMenu(void *currXfb) {
-	if (!callbackSet) {
-		cb = PAD_SetSamplingCallback(menuSamplingCallback);
-		callbackSet = true;
-	}
 	memset(strBuffer, '\0', sizeof(strBuffer));
 	resetCursor();
+	// read inputs
+	padsConnected = PAD_ScanPads();
 	
 	// read origin if a controller is connected and we don't have the origin
 	if (!originRead && (padsConnected & 1) == 1 ) {
@@ -132,6 +110,13 @@ bool menu_runMenu(void *currXfb) {
 		printStr("Oscilloscope Capture in memory!", currXfb);
 	}
 	setCursorPos(2, 0);
+	
+	// check for any buttons pressed/held
+	// don't update if we are on a menu with its own callback
+	if (currentMenu != WAVEFORM) {
+		pressed = PAD_ButtonsDown(0);
+		held = PAD_ButtonsHeld(0);
+	}
 
 	// determine what menu we are in
 	switch (currentMenu) {
