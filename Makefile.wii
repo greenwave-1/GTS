@@ -32,6 +32,11 @@ ifeq ($(DEBUG), 1)
 	CFLAGS += -DDEBUG
 endif
 
+BENCH ?= 0
+ifeq ($(BENCH), 1)
+	CFLAGS += -DBENCH
+endif
+
 ifdef version
 	CFLAGS += -DVERSION_NUMBER=\"$(version)\"
 else

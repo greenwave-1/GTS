@@ -1,6 +1,7 @@
 // fossScope (working title)
 
 #include <stdio.h>
+#include <string.h>
 #include <gccore.h>
 #include <ogc/video.h>
 #include <ogc/lwp_watchdog.h>
@@ -144,16 +145,11 @@ int main(int argc, char **argv) {
 	}
 	*/
 	
-	/*
-	#ifdef DEBUG
-	int minUs = 0;
-	int maxUs = 0;
-	int avgUs = 0;
-	int counter = 0;
+	
+	#ifdef BENCH
 	long long unsigned int time = 0;
 	int us = 0;
 	#endif
-	 */
 	
 	switch (VIDEO_GetCurrentTvMode()) {
 		case VI_NTSC:
@@ -205,12 +201,11 @@ int main(int argc, char **argv) {
 			break;
 		}
 		#endif
-		/*
-		#ifdef DEBUG
-		counter++;
+		
+		#ifdef BENCH
 		time = gettime();
 		#endif
-		 */
+		
 		
 		if (shouldExit) {
 			break;
@@ -238,14 +233,15 @@ int main(int argc, char **argv) {
 		}
 		xfbSwitch = !xfbSwitch;
 		
-		/*
-		#ifdef DEBUG
+		
+		#ifdef BENCH
 		us = ticks_to_microsecs(gettime() - time);
 		char msg[100];
-		sprintf(msg, "Microseconds taken in loop: %d", us);
-		sendMessage(msg);
+		sprintf(msg, "%d", us);
+		setCursorPos(22, 62 - strlen(msg));
+		printStrColor(msg, currXfb, COLOR_WHITE, COLOR_BLACK);
 		#endif
-		 */
+		
 		
 		if (SYS_ResetButtonDown()) {
 			VIDEO_ClearFrameBuffer(rmode, currXfb, COLOR_BLACK);

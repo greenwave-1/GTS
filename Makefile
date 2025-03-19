@@ -49,6 +49,10 @@ debug:
 	$(MAKE) -f Makefile.gc DEBUG=1
 	$(MAKE) -f Makefile.wii DEBUG=1
 
+bench:
+	$(MAKE) -f Makefile.gc BENCH=1
+	$(MAKE) -f Makefile.wii BENCH=1
+
 release:
 	$(MAKE) -f Makefile.gc version=$(version)
 	$(MAKE) -f Makefile.wii version=$(version)
