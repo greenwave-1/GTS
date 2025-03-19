@@ -8,21 +8,21 @@
 #include "../draw.h"
 #include "../polling.h"
 #include "../stickmap_coordinates.h"
-#include "../waveform.h"
+//#include "../waveform.h"
 
-#define STICK_MOVEMENT_THRESHOLD 5
-#define STICK_TIME_THRESHOLD_MS 100
-#define MEASURE_COOLDOWN_FRAMES 5
+const static u8 STICK_MOVEMENT_THRESHOLD = 5;
+const static u8 STICK_TIME_THRESHOLD_MS = 50;
+const static u8 MEASURE_COOLDOWN_FRAMES = 5;
 
-#define SCREEN_TIMEPLOT_START 70
+const static u8 SCREEN_TIMEPLOT_START = 70;
 
 static const uint32_t COLOR_RED_C = 0x846084d7;
 static const uint32_t COLOR_BLUE_C = 0x6dd26d72;
 
-static enum MENU_STATE state = OSC_SETUP;
+static enum OSC_MENU_STATE state = OSC_SETUP;
 static enum OSCILLOSCOPE_STATE oState = PRE_INPUT;
 
-static WaveformData data = { {{ 0 }}, 0, 500, false, false };
+static WaveformData *data = NULL; // = { {{ 0 }}, 0, 500, false, false };
 static enum OSCILLOSCOPE_TEST currentTest = SNAPBACK;
 static int waveformScaleFactor = 1;
 static int dataScrollOffset = 0;
@@ -77,10 +77,10 @@ static void oscilloscopeCallback() {
 		y = PAD_StickY(0);
 		// we're already recording an input
 		if (stickMove) {
-			data.data[data.endPoint].ax = x;
-			data.data[data.endPoint].ay = y;
-			data.data[data.endPoint].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-			data.endPoint++;
+			data->data[data->endPoint].ax = x;
+			data->data[data->endPoint].ay = y;
+			data->data[data->endPoint].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+			data->endPoint++;
 			// are we close to the origin?
 			if ((x < STICK_MOVEMENT_THRESHOLD && x > -STICK_MOVEMENT_THRESHOLD) &&
 					(y < STICK_MOVEMENT_THRESHOLD && y > -STICK_MOVEMENT_THRESHOLD)) {
@@ -88,8 +88,8 @@ static void oscilloscopeCallback() {
 			} else {
 				timeStickInOrigin = 0;
 			}
-			if (data.endPoint == WAVEFORM_SAMPLES || (timeStickInOrigin / 1000) >= 40) {
-				data.isDataReady = true;
+			if (data->endPoint == WAVEFORM_SAMPLES || (timeStickInOrigin / 1000) >= STICK_TIME_THRESHOLD_MS) {
+				data->isDataReady = true;
 				stickMove = false;
 				display = true;
 				oState = POST_INPUT_LOCK;
@@ -101,10 +101,10 @@ static void oscilloscopeCallback() {
 			if ((x > STICK_MOVEMENT_THRESHOLD || x < -STICK_MOVEMENT_THRESHOLD) ||
 					(y > STICK_MOVEMENT_THRESHOLD) || (y < -STICK_MOVEMENT_THRESHOLD)) {
 				stickMove = true;
-				data.data[0].ax = x;
-				data.data[0].ay = y;
-				data.data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-				data.endPoint = 1;
+				data->data[0].ax = x;
+				data->data[0].ay = y;
+				data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+				data->endPoint = 1;
 				oState = PRE_INPUT;
 			}
 		}
@@ -147,19 +147,25 @@ static void printInstructions(void *currXfb) {
 }
 
 // only run once
-static void setup(u32 *p, u32 *h) {
+static void setup(WaveformData *d, u32 *p, u32 *h) {
 	setSamplingRateHigh();
 	pressed = p;
 	held = h;
 	cb = PAD_SetSamplingCallback(oscilloscopeCallback);
 	state = OSC_POST_SETUP;
+	if(data == NULL) {
+		data = d;
+	}
+	if (data->isDataReady && oState == PRE_INPUT) {
+		oState = POST_INPUT_LOCK;
+	}
 }
 
 // function called from outside
-void menu_oscilloscope(void *currXfb, u32 *p, u32 *h) {
+void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 	switch (state) {
 		case OSC_SETUP:
-			setup(p, h);
+			setup(data, p, h);
 			break;
 		case OSC_POST_SETUP:
 			switch (oState) {
@@ -191,7 +197,7 @@ void menu_oscilloscope(void *currXfb, u32 *p, u32 *h) {
 					// draw guidelines based on selected test
 					DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
 					DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY, currXfb);
-					if (data.isDataReady) {
+					if (data->isDataReady) {
 
 						// draw guidelines based on selected test
 						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
@@ -228,12 +234,12 @@ void menu_oscilloscope(void *currXfb, u32 *p, u32 *h) {
 						int minX, minY;
 						int maxX, maxY;
 
-						if (data.endPoint < 500) {
+						if (data->endPoint < 500) {
 							dataScrollOffset = 0;
 						}
 
-						int prevX = data.data[dataScrollOffset].ax;
-						int prevY = data.data[dataScrollOffset].ay;
+						int prevX = data->data[dataScrollOffset].ax;
+						int prevY = data->data[dataScrollOffset].ay;
 
 						// initialize stat values to first point
 						minX = prevX;
@@ -248,20 +254,20 @@ void menu_oscilloscope(void *currXfb, u32 *p, u32 *h) {
 						// draw 500 datapoints from the scroll offset
 						for (int i = dataScrollOffset + 1; i < dataScrollOffset + 500; i++) {
 							// make sure we haven't gone outside our bounds
-							if (i == data.endPoint || waveformXPos >= 500) {
+							if (i == data->endPoint || waveformXPos >= 500) {
 								break;
 							}
 
 							// y first
 							DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevY,
-									SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - data.data[i].ay,
+									SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - data->data[i].ay,
 									COLOR_BLUE_C, currXfb);
-							prevY = data.data[i].ay;
+							prevY = data->data[i].ay;
 							// then x
 							DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevX,
-									SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - data.data[i].ax,
+									SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - data->data[i].ax,
 									COLOR_RED_C, currXfb);
-							prevX = data.data[i].ax;
+							prevX = data->data[i].ax;
 
 							// update stat values
 							if (minX > prevX) {
@@ -278,7 +284,7 @@ void menu_oscilloscope(void *currXfb, u32 *p, u32 *h) {
 							}
 
 							// adding time from drawn points, to show how long the current view is
-							drawnTicksUs += data.data[i].timeDiffUs;
+							drawnTicksUs += data->data[i].timeDiffUs;
 
 							// update scaling factor
 							waveformPrevXPos = waveformXPos;
@@ -287,15 +293,15 @@ void menu_oscilloscope(void *currXfb, u32 *p, u32 *h) {
 
 						// do we have enough data to enable scrolling?
 						// TODO: enable scrolling when scaled
-						if (data.endPoint >= 500 ) {
+						if (data->endPoint >= 500 ) {
 							// does the user want to scroll the waveform?
 							if (*held & PAD_BUTTON_RIGHT) {
 								if (*held & PAD_TRIGGER_R) {
-									if (dataScrollOffset + 510 < data.endPoint) {
+									if (dataScrollOffset + 510 < data->endPoint) {
 										dataScrollOffset += 10;
 									}
 								} else {
-									if (dataScrollOffset + 501 < data.endPoint) {
+									if (dataScrollOffset + 501 < data->endPoint) {
 										dataScrollOffset++;
 									}
 								}
@@ -314,7 +320,7 @@ void menu_oscilloscope(void *currXfb, u32 *p, u32 *h) {
 
 						setCursorPos(3, 0);
 						// total time is stored in microseconds, divide by 1000 for milliseconds
-						sprintf(strBuffer, "Total: %u, %0.3f ms | Start: %d, Shown: %0.3f ms\n", data.endPoint, (data.totalTimeUs / ((float) 1000)), dataScrollOffset + 1, (drawnTicksUs / ((float) 1000)));
+						sprintf(strBuffer, "Total: %u, %0.3f ms | Start: %d, Shown: %0.3f ms\n", data->endPoint, (data->totalTimeUs / ((float) 1000)), dataScrollOffset + 1, (drawnTicksUs / ((float) 1000)));
 						printStr(strBuffer, currXfb);
 
 						// print test data
@@ -334,20 +340,20 @@ void menu_oscilloscope(void *currXfb, u32 *p, u32 *h) {
 								int pivotStartIndex = -1, pivotEndIndex = -1;
 								int pivotStartSign = 0;
 								// start from the back of the list
-								for (int i = data.endPoint; i >= 0; i--) {
+								for (int i = data->endPoint; i >= 0; i--) {
 									// check x coordinate for +-64 (dash threshold)
-									if (data.data[i].ax >= 64 || data.data[i].ax <= -64) {
+									if (data->data[i].ax >= 64 || data->data[i].ax <= -64) {
 										if (pivotEndIndex == -1) {
 											pivotEndIndex = i;
 										}
 										// pivot input must hit 80 on both sides
-										if (data.data[i].ax >= 80 || data.data[i].ax <= -80) {
+										if (data->data[i].ax >= 80 || data->data[i].ax <= -80) {
 											pivotHit80 = true;
 										}
 									}
 
 									// are we outside the pivot range and have already logged data of being in range
-									if (pivotEndIndex != -1 && data.data[i].ax < 64 && data.data[i].ax > -64) {
+									if (pivotEndIndex != -1 && data->data[i].ax < 64 && data->data[i].ax > -64) {
 										leftPivotRange = true;
 										if (pivotStartIndex == -1) {
 											// need the "previous" poll since this one is out of the range
@@ -359,13 +365,13 @@ void menu_oscilloscope(void *currXfb, u32 *p, u32 *h) {
 									}
 
 									// look for the initial input
-									if ( (data.data[i].ax >= 64 || data.data[i].ax <= -64) && leftPivotRange) {
+									if ( (data->data[i].ax >= 64 || data->data[i].ax <= -64) && leftPivotRange) {
 										// used to ensure starting input is from the opposite side
 										if (pivotStartSign == 0) {
-											pivotStartSign = data.data[i].ax;
+											pivotStartSign = data->data[i].ax;
 										}
 										prevLeftPivotRange = true;
-										if (data.data[i].ax >= 80 || data.data[i].ax <= -80) {
+										if (data->data[i].ax >= 80 || data->data[i].ax <= -80) {
 											prevPivotHit80 = true;
 											break;
 										}
@@ -374,14 +380,14 @@ void menu_oscilloscope(void *currXfb, u32 *p, u32 *h) {
 
 								// phobvision doc says both sides need to hit 80 to succeed
 								// multiplication is to ensure signs are correct
-								if (prevPivotHit80 && pivotHit80 && (data.data[pivotEndIndex].ax * pivotStartSign < 0)) {
+								if (prevPivotHit80 && pivotHit80 && (data->data[pivotEndIndex].ax * pivotStartSign < 0)) {
 									float noTurnPercent = 0;
 									float pivotPercent = 0;
 									float dashbackPercent = 0;
 
 									u64 timeInPivotRangeUs = 0;
 									for (int i = pivotStartIndex; i <= pivotEndIndex; i++) {
-										timeInPivotRangeUs += data.data[i].timeDiffUs;
+										timeInPivotRangeUs += data->data[i].timeDiffUs;
 									}
 
 									// convert time to float in milliseconds
@@ -419,10 +425,10 @@ void menu_oscilloscope(void *currXfb, u32 *p, u32 *h) {
 								// go forward in list
 								int dashbackStartIndex = -1, dashbackEndIndex = -1;
 								u64 timeInRange = 0;
-								for (int i = 0; i < data.endPoint; i++) {
+								for (int i = 0; i < data->endPoint; i++) {
 									// is the stick in the range
-									if ((data.data[i].ax >= 23 && data.data[i].ax < 64) || (data.data[i].ax <= -23 && data.data[i].ax > -64)) {
-										timeInRange += data.data[i].timeDiffUs;
+									if ((data->data[i].ax >= 23 && data->data[i].ax < 64) || (data->data[i].ax <= -23 && data->data[i].ax > -64)) {
+										timeInRange += data->data[i].timeDiffUs;
 										if (dashbackStartIndex == -1) {
 											dashbackStartIndex = i;
 										}
@@ -453,12 +459,12 @@ void menu_oscilloscope(void *currXfb, u32 *p, u32 *h) {
 										// we need the sample that would occur around 1f after
 										while (usFromPoll < 16666) {
 											nextPollIndex++;
-											usFromPoll += data.data[nextPollIndex].timeDiffUs;
+											usFromPoll += data->data[nextPollIndex].timeDiffUs;
 										}
 										// the two frames need to move more than 75 units for UCF to convert it
-										if (data.data[i].ax + data.data[nextPollIndex].ax > 75 ||
-												data.data[i].ax + data.data[nextPollIndex].ax < -75) {
-											ucfTimeInRange -= data.data[i].timeDiffUs;
+										if (data->data[i].ax + data->data[nextPollIndex].ax > 75 ||
+												data->data[i].ax + data->data[nextPollIndex].ax < -75) {
+											ucfTimeInRange -= data->data[i].timeDiffUs;
 										}
 									}
 

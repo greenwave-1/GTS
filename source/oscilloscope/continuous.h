@@ -5,9 +5,10 @@
 #ifndef FOSSSCOPE_R2_CONTINUOUS_H
 #define FOSSSCOPE_R2_CONTINUOUS_H
 
-enum CONT_MENU_STATE { CONT_SETUP, CONT_POST_SETUP, CONT_INSTRUCTIONS };
+enum CONT_MENU_STATE { CONT_SETUP, CONT_POST_SETUP };
 
 void menu_continuousWaveform(void *currXfb);
+void menu_continuousEnd();
 
 
 

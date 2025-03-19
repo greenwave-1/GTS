@@ -65,7 +65,10 @@ static u32 held = 0;
 static u8 stickheld = 0;
 
 // menu item strings
-static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Coordinate Viewer", "2D Plot", "Export Data", "Continuous Waveform" };
+//static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Coordinate Viewer", "2D Plot", "Export Data", "Continuous Waveform" };
+static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Continuous Oscilloscope",
+                                                "Coordinate Viewer", "2D Plot", "Export Data"};
+
 
 static bool displayedWaitingInputMessage = false;
 
@@ -127,7 +130,7 @@ bool menu_runMenu(void *currXfb) {
 			menu_controllerTest(currXfb);
 			break;
 		case WAVEFORM:
-			menu_oscilloscope(currXfb, &pressed, &held);
+			menu_oscilloscope(currXfb, &data, &pressed, &held);
 			break;
 		case PLOT_2D:
 			if (displayInstructions) {
@@ -217,6 +220,9 @@ bool menu_runMenu(void *currXfb) {
 				case WAVEFORM:
 					menu_oscilloscopeEnd();
 					break;
+				case CONTINUOUS_WAVEFORM:
+					menu_continuousEnd();
+					break;
 				default:
 					break;
 			}
@@ -278,10 +284,14 @@ void menu_mainMenu(void *currXfb) {
 	if (pressed & PAD_BUTTON_UP || (up && movable)) {
 		if (mainMenuSelection > 0) {
 			mainMenuSelection--;
+		} else {
+			mainMenuSelection = MENUITEMS_LEN - 1;
 		}
 	} else if (pressed & PAD_BUTTON_DOWN || (down && movable)) {
 		if (mainMenuSelection < MENUITEMS_LEN - 1) {
 			mainMenuSelection++;
+		} else {
+			mainMenuSelection = 0;
 		}
 	}
 
@@ -296,16 +306,16 @@ void menu_mainMenu(void *currXfb) {
 				currentMenu = WAVEFORM;
 				break;
 			case 2:
-				currentMenu = COORD_MAP;
+				currentMenu = CONTINUOUS_WAVEFORM;
 				break;
 			case 3:
-				currentMenu = PLOT_2D;
+				currentMenu = COORD_MAP;
 				break;
 			case 4:
-				currentMenu = FILE_EXPORT;
+				currentMenu = PLOT_2D;
 				break;
 			case 5:
-				currentMenu = CONTINUOUS_WAVEFORM;
+				currentMenu = FILE_EXPORT;
 				break;
 		}
 	}
@@ -655,6 +665,9 @@ void menu_2dPlot(void *currXfb) {
 
 	// do we have data that we can display?
 	if (data.isDataReady) {
+		if (lastDrawPoint == -1) {
+			lastDrawPoint = data.endPoint - 1;
+		}
 		convertedCoords = convertStickValues(&data.data[lastDrawPoint]);
 		// TODO: move instructions under different prompt, so I don't have to keep messing with text placement
 		
