@@ -5,9 +5,12 @@
 #ifndef FOSSSCOPE_R2_CONTINUOUS_H
 #define FOSSSCOPE_R2_CONTINUOUS_H
 
-enum CONT_MENU_STATE { CONT_SETUP, CONT_POST_SETUP };
+#include <gccore.h>
 
-void menu_continuousWaveform(void *currXfb);
+enum CONT_MENU_STATE { CONT_SETUP, CONT_POST_SETUP };
+enum CONT_STATE { INPUT, INPUT_LOCK };
+
+void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h);
 void menu_continuousEnd();
 
 

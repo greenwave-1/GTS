@@ -31,6 +31,7 @@ static char strBuffer[100];
 static u8 stickCooldown = 0;
 static bool pressLocked = false;
 static bool stickMove = false;
+static bool showCStick = false;
 static bool display = false;
 
 static u8 ellipseCounter = 0;
@@ -52,7 +53,7 @@ static void oscilloscopeCallback() {
 		prevSampleCallbackTick = sampleCallbackTick;
 	}
 
-	static s8 x, y;
+	static s8 x, y, cx, cy;
 	PAD_ScanPads();
 
 	// keep buttons in a "pressed" state long enough for code to see it
@@ -75,18 +76,31 @@ static void oscilloscopeCallback() {
 	if (oState != POST_INPUT_LOCK) {
 		x = PAD_StickX(0);
 		y = PAD_StickY(0);
+		cx = PAD_SubStickX(0);
+		cy = PAD_SubStickY(0);
 		// we're already recording an input
 		if (stickMove) {
 			data->data[data->endPoint].ax = x;
 			data->data[data->endPoint].ay = y;
+			data->data[data->endPoint].cx = cx;
+			data->data[data->endPoint].cy = cy;
 			data->data[data->endPoint].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 			data->endPoint++;
 			// are we close to the origin?
-			if ((x < STICK_MOVEMENT_THRESHOLD && x > -STICK_MOVEMENT_THRESHOLD) &&
-					(y < STICK_MOVEMENT_THRESHOLD && y > -STICK_MOVEMENT_THRESHOLD)) {
-				timeStickInOrigin += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
+			if (!showCStick) {
+				if ((x < STICK_MOVEMENT_THRESHOLD && x > -STICK_MOVEMENT_THRESHOLD) &&
+				    (y < STICK_MOVEMENT_THRESHOLD && y > -STICK_MOVEMENT_THRESHOLD)) {
+					timeStickInOrigin += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
+				} else {
+					timeStickInOrigin = 0;
+				}
 			} else {
-				timeStickInOrigin = 0;
+				if ((cx < STICK_MOVEMENT_THRESHOLD && cx > -STICK_MOVEMENT_THRESHOLD) &&
+				    (cy < STICK_MOVEMENT_THRESHOLD && cy > -STICK_MOVEMENT_THRESHOLD)) {
+					timeStickInOrigin += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
+				} else {
+					timeStickInOrigin = 0;
+				}
 			}
 			if (data->endPoint == WAVEFORM_SAMPLES || (timeStickInOrigin / 1000) >= STICK_TIME_THRESHOLD_MS) {
 				data->isDataReady = true;
@@ -98,14 +112,30 @@ static void oscilloscopeCallback() {
 			// we've not recorded an input yet
 		} else {
 			// does the stick move outside the threshold?
-			if ((x > STICK_MOVEMENT_THRESHOLD || x < -STICK_MOVEMENT_THRESHOLD) ||
-					(y > STICK_MOVEMENT_THRESHOLD) || (y < -STICK_MOVEMENT_THRESHOLD)) {
-				stickMove = true;
-				data->data[0].ax = x;
-				data->data[0].ay = y;
-				data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-				data->endPoint = 1;
-				oState = PRE_INPUT;
+			if (!showCStick) {
+				if ((x > STICK_MOVEMENT_THRESHOLD || x < -STICK_MOVEMENT_THRESHOLD) ||
+				    (y > STICK_MOVEMENT_THRESHOLD) || (y < -STICK_MOVEMENT_THRESHOLD)) {
+					stickMove = true;
+					data->data[0].ax = x;
+					data->data[0].ay = y;
+					data->data[0].cx = cx;
+					data->data[0].cy = cy;
+					data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+					data->endPoint = 1;
+					oState = PRE_INPUT;
+				}
+			} else {
+				if ((cx > STICK_MOVEMENT_THRESHOLD || cx < -STICK_MOVEMENT_THRESHOLD) ||
+				    (cy > STICK_MOVEMENT_THRESHOLD) || (cy < -STICK_MOVEMENT_THRESHOLD)) {
+					stickMove = true;
+					data->data[0].ax = x;
+					data->data[0].ay = y;
+					data->data[0].cx = cx;
+					data->data[0].cy = cy;
+					data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+					data->endPoint = 1;
+					oState = PRE_INPUT;
+				}
 			}
 		}
 	}
@@ -114,6 +144,7 @@ static void oscilloscopeCallback() {
 static void printInstructions(void *currXfb) {
 	setCursorPos(2, 0);
 	printStr("Press X to cycle the current test, results will show above the waveform. "
+			 "Press Y to cycle between Analog Stick and C-Stick.\n"
 	         "Use DPAD left/right to scroll waveform when it is\nlarger than the "
 	         "displayed area, hold R to move faster.", currXfb);
 	printStr("\n\nCURRENT TEST: ", currXfb);
@@ -257,17 +288,26 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 							if (i == data->endPoint || waveformXPos >= 500) {
 								break;
 							}
+							
+							int currY, currX;
+							if (!showCStick) {
+								currY = data->data[i].ay;
+								currX = data->data[i].ax;
+							} else {
+								currY = data->data[i].cy;
+								currX = data->data[i].cx;
+							}
 
 							// y first
 							DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevY,
-									SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - data->data[i].ay,
+									SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currY,
 									COLOR_BLUE_C, currXfb);
-							prevY = data->data[i].ay;
+							prevY = currY;
 							// then x
 							DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevX,
-									SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - data->data[i].ax,
+									SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currX,
 									COLOR_RED_C, currXfb);
-							prevX = data->data[i].ax;
+							prevX = currX;
 
 							// update stat values
 							if (minX > prevX) {
@@ -320,7 +360,12 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 
 						setCursorPos(3, 0);
 						// total time is stored in microseconds, divide by 1000 for milliseconds
-						sprintf(strBuffer, "Total: %u, %0.3f ms | Start: %d, Shown: %0.3f ms\n", data->endPoint, (data->totalTimeUs / ((float) 1000)), dataScrollOffset + 1, (drawnTicksUs / ((float) 1000)));
+						if (!showCStick) {
+							printStr("Stick ", currXfb);
+						} else {
+							printStr("C-Stick ", currXfb);
+						}
+						sprintf(strBuffer, "total: %u, %0.3f ms | Start: %d, Shown: %0.3f ms\n", data->endPoint, (data->totalTimeUs / ((float) 1000)), dataScrollOffset + 1, (drawnTicksUs / ((float) 1000)));
 						printStr(strBuffer, currXfb);
 
 						// print test data
@@ -540,10 +585,20 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 					if (currentTest == OSCILLOSCOPE_TEST_LEN) {
 						currentTest = SNAPBACK;
 					}
+					if (showCStick && (currentTest != SNAPBACK && currentTest < NO_TEST)) {
+						currentTest = NO_TEST;
+					}
 					buttonLock = true;
 				}
 				if (*pressed & PAD_TRIGGER_Z && !buttonLock) {
 					state = OSC_INSTRUCTIONS;
+					buttonLock = true;
+				}
+				if (*pressed & PAD_BUTTON_Y && !buttonLock) {
+					showCStick = !showCStick;
+					if (showCStick) {
+						currentTest = SNAPBACK;
+					}
 					buttonLock = true;
 				}
 			}

@@ -124,7 +124,7 @@ bool menu_runMenu(void *currXfb) {
 	
 	// check for any buttons pressed/held
 	// don't update if we are on a menu with its own callback
-	if (currentMenu != WAVEFORM) {
+	if (currentMenu != WAVEFORM && currentMenu != CONTINUOUS_WAVEFORM) {
 		pressed = PAD_ButtonsDown(0);
 		held = PAD_ButtonsHeld(0);
 	}
@@ -183,7 +183,7 @@ bool menu_runMenu(void *currXfb) {
 			}
 			break;
 		case CONTINUOUS_WAVEFORM:
-			menu_continuousWaveform(currXfb);
+			menu_continuousWaveform(currXfb, &pressed, &held);
 			break;
 		default:
 			printStr("HOW DID WE END UP HERE?\n", currXfb);
