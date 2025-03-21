@@ -6,6 +6,12 @@
 //#include "images/stickmaps.h"
 #include "images/custom_colors.h"
 
+static bool do2xHorizontalDraw = false;
+
+void setInterlaced(bool interlaced) {
+	do2xHorizontalDraw = interlaced;
+}
+
 // most of this is taken from
 // https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
 // TODO: this is easily the most costly function in here. single main loop goes from 4ms to 10 ms from calling this,
@@ -37,7 +43,7 @@ void drawImage(void *currXfb, const unsigned char image[], const unsigned char c
 		for (int column = offsetX; column < imageEndpointX; column++) {
 			// is there a pixel to actually draw? (0-4 is transparency)
 			if (color >= 5) {
-				DrawDot(column, row, CUSTOM_COLORS[color - 5], currXfb);
+				DrawDotAccurate(column, row, CUSTOM_COLORS[color - 5], currXfb);
 			}
 			
 			runIndex++;
@@ -58,7 +64,7 @@ void drawImage(void *currXfb, const unsigned char image[], const unsigned char c
 */
 void DrawHLine (int x1, int x2, int y, int color, void *xfb) {
 	for (int i = x1; i <= x2; i++) {
-		DrawDot(i, y, color, xfb);
+		DrawDotAccurate(i, y, color, xfb);
 	}
 }
 
@@ -155,13 +161,18 @@ void DrawLine(int x1, int y1, int x2, int y2, int color, void *xfb) {
 	}
 }
 
-/*
+
 void DrawDot (int x, int y, int color, void *xfb) {
-	x >>= 1;
-	u32 *tmpfb = xfb;
-	tmpfb[x + (640 * y) / 2] = color;
-}*/
-void DrawDot (int x, int y, int color, void *xfb) {
+	if (do2xHorizontalDraw) {
+		x >>= 1;
+		u32 *tmpfb = xfb;
+		tmpfb[x + (640 * y) / 2] = color;
+	} else {
+		DrawDotAccurate(x, y, color, xfb);
+	}
+}
+
+void DrawDotAccurate (int x, int y, int color, void *xfb) {
 	uint32_t *tmpfb = xfb;
 	int index = (x >> 1) + (640 * y) / 2;
 	uint32_t data = tmpfb[index];
@@ -247,7 +258,7 @@ void DrawFilledCircle(int cx, int cy, int r, int color, void *xfb) {
 	for (int ty = (r * -1); ty <= r; ty++) {
 		for (int tx = (r * -1); tx <= r; tx++) {
 			if ( (tx * tx) + (ty * ty) <= (r * r)) {
-				DrawDot(cx + tx, cy + ty, color, xfb);
+				DrawDotAccurate(cx + tx, cy + ty, color, xfb);
 			}
 		}
 	}

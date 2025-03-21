@@ -43,7 +43,7 @@ void drawChar(unsigned char bitmap[],
 		for(int col = 0; col < 8; col++) {
 			if((font[(character-0x20)*15+row] << col) & 0b10000000) {
 				uint16_t colOffset = col+currX + PRINT_PADDING_HORIZONTAL;
-				DrawDot(colOffset, rowOffset, color, bitmap);
+				DrawDotAccurate(colOffset, rowOffset, color, bitmap);
 			}
 		}
 	}
@@ -64,7 +64,7 @@ void drawCharDirect(unsigned char bitmap[],
 		for(int col = 0; col < 8; col++) {
 			if((font[(character-0x20)*15+row] << col) & 0b10000000) {
 				uint16_t colOffset = col+x;
-				DrawDot(colOffset, rowOffset, color, bitmap);
+				DrawDotAccurate(colOffset, rowOffset, color, bitmap);
 			}
 		}
 	}

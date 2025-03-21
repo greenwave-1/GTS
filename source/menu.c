@@ -13,7 +13,7 @@
 #include "images/stickmaps.h"
 #include "draw.h"
 #include "print.h"
-#include "export.h"
+#include "file.h"
 #include "stickmap_coordinates.h"
 
 #include "oscilloscope/oscilloscope.h"
@@ -86,10 +86,18 @@ static bool originRead = false;
 // buffer for strings with numbers and stuff
 static char strBuffer[100];
 
+static bool setDrawInterlaceMode = false;
+
 // the "main" for the menus
 // other menu functions are called from here
 // this also handles moving between menus and exiting
 bool menu_runMenu(void *currXfb) {
+	if (!setDrawInterlaceMode) {
+		if (VIDEO_GetScanMode() == VI_INTERLACE) {
+			setInterlaced(true);
+		}
+		setDrawInterlaceMode = true;
+	}
 	memset(strBuffer, '\0', sizeof(strBuffer));
 	resetCursor();
 	// read inputs
