@@ -4,6 +4,7 @@
 
 #include "oscilloscope.h"
 #include <ogc/lwp_watchdog.h>
+#include <stdlib.h>
 #include "../print.h"
 #include "../draw.h"
 #include "../polling.h"
@@ -29,6 +30,8 @@ static int dataScrollOffset = 0;
 static char strBuffer[100];
 
 static u8 stickCooldown = 0;
+static s8 snapbackStartPosX = 0, snapbackStartPosY = 0;
+static s8 snapbackPrevPosX = 0, snapbackPrevPosY = 0;
 static bool pressLocked = false;
 static bool stickMove = false;
 static bool showCStick = false;
@@ -39,6 +42,7 @@ static u64 pressedTimer = 0;
 static u64 prevSampleCallbackTick = 0;
 static u64 sampleCallbackTick = 0;
 static u64 timeStickInOrigin = 0;
+static u64 timeStoppedMoving = 0;
 
 static u32 *pressed;
 static u32 *held;
@@ -78,63 +82,168 @@ static void oscilloscopeCallback() {
 		y = PAD_StickY(0);
 		cx = PAD_SubStickX(0);
 		cy = PAD_SubStickY(0);
-		// we're already recording an input
-		if (stickMove) {
-			data->data[data->endPoint].ax = x;
-			data->data[data->endPoint].ay = y;
-			data->data[data->endPoint].cx = cx;
-			data->data[data->endPoint].cy = cy;
-			data->data[data->endPoint].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-			data->endPoint++;
-			// are we close to the origin?
-			if (!showCStick) {
-				if ((x < STICK_MOVEMENT_THRESHOLD && x > -STICK_MOVEMENT_THRESHOLD) &&
-				    (y < STICK_MOVEMENT_THRESHOLD && y > -STICK_MOVEMENT_THRESHOLD)) {
-					timeStickInOrigin += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
+		
+		// separate logic to allow holding the stick at the edge and then letting go
+		if (currentTest == SNAPBACK) {
+			// we're already recording an input
+			if (stickMove) {
+				data->data[data->endPoint].ax = x;
+				data->data[data->endPoint].ay = y;
+				data->data[data->endPoint].cx = cx;
+				data->data[data->endPoint].cy = cy;
+				data->data[data->endPoint].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+				data->endPoint++;
+				
+				// has the stick stopped moving?
+				if (!showCStick) {
+					if (abs(x - snapbackPrevPosX) < STICK_MOVEMENT_THRESHOLD &&
+						abs(y - snapbackPrevPosY) < STICK_MOVEMENT_THRESHOLD ) {
+						timeStoppedMoving += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
+					} else {
+						timeStoppedMoving = 0;
+					}
+					snapbackPrevPosX = x;
+					snapbackPrevPosY = y;
 				} else {
-					timeStickInOrigin = 0;
+					if (abs(cx - snapbackPrevPosX) < STICK_MOVEMENT_THRESHOLD &&
+					    abs(cy - snapbackPrevPosY) < STICK_MOVEMENT_THRESHOLD) {
+						timeStoppedMoving += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
+					} else {
+						timeStoppedMoving = 0;
+					}
+					snapbackPrevPosX = cx;
+					snapbackPrevPosY = cy;
 				}
-			} else {
-				if ((cx < STICK_MOVEMENT_THRESHOLD && cx > -STICK_MOVEMENT_THRESHOLD) &&
-				    (cy < STICK_MOVEMENT_THRESHOLD && cy > -STICK_MOVEMENT_THRESHOLD)) {
-					timeStickInOrigin += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
-				} else {
-					timeStickInOrigin = 0;
+				
+				// have we either run out of data, or has the stick stopped moving for long enough?
+				if (data->endPoint == WAVEFORM_SAMPLES || ((timeStoppedMoving / 2000)) >= STICK_TIME_THRESHOLD_MS) {
+					if (!showCStick) {
+						// are we stopped near the origin?
+						if ((x < STICK_MOVEMENT_THRESHOLD && x > -STICK_MOVEMENT_THRESHOLD) &&
+						    (y < STICK_MOVEMENT_THRESHOLD && y > -STICK_MOVEMENT_THRESHOLD)) {
+							// normal procedure, make data ready
+							data->isDataReady = true;
+							stickMove = false;
+							display = true;
+							oState = POST_INPUT_LOCK;
+							stickCooldown = MEASURE_COOLDOWN_FRAMES;
+							snapbackStartPosX = 0;
+							snapbackStartPosY = 0;
+						} else {
+							// go back in the loop, we're holding a position somewhere outside origin
+							// this will also reset if we're out of datapoints? not sure how this'll work
+							data->endPoint = 0;
+							stickMove = false;
+							snapbackStartPosX = x;
+							snapbackStartPosY = y;
+						}
+					} else {
+						if ((cx < STICK_MOVEMENT_THRESHOLD && cx > -STICK_MOVEMENT_THRESHOLD) &&
+						    (cy < STICK_MOVEMENT_THRESHOLD && cy > -STICK_MOVEMENT_THRESHOLD)) {
+							data->isDataReady = true;
+							stickMove = false;
+							display = true;
+							oState = POST_INPUT_LOCK;
+							stickCooldown = MEASURE_COOLDOWN_FRAMES;
+							snapbackStartPosX = 0;
+							snapbackStartPosY = 0;
+						} else {
+							data->endPoint = 0;
+							stickMove = false;
+							snapbackStartPosX = cx;
+							snapbackStartPosY = cy;
+						}
+					}
 				}
-			}
-			if (data->endPoint == WAVEFORM_SAMPLES || (timeStickInOrigin / 1000) >= STICK_TIME_THRESHOLD_MS) {
-				data->isDataReady = true;
-				stickMove = false;
-				display = true;
-				oState = POST_INPUT_LOCK;
-				stickCooldown = MEASURE_COOLDOWN_FRAMES;
-			}
+				
 			// we've not recorded an input yet
-		} else {
-			// does the stick move outside the threshold?
-			if (!showCStick) {
-				if ((x > STICK_MOVEMENT_THRESHOLD || x < -STICK_MOVEMENT_THRESHOLD) ||
-				    (y > STICK_MOVEMENT_THRESHOLD) || (y < -STICK_MOVEMENT_THRESHOLD)) {
-					stickMove = true;
-					data->data[0].ax = x;
-					data->data[0].ay = y;
-					data->data[0].cx = cx;
-					data->data[0].cy = cy;
-					data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-					data->endPoint = 1;
-					oState = PRE_INPUT;
-				}
 			} else {
-				if ((cx > STICK_MOVEMENT_THRESHOLD || cx < -STICK_MOVEMENT_THRESHOLD) ||
-				    (cy > STICK_MOVEMENT_THRESHOLD) || (cy < -STICK_MOVEMENT_THRESHOLD)) {
-					stickMove = true;
-					data->data[0].ax = x;
-					data->data[0].ay = y;
-					data->data[0].cx = cx;
-					data->data[0].cy = cy;
-					data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-					data->endPoint = 1;
-					oState = PRE_INPUT;
+				// does the stick move outside the threshold?
+				if (!showCStick) {
+					if ((x > snapbackStartPosX + STICK_MOVEMENT_THRESHOLD || x < snapbackStartPosX - STICK_MOVEMENT_THRESHOLD) ||
+					    (y > snapbackStartPosY + STICK_MOVEMENT_THRESHOLD) || (y < snapbackStartPosY - STICK_MOVEMENT_THRESHOLD)) {
+						stickMove = true;
+						data->data[0].ax = x;
+						data->data[0].ay = y;
+						data->data[0].cx = cx;
+						data->data[0].cy = cy;
+						data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+						data->endPoint = 1;
+						oState = PRE_INPUT;
+					}
+				} else {
+					if ((cx > snapbackStartPosX + STICK_MOVEMENT_THRESHOLD || cx < snapbackStartPosX - STICK_MOVEMENT_THRESHOLD) ||
+					    (cy > snapbackStartPosY + STICK_MOVEMENT_THRESHOLD) || (cy < snapbackStartPosY - STICK_MOVEMENT_THRESHOLD)) {
+						stickMove = true;
+						data->data[0].ax = x;
+						data->data[0].ay = y;
+						data->data[0].cx = cx;
+						data->data[0].cy = cy;
+						data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+						data->endPoint = 1;
+						oState = PRE_INPUT;
+					}
+				}
+			}
+		} else {
+			// we're already recording an input
+			if (stickMove) {
+				data->data[data->endPoint].ax = x;
+				data->data[data->endPoint].ay = y;
+				data->data[data->endPoint].cx = cx;
+				data->data[data->endPoint].cy = cy;
+				data->data[data->endPoint].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+				data->endPoint++;
+				// are we close to the origin?
+				if (!showCStick) {
+					if ((x < STICK_MOVEMENT_THRESHOLD && x > -STICK_MOVEMENT_THRESHOLD) &&
+					    (y < STICK_MOVEMENT_THRESHOLD && y > -STICK_MOVEMENT_THRESHOLD)) {
+						timeStickInOrigin += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
+					} else {
+						timeStickInOrigin = 0;
+					}
+				} else {
+					if ((cx < STICK_MOVEMENT_THRESHOLD && cx > -STICK_MOVEMENT_THRESHOLD) &&
+					    (cy < STICK_MOVEMENT_THRESHOLD && cy > -STICK_MOVEMENT_THRESHOLD)) {
+						timeStickInOrigin += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
+					} else {
+						timeStickInOrigin = 0;
+					}
+				}
+				if (data->endPoint == WAVEFORM_SAMPLES || (timeStickInOrigin / 1000) >= STICK_TIME_THRESHOLD_MS) {
+					data->isDataReady = true;
+					stickMove = false;
+					display = true;
+					oState = POST_INPUT_LOCK;
+					stickCooldown = MEASURE_COOLDOWN_FRAMES;
+				}
+			// we've not recorded an input yet
+			} else {
+				// does the stick move outside the threshold?
+				if (!showCStick) {
+					if ((x > STICK_MOVEMENT_THRESHOLD || x < -STICK_MOVEMENT_THRESHOLD) ||
+					    (y > STICK_MOVEMENT_THRESHOLD) || (y < -STICK_MOVEMENT_THRESHOLD)) {
+						stickMove = true;
+						data->data[0].ax = x;
+						data->data[0].ay = y;
+						data->data[0].cx = cx;
+						data->data[0].cy = cy;
+						data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+						data->endPoint = 1;
+						oState = PRE_INPUT;
+					}
+				} else {
+					if ((cx > STICK_MOVEMENT_THRESHOLD || cx < -STICK_MOVEMENT_THRESHOLD) ||
+					    (cy > STICK_MOVEMENT_THRESHOLD) || (cy < -STICK_MOVEMENT_THRESHOLD)) {
+						stickMove = true;
+						data->data[0].ax = x;
+						data->data[0].ay = y;
+						data->data[0].cx = cx;
+						data->data[0].cy = cy;
+						data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+						data->endPoint = 1;
+						oState = PRE_INPUT;
+					}
 				}
 			}
 		}
