@@ -40,8 +40,7 @@ endif
 ifdef version
 	CFLAGS += -DVERSION_NUMBER=\"$(version)\"
 else
-	datever := $(date '+%F_%H:%M:%S')
-	CFLAGS += -DVERSION_NUMBER=\"`date '+%F_%H:%M:%S'`\ DEV\"
+	CFLAGS += -DVERSION_NUMBER=\"`date -u '+%F_%H:%M:%S'`\ DEV\"
 endif
 
 CXXFLAGS	=	$(CFLAGS)
