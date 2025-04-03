@@ -43,36 +43,47 @@ const u32 STICKMAP_SHIELDDROP_RETCOLORS[][2] = { {COLOR_BLACK, COLOR_WHITE},
 
 const int STICKMAP_SHIELDDROP_ENUM_LEN = 4;
 
-const int STICKMAP_SHIELDDROP_COORD_VANILLA[][2] = { { 7375, 6625},
-                                                            { 7375, 6750},
-                                                            { 7250, 6875} };
+const int STICKMAP_SHIELDDROP_COORD_VANILLA[][2] = { { 7375, 6625 },
+													 { 7375, 6750 },
+													 { 7250, 6875 } };
 const int STICKMAP_SHIELDDROP_COORD_VANILLA_LEN = 3;
 
 const int STICKMAP_SHIELDDROP_COORD_UCF_LOWER[][2] = { { 7000, 7000 },
-                                                              { 7125, 7000 },
-                                                              { 6875, 7125 },
-                                                              { 7000, 7125 },
-                                                              { 6750, 7250 },
-                                                              { 6875, 7250 },
-                                                              { 6500, 7375 },
-                                                              { 6625, 7375 },
-                                                              { 6750, 7375 },
-                                                              { 6375, 7500 },
-                                                              { 6500, 7500 },
-                                                              { 6250, 7625 },
-                                                              { 6375, 7625 },
-                                                              { 6125, 7785 },
-                                                              { 6250, 7785 },
-                                                              { 6000, 7875 },
-                                                              { 6125, 7875 } };
+													   { 7125, 7000 },
+													   
+													   { 6875, 7125 },
+													   { 7000, 7125 },
+													   
+													   { 6750, 7250 },
+													   { 6875, 7250 },
+													   
+													   { 6500, 7375 },
+													   { 6625, 7375 },
+													   { 6750, 7375 },
+													   
+													   { 6375, 7500 },
+													   { 6500, 7500 },
+													   
+													   { 6250, 7625 },
+													   { 6375, 7625 },
+													   
+													   { 6125, 7785 },
+													   { 6250, 7785 },
+													   { 6000, 7875 },
+													   { 6125, 7875 } };
 const int STICKMAP_SHIELDDROP_COORD_UCF_LOWER_LEN = 17;
 
-const int STICKMAP_SHIELDDROP_COORD_UCF_UPPER[][2] = { { 7625, 6250 },
-                                                              { 7750, 6250 },
-                                                              { 7500, 6375 },
-                                                              { 7625, 6375 },
-                                                              { 7375, 6250 },
-                                                              { 7500, 6250 } };
+const int STICKMAP_SHIELDDROP_COORD_UCF_UPPER[][2] = { { 7875, 6125 },
+                                                       { 7750, 6125 },
+													   
+													   { 7625, 6250 },
+													   { 7750, 6250 },
+													   
+													   { 7500, 6375 },
+													   { 7625, 6375 },
+													   
+													   { 7375, 6500 },
+													   { 7500, 6500 } };
 const int STICKMAP_SHIELDDROP_COORD_UCF_UPPER_LEN = 6;
 
 int isCoordValid(enum STICKMAP_LIST test, WaveformDatapoint coords) {
