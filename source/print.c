@@ -34,9 +34,9 @@ void drawChar(unsigned char bitmap[],
 		return;
 	}
 
-	if (character == ' ' && currX == 0) {
-		return;
-	}
+	//if (character == ' ' && currX == 0) {
+	//	return;
+	//}
 	
 	for(int row = 0; row < 15; row++) {
 		uint32_t rowOffset = (row+currY + PRINT_PADDING_VERTICAL);
