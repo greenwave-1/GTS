@@ -84,7 +84,7 @@ const int STICKMAP_SHIELDDROP_COORD_UCF_UPPER[][2] = { { 7875, 6125 },
 													   
 													   { 7375, 6500 },
 													   { 7500, 6500 } };
-const int STICKMAP_SHIELDDROP_COORD_UCF_UPPER_LEN = 6;
+const int STICKMAP_SHIELDDROP_COORD_UCF_UPPER_LEN = 8;
 
 int isCoordValid(enum STICKMAP_LIST test, WaveformDatapoint coords) {
 	int ret = 0;
