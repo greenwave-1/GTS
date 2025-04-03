@@ -252,8 +252,8 @@ static void oscilloscopeCallback() {
 
 static void printInstructions(void *currXfb) {
 	setCursorPos(2, 0);
-	printStr("Press X to cycle the current test, results will show above the waveform. "
-			 "Press Y to cycle between Analog Stick and C-Stick.\n"
+	printStr("Press X to cycle the current test, results will show above the\n"
+			 "waveform. Press Y to cycle between Analog Stick and C-Stick.\n"
 	         "Use DPAD left/right to scroll waveform when it is\nlarger than the "
 	         "displayed area, hold R to move faster.", currXfb);
 	printStr("\n\nCURRENT TEST: ", currXfb);
@@ -266,13 +266,15 @@ static void printInstructions(void *currXfb) {
 			break;
 		case PIVOT:
 			printStr("PIVOT\nFor a successful pivot, you want the stick's position to stay "
-				   "above/below +64/-64 for ~16.6ms (1 frame). Less, and you might get nothing, "
-				   "more, and you might get a dashback. You also need the stick to hit 80/-80 on "
-				   "both sides.\nCheck the PhobVision docs for more info.", currXfb);
+				   "above/below +64/-64 for ~16.6ms (1 frame). Less, and you might\n"
+				   "get nothing, more, and you might get a dashback. You also need\n"
+				   "the stick to hit 80/-80 on both sides.\n"
+				   "Check the PhobVision docs for more info.", currXfb);
 			break;
 		case DASHBACK:
-			printStr("DASHBACK\nA (vanilla) dashback will be successful when the stick doesn't get "
-			"polled between 23 and 64, or -23 and -64.\nLess time in this range is better.", currXfb);
+			printStr("DASHBACK\nA (vanilla) dashback will be successful when the stick doesn't\n"
+					 "get polled between 23 and 64, or -23 and -64.\n"
+					 "Less time in this range is better.", currXfb);
 			break;
 		default:
 			printStr("NO TEST SELECTED", currXfb);
