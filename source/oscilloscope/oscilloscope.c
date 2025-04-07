@@ -47,6 +47,7 @@ static u64 timeStoppedMoving = 0;
 static u32 *pressed;
 static u32 *held;
 static bool buttonLock = false;
+static u8 buttonPressCooldown = 0;
 
 static sampling_callback cb;
 static void oscilloscopeCallback() {
@@ -284,6 +285,7 @@ static void printInstructions(void *currXfb) {
 		if (*pressed & PAD_TRIGGER_Z) {
 			state = OSC_POST_SETUP;
 			buttonLock = true;
+			buttonPressCooldown = 5;
 		}
 	}
 }
@@ -376,8 +378,12 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 						int minX, minY;
 						int maxX, maxY;
 
+						// show all data if it will fit
 						if (data->endPoint < 500) {
 							dataScrollOffset = 0;
+						// move screen to end of data input if it was further from the last capture
+						} else if (dataScrollOffset > (data->endPoint) - 500) {
+							dataScrollOffset = data->endPoint - 501;
 						}
 
 						int prevX = data->data[dataScrollOffset].ax;
@@ -498,7 +504,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 								// start from the back of the list
 								for (int i = data->endPoint; i >= 0; i--) {
 									// check x coordinate for +-64 (dash threshold)
-									if (data->data[i].ax >= 64 || data->data[i].ax <= -64) {
+									if ( (data->data[i].ax >= 64 || data->data[i].ax <= -64) && !leftPivotRange) {
 										if (pivotEndIndex == -1) {
 											pivotEndIndex = i;
 										}
@@ -689,6 +695,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 						oState = POST_INPUT_LOCK;
 					}
 					buttonLock = true;
+					buttonPressCooldown = 5;
 				}
 				if (*pressed & PAD_BUTTON_X && !buttonLock) {
 					currentTest++;
@@ -700,10 +707,12 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 						currentTest = NO_TEST;
 					}
 					buttonLock = true;
+					buttonPressCooldown = 5;
 				}
 				if (*pressed & PAD_TRIGGER_Z && !buttonLock) {
 					state = OSC_INSTRUCTIONS;
 					buttonLock = true;
+					buttonPressCooldown = 5;
 				}
 				if (*pressed & PAD_BUTTON_Y && !buttonLock) {
 					showCStick = !showCStick;
@@ -711,6 +720,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 						currentTest = SNAPBACK;
 					}
 					buttonLock = true;
+					buttonPressCooldown = 5;
 				}
 			}
 			// adjust scaling factor
@@ -727,8 +737,15 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 			printStr("How did we get here?", currXfb);
 			break;
 	}
-	if ((*held) == 0 && buttonLock) {
-		buttonLock = false;
+	if (buttonLock) {
+		// don't allow button press until a number of frames has passed
+		if (buttonPressCooldown > 0) {
+			buttonPressCooldown--;
+		} else {
+			if ((*held) == 0) {
+				buttonLock = 0;
+			}
+		}
 	}
 }
 
