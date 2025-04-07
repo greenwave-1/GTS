@@ -40,6 +40,11 @@ static enum CURRENT_MENU currentMenu = MAIN_MENU;
 // enum for previous menu, we move to it when we're waiting for user input
 static enum CURRENT_MENU previousMenu = MAIN_MENU;
 
+// lock var for controller test
+static bool lockExitControllerTest = false;
+static bool startHeldAfter = false;
+static u8 startHeldCounter = 0;
+
 // enum for what image to draw in 2d plot
 static enum IMAGE selectedImage = SNAPBACK;
 static int map2dStartIndex = 0;
@@ -202,9 +207,47 @@ bool menu_runMenu(void *currXfb) {
 		printStr("Exiting...", currXfb);
 		return true;
 	}
+	// controller test lock stuff
+	else if (held == PAD_BUTTON_START && currentMenu == CONTROLLER_TEST && !startHeldAfter) {
+		if (lockExitControllerTest) {
+			printStr("Enabling exit", currXfb);
+			startHeldCounter++;
+			if (startHeldCounter > 15) {
+				printStr(".", currXfb);
+			}
+			if (startHeldCounter > 30) {
+				printStr(".", currXfb);
+			}
+			if (startHeldCounter > 45) {
+				printStr(".", currXfb);
+			}
+			if (startHeldCounter > 46) {
+				lockExitControllerTest = false;
+				startHeldCounter = 0;
+				startHeldAfter = true;
+			}
+		} else {
+			printStr("Disabling exit", currXfb);
+			startHeldCounter++;
+			if (startHeldCounter > 15) {
+				printStr(".", currXfb);
+			}
+			if (startHeldCounter > 30) {
+				printStr(".", currXfb);
+			}
+			if (startHeldCounter > 45) {
+				printStr(".", currXfb);
+			}
+			if (startHeldCounter > 46) {
+				lockExitControllerTest = true;
+				startHeldCounter = 0;
+				startHeldAfter = true;
+			}
+		}
+	}
 
 	// does the user want to move back to the main menu?
-	else if (held & PAD_BUTTON_B && currentMenu != MAIN_MENU) {
+	else if (held & PAD_BUTTON_B && currentMenu != MAIN_MENU && !lockExitControllerTest) {
 		bHeldCounter++;
 
 		// give user feedback that they are holding the button
@@ -248,7 +291,18 @@ bool menu_runMenu(void *currXfb) {
 				displayInstructions = !displayInstructions;
 			}
 		}
-		if (currentMenu != MAIN_MENU) {
+		if (currentMenu == CONTROLLER_TEST) {
+			if (lockExitControllerTest) {
+				printStr("Exiting disabled, hold Start to re-enable.", currXfb);
+			} else {
+				printStr("Hold B to return to main menu, hold start to disable.", currXfb);
+			}
+			startHeldCounter = 0;
+			
+			if (startHeldAfter && held ^ PAD_BUTTON_START) {
+				startHeldAfter = false;
+			}
+		} else if (currentMenu != MAIN_MENU) {
 			printStr("Hold B to return to main menu.", currXfb);
 		} else {
 			printStr("Press Start to exit.", currXfb);
