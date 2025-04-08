@@ -163,6 +163,14 @@ static void oscilloscopeCallback() {
 				if (!showCStick) {
 					if ((x > snapbackStartPosX + STICK_MOVEMENT_THRESHOLD || x < snapbackStartPosX - STICK_MOVEMENT_THRESHOLD) ||
 					    (y > snapbackStartPosY + STICK_MOVEMENT_THRESHOLD) || (y < snapbackStartPosY - STICK_MOVEMENT_THRESHOLD)) {
+						// reset data
+						for (int i = 1; i < WAVEFORM_SAMPLES; i++) {
+							data->data[i].ax = 0;
+							data->data[i].ay = 0;
+							data->data[i].cx = 0;
+							data->data[i].cy = 0;
+							data->data[i].timeDiffUs = 0;
+						}
 						stickMove = true;
 						data->data[0].ax = x;
 						data->data[0].ay = y;
@@ -175,6 +183,14 @@ static void oscilloscopeCallback() {
 				} else {
 					if ((cx > snapbackStartPosX + STICK_MOVEMENT_THRESHOLD || cx < snapbackStartPosX - STICK_MOVEMENT_THRESHOLD) ||
 					    (cy > snapbackStartPosY + STICK_MOVEMENT_THRESHOLD) || (cy < snapbackStartPosY - STICK_MOVEMENT_THRESHOLD)) {
+						// reset data
+						for (int i = 1; i < WAVEFORM_SAMPLES; i++) {
+							data->data[i].ax = 0;
+							data->data[i].ay = 0;
+							data->data[i].cx = 0;
+							data->data[i].cy = 0;
+							data->data[i].timeDiffUs = 0;
+						}
 						stickMove = true;
 						data->data[0].ax = x;
 						data->data[0].ay = y;
@@ -224,6 +240,14 @@ static void oscilloscopeCallback() {
 				if (!showCStick) {
 					if ((x > STICK_MOVEMENT_THRESHOLD || x < -STICK_MOVEMENT_THRESHOLD) ||
 					    (y > STICK_MOVEMENT_THRESHOLD) || (y < -STICK_MOVEMENT_THRESHOLD)) {
+						// reset data
+						for (int i = 1; i < WAVEFORM_SAMPLES; i++) {
+							data->data[i].ax = 0;
+							data->data[i].ay = 0;
+							data->data[i].cx = 0;
+							data->data[i].cy = 0;
+							data->data[i].timeDiffUs = 0;
+						}
 						stickMove = true;
 						data->data[0].ax = x;
 						data->data[0].ay = y;
@@ -236,6 +260,14 @@ static void oscilloscopeCallback() {
 				} else {
 					if ((cx > STICK_MOVEMENT_THRESHOLD || cx < -STICK_MOVEMENT_THRESHOLD) ||
 					    (cy > STICK_MOVEMENT_THRESHOLD) || (cy < -STICK_MOVEMENT_THRESHOLD)) {
+						// reset data
+						for (int i = 1; i < WAVEFORM_SAMPLES; i++) {
+							data->data[i].ax = 0;
+							data->data[i].ay = 0;
+							data->data[i].cx = 0;
+							data->data[i].cy = 0;
+							data->data[i].timeDiffUs = 0;
+						}
 						stickMove = true;
 						data->data[0].ax = x;
 						data->data[0].ay = y;
