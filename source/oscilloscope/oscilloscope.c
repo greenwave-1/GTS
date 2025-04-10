@@ -534,7 +534,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 								int pivotStartIndex = -1, pivotEndIndex = -1;
 								int pivotStartSign = 0;
 								// start from the back of the list
-								for (int i = data->endPoint; i >= 0; i--) {
+								for (int i = data->endPoint - 1; i >= 0; i--) {
 									// check x coordinate for +-64 (dash threshold)
 									if ( (data->data[i].ax >= 64 || data->data[i].ax <= -64) && !leftPivotRange) {
 										if (pivotEndIndex == -1) {
