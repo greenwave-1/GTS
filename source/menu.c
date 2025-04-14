@@ -210,35 +210,35 @@ bool menu_runMenu(void *currXfb) {
 	// controller test lock stuff
 	else if (held == PAD_BUTTON_START && currentMenu == CONTROLLER_TEST && !startHeldAfter) {
 		if (lockExitControllerTest) {
-			printStr("Enabling exit", currXfb);
+			printStr("Enabling exit, hold for 2 seconds", currXfb);
 			startHeldCounter++;
-			if (startHeldCounter > 15) {
+			if (startHeldCounter > 40) {
 				printStr(".", currXfb);
 			}
-			if (startHeldCounter > 30) {
+			if (startHeldCounter > 80) {
 				printStr(".", currXfb);
 			}
-			if (startHeldCounter > 45) {
+			if (startHeldCounter > 120) {
 				printStr(".", currXfb);
 			}
-			if (startHeldCounter > 46) {
+			if (startHeldCounter > 121) {
 				lockExitControllerTest = false;
 				startHeldCounter = 0;
 				startHeldAfter = true;
 			}
 		} else {
-			printStr("Disabling exit", currXfb);
+			printStr("Disabling exit, hold for 2 seconds", currXfb);
 			startHeldCounter++;
-			if (startHeldCounter > 15) {
+			if (startHeldCounter > 40) {
 				printStr(".", currXfb);
 			}
-			if (startHeldCounter > 30) {
+			if (startHeldCounter > 80) {
 				printStr(".", currXfb);
 			}
-			if (startHeldCounter > 45) {
+			if (startHeldCounter > 120) {
 				printStr(".", currXfb);
 			}
-			if (startHeldCounter > 46) {
+			if (startHeldCounter > 121) {
 				lockExitControllerTest = true;
 				startHeldCounter = 0;
 				startHeldAfter = true;
