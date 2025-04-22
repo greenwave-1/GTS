@@ -14,8 +14,8 @@
 #include <string.h>
 #endif
 
-#define STICK_MOVEMENT_THRESHOLD 5
-#define STICK_ORIGIN_THRESHOLD 3
+#define STICK_MOVEMENT_THRESHOLD 2
+#define STICK_MOVEMENT_TIME_US 250000 // 250 ms
 
 static bool isReadReady = false;
 static u64 prevSampleCallbackTick = 0;
@@ -50,7 +50,6 @@ void measureWaveform(WaveformData *data) {
 	// initial value is arbitrary, but not close enough to 0 so that the rest of the code continues to work.
 	int prevPollDiffX = 10;
 	int prevPollDiffY = 10;
-	unsigned int stickNotMovingCounter = 0;
 
 	data->endPoint = 0;
 	data->totalTimeUs = 0;
@@ -77,6 +76,8 @@ void measureWaveform(WaveformData *data) {
 	}
 
 	u64 temp;
+	u64 noMovementTimer = 0;
+	int noMovementStartIndex = -1;
 	while (true) {
 		// wait for poll
 		cb = PAD_SetSamplingCallback(samplingCallback);
@@ -104,6 +105,10 @@ void measureWaveform(WaveformData *data) {
 
 		// have we overrun our array?
 		if (data->endPoint == WAVEFORM_SAMPLES) {
+			// truncate if the stick was not moving
+			if (noMovementStartIndex != -1) {
+				data->endPoint = noMovementStartIndex;
+			}
 			break;
 		}
 
@@ -112,22 +117,21 @@ void measureWaveform(WaveformData *data) {
 			// has the stick stopped moving (as defined by STICK_MOVEMENT_THRESHOLD)
 			if (prevPollDiffX < STICK_MOVEMENT_THRESHOLD && prevPollDiffX > -STICK_MOVEMENT_THRESHOLD &&
 				prevPollDiffY < STICK_MOVEMENT_THRESHOLD && prevPollDiffY > -STICK_MOVEMENT_THRESHOLD) {
-
-				// is the stick close to origin?
-				if (currPollX < STICK_ORIGIN_THRESHOLD && currPollX > -STICK_ORIGIN_THRESHOLD &&
-					currPollY < STICK_ORIGIN_THRESHOLD && currPollY > -STICK_ORIGIN_THRESHOLD) {
-					// accelerate our counter if we're not moving _and_ at origin
-					stickNotMovingCounter += 25;
+				if (noMovementStartIndex == -1) {
+					noMovementStartIndex = data->endPoint;
+				} else {
+					noMovementTimer += data->data[data->endPoint - 1].timeDiffUs;
 				}
-				stickNotMovingCounter++;
-
-				// break if the stick continues to not move
-				// TODO: this should be tweaked
-				if (stickNotMovingCounter > 500) {
+				
+				// break if enough time passes
+				if (noMovementTimer >= STICK_MOVEMENT_TIME_US) {
+					// ugly way to truncate "dead" inputs
+					data->endPoint = noMovementStartIndex;
 					break;
 				}
 			} else {
-				stickNotMovingCounter = 0;
+				noMovementStartIndex = -1;
+				noMovementTimer = 0;
 			}
 		}
 		isReadReady = false;
