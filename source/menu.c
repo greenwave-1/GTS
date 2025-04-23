@@ -115,12 +115,15 @@ bool menu_runMenu(void *currXfb) {
 	}
 	
 	printStr("FossScope (Working Title)", currXfb);
+	
+	// check if port 1 is disconnected
 	if ((padsConnected & 1) == 0) {
 		setCursorPos(0, 38);
 		printStr("Controller Disconnected!", currXfb);
 		data.isDataReady = false;
 		originRead = false;
 	}
+	
 	if (data.isDataReady) {
 		setCursorPos(0, 31);
 		printStr("Oscilloscope Capture in memory!", currXfb);

@@ -390,11 +390,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 						printStrColor("LOCKED", currXfb, COLOR_WHITE, COLOR_BLACK);
 					}
 				case POST_INPUT:
-					// draw guidelines based on selected test
-					DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
-					DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY, currXfb);
 					if (data->isDataReady) {
-
 						// draw guidelines based on selected test
 						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
 						DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY, currXfb);
@@ -714,32 +710,34 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 								break;
 
 						}
-					}
-					setCursorPos(21,0);
-					printStr("Current test: ", currXfb);
-					switch (currentTest) {
-						case SNAPBACK:
-							printStr("Snapback", currXfb);
-							break;
-						case PIVOT:
-							printStr("Pivot", currXfb);
-							break;
-						case DASHBACK:
-							printStr("Dashback", currXfb);
-							break;
-						case NO_TEST:
-							printStr("None", currXfb);
-							break;
-						default:
-							printStr("Error", currXfb);
-							break;
+						setCursorPos(21,0);
+						printStr("Current test: ", currXfb);
+						switch (currentTest) {
+							case SNAPBACK:
+								printStr("Snapback", currXfb);
+								break;
+							case PIVOT:
+								printStr("Pivot", currXfb);
+								break;
+							case DASHBACK:
+								printStr("Dashback", currXfb);
+								break;
+							case NO_TEST:
+								printStr("None", currXfb);
+								break;
+							default:
+								printStr("Error", currXfb);
+								break;
+						}
+					} else {
+						oState = PRE_INPUT;
 					}
 					break;
 				default:
 					printStr("How did we get here?", currXfb);
 					break;
 			}
-			if (!buttonLock){
+			if (!buttonLock) {
 				if (*pressed & PAD_BUTTON_A && !buttonLock) {
 					if (oState == POST_INPUT_LOCK && stickCooldown == 0) {
 						oState = POST_INPUT;
@@ -749,7 +747,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 					buttonLock = true;
 					buttonPressCooldown = 5;
 				}
-				if (*pressed & PAD_BUTTON_X && !buttonLock) {
+				if (*pressed & PAD_BUTTON_X && !buttonLock && !stickMove) {
 					currentTest++;
 					// check if we overrun our test length
 					if (currentTest == OSCILLOSCOPE_TEST_LEN) {
@@ -766,11 +764,9 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 					buttonLock = true;
 					buttonPressCooldown = 5;
 				}
-				if (*pressed & PAD_BUTTON_Y && !buttonLock) {
+				if (*pressed & PAD_BUTTON_Y && !buttonLock && !stickMove) {
 					showCStick = !showCStick;
-					if (showCStick) {
-						currentTest = SNAPBACK;
-					}
+					currentTest = SNAPBACK;
 					buttonLock = true;
 					buttonPressCooldown = 5;
 				}
