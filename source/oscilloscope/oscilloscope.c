@@ -357,6 +357,26 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 					if (ellipseCounter == 60) {
 						ellipseCounter = 0;
 					}
+					
+					setCursorPos(21,0);
+					printStr("Current test: ", currXfb);
+					switch (currentTest) {
+						case SNAPBACK:
+							printStr("Snapback", currXfb);
+							break;
+						case PIVOT:
+							printStr("Pivot", currXfb);
+							break;
+						case DASHBACK:
+							printStr("Dashback", currXfb);
+							break;
+						case NO_TEST:
+							printStr("None", currXfb);
+							break;
+						default:
+							printStr("Error", currXfb);
+							break;
+					}
 					break;
 				case POST_INPUT_LOCK:
 					// dont allow new input until cooldown elapses
