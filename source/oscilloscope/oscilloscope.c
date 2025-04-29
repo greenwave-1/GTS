@@ -178,8 +178,11 @@ static void oscilloscopeCallback() {
 							data->data[0].ay = y;
 							data->data[0].cx = cx;
 							data->data[0].cy = cy;
-							data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+							data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
+							//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 							data->endPoint = 1;
+							data->isDataReady = false;
+							data->exported = false;
 							oState = PRE_INPUT;
 						}
 					} else {
@@ -198,8 +201,11 @@ static void oscilloscopeCallback() {
 							data->data[0].ay = y;
 							data->data[0].cx = cx;
 							data->data[0].cy = cy;
-							data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+							data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
+							//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 							data->endPoint = 1;
+							data->isDataReady = false;
+							data->exported = false;
 							oState = PRE_INPUT;
 						}
 					}
@@ -256,6 +262,7 @@ static void oscilloscopeCallback() {
 							data->data[i].cy = data->data[i + pivotStartIndex].cy;
 							data->data[i].timeDiffUs = data->data[i + pivotStartIndex].timeDiffUs;
 						}
+						data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
 						data->endPoint = data->endPoint - pivotStartIndex - 1;
 						
 						// normal stuff
@@ -283,8 +290,11 @@ static void oscilloscopeCallback() {
 						data->data[0].ay = y;
 						data->data[0].cx = cx;
 						data->data[0].cy = cy;
-						data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+						data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
+						//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 						data->endPoint = 1;
+						data->isDataReady = false;
+						data->exported = false;
 						oState = PRE_INPUT;
 					}
 				}
@@ -321,7 +331,7 @@ static void oscilloscopeCallback() {
 						oState = POST_INPUT_LOCK;
 						stickCooldown = MEASURE_COOLDOWN_FRAMES;
 					}
-					// we've not recorded an input yet
+				// we've not recorded an input yet
 				} else {
 					// does the stick move outside the threshold?
 					if (!showCStick) {
@@ -340,8 +350,11 @@ static void oscilloscopeCallback() {
 							data->data[0].ay = y;
 							data->data[0].cx = cx;
 							data->data[0].cy = cy;
-							data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+							data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
+							//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 							data->endPoint = 1;
+							data->isDataReady = false;
+							data->exported = false;
 							oState = PRE_INPUT;
 						}
 					} else {
@@ -360,8 +373,11 @@ static void oscilloscopeCallback() {
 							data->data[0].ay = y;
 							data->data[0].cx = cx;
 							data->data[0].cy = cy;
-							data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+							data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
+							//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 							data->endPoint = 1;
+							data->isDataReady = false;
+							data->exported = false;
 							oState = PRE_INPUT;
 						}
 					}

@@ -4,7 +4,8 @@
 #include <fat.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "waveform.h"
+#include "../waveform.h"
+#include "../print.h"
 #include <stdbool.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -14,15 +15,15 @@
 // technically this can only occur if someone exports multiple in one second
 static unsigned int increment = 0;
 
-bool exportData(WaveformData *data, bool exportAsMeleeValues) {
+int exportData(WaveformData *data) {
+	data->exported = true;
 	// do we have data to begin with?
 	if (!data->isDataReady) {
-		return false;
+		return 1;
 	}
 	
 	if (!fatInitDefault()) {
-		printf("Fat init fail");
-		return false;
+		return 2;
 	}
 	
 	// get current time in YY-MM-DD_HH-MM-SS format
@@ -43,20 +44,20 @@ bool exportData(WaveformData *data, bool exportAsMeleeValues) {
 		struct stat st = {0};
 		if (stat("/FossScope", &st) == -1) {
 			if (mkdir("/FossScope", 0700) == -1) {
-				printf("directory creation fail");
-				return false;
+				return 3;
 			}
 		}
 	}
 	
 	// create filepath
 	char fileStr[64] = "/FossScope/";
-	strcat(fileStr, timeStr);  // in theory this is right, idk if its actually right tho...
+	strncat(fileStr, timeStr, 32);  // in theory this is right, idk if its actually right tho...
 	strcat(fileStr, "_");
 	{
-		char numBuf[4];
+		char numBuf[2];
 		sprintf(numBuf, "%u", increment);
 		strcat(fileStr, numBuf);
+		// increment will only ever be 1-9
 		increment++;
 		increment %= 10;
 	}
@@ -67,53 +68,34 @@ bool exportData(WaveformData *data, bool exportAsMeleeValues) {
 		struct stat st = {0};
 		// check if file already exists
 		if (stat(fileStr, &st) == 0) {
-			printf("file exists");
-			return false;
+			return 4;
 		}
 	}
 	
 	FILE *fptr = fopen(fileStr, "w");
 	
-	// first row is: datetime, number of polls, are the polls being exported as melee coords
-	fprintf(fptr, "%s,%u,%d\n", timeStr, data->endPoint, exportAsMeleeValues);
+	// first row is: datetime, number of polls
+	fprintf(fptr, "%s,%u\n", timeStr, data->endPoint);
 	
 	// actual data
 	// second row is x coords, third row is y coords, fourth row is time from last poll
 	
 	// x
 	for (int i = 0; i < data->endPoint; i++) {
-		if (exportAsMeleeValues) {
-			WaveformDatapoint temp = convertStickValues(&(data->data[i]));
-			if (i == 0) {
-				fprintf(fptr, "%d", temp.ax);
-			} else {
-				fprintf(fptr, ",%d", temp.ax);
-			}
-		} else {
-			if (i == 0) {
+		if (i == 0) {
 				fprintf(fptr, "%d", data->data[i].ax);
-			} else {
-				fprintf(fptr, ",%d", data->data[i].ax);
-			}
+		} else {
+			fprintf(fptr, ",%d", data->data[i].ax);
 		}
 	}
 	fprintf(fptr, "\n");
 	
 	// y
 	for (int i = 0; i < data->endPoint; i++) {
-		if (exportAsMeleeValues) {
-			WaveformDatapoint temp = convertStickValues(&(data->data[i]));
-			if (i == 0) {
-				fprintf(fptr, "%d", temp.ay);
-			} else {
-				fprintf(fptr, ",%d", temp.ay);
-			}
+		if (i == 0) {
+			fprintf(fptr, "%d", data->data[i].ay);
 		} else {
-			if (i == 0) {
-				fprintf(fptr, "%d", data->data[i].ay);
-			} else {
-				fprintf(fptr, ",%d", data->data[i].ay);
-			}
+			fprintf(fptr, ",%d", data->data[i].ay);
 		}
 	}
 	fprintf(fptr, "\n");
@@ -128,5 +110,5 @@ bool exportData(WaveformData *data, bool exportAsMeleeValues) {
 	}
 	fprintf(fptr, "\n");
 	fclose(fptr);
-	return true;
+	return 0;
 }

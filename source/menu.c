@@ -13,7 +13,7 @@
 #include "images/stickmaps.h"
 #include "draw.h"
 #include "print.h"
-#include "file.h"
+#include "file/file.h"
 #include "stickmap_coordinates.h"
 
 #include "oscilloscope/oscilloscope.h"
@@ -78,17 +78,18 @@ static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscill
 static bool displayedWaitingInputMessage = false;
 
 static bool displayInstructions = false;
-//static bool fileIOSuccess = false;
 
 static int lastDrawPoint = -1;
 static int dataScrollOffset = 0;
+
+static int exportReturnCode = -1;
 
 static u32 padsConnected = 0;
 
 static PADStatus origin[PAD_CHANMAX];
 static bool originRead = false;
 
-// buffer for strings with numbers and stuff
+// buffer for strings with numbers and stuff using sprintf
 static char strBuffer[100];
 
 static bool setDrawInterlaceMode = false;
@@ -127,6 +128,8 @@ bool menu_runMenu(void *currXfb) {
 	if (data.isDataReady) {
 		setCursorPos(0, 31);
 		printStr("Oscilloscope Capture in memory!", currXfb);
+	} else {
+		exportReturnCode = -1;
 	}
 	setCursorPos(2, 0);
 	
@@ -745,7 +748,7 @@ void menu_2dPlot(void *currXfb) {
 		printStr(strBuffer, currXfb);
 		
 		u64 timeFromStart = 0;
-		for (int i = map2dStartIndex; i <= lastDrawPoint; i++) {
+		for (int i = map2dStartIndex + 1; i <= lastDrawPoint; i++) {
 			timeFromStart += data.data[i].timeDiffUs;
 		}
 		float timeFromStartMs = timeFromStart / 1000.0;
@@ -948,27 +951,37 @@ void menu_2dPlot(void *currXfb) {
 	}
 }
 
-
 void menu_fileExport(void *currXfb) {
-	printStr("todo", currXfb);
-	return;
-	
+	// run if we have a result
+	//if (exportReturnCode >= 0) {
 	if (data.isDataReady) {
-		if (!data.exported) {
-			data.exported = exportData(&data, false);
-			if (!data.exported) {
-				printf("Failed to export data");
-				while (!(held & PAD_BUTTON_B)) {
-					PAD_ScanPads();
-					held = PAD_ButtonsHeld(0);
-					VIDEO_WaitVSync();
-				}
+		if (data.exported) {
+			switch (exportReturnCode) {
+				case 0:
+					printStr("File exported successfully.", currXfb);
+					break;
+				case 1:
+					printStr("Data was marked as not ready, this shouldn't happen!", currXfb);
+					break;
+				case 2:
+					printStr("Failed to init filesystem.", currXfb);
+					break;
+				case 3:
+					printStr("Failed to create parent directory.", currXfb);
+					break;
+				case 4:
+					printStr("Failed to create file, file already exists!", currXfb);
+					break;
+				default:
+					printStr("How did we get here?", currXfb);
+					break;
 			}
 		} else {
-			printf("Data already exported");
+			printStr("Attempting to export data...", currXfb);
+			exportReturnCode = exportData(&data);
 		}
 	} else {
-		printf("No data to export, record an input using Oscilloscope or Plot");
+		printStr("No data to export, record an input first.", currXfb);
 	}
 }
 

@@ -32,7 +32,7 @@ void samplingCallback() {
 	}
 	isReadReady = true;
 	
-	PAD_SetSamplingCallback(cb);
+	//PAD_SetSamplingCallback(cb);
 	return;
 }
 
@@ -45,6 +45,9 @@ void measureWaveform(WaveformData *data) {
 	data->exported = false;
 	
 	setSamplingRateHigh();
+	
+	cb = PAD_SetSamplingCallback(samplingCallback);
+	u64 temp;
 	
 	// we need a way to determine if the stick has stopped moving, this is a basic way to do so.
 	// initial value is arbitrary, but not close enough to 0 so that the rest of the code continues to work.
@@ -68,19 +71,23 @@ void measureWaveform(WaveformData *data) {
 	// wait for the stick to move roughly 10 units outside its starting position on either axis
 	while ( (currPollX > startPosX - STICK_MOVEMENT_THRESHOLD && currPollX < startPosX + STICK_MOVEMENT_THRESHOLD) &&
 			(currPollY > startPosY - STICK_MOVEMENT_THRESHOLD && currPollY < startPosY + STICK_MOVEMENT_THRESHOLD) ) {
+		while (!isReadReady) {
+			temp = gettime();
+			// sleep for 10 microseconds between checks
+			while (ticks_to_microsecs(gettime() - temp) > 10);
+		}
 		PAD_ScanPads();
 		currPollX = PAD_StickX(0);
 		prevPollX = currPollX;
 		currPollY = PAD_StickY(0);
 		prevPollY = currPollY;
+		isReadReady = false;
 	}
 
-	u64 temp;
 	u64 noMovementTimer = 0;
 	int noMovementStartIndex = -1;
 	while (true) {
 		// wait for poll
-		cb = PAD_SetSamplingCallback(samplingCallback);
 		while (!isReadReady) {
 			temp = gettime();
 			// sleep for 10 microseconds between checks
@@ -100,7 +107,11 @@ void measureWaveform(WaveformData *data) {
 		// add data
 		data->data[data->endPoint].ax = currPollX;
 		data->data[data->endPoint].ay = currPollY;
-		data->data[data->endPoint].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+		if (data->endPoint == 0) {
+			data->data[0].timeDiffUs = 0;
+		} else {
+			data->data[data->endPoint].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+		}
 		data->endPoint++;
 
 		// have we overrun our array?
@@ -137,7 +148,7 @@ void measureWaveform(WaveformData *data) {
 		isReadReady = false;
 	}
 	data->isDataReady = true;
-	PAD_SetSamplingCallback(NULL);
+	PAD_SetSamplingCallback(cb);
 	
 	// calculate total read time
 	for (int i = 0; i < data->endPoint; i++) {
