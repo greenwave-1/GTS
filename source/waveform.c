@@ -10,7 +10,7 @@
 #include "gecko.h"
 #include "polling.h"
 
-#ifdef DEBUG
+#ifdef DEBUGLOG
 #include <string.h>
 #endif
 

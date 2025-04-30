@@ -17,6 +17,9 @@ rungc: export WIILOAD=tcp:10.20.204.108
 # this can be any of the run targets
 run: runwii
 
+# this can be debuglog (prints info to usb gecko), or debuggdb (actual remote debugger)
+debug: debuglog
+
 clean: gc-clean wii-clean
 
 all: gc wii
@@ -45,9 +48,13 @@ gc-clean:
 wii-clean:
 	$(MAKE) -f Makefile.wii clean
 
-debug:
+debuglog:
 	$(MAKE) -f Makefile.gc DEBUG=1
 	$(MAKE) -f Makefile.wii DEBUG=1
+
+debuggdb:
+	$(MAKE) -f Makefile.gc DEBUG=2
+	$(MAKE) -f Makefile.wii DEBUG=2
 
 bench:
 	$(MAKE) -f Makefile.gc BENCH=1

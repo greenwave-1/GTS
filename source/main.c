@@ -11,10 +11,13 @@
 #include "print.h"
 
 
-#ifdef DEBUG
+#ifdef DEBUGLOG
 #include <ogc/lwp_watchdog.h>
 #endif
 
+#ifdef DEBUGGDB
+#include <debug.h>
+#endif
 
 // basic stuff from the template
 static void *xfb1 = NULL;
@@ -39,6 +42,10 @@ int main(int argc, char **argv) {
 	// register power button handler if we're on wii
 	#if defined(HW_RVL)
 	SYS_SetPowerCallback(powerButtonCallback);
+	#endif
+	
+	#ifdef DEBUGGDB
+	DEBUG_Init(GDBSTUB_DEVICE_USB, 1);
 	#endif
 	
 	// do basic initialization
@@ -72,11 +79,15 @@ int main(int argc, char **argv) {
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
 
 	bool shouldExit = false;
+	
+	#ifdef DEBUGGDB
+	_break();
+	#endif
 
 	void *currXfb = NULL;
 	
 	// there is a makefile target that will enable this
-	#ifdef DEBUG
+	#ifdef DEBUGLOG
 	sendMessage("USB Gecko Debug output enabled");
 	#ifdef HW_RVL
 	sendMessage("Running on Wii");
@@ -154,17 +165,17 @@ int main(int argc, char **argv) {
 	switch (VIDEO_GetCurrentTvMode()) {
 		case VI_NTSC:
 		case VI_EURGB60:
-			#ifdef DEBUG
+			#ifdef DEBUGLOG
 			sendMessage("Video mode is NTSC/EURGB60");
 			#endif
 			break;
 		case VI_MPAL: // no idea if this should be a supported mode...
-			#ifdef DEBUG
+			#ifdef DEBUGLOG
 			sendMessage("Video mode is MPAL");
 			#endif
 			break;
 		case VI_PAL:
-			#ifdef DEBUG
+			#ifdef DEBUGLOG
 			sendMessage("Video mode is PAL");
 			#endif
 		default:

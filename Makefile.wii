@@ -29,7 +29,11 @@ CFLAGS	= -g -O2 -Wall $(MACHDEP) $(INCLUDE)
 
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
-	CFLAGS += -DDEBUG
+	CFLAGS += -DDEBUGLOG
+endif
+
+ifeq ($(DEBUG), 2)
+	CFLAGS += -DDEBUGGDB
 endif
 
 BENCH ?= 0
@@ -51,6 +55,10 @@ LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
 LIBS	:=	-lfat -lwiiuse -lbte -logc -lm
+
+ifeq ($(DEBUG), 2)
+	LIBS	:=	-lfat -lwiiuse -lbte -ldb -logc -lm
+endif
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
