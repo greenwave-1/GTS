@@ -1,10 +1,12 @@
 #ifndef FONT_H
 #define FONT_H
 
-// taken from:
-// https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/include/images/font.h
+// Code in use from the PhobGCC project is licensed under GPLv3. A copy of this license is provided in the root
+// directory of this project's repository.
 
+// Upstream URL for the PhobGCC project is: https://github.com/PhobGCC/PhobGCC-SW
 
+// PhobGCC/rp2040/include/images/font.h
 const char font[15*(32*3 - 1)] = {
 0b00000000, // space
 0b00000000,
@@ -1051,13 +1053,13 @@ const char font[15*(32*3 - 1)] = {
 0b00000000,
 0b00000000,
 0b00000000,
-0b01111100,
-0b11000110, //
-0b00000110,
 0b01111110,
-0b11000110,
-0b11000110,
-0b11001110,
+0b11000011, //
+0b00000011,
+0b01111111,
+0b11000011,
+0b11000011,
+0b11000111,
 0b01111001, //
 0b00000000,
 0b00000000,

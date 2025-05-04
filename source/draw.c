@@ -3,8 +3,7 @@
 //
 
 #include "draw.h"
-//#include "images/stickmaps.h"
-#include "images/custom_colors.h"
+#include "images/stickmaps.h"
 
 static bool do2xHorizontalDraw = false;
 
