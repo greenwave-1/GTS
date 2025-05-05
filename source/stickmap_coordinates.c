@@ -29,10 +29,12 @@ const int STICKMAP_FF_WD_COORD_UNSAFE[][2] = { {9500, 3000},
 const int STICKMAP_FF_WD_COORD_UNSAFE_LEN = 2;
 
 
-const char* STICKMAP_SHIELDDROP_DESC = "Coorinates for Vanilla and UCF Shield drops\n\n"
+const char* STICKMAP_SHIELDDROP_DESC = "Coorinates for Vanilla and UCF Shield drops. Different\n"
+									   "coordinate groups vary in requirements, check the SmashBoards\n"
+									   "UCF post for more info.\n\n"
                                        "VANILLA / Green -> Coordinates that will work without UCF\n"
-                                       "UCF LOWER / Blue -> Lower coordinates (idk)\n"
-                                       "UCF v0.84 UPPER / Yellow -> v0.84 upper coordinates (idk)";
+                                       "UCF LOWER / Blue -> Lower coordinates for any UCF Version\n"
+                                       "UCF v0.84 UPPER / Yellow -> Upper coordinates for v0.84+ only\n";
 
 const char* STICKMAP_SHIELDDROP_RETVALS[] = { "MISS", "VANILLA", "UCF LOWER", "UCF v0.84 UPPER" };
 
