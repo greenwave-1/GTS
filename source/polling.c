@@ -24,14 +24,14 @@ static int pollsPerFrameHigh = 24;
 void __setStaticXYValues() {
 	switch(VIDEO_GetScanMode()) {
 		case VI_INTERLACE:
-			xLineCountNormal = 120;
+			xLineCountNormal = 131;
 			xLineCountHigh = 11;
 #ifdef DEBUGLOG
 			sendMessage("Video scan mode is interlaced");
 #endif
 			break;
 		case VI_PROGRESSIVE:
-			xLineCountNormal = 240;
+			xLineCountNormal = 263;
 			xLineCountHigh = 22;
 #ifdef DEBUGLOG
 			sendMessage("Video scan mode is progressive");
@@ -39,8 +39,8 @@ void __setStaticXYValues() {
 			break;
 		case VI_NON_INTERLACE:
 		default:
-			xLineCountNormal = 240;
-			xLineCountHigh = 240;
+			//xLineCountNormal = 240;
+			//xLineCountHigh = 240;
 			unsupportedMode = true;
 #ifdef DEBUGLOG
 			sendMessage("Video scan mode is unsupported");
