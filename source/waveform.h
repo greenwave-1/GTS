@@ -1,5 +1,5 @@
 //
-// Created on 10/30/23.
+// Created on 2023/10/30.
 //
 
 #ifndef FOSSSCOPE_WAVEFORM_H

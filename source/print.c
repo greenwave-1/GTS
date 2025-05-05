@@ -1,6 +1,11 @@
 //
-// Created on 3/14/25.
+// Created on 2025/03/14.
 //
+
+// Code in use from the PhobGCC project is licensed under GPLv3. A copy of this license is provided in the root
+// directory of this project's repository.
+
+// Upstream URL for the PhobGCC project is: https://github.com/PhobGCC/PhobGCC-SW
 
 // the majority of this was adapted from the Phobgcc PhobVision code:
 // https://github.com/PhobGCC/PhobGCC-SW/tree/main/PhobGCC/rp2040

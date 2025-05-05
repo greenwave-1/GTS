@@ -1,5 +1,5 @@
 //
-// Created on 3/18/25.
+// Created on 2025/03/18.
 //
 
 #include "oscilloscope.h"
