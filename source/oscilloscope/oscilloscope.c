@@ -390,28 +390,30 @@ static void oscilloscopeCallback() {
 static void printInstructions(void *currXfb) {
 	setCursorPos(2, 0);
 	printStr("Press X to cycle the current test, results will show above the\n"
-			 "waveform. Press Y to cycle between Analog Stick and C-Stick.\n"
-	         "Use DPAD left/right to scroll waveform when it is\nlarger than the "
-	         "displayed area, hold R to move faster.", currXfb);
+			"waveform. Press Y to cycle between Analog Stick and C-Stick.\n"
+			"Use DPAD left/right to scroll waveform when it is\n"
+			"larger than the displayed area, hold R to move faster.", currXfb);
 	printStr("\n\nCURRENT TEST: ", currXfb);
 	switch (currentTest) {
 		case SNAPBACK:
-			printStr("SNAPBACK\nCheck the min/max value on a given axis depending on where\nyour "
-					"stick started. If you moved the stick left, check the\nMax value on a given "
-					"axis. Snapback can occur when the\nmax value is at or above 23. If right, "
-					"then at or below -23.", currXfb);
+			printStr("SNAPBACK\n"
+					"Check the min/max value on a given axis depending on where\n"
+					"the stick started. The range in which Melee will not register\n"
+					"a directional input is -22 to +22. Anything outside that range\n"
+					"risks the game registering a non-neutral stick input.", currXfb);
 			break;
 		case PIVOT:
-			printStr("PIVOT\nFor a successful pivot, you want the stick's position to stay "
-				   "above/below +64/-64 for ~16.6ms (1 frame). Less, and you might\n"
-				   "get nothing, more, and you might get a dashback. You also need\n"
-				   "the stick to hit 80/-80 on both sides.\n"
-				   "Check the PhobVision docs for more info.", currXfb);
+			printStr("PIVOT\n"
+					"For a successful pivot, the stick's position should stay\n"
+					"above/below +64/-64 for ~16.6ms (1 frame). Less, and a pivot\n"
+					"may not occur; more, and a dashback may occur. The stick\n"
+					"should also hit 80/-80 on both sides.\n", currXfb);
 			break;
 		case DASHBACK:
-			printStr("DASHBACK\nA (vanilla) dashback will be successful when the stick doesn't\n"
-					 "get polled between 23 and 64, or -23 and -64.\n"
-					 "Less time in this range is better.", currXfb);
+			printStr("DASHBACK\n"
+					"A (vanilla) dashback will be successful when the stick doesn't\n"
+					"get polled between 23 and 64, or -23 and -64.\n"
+					"Less time in this range is better.", currXfb);
 			break;
 		default:
 			printStr("NO TEST SELECTED", currXfb);
@@ -842,7 +844,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 					break;
 			}
 			if (!buttonLock) {
-				if (*pressed & PAD_BUTTON_A && !buttonLock) {
+				if (*pressed & PAD_BUTTON_A && !buttonLock && oState != PRE_INPUT) {
 					if (oState == POST_INPUT_LOCK && stickCooldown == 0) {
 						oState = POST_INPUT;
 					} else {
