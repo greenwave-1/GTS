@@ -2,8 +2,8 @@
 // Created on 2025/03/17.
 //
 
-#ifndef FOSSSCOPE_R2_CONTINUOUS_H
-#define FOSSSCOPE_R2_CONTINUOUS_H
+#ifndef GTS_CONTINUOUS_H
+#define GTS_CONTINUOUS_H
 
 #include <gccore.h>
 
@@ -15,4 +15,4 @@ void menu_continuousEnd();
 
 
 
-#endif //FOSSSCOPE_R2_CONTINUOUS_H
+#endif //GTS_CONTINUOUS_H

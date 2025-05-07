@@ -42,15 +42,15 @@ int exportData(WaveformData *data) {
 	// https://stackoverflow.com/questions/7430248/creating-a-new-directory-in-c
 	{
 		struct stat st = {0};
-		if (stat("/FossScope", &st) == -1) {
-			if (mkdir("/FossScope", 0700) == -1) {
+		if (stat("/GTS", &st) == -1) {
+			if (mkdir("/GTS", 0700) == -1) {
 				return 3;
 			}
 		}
 	}
 	
 	// create filepath
-	char fileStr[64] = "/FossScope/";
+	char fileStr[64] = "/GTS/";
 	strncat(fileStr, timeStr, 32);  // in theory this is right, idk if its actually right tho...
 	strcat(fileStr, "_");
 	{

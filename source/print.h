@@ -5,8 +5,8 @@
 // the majority of this was adapted from the Phobgcc PhobVision code:
 // https://github.com/PhobGCC/PhobGCC-SW/tree/main/PhobGCC/rp2040
 
-#ifndef FOSSSCOPE_PRINT_H
-#define FOSSSCOPE_PRINT_H
+#ifndef GTS_PRINT_H
+#define GTS_PRINT_H
 
 #include <stdint.h>
 
@@ -38,4 +38,4 @@ void printStrColor(const char* str, void *xfb, const uint32_t bg_color, const ui
 void resetCursor();
 void setCursorPos(int row, int col);
 
-#endif //FOSSSCOPE_PRINT_H
+#endif //GTS_PRINT_H

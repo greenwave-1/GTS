@@ -2,8 +2,8 @@
 // Created on 2025/03/18.
 //
 
-#ifndef FOSSSCOPE_R2_OSCILLOSCOPE_H
-#define FOSSSCOPE_R2_OSCILLOSCOPE_H
+#ifndef GTS_OSCILLOSCOPE_H
+#define GTS_OSCILLOSCOPE_H
 
 #include <gccore.h>
 #include "../waveform.h"
@@ -20,4 +20,4 @@ void menu_oscilloscope(void *currXfb, WaveformData *d, u32 *p, u32 *h);
 void menu_oscilloscopeEnd();
 sampling_callback getOscilloscopeCallbackRef();
 
-#endif //FOSSSCOPE_R2_OSCILLOSCOPE_H
+#endif //GTS_OSCILLOSCOPE_H

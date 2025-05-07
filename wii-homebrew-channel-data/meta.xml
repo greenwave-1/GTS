@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <app version="1">
-    <name>FossScope</name>
+    <name>GCC Test Suite</name>
     <version>VERSION</version>
     <release_date>DATE</release_date>
     <short_description>A controller test program</short_description>

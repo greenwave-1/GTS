@@ -37,7 +37,7 @@ rungc:
 	$(MAKE) -f Makefile.gc run
 
 runemu:
-	$(emupath) -b -e fossScope_gc.dol
+	$(emupath) -b -e GTS_gc.dol
 
 reloadgc:
 	$(MAKE) -f Makefile.gc reload

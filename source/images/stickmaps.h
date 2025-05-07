@@ -1,5 +1,5 @@
-#ifndef STICKMAPS_H
-#define STICKMAPS_H
+#ifndef GTS_STICKMAPS_H
+#define GTS_STICKMAPS_H
 
 // Code in use from the PhobGCC project is licensed under GPLv3. A copy of this license is provided in the root
 // directory of this project's repository.
@@ -43,4 +43,4 @@ extern const u32 CUSTOM_COLORS[];
 #define IMAGE_LEN 7
 enum IMAGE { NO_IMAGE, DEADZONE, A_WAIT, MOVE_WAIT, CROUCH, LEDGE_L, LEDGE_R  };
 
-#endif //STICKMAPS_H
+#endif //GTS_STICKMAPS_H

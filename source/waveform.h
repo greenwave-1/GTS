@@ -2,8 +2,8 @@
 // Created on 2023/10/30.
 //
 
-#ifndef FOSSSCOPE_WAVEFORM_H
-#define FOSSSCOPE_WAVEFORM_H
+#ifndef GTS_WAVEFORM_H
+#define GTS_WAVEFORM_H
 
 #include <gccore.h>
 
@@ -53,4 +53,4 @@ WaveformDatapoint convertStickValues(WaveformDatapoint *data);
 //char* meleeCoord(int coord);
 
 
-#endif //FOSSSCOPE_WAVEFORM_H
+#endif //GTS_WAVEFORM_H

@@ -115,7 +115,7 @@ bool menu_runMenu(void *currXfb) {
 		originRead = true;
 	}
 	
-	printStr("FossScope (Working Title)", currXfb);
+	printStr("GCC Test Suite", currXfb);
 	
 	// check if port 1 is disconnected
 	if ((padsConnected & 1) == 0) {

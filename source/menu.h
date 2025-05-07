@@ -2,8 +2,8 @@
 // Created on 2023/10/25.
 //
 
-#ifndef FOSSSCOPE_MENU_H
-#define FOSSSCOPE_MENU_H
+#ifndef GTS_MENU_H
+#define GTS_MENU_H
 
 #include <stdbool.h>
 
@@ -20,4 +20,4 @@ void menu_waitingMeasure(void *currXfb);
 void menu_coordinateViewer(void *currXfb);
 
 
-#endif //FOSSSCOPE_MENU_H
+#endif //GTS_MENU_H

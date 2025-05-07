@@ -1,5 +1,5 @@
-#ifndef FONT_H
-#define FONT_H
+#ifndef GTS_FONT_H
+#define GTS_FONT_H
 
 // Code in use from the PhobGCC project is licensed under GPLv3. A copy of this license is provided in the root
 // directory of this project's repository.
@@ -1531,4 +1531,4 @@ const char font[15*(32*3 - 1)] = {
 
 
 
-#endif //FONT_H
+#endif //GTS_FONT_H

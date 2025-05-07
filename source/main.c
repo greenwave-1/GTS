@@ -1,5 +1,3 @@
-// fossScope (working title)
-
 #include <stdio.h>
 #include <string.h>
 #include <gccore.h>

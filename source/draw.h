@@ -2,8 +2,8 @@
 // Created on 2025/02/14.
 //
 
-#ifndef FOSSSCOPE_DRAW_H
-#define FOSSSCOPE_DRAW_H
+#ifndef GTS_DRAW_H
+#define GTS_DRAW_H
 
 #include <gctypes.h>
 #include "stickmap_coordinates.h"
@@ -99,4 +99,4 @@ void DrawOctagonalGate(int x, int y, int scale, int color, void *xfb);
 // draw for tests in coordinate viewer
 void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which, void *xfb);
 
-#endif //FOSSSCOPE_DRAW_H
+#endif //GTS_DRAW_H

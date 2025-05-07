@@ -9,22 +9,22 @@ then
   exit 1
 fi
 
-FILENAME=`basename "$PWD"`
+#FILENAME=`basename "$PWD"`
 DATE=`date -I`
 
 make release version=$1
 
-mkdir -p release/wii/apps/FossScope
-cp wii-homebrew-channel-data/meta.xml release/wii/apps/FossScope/
-cp wii-homebrew-channel-data/icon.png release/wii/apps/FossScope/
+mkdir -p release/wii/apps/GTS
+cp wii-homebrew-channel-data/meta.xml release/wii/apps/GTS/
+cp wii-homebrew-channel-data/icon.png release/wii/apps/GTS/
 
-mv ${FILENAME}_wii.dol release/wii/apps/FossScope/boot.dol
-mv ${FILENAME}_gc.dol release/FossScope_GC.dol
+mv GTS_wii.dol release/wii/apps/GTS/boot.dol
+mv GTS_gc.dol release/GTS_GC.dol
 
-sed -i 's/VERSION/'$1'/g' release/wii/apps/FossScope/meta.xml
-sed -i 's/DATE/'$DATE'/g' release/wii/apps/FossScope/meta.xml
+sed -i 's/VERSION/'$1'/g' release/wii/apps/GTS/meta.xml
+sed -i 's/DATE/'$DATE'/g' release/wii/apps/GTS/meta.xml
 
 make clean
 
 cd release/wii/
-zip ../wii.zip apps/FossScope/*
+zip ../wii.zip apps/GTS/*

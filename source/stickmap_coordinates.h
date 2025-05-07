@@ -4,8 +4,8 @@
 
 #include "waveform.h"
 
-#ifndef FOSSSCOPE_R2_STICKMAP_COORDINATES_H
-#define FOSSSCOPE_R2_STICKMAP_COORDINATES_H
+#ifndef GTS_STICKMAP_COORDINATES_H
+#define GTS_STICKMAP_COORDINATES_H
 
 
 enum STICKMAP_LIST { NONE, FF_WD, SHIELDDROP };
@@ -66,4 +66,4 @@ extern const int STICKMAP_SHIELDDROP_COORD_UCF_UPPER_LEN;
 int isCoordValid(enum STICKMAP_LIST, WaveformDatapoint);
 int toStickmap(int meleeCoord);
 
-#endif //FOSSSCOPE_R2_STICKMAP_COORDINATES_H
+#endif //GTS_STICKMAP_COORDINATES_H
