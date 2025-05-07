@@ -4,6 +4,7 @@ GCC Test Suite (GTS for short) is an open source alternative to SmashScope.
 
 Currently not feature-complete, but in a workable state.
 
+(This project was originally developed under the name FossScope)
 ## Current features:
 - Polls at ~1400 hz in the oscilloscope menus, ~120 hz otherwise
 - Two oscilloscope menus, one for testing specific inputs, and one for continuously measuring
