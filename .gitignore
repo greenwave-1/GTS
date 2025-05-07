@@ -1,7 +1,8 @@
 # don't push build stuffs
 *.dol
 *.elf
-build/
+build_gc/
+build_wii/
 .idea/
 release/
 *.zip
