@@ -22,7 +22,7 @@ static const uint32_t COLOR_RED_C = 0x846084d7;
 static const uint32_t COLOR_BLUE_C = 0x6dd26d72;
 
 static enum OSC_MENU_STATE state = OSC_SETUP;
-static enum OSCILLOSCOPE_STATE oState = PRE_INPUT;
+static enum OSC_STATE oState = PRE_INPUT;
 
 static WaveformData *data = NULL; // = { {{ 0 }}, 0, 500, false, false };
 static enum OSCILLOSCOPE_TEST currentTest = SNAPBACK;

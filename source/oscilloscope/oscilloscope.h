@@ -11,13 +11,12 @@
 static const float FRAME_TIME_MS = (1000/60.0);
 
 enum OSC_MENU_STATE { OSC_SETUP, OSC_POST_SETUP, OSC_INSTRUCTIONS };
-enum OSCILLOSCOPE_STATE { PRE_INPUT, POST_INPUT, POST_INPUT_LOCK };
+enum OSC_STATE { PRE_INPUT, POST_INPUT, POST_INPUT_LOCK };
 
 static const u8 OSCILLOSCOPE_TEST_LEN = 4;
 enum OSCILLOSCOPE_TEST { SNAPBACK, PIVOT, DASHBACK, NO_TEST };
 
 void menu_oscilloscope(void *currXfb, WaveformData *d, u32 *p, u32 *h);
 void menu_oscilloscopeEnd();
-sampling_callback getOscilloscopeCallbackRef();
 
 #endif //GTS_OSCILLOSCOPE_H
