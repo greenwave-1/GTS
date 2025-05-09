@@ -12,6 +12,8 @@
 #include "../draw.h"
 #include "../waveform.h"
 
+char strBuffer[100];
+
 const static u8 SCREEN_TIMEPLOT_START = 70;
 
 static const uint32_t COLOR_RED_C = 0x846084d7;
@@ -106,9 +108,7 @@ void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
 			} else {
 				freeze = false;
 			}
-			// draw guidelines based on selected test
-			DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
-			DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY, currXfb);
+
 			if (data.isDataReady) {
 				// draw guidelines based on selected test
 				DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500,
@@ -117,31 +117,42 @@ void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
 				// lots of the specific values are taken from:
 				// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
 				
-				if (data.endPoint < 500) {
+				// reset offset if its invalid
+				if (dataScrollOffset > (3000 - (500 * waveformScaleFactor))) {
+					dataScrollOffset = (3000 - (500 * waveformScaleFactor));
+				} else if (dataScrollOffset < 0) {
 					dataScrollOffset = 0;
 				}
 				
-				int prevX = data.data[dataScrollOffset].ax;
-				int prevY = data.data[dataScrollOffset].ay;
+				int prevX = 0;
+				int prevY = 0;
 				
 				int waveformPrevXPos = 0;
 				int waveformXPos = 1;
 				
-				// draw 500 datapoints,
-				// draw every dataScrollOffset point
+				// calculate start point
+				// waveformScaleFactor determines how much information is shown by only drawing every x point
+				int startPoint = (dataIndex - (500 * waveformScaleFactor) - dataScrollOffset);
+				if (startPoint < 0) {
+					startPoint += 3000;
+				}
+				
+				setCursorPos(20,0);
+				sprintf(strBuffer, "Scaling Factor: %d\n", waveformScaleFactor);
+				printStr(strBuffer, currXfb);
+				if (cState == INPUT_LOCK) {
+					sprintf(strBuffer, "Offset: %d", dataScrollOffset);
+					printStr(strBuffer, currXfb);
+				}
+				
 				for (int i = 0; i < 500; i++) {
-					// make sure we haven't gone outside our bounds
-					if (i == data.endPoint || waveformXPos >= 500) {
-						break;
-					}
-					
 					int currX, currY;
 					if (!showCStick) {
-						currX = data.data[i * waveformScaleFactor].ax;
-						currY = data.data[i * waveformScaleFactor].ay;
+						currX = data.data[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].ax;
+						currY = data.data[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].ay;
 					} else {
-						currX = data.data[i * waveformScaleFactor].cx;
-						currY = data.data[i * waveformScaleFactor].cy;
+						currX = data.data[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].cx;
+						currY = data.data[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].cy;
 					}
 					
 					// y first
@@ -160,13 +171,12 @@ void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
 					waveformXPos++;
 				}
 				
-				// draw line where our most recent data is
-				DrawVLine(SCREEN_TIMEPLOT_START + (dataIndex / waveformScaleFactor), SCREEN_POS_CENTER_Y - 128, SCREEN_POS_CENTER_Y + 128, COLOR_SILVER, currXfb);
-				
 				if (!buttonLock){
 					if (*pressed & PAD_BUTTON_A && !buttonLock) {
 						if (cState == INPUT_LOCK) {
 							cState = INPUT;
+							waveformScaleFactor = 6;
+							dataScrollOffset = 0;
 						} else {
 							cState = INPUT_LOCK;
 						}
@@ -175,6 +185,27 @@ void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
 					if (*pressed & PAD_BUTTON_Y && !buttonLock) {
 						showCStick = !showCStick;
 						buttonLock = true;
+					}
+					if (*pressed & PAD_BUTTON_UP && !buttonLock && cState == INPUT_LOCK) {
+						waveformScaleFactor--;
+						if (waveformScaleFactor < 1) {
+							waveformScaleFactor = 1;
+						}
+						buttonLock = true;
+					}
+					if (*pressed & PAD_BUTTON_DOWN && !buttonLock && cState == INPUT_LOCK) {
+						waveformScaleFactor++;
+						if (waveformScaleFactor > 6) {
+							waveformScaleFactor = 6;
+						}
+						buttonLock = true;
+					}
+					
+					// bounds checks happen above, since they need to be adjusted depending on scale factor anyways
+					if (*held & PAD_BUTTON_LEFT && cState == INPUT_LOCK) {
+						dataScrollOffset += 25;
+					} else if (*held & PAD_BUTTON_RIGHT && cState == INPUT_LOCK) {
+						dataScrollOffset -= 25;
 					}
 				}
 			}
