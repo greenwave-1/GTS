@@ -12,7 +12,7 @@
 #include "../draw.h"
 #include "../waveform.h"
 
-char strBuffer[100];
+static char strBuffer[100];
 
 const static u8 SCREEN_TIMEPLOT_START = 70;
 
@@ -32,8 +32,8 @@ static bool freeze = false;
 static bool showCStick = false;
 
 static bool buttonLock = false;
-static u32 *pressed;
-static u32 *held;
+static u32 *pressed = NULL;
+static u32 *held = NULL;
 
 static u64 prevSampleCallbackTick = 0;
 static u64 sampleCallbackTick = 0;

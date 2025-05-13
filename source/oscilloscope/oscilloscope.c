@@ -45,8 +45,8 @@ static u64 sampleCallbackTick = 0;
 static u64 timeStickInOrigin = 0;
 static u64 timeStoppedMoving = 0;
 
-static u32 *pressed;
-static u32 *held;
+static u32 *pressed = NULL;
+static u32 *held = NULL;
 static bool buttonLock = false;
 static u8 buttonPressCooldown = 0;
 
@@ -419,6 +419,10 @@ static void printInstructions(void *currXfb) {
 			printStr("NO TEST SELECTED", currXfb);
 			break;
 	}
+	
+	setCursorPos(21, 0);
+	printStr("Press Z to close instructions.", currXfb);
+	
 	if (!buttonLock) {
 		if (*pressed & PAD_TRIGGER_Z) {
 			state = OSC_POST_SETUP;

@@ -18,6 +18,7 @@
 
 #include "oscilloscope/oscilloscope.h"
 #include "oscilloscope/continuous.h"
+#include "plot2d/plot2d.h"
 
 #ifndef VERSION_NUMBER
 #define VERSION_NUMBER "NOVERS_DEV"
@@ -135,7 +136,7 @@ bool menu_runMenu(void *currXfb) {
 	
 	// check for any buttons pressed/held
 	// don't update if we are on a menu with its own callback
-	if (currentMenu != WAVEFORM && currentMenu != CONTINUOUS_WAVEFORM) {
+	if (currentMenu != WAVEFORM && currentMenu != CONTINUOUS_WAVEFORM && currentMenu != PLOT_2D) {
 		pressed = PAD_ButtonsDown(0);
 		held = PAD_ButtonsHeld(0);
 	}
@@ -152,15 +153,7 @@ bool menu_runMenu(void *currXfb) {
 			menu_oscilloscope(currXfb, &data, &pressed, &held);
 			break;
 		case PLOT_2D:
-			if (displayInstructions) {
-				printStr("Press X to cycle the stickmap background. Use DPAD\nleft/right to change "
-					   "what the last point drawn is.\nInformation on the last chosen point is "
-					   "displayed\nat the bottom. Hold R to add or remove points faster.\n"
-					   "Hold L to move one point at a time.\n\nHold Y to move the \"starting sample\" with the\n"
-					   "same controls as above. Information for the selected\nrange is shown on the left.", currXfb);
-			} else {
-				menu_2dPlot(currXfb);
-			}
+			menu_plot2d(currXfb, &data, &pressed, &held);
 			break;
 		case FILE_EXPORT:
 			menu_fileExport(currXfb);
@@ -280,6 +273,9 @@ bool menu_runMenu(void *currXfb) {
 				case CONTINUOUS_WAVEFORM:
 					menu_continuousEnd();
 					break;
+				case PLOT_2D:
+					menu_plot2dEnd();
+					break;
 				default:
 					break;
 			}
@@ -293,7 +289,7 @@ bool menu_runMenu(void *currXfb) {
 	} else {
 		// does the user want to display instructions?
 		if (pressed & PAD_TRIGGER_Z) {
-			if (currentMenu == PLOT_2D || currentMenu == COORD_MAP) {
+			if (currentMenu == COORD_MAP) {
 				displayInstructions = !displayInstructions;
 			}
 		}
@@ -726,6 +722,8 @@ void menu_controllerTest(void *currXfb) {
 }
 
 void menu_2dPlot(void *currXfb) {
+	return;
+	
 	static WaveformDatapoint convertedCoords;
 
 	// display instructions and data for user

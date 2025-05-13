@@ -17,7 +17,7 @@ include $(DEVKITPRO)/libogc2/gamecube_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	GTS_gc
 BUILD		:=	build_gc
-SOURCES		:=	source source/oscilloscope source/file source/images
+SOURCES		:=	source source/oscilloscope source/file source/images source/plot2d
 DATA		:=	data
 INCLUDES	:=
 
