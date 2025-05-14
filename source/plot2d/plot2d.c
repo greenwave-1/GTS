@@ -5,6 +5,7 @@
 #include "plot2d.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <gccore.h>
 #include <ogc/lwp_watchdog.h>
 #include "../print.h"
@@ -26,10 +27,20 @@ static enum PLOT_MENU_STATE menuState = PLOT_SETUP;
 static enum PLOT_STATE plotState = PLOT_INPUT;
 
 static WaveformData *data = NULL;
+static int prevPosX = 0, prevPosY = 0;
+static int currPosX = 0, currPosY = 0;
+static int prevPosDiffX = 0, prevPosDiffY = 0;
+static u64 noMovementTimer = 0;
+
+static int noMovementStartIndex = -1;
+static bool haveStartPoint = false;
+static bool captureStart = false;
+
 static WaveformDatapoint convertedCoords;
 static int map2dStartIndex = 0;
 static int lastDrawPoint = -1;
 static int *indexPointer = NULL;
+
 
 // enum for what image to draw in 2d plot
 static enum IMAGE selectedImage = NO_IMAGE;
@@ -42,16 +53,10 @@ static u64 pressedTimer = 0;
 static u8 ellipseCounter = 0;
 static bool pressLocked = false;
 
-static bool stickMoved = false;
-static int startingX, startingY;
-
 static void plot2dSamplingCallback() {
 	// time from last call of this function calculation
 	prevSampleCallbackTick = sampleCallbackTick;
 	sampleCallbackTick = gettime();
-	if (prevSampleCallbackTick == 0) {
-		prevSampleCallbackTick = sampleCallbackTick;
-	}
 	
 	//static s8 x, y, cx, cy;
 	PAD_ScanPads();
@@ -73,7 +78,79 @@ static void plot2dSamplingCallback() {
 	*held = PAD_ButtonsHeld(0);
 	
 	if (plotState == PLOT_INPUT) {
-	
+		// are we already capturing data?
+		if (captureStart) {
+			prevPosX = currPosX;
+			prevPosY = currPosY;
+			currPosX = PAD_StickX(0);
+			currPosY = PAD_StickY(0);
+			prevPosDiffX = abs(currPosX - prevPosX);
+			prevPosDiffY = abs(currPosY - prevPosY);
+			
+			data->data[data->endPoint].ax = currPosX;
+			data->data[data->endPoint].ay = currPosY;
+			data->data[data->endPoint].cx = 0;
+			data->data[data->endPoint].cy = 0;
+			data->data[data->endPoint].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+			data->endPoint++;
+			
+			// are we currently checking if the stick has stopped moving?
+			if ((prevPosDiffX < 2 && prevPosDiffY < 2) || data->endPoint == WAVEFORM_SAMPLES) {
+				if (noMovementStartIndex == -1) {
+					noMovementStartIndex = data->endPoint;
+				} else {
+					// for some reason this can't be timeDiffUs, it breaks specifically on first run in the menu
+					// if a shorter capture already exists, weird...
+					noMovementTimer += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+				}
+				
+				// not moving for 250 ms
+				if (noMovementTimer >= 250000 || data->endPoint == WAVEFORM_SAMPLES) {
+					if (noMovementStartIndex != -1) {
+						data->endPoint = noMovementStartIndex;
+					}
+					data->isDataReady = true;
+					plotState = PLOT_DISPLAY;
+				}
+			} else {
+				noMovementStartIndex = -1;
+				noMovementTimer = 0;
+			}
+		
+		// get our initial start point, needed to know when to start actually recording
+		} else if (!haveStartPoint) {
+			prevPosX = PAD_StickX(0);
+			prevPosY = PAD_StickY(0);
+			data->isDataReady = false;
+			data->exported = false;
+			haveStartPoint = true;
+		// wait for stick to move outside ~10 units to start recording
+		} else {
+			currPosX = PAD_StickX(0);
+			currPosY = PAD_StickY(0);
+			if ( abs(currPosX - prevPosX) >= 10 || abs (currPosY - prevPosY) >= 10 ) {
+				captureStart = true;
+				data->data[0].ax = currPosX;
+				data->data[0].ay = currPosY;
+				data->data[0].cx = 0;
+				data->data[0].cy = 0;
+				data->data[0].timeDiffUs = 0;
+				data->endPoint = 1;
+			}
+		}
+		
+		if (data->isDataReady) {
+			// calculate total read time
+			for (int i = 0; i < data->endPoint; i++) {
+				data->totalTimeUs += data->data[i].timeDiffUs;
+			}
+			
+			// reset stuff
+			haveStartPoint = false;
+			noMovementStartIndex = -1;
+			noMovementTimer = 0;
+			captureStart = false;
+		}
 	}
 }
 
@@ -86,9 +163,7 @@ static void setup(WaveformData *d, u32 *p, u32 *h) {
 	if (data == NULL) {
 		data = d;
 	}
-	if (d->isDataReady) {
-		plotState = PLOT_DISPLAY;
-	}
+	plotState = PLOT_DISPLAY;
 }
 
 void printInstructions(void *currXfb) {
@@ -128,216 +203,237 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 					
 					// check if last draw point needs to be reset
 					if (lastDrawPoint == -1) {
-						lastDrawPoint = d->endPoint - 1;
+						lastDrawPoint = data->endPoint - 1;
 					}
-					convertedCoords = convertStickValues(&d->data[lastDrawPoint]);
-					
-					setCursorPos(5, 0);
-					sprintf(strBuffer, "Total samples: %04u\n", d->endPoint);
-					printStr(strBuffer, currXfb);
-					sprintf(strBuffer, "Start sample: %04u\n", map2dStartIndex + 1);
-					printStr(strBuffer, currXfb);
-					sprintf(strBuffer, "End sample: %04u\n", lastDrawPoint + 1);
-					printStr(strBuffer, currXfb);
-					
-					u64 timeFromStart = 0;
-					for (int i = map2dStartIndex + 1; i <= lastDrawPoint; i++) {
-						timeFromStart += d->data[i].timeDiffUs;
-					}
-					float timeFromStartMs = timeFromStart / 1000.0;
-					sprintf(strBuffer, "Total MS: %6.2f\n", timeFromStartMs);
-					printStr(strBuffer, currXfb);
-					sprintf(strBuffer, "Total frames: %2.2f", timeFromStartMs / FRAME_TIME);
-					printStr(strBuffer, currXfb);
-					
-					// print coordinates of last drawn point
-					// raw stick coordinates
-					setCursorPos(19, 0);
-					sprintf(strBuffer, "Raw XY: (%04d,%04d)\n", d->data[lastDrawPoint].ax, d->data[lastDrawPoint].ay);
-					printStr(strBuffer, currXfb);
-					printStr("Melee XY: (", currXfb);
-					// is the value negative?
-					if (d->data[lastDrawPoint].ax < 0) {
-						printStr("-", currXfb);
-					} else {
-						printStr("0", currXfb);
-					}
-					// is this a 1.0 value?
-					if (convertedCoords.ax == 10000) {
-						printStr("1.0000", currXfb);
-					} else {
-						sprintf(strBuffer, "0.%04d", convertedCoords.ax);
+					if (data->isDataReady) {
+						convertedCoords = convertStickValues(&data->data[lastDrawPoint]);
+						
+						setCursorPos(5, 0);
+						sprintf(strBuffer, "Total samples: %04u\n", data->endPoint);
 						printStr(strBuffer, currXfb);
-					}
-					printStr(",", currXfb);
-					
-					// is the value negative?
-					if (d->data[lastDrawPoint].ay < 0) {
-						printStr("-", currXfb);
-					} else {
-						printStr("0", currXfb);
-					}
-					// is this a 1.0 value?
-					if (convertedCoords.ay == 10000) {
-						printStr("1.0000", currXfb);
-					} else {
-						sprintf(strBuffer, "0.%04d", convertedCoords.ay);
+						sprintf(strBuffer, "Start sample: %04u\n", map2dStartIndex + 1);
 						printStr(strBuffer, currXfb);
-					}
-					printStr(")\n", currXfb);
-					printStr("Stickmap: ", currXfb);
-					
-					// draw image below 2d plot, and print while we're at it
-					switch (selectedImage) {
-						case A_WAIT:
-							printStr("Wait Attacks", currXfb);
-							drawImage(currXfb, await_image, await_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
-							break;
-						case CROUCH:
-							printStr("Crouch", currXfb);
-							drawImage(currXfb, crouch_image, crouch_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
-							break;
-						case DEADZONE:
-							printStr("Deadzones", currXfb);
-							drawImage(currXfb, deadzone_image, deadzone_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
-							break;
-						case LEDGE_L:
-							printStr("Left Ledge", currXfb);
-							drawImage(currXfb, ledgeL_image, ledgeL_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
-							break;
-						case LEDGE_R:
-							printStr("Right Ledge", currXfb);
-							drawImage(currXfb, ledgeR_image, ledgeR_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
-							break;
-						case MOVE_WAIT:
-							printStr("Wait Movement", currXfb);
-							drawImage(currXfb, movewait_image, movewait_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
-							break;
-						case NO_IMAGE:
-							printStr("None", currXfb);
-						default:
-							break;
-					}
-					
-					// draw box around plot area
-					DrawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
-					        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
-					        COLOR_WHITE, currXfb);
-					
-					// draw plot
-					// y is negated because of how the graph is drawn
-					// TODO: why does this need to be <= to avoid an off-by-one? step through logic later this is bugging me
-					for (int i = 0; i <= lastDrawPoint; i++) {
-						if (i >= map2dStartIndex) {
-							DrawDot(COORD_CIRCLE_CENTER_X + d->data[i].ax, SCREEN_POS_CENTER_Y - d->data[i].ay, COLOR_WHITE, currXfb);
+						sprintf(strBuffer, "End sample: %04u\n", lastDrawPoint + 1);
+						printStr(strBuffer, currXfb);
+						
+						u64 timeFromStart = 0;
+						for (int i = map2dStartIndex + 1; i <= lastDrawPoint; i++) {
+							timeFromStart += data->data[i].timeDiffUs;
+						}
+						float timeFromStartMs = timeFromStart / 1000.0;
+						sprintf(strBuffer, "Total MS: %6.2f\n", timeFromStartMs);
+						printStr(strBuffer, currXfb);
+						sprintf(strBuffer, "Total frames: %2.2f", timeFromStartMs / FRAME_TIME);
+						printStr(strBuffer, currXfb);
+						
+						// print coordinates of last drawn point
+						// raw stick coordinates
+						setCursorPos(19, 0);
+						sprintf(strBuffer, "Raw XY: (%04d,%04d)\n", data->data[lastDrawPoint].ax,
+						        data->data[lastDrawPoint].ay);
+						printStr(strBuffer, currXfb);
+						printStr("Melee XY: (", currXfb);
+						// is the value negative?
+						if (data->data[lastDrawPoint].ax < 0) {
+							printStr("-", currXfb);
 						} else {
-							DrawDot(COORD_CIRCLE_CENTER_X + d->data[i].ax, SCREEN_POS_CENTER_Y - d->data[i].ay, COLOR_GRAY, currXfb);
+							printStr("0", currXfb);
+						}
+						// is this a 1.0 value?
+						if (convertedCoords.ax == 10000) {
+							printStr("1.0000", currXfb);
+						} else {
+							sprintf(strBuffer, "0.%04d", convertedCoords.ax);
+							printStr(strBuffer, currXfb);
+						}
+						printStr(",", currXfb);
+						
+						// is the value negative?
+						if (data->data[lastDrawPoint].ay < 0) {
+							printStr("-", currXfb);
+						} else {
+							printStr("0", currXfb);
+						}
+						// is this a 1.0 value?
+						if (convertedCoords.ay == 10000) {
+							printStr("1.0000", currXfb);
+						} else {
+							sprintf(strBuffer, "0.%04d", convertedCoords.ay);
+							printStr(strBuffer, currXfb);
+						}
+						printStr(")\n", currXfb);
+						printStr("Stickmap: ", currXfb);
+						
+						// draw image below 2d plot, and print while we're at it
+						switch (selectedImage) {
+							case A_WAIT:
+								printStr("Wait Attacks", currXfb);
+								drawImage(currXfb, await_image, await_indexes, COORD_CIRCLE_CENTER_X - 127,
+								          SCREEN_POS_CENTER_Y - 127);
+								break;
+							case CROUCH:
+								printStr("Crouch", currXfb);
+								drawImage(currXfb, crouch_image, crouch_indexes, COORD_CIRCLE_CENTER_X - 127,
+								          SCREEN_POS_CENTER_Y - 127);
+								break;
+							case DEADZONE:
+								printStr("Deadzones", currXfb);
+								drawImage(currXfb, deadzone_image, deadzone_indexes, COORD_CIRCLE_CENTER_X - 127,
+								          SCREEN_POS_CENTER_Y - 127);
+								break;
+							case LEDGE_L:
+								printStr("Left Ledge", currXfb);
+								drawImage(currXfb, ledgeL_image, ledgeL_indexes, COORD_CIRCLE_CENTER_X - 127,
+								          SCREEN_POS_CENTER_Y - 127);
+								break;
+							case LEDGE_R:
+								printStr("Right Ledge", currXfb);
+								drawImage(currXfb, ledgeR_image, ledgeR_indexes, COORD_CIRCLE_CENTER_X - 127,
+								          SCREEN_POS_CENTER_Y - 127);
+								break;
+							case MOVE_WAIT:
+								printStr("Wait Movement", currXfb);
+								drawImage(currXfb, movewait_image, movewait_indexes, COORD_CIRCLE_CENTER_X - 127,
+								          SCREEN_POS_CENTER_Y - 127);
+								break;
+							case NO_IMAGE:
+								printStr("None", currXfb);
+							default:
+								break;
+						}
+						
+						// draw box around plot area
+						DrawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
+						        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
+						        COLOR_WHITE, currXfb);
+						
+						// draw plot
+						// y is negated because of how the graph is drawn
+						// TODO: why does this need to be <= to avoid an off-by-one? step through logic later this is bugging me
+						for (int i = 0; i <= lastDrawPoint; i++) {
+							if (i >= map2dStartIndex) {
+								DrawDot(COORD_CIRCLE_CENTER_X + data->data[i].ax,
+								        SCREEN_POS_CENTER_Y - data->data[i].ay, COLOR_WHITE, currXfb);
+							} else {
+								DrawDot(COORD_CIRCLE_CENTER_X + data->data[i].ax,
+								        SCREEN_POS_CENTER_Y - data->data[i].ay, COLOR_GRAY, currXfb);
+							}
+						}
+						
+						// using a pointer so that the logic can be used for both moving the beginning and end
+						if (*held & PAD_BUTTON_Y) {
+							indexPointer = &map2dStartIndex;
+						} else {
+							indexPointer = &lastDrawPoint;
+						}
+						
+						// cycle the stickmap shown
+						if (*pressed & PAD_BUTTON_X && !buttonLock) {
+							selectedImage++;
+							if (selectedImage == IMAGE_LEN) {
+								selectedImage = NO_IMAGE;
+							}
+							buttonLock = true;
+							buttonPressCooldown = 5;
+							// set up for reading data
+						}
+						
+						// holding L makes only individual presses work
+						if (*held & PAD_TRIGGER_L) {
+							if (*pressed & PAD_BUTTON_LEFT && !buttonLock) {
+								if (*indexPointer - 1 >= 0) {
+									(*indexPointer)--;
+								}
+								buttonLock = true;
+								buttonPressCooldown = 5;
+							} else if (*pressed & PAD_BUTTON_RIGHT && !buttonLock) {
+								// this logic can't be generalized easily
+								if (indexPointer == &map2dStartIndex) {
+									if (map2dStartIndex + 1 < lastDrawPoint) {
+										map2dStartIndex++;
+									} else {
+										map2dStartIndex = lastDrawPoint;
+									}
+								} else {
+									if (lastDrawPoint + 1 < data->endPoint) {
+										lastDrawPoint++;
+									} else {
+										lastDrawPoint = data->endPoint - 1;
+									}
+								}
+								buttonLock = true;
+								buttonPressCooldown = 5;
+							}
+							// holding R moves points faster
+						} else if (*held & PAD_TRIGGER_R) {
+							if (*held & PAD_BUTTON_LEFT) {
+								if (*indexPointer - 5 >= 0) {
+									(*indexPointer) -= 5;
+								} else {
+									(*indexPointer) = 0;
+								}
+							} else if (*held & PAD_BUTTON_RIGHT) {
+								// this logic can't be generalized easily
+								if (indexPointer == &map2dStartIndex) {
+									if (map2dStartIndex + 5 < lastDrawPoint) {
+										map2dStartIndex += 5;
+									} else {
+										map2dStartIndex = lastDrawPoint;
+									}
+								} else {
+									if (lastDrawPoint + 5 < data->endPoint) {
+										lastDrawPoint += 5;
+									} else {
+										lastDrawPoint = data->endPoint - 1;
+									}
+								}
+							}
+							// not holding either trigger, normal point movement
+						} else {
+							if (*held & PAD_BUTTON_LEFT) {
+								if (*indexPointer - 1 >= 0) {
+									(*indexPointer)--;
+								}
+							} else if (*held & PAD_BUTTON_RIGHT) {
+								// this logic can't be generalized easily
+								if (indexPointer == &map2dStartIndex) {
+									if (map2dStartIndex + +1 < lastDrawPoint) {
+										map2dStartIndex++;
+									} else {
+										map2dStartIndex = lastDrawPoint;
+									}
+								} else {
+									if (lastDrawPoint + 1 < data->endPoint) {
+										lastDrawPoint++;
+									} else {
+										lastDrawPoint = data->endPoint - 1;
+									}
+								}
+							}
+						}
+						
+						// make sure that the end never goes before the beginning
+						if (lastDrawPoint < map2dStartIndex) {
+							map2dStartIndex = lastDrawPoint;
 						}
 					}
 					
-					// using a pointer so that the logic can be used for both moving the beginning and end
-					if (*held & PAD_BUTTON_Y) {
-						indexPointer = &map2dStartIndex;
-					} else {
-						indexPointer = &lastDrawPoint;
+					if (!buttonLock) {
+						if (*pressed & PAD_TRIGGER_Z) {
+							menuState = PLOT_INSTRUCTIONS;
+							buttonLock = true;
+							buttonPressCooldown = 5;
+						}
 					}
 					
-					// cycle the stickmap shown
-					if (*pressed & PAD_BUTTON_X && !buttonLock) {
-						selectedImage++;
-						if (selectedImage == IMAGE_LEN) {
-							selectedImage = NO_IMAGE;
-						}
-						buttonLock = true;
-						buttonPressCooldown = 5;
-					// set up for reading data
-					}
 					if (*pressed & PAD_BUTTON_A && !buttonLock) {
 						plotState = PLOT_INPUT;
-						d->isDataReady = false;
+						lastDrawPoint = -1;
+						map2dStartIndex = 0;
+						data->isDataReady = false;
 						buttonLock = true;
 						buttonPressCooldown = 5;
 					}
-					
-					// holding L makes only individual presses work
-					if (*held & PAD_TRIGGER_L) {
-						if (*pressed & PAD_BUTTON_LEFT && !buttonLock) {
-							if (*indexPointer - 1 >= 0) {
-								(*indexPointer)--;
-							}
-							buttonLock = true;
-							buttonPressCooldown = 5;
-						} else if (*pressed & PAD_BUTTON_RIGHT && !buttonLock) {
-							// this logic can't be generalized easily
-							if (indexPointer == &map2dStartIndex) {
-								if (map2dStartIndex + 1 < lastDrawPoint) {
-									map2dStartIndex++;
-								} else {
-									map2dStartIndex = lastDrawPoint;
-								}
-							} else {
-								if (lastDrawPoint + 1 < d->endPoint) {
-									lastDrawPoint++;
-								} else {
-									lastDrawPoint = d->endPoint - 1;
-								}
-							}
-							buttonLock = true;
-							buttonPressCooldown = 5;
-						}
-					// holding R moves points faster
-					} else if (*held & PAD_TRIGGER_R) {
-						if (*held & PAD_BUTTON_LEFT) {
-							if (*indexPointer - 5 >= 0) {
-								(*indexPointer) -= 5;
-							} else {
-								(*indexPointer) = 0;
-							}
-						} else if (*held & PAD_BUTTON_RIGHT) {
-							// this logic can't be generalized easily
-							if (indexPointer == &map2dStartIndex) {
-								if (map2dStartIndex + 5 < lastDrawPoint) {
-									map2dStartIndex += 5;
-								} else {
-									map2dStartIndex = lastDrawPoint;
-								}
-							} else {
-								if (lastDrawPoint + 5 < d->endPoint) {
-									lastDrawPoint += 5;
-								} else {
-									lastDrawPoint = d->endPoint - 1;
-								}
-							}
-						}
-					// not holding either trigger, normal point movement
-					} else {
-						if (*held & PAD_BUTTON_LEFT) {
-							if (*indexPointer - 1 >= 0) {
-								(*indexPointer)--;
-							}
-						} else if (*held & PAD_BUTTON_RIGHT) {
-							// this logic can't be generalized easily
-							if (indexPointer == &map2dStartIndex) {
-								if (map2dStartIndex+ + 1 < lastDrawPoint) {
-									map2dStartIndex++;
-								} else {
-									map2dStartIndex = lastDrawPoint;
-								}
-							} else {
-								if (lastDrawPoint + 1 < d->endPoint) {
-									lastDrawPoint++;
-								} else {
-									lastDrawPoint = d->endPoint - 1;
-								}
-							}
-						}
-					}
-					
-					// make sure that the end never goes before the beginning
-					if (lastDrawPoint < map2dStartIndex) {
-						map2dStartIndex = lastDrawPoint;
-					}
-					
 					break;
 				case PLOT_INPUT:
 					// nothing happens here other than showing the message about waiting for an input
@@ -358,14 +454,6 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 				default:
 					printStr("how did we get here?", currXfb);
 					break;
-			}
-			
-			if (!buttonLock) {
-				if (*pressed & PAD_TRIGGER_Z) {
-					menuState = PLOT_INSTRUCTIONS;
-					buttonLock = true;
-					buttonPressCooldown = 5;
-				}
 			}
 			break;
 		default:
@@ -394,4 +482,12 @@ void menu_plot2dEnd() {
 	held = NULL;
 	menuState = PLOT_SETUP;
 	lastDrawPoint = -1;
+	if (!data->isDataReady) {
+		// reset stuff
+		data->endPoint = 0;
+		haveStartPoint = false;
+		noMovementStartIndex = -1;
+		noMovementTimer = 0;
+		captureStart = false;
+	}
 }

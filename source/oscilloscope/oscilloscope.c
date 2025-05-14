@@ -913,4 +913,8 @@ void menu_oscilloscopeEnd() {
 	pressed = NULL;
 	held = NULL;
 	state = OSC_SETUP;
+	if (!data->isDataReady) {
+		data->endPoint = 0;
+		stickMove = false;
+	}
 }
