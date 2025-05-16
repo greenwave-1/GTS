@@ -30,6 +30,8 @@ static WaveformData *data = NULL;
 static int prevPosX = 0, prevPosY = 0;
 static int currPosX = 0, currPosY = 0;
 static int prevPosDiffX = 0, prevPosDiffY = 0;
+static u32 currMovementHeldState = 0;
+static u32 prevMovementHeldState = 0;
 static u64 noMovementTimer = 0;
 
 static int noMovementStartIndex = -1;
@@ -86,16 +88,19 @@ static void plot2dSamplingCallback() {
 			currPosY = PAD_StickY(0);
 			prevPosDiffX = abs(currPosX - prevPosX);
 			prevPosDiffY = abs(currPosY - prevPosY);
+			prevMovementHeldState = currMovementHeldState;
+			currMovementHeldState = *held;
 			
 			data->data[data->endPoint].ax = currPosX;
 			data->data[data->endPoint].ay = currPosY;
 			data->data[data->endPoint].cx = 0;
 			data->data[data->endPoint].cy = 0;
+			data->data[data->endPoint].buttonsHeld = *held;
 			data->data[data->endPoint].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 			data->endPoint++;
 			
 			// are we currently checking if the stick has stopped moving?
-			if ((prevPosDiffX < 2 && prevPosDiffY < 2) || data->endPoint == WAVEFORM_SAMPLES) {
+			if ((prevPosDiffX < 2 && prevPosDiffY < 2 && prevMovementHeldState == currMovementHeldState) || data->endPoint == WAVEFORM_SAMPLES) {
 				if (noMovementStartIndex == -1) {
 					noMovementStartIndex = data->endPoint;
 				} else {
@@ -119,21 +124,25 @@ static void plot2dSamplingCallback() {
 		
 		// get our initial start point, needed to know when to start actually recording
 		} else if (!haveStartPoint) {
-			prevPosX = PAD_StickX(0);
-			prevPosY = PAD_StickY(0);
-			data->isDataReady = false;
-			data->exported = false;
-			haveStartPoint = true;
-		// wait for stick to move outside ~10 units to start recording
+			// wait for A to be released before allowing data capture
+			if (*held == 0) {
+				prevPosX = PAD_StickX(0);
+				prevPosY = PAD_StickY(0);
+				data->isDataReady = false;
+				data->exported = false;
+				haveStartPoint = true;
+			}
+		// wait for stick to move outside ~10 units, or for buttons to be pressed to start recording
 		} else {
 			currPosX = PAD_StickX(0);
 			currPosY = PAD_StickY(0);
-			if ( abs(currPosX - prevPosX) >= 10 || abs (currPosY - prevPosY) >= 10 ) {
+			if ( abs(currPosX - prevPosX) >= 10 || abs (currPosY - prevPosY) >= 10 || *held != 0) {
 				captureStart = true;
 				data->data[0].ax = currPosX;
 				data->data[0].ay = currPosY;
 				data->data[0].cx = 0;
 				data->data[0].cy = 0;
+				data->data[0].buttonsHeld = *held;
 				data->data[0].timeDiffUs = 0;
 				data->endPoint = 1;
 			}
@@ -225,6 +234,31 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 						printStr(strBuffer, currXfb);
 						sprintf(strBuffer, "Total frames: %2.2f", timeFromStartMs / FRAME_TIME);
 						printStr(strBuffer, currXfb);
+						
+						// show button presses of last drawn point
+						setCursorPos(15,0);
+						printStr("Buttons Pressed:\n", currXfb);
+						if (data->data[lastDrawPoint].buttonsHeld & PAD_BUTTON_A) {
+							printStr("A ", currXfb);
+						}
+						if (data->data[lastDrawPoint].buttonsHeld & PAD_BUTTON_B) {
+							printStr("B ", currXfb);
+						}
+						if (data->data[lastDrawPoint].buttonsHeld & PAD_BUTTON_X) {
+							printStr("X ", currXfb);
+						}
+						if (data->data[lastDrawPoint].buttonsHeld & PAD_BUTTON_Y) {
+							printStr("Y ", currXfb);
+						}
+						if (data->data[lastDrawPoint].buttonsHeld & PAD_TRIGGER_Z) {
+							printStr("Z ", currXfb);
+						}
+						if (data->data[lastDrawPoint].buttonsHeld & PAD_TRIGGER_L) {
+							printStr("L ", currXfb);
+						}
+						if (data->data[lastDrawPoint].buttonsHeld & PAD_TRIGGER_R) {
+							printStr("R ", currXfb);
+						}
 						
 						// print coordinates of last drawn point
 						// raw stick coordinates

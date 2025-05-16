@@ -16,6 +16,8 @@ typedef struct WaveformDatapoint {
 	// c stick
 	int cx;
 	int cy;
+	// buttons held
+	u32 buttonsHeld;
 	// time from last datapoint
 	u64 timeDiffUs;
 	// for converted values

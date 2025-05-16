@@ -39,7 +39,7 @@ void samplingCallback() {
 void measureWaveform(WaveformData *data) {
 	// reset old data
 	for (int i = 0; i < WAVEFORM_SAMPLES; i++) {
-		data->data[i] = (WaveformDatapoint) { .ax = 0, .ay = 0, .cx = 0, .cy = 0, .timeDiffUs = 0,
+		data->data[i] = (WaveformDatapoint) { .ax = 0, .ay = 0, .cx = 0, .cy = 0, .buttonsHeld = 0, .timeDiffUs = 0,
 						  .isAXNegative = false, .isAYNegative = false, .isCXNegative = false, .isCYNegative = false } ;
 	}
 	data->exported = false;
