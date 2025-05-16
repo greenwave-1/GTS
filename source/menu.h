@@ -8,7 +8,7 @@
 #include <stdbool.h>
 
 // enum for keeping track of the currently displayed menu
-enum CURRENT_MENU { MAIN_MENU, CONTROLLER_TEST, WAVEFORM, PLOT_2D, IMAGE_TEST, FILE_EXPORT, WAITING_MEASURE, COORD_MAP, CONTINUOUS_WAVEFORM, ERR };
+enum CURRENT_MENU { MAIN_MENU, CONTROLLER_TEST, WAVEFORM, PLOT_2D, IMAGE_TEST, FILE_EXPORT, WAITING_MEASURE, COORD_MAP, CONTINUOUS_WAVEFORM, TRIGGER_WAVEFORM, ERR };
 
 // functions for drawing the individual menus
 bool menu_runMenu(void *currXfb);
