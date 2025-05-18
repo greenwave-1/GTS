@@ -13,6 +13,8 @@ const static u8 SCREEN_TIMEPLOT_START = 70;
 
 static u32 *pressed = NULL;
 static u32 *held = NULL;
+static bool buttonLock = false;
+static u8 buttonPressCooldown = 0;
 
 static enum TRIG_MENU_STATE menuState = TRIG_SETUP;
 static enum TRIG_STATE trigState = TRIG_DISPLAY;
@@ -74,6 +76,14 @@ static void setup(u32 *p, u32 *h) {
 
 void displayInstructions(void *currXfb) {
 	printStr("press buttons good", currXfb);
+	
+	if (!buttonLock) {
+		if (*pressed & PAD_TRIGGER_Z) {
+			menuState = TRIG_POST_SETUP;
+			buttonLock = true;
+			buttonPressCooldown = 5;
+		}
+	}
 }
 
 void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
@@ -109,6 +119,15 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 						waveformPrevXPos = waveformXPos;
 						waveformXPos++;
 					}
+					
+					if (!buttonLock) {
+						if (*pressed & PAD_TRIGGER_Z) {
+							menuState = TRIG_INSTRUCTIONS;
+							buttonLock = true;
+							buttonPressCooldown = 5;
+						}
+					}
+					
 					break;
 				default:
 					printStr("trigState default case! how did we get here?", currXfb);
@@ -121,6 +140,19 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 		default:
 			printStr("menuState default case! how did we get here?", currXfb);
 			break;
+	}
+	
+	if (buttonLock) {
+		// don't allow button press until a number of frames has passed
+		if (buttonPressCooldown > 0) {
+			buttonPressCooldown--;
+		} else {
+			// allow L and R to be held and not prevent buttonLock from being reset
+			// this is needed _only_ because we have a check for a pressed button while another is held
+			if ((*held) == 0 || *held & PAD_TRIGGER_L || *held & PAD_TRIGGER_R) {
+				buttonLock = 0;
+			}
+		}
 	}
 }
 
