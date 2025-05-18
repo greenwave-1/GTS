@@ -118,8 +118,8 @@ void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
 				// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
 				
 				// reset offset if its invalid
-				if (dataScrollOffset > (3000 - (500 * waveformScaleFactor))) {
-					dataScrollOffset = (3000 - (500 * waveformScaleFactor));
+				if (dataScrollOffset > (WAVEFORM_SAMPLES - (500 * waveformScaleFactor))) {
+					dataScrollOffset = (WAVEFORM_SAMPLES - (500 * waveformScaleFactor));
 				} else if (dataScrollOffset < 0) {
 					dataScrollOffset = 0;
 				}
@@ -134,7 +134,7 @@ void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
 				// waveformScaleFactor determines how much information is shown by only drawing every x point
 				int startPoint = (dataIndex - (500 * waveformScaleFactor) - dataScrollOffset);
 				if (startPoint < 0) {
-					startPoint += 3000;
+					startPoint += WAVEFORM_SAMPLES;
 				}
 				
 				setCursorPos(20,0);
