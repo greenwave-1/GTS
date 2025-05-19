@@ -92,7 +92,7 @@ void DrawLine (int x1, int y1, int x2, int y2, int color, void *xfb);
 void DrawDot (int x, int y, int color, void *xfb);
 void DrawDotAccurate (int x, int y, int color, void *xfb);
 void DrawCircle (int cx, int cy, int r, int color, void *xfb);
-void DrawFilledCircle(int cx, int cy, int interval, int color, void *xfb);
+void DrawFilledCircle(int cx, int cy, int rad, int color, void *xfb);
 void DrawFilledBoxCenter(int x, int y, int rad, int color, void *xfb);
 void DrawOctagonalGate(int x, int y, int scale, int color, void *xfb);
 

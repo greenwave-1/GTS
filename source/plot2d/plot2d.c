@@ -225,16 +225,6 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 						sprintf(strBuffer, "End sample: %04u\n", lastDrawPoint + 1);
 						printStr(strBuffer, currXfb);
 						
-						u64 timeFromStart = 0;
-						for (int i = map2dStartIndex + 1; i <= lastDrawPoint; i++) {
-							timeFromStart += data->data[i].timeDiffUs;
-						}
-						float timeFromStartMs = timeFromStart / 1000.0;
-						sprintf(strBuffer, "Total MS: %6.2f\n", timeFromStartMs);
-						printStr(strBuffer, currXfb);
-						sprintf(strBuffer, "Total frames: %2.2f", timeFromStartMs / FRAME_TIME);
-						printStr(strBuffer, currXfb);
-						
 						// show button presses of last drawn point
 						setCursorPos(15,0);
 						printStr("Buttons Pressed:\n", currXfb);
@@ -341,18 +331,50 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 						        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
 						        COLOR_WHITE, currXfb);
 						
+						u64 timeFromFirstSampleDraw = 0;
+						int frameCounter = 0;
 						// draw plot
 						// y is negated because of how the graph is drawn
 						// TODO: why does this need to be <= to avoid an off-by-one? step through logic later this is bugging me
-						for (int i = 0; i <= lastDrawPoint; i++) {
-							if (i >= map2dStartIndex) {
-								DrawDot(COORD_CIRCLE_CENTER_X + data->data[i].ax,
-								        SCREEN_POS_CENTER_Y - data->data[i].ay, COLOR_WHITE, currXfb);
+						for (int i = map2dStartIndex; i <= lastDrawPoint; i++) {
+							// don't add from the first value
+							if (i != map2dStartIndex) {
+								timeFromFirstSampleDraw += data->data[i].timeDiffUs;
+							}
+
+							if ((timeFromFirstSampleDraw / 16666) > frameCounter) {
+								if (data->data[i].buttonsHeld != 0) {
+									DrawFilledCircle(COORD_CIRCLE_CENTER_X + data->data[i].ax,
+									                 SCREEN_POS_CENTER_Y - data->data[i].ay, 2, COLOR_YELLOW, currXfb);
+								} else {
+									DrawFilledCircle(COORD_CIRCLE_CENTER_X + data->data[i].ax,
+									                 SCREEN_POS_CENTER_Y - data->data[i].ay, 2, COLOR_WHITE, currXfb);
+								}
+								frameCounter++;
 							} else {
-								DrawDot(COORD_CIRCLE_CENTER_X + data->data[i].ax,
-								        SCREEN_POS_CENTER_Y - data->data[i].ay, COLOR_GRAY, currXfb);
+								if (data->data[i].buttonsHeld != 0) {
+									DrawDot(COORD_CIRCLE_CENTER_X + data->data[i].ax,
+									        SCREEN_POS_CENTER_Y - data->data[i].ay, COLOR_YELLOW, currXfb);
+								} else {
+									DrawDot(COORD_CIRCLE_CENTER_X + data->data[i].ax,
+									        SCREEN_POS_CENTER_Y - data->data[i].ay, COLOR_WHITE, currXfb);
+								}
 							}
 						}
+						
+						// highlight last sample with a box
+						DrawBox( (COORD_CIRCLE_CENTER_X + data->data[lastDrawPoint].ax) - 3,
+						         (SCREEN_POS_CENTER_Y - data->data[lastDrawPoint].ay) - 3,
+						         (COORD_CIRCLE_CENTER_X + data->data[lastDrawPoint].ax) + 3,
+						         (SCREEN_POS_CENTER_Y - data->data[lastDrawPoint].ay) + 3,
+								 COLOR_WHITE, currXfb);
+						
+						float timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
+						setCursorPos(8, 0);
+						sprintf(strBuffer, "Total MS: %6.2f\n", timeFromStartMs);
+						printStr(strBuffer, currXfb);
+						sprintf(strBuffer, "Total frames: %2.2f", timeFromStartMs / FRAME_TIME);
+						printStr(strBuffer, currXfb);
 						
 						// using a pointer so that the logic can be used for both moving the beginning and end
 						if (*held & PAD_BUTTON_Y) {
