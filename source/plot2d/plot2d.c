@@ -376,13 +376,6 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 						sprintf(strBuffer, "Total frames: %2.2f", timeFromStartMs / FRAME_TIME);
 						printStr(strBuffer, currXfb);
 						
-						// using a pointer so that the logic can be used for both moving the beginning and end
-						if (*held & PAD_BUTTON_Y) {
-							indexPointer = &map2dStartIndex;
-						} else {
-							indexPointer = &lastDrawPoint;
-						}
-						
 						// cycle the stickmap shown
 						if (*pressed & PAD_BUTTON_X && !buttonLock) {
 							selectedImage++;
@@ -391,30 +384,34 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 							}
 							buttonLock = true;
 							buttonPressCooldown = 5;
-							// set up for reading data
 						}
 						
 						// holding L makes only individual presses work
 						if (*held & PAD_TRIGGER_L) {
 							if (*pressed & PAD_BUTTON_LEFT && !buttonLock) {
-								if (*indexPointer - 1 >= 0) {
-									(*indexPointer)--;
+								// y button moves the starting point
+								if (*held & PAD_BUTTON_Y) {
+									// bounds check
+									if (map2dStartIndex - 1 >= 0) {
+										map2dStartIndex--;
+									}
+								} else {
+									// dont let end point go past the start point
+									if (lastDrawPoint - 1 >= map2dStartIndex) {
+										lastDrawPoint--;
+									}
 								}
 								buttonLock = true;
 								buttonPressCooldown = 5;
 							} else if (*pressed & PAD_BUTTON_RIGHT && !buttonLock) {
-								// this logic can't be generalized easily
-								if (indexPointer == &map2dStartIndex) {
-									if (map2dStartIndex + 1 < lastDrawPoint) {
+								// starting point
+								if (*held & PAD_BUTTON_Y) {
+									if (map2dStartIndex + 1 <= lastDrawPoint) {
 										map2dStartIndex++;
-									} else {
-										map2dStartIndex = lastDrawPoint;
 									}
 								} else {
-									if (lastDrawPoint + 1 < data->endPoint) {
+									if (lastDrawPoint + 1 <= data->endPoint) {
 										lastDrawPoint++;
-									} else {
-										lastDrawPoint = data->endPoint - 1;
 									}
 								}
 								buttonLock = true;
@@ -423,15 +420,25 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 							// holding R moves points faster
 						} else if (*held & PAD_TRIGGER_R) {
 							if (*held & PAD_BUTTON_LEFT) {
-								if (*indexPointer - 5 >= 0) {
-									(*indexPointer) -= 5;
+								// starting point
+								if (*held & PAD_BUTTON_Y) {
+									if (map2dStartIndex - 5 >= 0) {
+										map2dStartIndex -= 5;
+									} else {
+										// snap min to zero
+										map2dStartIndex = 0;
+									}
 								} else {
-									(*indexPointer) = 0;
+									if (lastDrawPoint - 5 >= map2dStartIndex) {
+										lastDrawPoint -= 5;
+									} else {
+										lastDrawPoint = map2dStartIndex;
+									}
 								}
 							} else if (*held & PAD_BUTTON_RIGHT) {
-								// this logic can't be generalized easily
-								if (indexPointer == &map2dStartIndex) {
-									if (map2dStartIndex + 5 < lastDrawPoint) {
+								// starting point
+								if (*held & PAD_BUTTON_Y) {
+									if (map2dStartIndex + 5 <= lastDrawPoint) {
 										map2dStartIndex += 5;
 									} else {
 										map2dStartIndex = lastDrawPoint;
@@ -444,16 +451,21 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 									}
 								}
 							}
-							// not holding either trigger, normal point movement
+						// not holding either trigger, normal point movement
 						} else {
 							if (*held & PAD_BUTTON_LEFT) {
-								if (*indexPointer - 1 >= 0) {
-									(*indexPointer)--;
+								if (*held & PAD_BUTTON_Y) {
+									if (map2dStartIndex - 1 >= 0) {
+										map2dStartIndex--;
+									}
+								} else {
+									if (lastDrawPoint - 1 >= map2dStartIndex) {
+										lastDrawPoint--;
+									}
 								}
 							} else if (*held & PAD_BUTTON_RIGHT) {
-								// this logic can't be generalized easily
-								if (indexPointer == &map2dStartIndex) {
-									if (map2dStartIndex + +1 < lastDrawPoint) {
+								if (*held & PAD_BUTTON_Y) {
+									if (map2dStartIndex + 1 <= lastDrawPoint) {
 										map2dStartIndex++;
 									} else {
 										map2dStartIndex = lastDrawPoint;
@@ -469,6 +481,7 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 						}
 						
 						// make sure that the end never goes before the beginning
+						// TODO: print debug message if this occurs
 						if (lastDrawPoint < map2dStartIndex) {
 							map2dStartIndex = lastDrawPoint;
 						}
