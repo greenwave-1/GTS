@@ -25,7 +25,7 @@ static GXRModeObj *rmode = NULL;
 
 static VIRetraceCallback cb;
 
-void retraceCallback() {
+void retraceCallback(u32 retraceCnt) {
 	setSamplingRate();
 }
 
