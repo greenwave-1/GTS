@@ -17,10 +17,14 @@ static bool buttonLock = false;
 static u8 buttonPressCooldown = 0;
 
 static enum TRIG_MENU_STATE menuState = TRIG_SETUP;
-static enum TRIG_STATE trigState = TRIG_DISPLAY;
+static enum TRIG_STATE trigState = TRIG_INPUT;
+static enum TRIG_CAPTURE_SELECTION captureSelection = TRIGGER_L;
 
-static u8 triggerValues[500] = {0};
-static int triggerValuesPointer = 0;
+//static u8 triggerValues[500] = {0};
+//static int triggerValuesPointer = 0;
+static TriggerData data = { {{0}}, 0, 0, 0, 0, false };
+static TriggerDatapoint curr;
+static bool startedCapture = false;
 
 static sampling_callback cb;
 static u64 prevSampleCallbackTick = 0;
@@ -28,6 +32,7 @@ static u64 sampleCallbackTick = 0;
 static u64 pressedTimer = 0;
 static u8 ellipseCounter = 0;
 static bool pressLocked = false;
+static int dataScrollOffset = 0;
 
 void triggerSamplingCallback() {
 	// time from last call of this function calculation
@@ -53,15 +58,63 @@ void triggerSamplingCallback() {
 	
 	*held = PAD_ButtonsHeld(0);
 	
-	// temp for testing
-	triggerValues[triggerValuesPointer] = PAD_TriggerL(0);
-	triggerValuesPointer++;
-	if (triggerValuesPointer == 500) {
-		triggerValuesPointer = 0;
-	}
-	
-	if (trigState == TRIG_INPUT) {
-		// actual capture logic will go here
+	// detection logic
+	if (trigState != TRIG_DISPLAY_LOCK) {
+		// record current data
+		curr.triggerLAnalog = PAD_TriggerL(0);
+		curr.triggerRAnalog = PAD_TriggerR(0);
+		curr.triggerLDigital = (*held & PAD_TRIGGER_L);
+		curr.triggerRDigital = (*held & PAD_TRIGGER_R);
+		
+		if (startedCapture) {
+			// capture data
+			data.data[data.endPoint].triggerLAnalog = curr.triggerLAnalog;
+			data.data[data.endPoint].triggerRAnalog = curr.triggerRAnalog;
+			data.data[data.endPoint].triggerLDigital = curr.triggerLDigital;
+			data.data[data.endPoint].triggerRDigital = curr.triggerRDigital;
+			data.endPoint++;
+			
+			// has the trigger moved back within bounds and triggers not being pressed anymore
+			switch (captureSelection) {
+				case TRIGGER_L:
+					if ((curr.triggerLAnalog < 43 && !curr.triggerLDigital) || data.endPoint == WAVEFORM_SAMPLES) {
+						trigState = TRIG_DISPLAY;
+						startedCapture = false;
+						data.isDataReady = true;
+					}
+					break;
+				case TRIGGER_R:
+					if ((curr.triggerRAnalog < 43 && !curr.triggerRDigital) || data.endPoint == WAVEFORM_SAMPLES) {
+						trigState = TRIG_DISPLAY;
+						startedCapture = false;
+						data.isDataReady = true;
+					}
+					break;
+			}
+		} else {
+			// check for analog value above 42, or for any digital trigger
+			if (curr.triggerLAnalog >= 43 || curr.triggerLDigital) {
+				captureSelection = TRIGGER_L;
+				data.data[0].triggerLAnalog = curr.triggerLAnalog;
+				data.data[0].triggerRAnalog = curr.triggerRAnalog;
+				data.data[0].triggerLDigital = curr.triggerLDigital;
+				data.data[0].triggerRDigital = curr.triggerRDigital;
+				data.endPoint = 1;
+				data.isDataReady = false;
+				trigState = TRIG_INPUT;
+				startedCapture = true;
+			} else if (curr.triggerRAnalog >= 43 || curr.triggerRDigital) {
+				captureSelection = TRIGGER_R;
+				data.data[0].triggerLAnalog = curr.triggerLAnalog;
+				data.data[0].triggerRAnalog = curr.triggerRAnalog;
+				data.data[0].triggerLDigital = curr.triggerLDigital;
+				data.data[0].triggerRDigital = curr.triggerRDigital;
+				data.endPoint = 1;
+				data.isDataReady = false;
+				trigState = TRIG_INPUT;
+				startedCapture = true;
+			}
+		}
 	}
 }
 
@@ -109,25 +162,75 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 						ellipseCounter = 0;
 					}
 					break;
+				case TRIG_DISPLAY_LOCK:
+					setCursorPos(2, 28);
+					printStrColor("LOCKED", currXfb, COLOR_WHITE, COLOR_BLACK);
 				case TRIG_DISPLAY:
-					int waveformPrevXPos = 0;
-					int waveformXPos = 1;
-					for (int i = 0; i < 500; i++) {
-						DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, (SCREEN_POS_CENTER_Y + 128) - triggerValues[i],
-						         SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y + 128),
-						         COLOR_BLUE, currXfb);
-						waveformPrevXPos = waveformXPos;
-						waveformXPos++;
+					if (data.isDataReady) {
+						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
+						
+						u8 curr = 0, prev = 0;
+						bool currDigital = false;
+						int waveformXPos = 1, waveformPrevXPos = 0;
+						// draw 500 datapoints from the scroll offset
+						for (int i = dataScrollOffset + 1; i < dataScrollOffset + 500; i++) {
+							// make sure we haven't gone outside our bounds
+							if (i == data.endPoint || waveformXPos >= 500) {
+								break;
+							}
+							
+							switch (captureSelection) {
+								case TRIGGER_L:
+									curr = data.data[i].triggerLAnalog;
+									currDigital = data.data[i].triggerLDigital;
+									break;
+								case TRIGGER_R:
+									curr = data.data[i].triggerRAnalog;
+									currDigital = data.data[i].triggerRDigital;
+									break;
+							}
+							// analog
+							DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, (SCREEN_POS_CENTER_Y + 128) - prev,
+							         SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y + 128) - curr,
+							         COLOR_WHITE, currXfb);
+							prev = curr;
+							
+							// digital
+							if (currDigital) {
+								DrawDot(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y + 28),
+										COLOR_WHITE, currXfb);
+							}
+							
+							// update scaling factor
+							waveformPrevXPos = waveformXPos;
+							waveformXPos++;
+						}
+						
+						setCursorPos(3, 27);
+						switch (captureSelection) {
+							case TRIGGER_L:
+								printStr("L Trigger", currXfb);
+								break;
+							case TRIGGER_R:
+								printStr("R Trigger", currXfb);
+								break;
+						}
 					}
-					
 					if (!buttonLock) {
 						if (*pressed & PAD_TRIGGER_Z) {
 							menuState = TRIG_INSTRUCTIONS;
 							buttonLock = true;
 							buttonPressCooldown = 5;
+						} else if (*pressed & PAD_BUTTON_A) {
+							if (trigState == TRIG_DISPLAY) {
+								trigState = TRIG_DISPLAY_LOCK;
+							} else {
+								trigState = TRIG_DISPLAY;
+							}
+							buttonLock = true;
+							buttonPressCooldown = 5;
 						}
 					}
-					
 					break;
 				default:
 					printStr("trigState default case! how did we get here?", currXfb);
