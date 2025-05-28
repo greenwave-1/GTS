@@ -24,11 +24,14 @@ static enum TRIG_CAPTURE_SELECTION captureSelection = TRIGGER_L;
 //static int triggerValuesPointer = 0;
 static TriggerData data = { {{0}}, 0, 0, 0, 0, false };
 static TriggerDatapoint curr;
+static TriggerDatapoint startingLoop[20];
+static int startingLoopIndex = 0;
 static bool startedCapture = false;
 
 static sampling_callback cb;
 static u64 prevSampleCallbackTick = 0;
 static u64 sampleCallbackTick = 0;
+static u64 captureEndTimer = 0;
 static u64 pressedTimer = 0;
 static u8 ellipseCounter = 0;
 static bool pressLocked = false;
@@ -65,6 +68,7 @@ void triggerSamplingCallback() {
 		curr.triggerRAnalog = PAD_TriggerR(0);
 		curr.triggerLDigital = (*held & PAD_TRIGGER_L);
 		curr.triggerRDigital = (*held & PAD_TRIGGER_R);
+		curr.timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 		
 		if (startedCapture) {
 			// capture data
@@ -78,38 +82,64 @@ void triggerSamplingCallback() {
 			switch (captureSelection) {
 				case TRIGGER_L:
 					if ((curr.triggerLAnalog < 43 && !curr.triggerLDigital) || data.endPoint == WAVEFORM_SAMPLES) {
-						trigState = TRIG_DISPLAY;
-						startedCapture = false;
-						data.isDataReady = true;
+						// add to timer
+						captureEndTimer += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+						if (captureEndTimer >= 20000 || data.endPoint == WAVEFORM_SAMPLES) {
+							trigState = TRIG_DISPLAY;
+							startedCapture = false;
+							data.isDataReady = true;
+							captureEndTimer = 0;
+						}
+					} else {
+						captureEndTimer = 0;
 					}
 					break;
 				case TRIGGER_R:
 					if ((curr.triggerRAnalog < 43 && !curr.triggerRDigital) || data.endPoint == WAVEFORM_SAMPLES) {
-						trigState = TRIG_DISPLAY;
-						startedCapture = false;
-						data.isDataReady = true;
+						// add to timer
+						captureEndTimer += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+						if (captureEndTimer >= 20000 || data.endPoint == WAVEFORM_SAMPLES) {
+							trigState = TRIG_DISPLAY;
+							startedCapture = false;
+							data.isDataReady = true;
+							captureEndTimer = 0;
+						}
+					} else {
+						captureEndTimer = 0;
 					}
 					break;
 			}
 		} else {
+			// continuously capture data
+			startingLoop[startingLoopIndex] = curr;
+			startingLoopIndex++;
+			if (startingLoopIndex == 20) {
+				startingLoopIndex = 0;
+			}
 			// check for analog value above 42, or for any digital trigger
 			if (curr.triggerLAnalog >= 43 || curr.triggerLDigital) {
 				captureSelection = TRIGGER_L;
-				data.data[0].triggerLAnalog = curr.triggerLAnalog;
-				data.data[0].triggerRAnalog = curr.triggerRAnalog;
-				data.data[0].triggerLDigital = curr.triggerLDigital;
-				data.data[0].triggerRDigital = curr.triggerRDigital;
-				data.endPoint = 1;
+				data.endPoint = 0;
+				for (int i = 0; i < 20; i++) {
+					data.data[data.endPoint] = startingLoop[(startingLoopIndex + i) % 20];
+					if (data.endPoint == 0) {
+						data.data[0].timeDiffUs = 0;
+					}
+					data.endPoint++;
+				}
 				data.isDataReady = false;
 				trigState = TRIG_INPUT;
 				startedCapture = true;
 			} else if (curr.triggerRAnalog >= 43 || curr.triggerRDigital) {
 				captureSelection = TRIGGER_R;
-				data.data[0].triggerLAnalog = curr.triggerLAnalog;
-				data.data[0].triggerRAnalog = curr.triggerRAnalog;
-				data.data[0].triggerLDigital = curr.triggerLDigital;
-				data.data[0].triggerRDigital = curr.triggerRDigital;
-				data.endPoint = 1;
+				data.endPoint = 0;
+				for (int i = 0; i < 20; i++) {
+					data.data[data.endPoint] = startingLoop[(startingLoopIndex + i) % 20];
+					if (data.endPoint == 0) {
+						data.data[0].timeDiffUs = 0;
+					}
+					data.endPoint++;
+				}
 				data.isDataReady = false;
 				trigState = TRIG_INPUT;
 				startedCapture = true;
@@ -128,7 +158,12 @@ static void setup(u32 *p, u32 *h) {
 }
 
 void displayInstructions(void *currXfb) {
-	printStr("press buttons good", currXfb);
+	printStr("Press and release either trigger to capture. A capture will\n"
+			 "start if a digital press is detected, or if the analog value\n"
+			 "is above 42. Capture will stop if the analog value is below\n"
+			 "43 and the digital trigger is not pressed.\n\n"
+			 "A Green line indicates when a digital press is detected.\n\n"
+			 "Use DPAD Left and Right to scroll the capture, if needed.\n", currXfb);
 	
 	if (!buttonLock) {
 		if (*pressed & PAD_TRIGGER_Z) {
@@ -172,6 +207,11 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 						u8 curr = 0, prev = 0;
 						bool currDigital = false;
 						int waveformXPos = 1, waveformPrevXPos = 0;
+						
+						if (data.endPoint < 500) {
+							dataScrollOffset = 0;
+						}
+						
 						// draw 500 datapoints from the scroll offset
 						for (int i = dataScrollOffset + 1; i < dataScrollOffset + 500; i++) {
 							// make sure we haven't gone outside our bounds
@@ -198,7 +238,7 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 							// digital
 							if (currDigital) {
 								DrawDot(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y + 28),
-										COLOR_WHITE, currXfb);
+										COLOR_LIME, currXfb);
 							}
 							
 							// update scaling factor
@@ -229,6 +269,18 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 							}
 							buttonLock = true;
 							buttonPressCooldown = 5;
+						}
+					}
+					if (data.endPoint >= 500 ) {
+						// does the user want to scroll the waveform?
+						if (*held & PAD_BUTTON_RIGHT) {
+							if (dataScrollOffset + 510 < data.endPoint) {
+								dataScrollOffset += 10;
+							}
+						} else if (*held & PAD_BUTTON_LEFT) {
+							if (dataScrollOffset - 10 >= 0) {
+								dataScrollOffset -= 10;
+							}
 						}
 					}
 					break;

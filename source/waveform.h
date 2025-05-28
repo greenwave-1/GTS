@@ -48,6 +48,7 @@ typedef struct TriggerDatapoint {
 	u8 triggerRAnalog;
 	bool triggerLDigital;
 	bool triggerRDigital;
+	u64 timeDiffUs;
 } TriggerDatapoint;
 
 typedef struct TriggerData {
