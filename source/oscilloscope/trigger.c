@@ -9,6 +9,7 @@
 #include "../polling.h"
 #include "../print.h"
 
+static const float FRAME_TIME_MS = (1000/60.0);
 const static u8 SCREEN_TIMEPLOT_START = 70;
 
 static u32 *pressed = NULL;
@@ -36,6 +37,8 @@ static u64 pressedTimer = 0;
 static u8 ellipseCounter = 0;
 static bool pressLocked = false;
 static int dataScrollOffset = 0;
+
+static char strBuffer[100];
 
 void triggerSamplingCallback() {
 	// time from last call of this function calculation
@@ -72,10 +75,7 @@ void triggerSamplingCallback() {
 		
 		if (startedCapture) {
 			// capture data
-			data.data[data.endPoint].triggerLAnalog = curr.triggerLAnalog;
-			data.data[data.endPoint].triggerRAnalog = curr.triggerRAnalog;
-			data.data[data.endPoint].triggerLDigital = curr.triggerLDigital;
-			data.data[data.endPoint].triggerRDigital = curr.triggerRDigital;
+			data.data[data.endPoint] = curr;
 			data.endPoint++;
 			
 			// has the trigger moved back within bounds and triggers not being pressed anymore
@@ -162,7 +162,10 @@ void displayInstructions(void *currXfb) {
 			 "start if a digital press is detected, or if the analog value\n"
 			 "is above 42. Capture will stop if the analog value is below\n"
 			 "43 and the digital trigger is not pressed.\n\n"
-			 "A Green line indicates when a digital press is detected.\n\n"
+			 "A Green line indicates when a digital press is detected.\n"
+			 "A Gray line shows the minimum value Melee uses for Analog\n"
+			 "shield (43 or above).\n\n"
+			 "Percents for projectile powershields are shown at the bottom.\n\n"
 			 "Use DPAD Left and Right to scroll the capture, if needed.\n", currXfb);
 	
 	if (!buttonLock) {
@@ -202,7 +205,10 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 					printStrColor("LOCKED", currXfb, COLOR_WHITE, COLOR_BLACK);
 				case TRIG_DISPLAY:
 					if (data.isDataReady) {
+						// bounding box
 						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
+						// line at 43, start of melee analog shield range
+						DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 499, (SCREEN_POS_CENTER_Y + 85), COLOR_GRAY, currXfb);
 						
 						u8 curr = 0, prev = 0;
 						bool currDigital = false;
@@ -255,6 +261,61 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 								printStr("R Trigger", currXfb);
 								break;
 						}
+						
+						// calculate projectile powershield percentages
+						float psDigital = 0.0, psADT = 0.0, psNone = 0.0;
+						u64 timeInAnalogRangeUs = 0;
+						int sampleDigitalBegin = -1;
+						switch (captureSelection) {
+							case TRIGGER_L:
+								for (int i = 0; i < data.endPoint; i++) {
+									if (data.data[i].triggerLDigital) {
+										sampleDigitalBegin = i;
+										break;
+									}
+									if (data.data[i].triggerLAnalog > 42) {
+										timeInAnalogRangeUs += data.data[i].timeDiffUs;
+									}
+								}
+								break;
+							case TRIGGER_R:
+								for (int i = 0; i < data.endPoint; i++) {
+									if (data.data[i].triggerRDigital) {
+										sampleDigitalBegin = i;
+										break;
+									}
+									if (data.data[i].triggerRAnalog > 42) {
+										timeInAnalogRangeUs += data.data[i].timeDiffUs;
+									}
+								}
+								break;
+						}
+						
+						// float representing percent of a frame
+						float analogRangeFrame = (timeInAnalogRangeUs / 1000.0) / FRAME_TIME_MS;
+						
+						// digital press never occurred
+						if (sampleDigitalBegin == -1) {
+							// do nothing
+						// time before digital press is more than a frame
+						} else if (analogRangeFrame > 1) {
+							psADT = 100 * (2 - analogRangeFrame);
+							if (psADT < 0) {
+								psADT = 0;
+							}
+							psNone = 100 - psADT;
+						// time before digital press is less than/equal to a frame
+						} else {
+							psDigital = 100 * (1 - analogRangeFrame);
+							psADT = 100 - psDigital;
+						}
+						
+						setCursorPos(20, 0);
+						//sprintf(strBuffer, "%llu %2.2f %d %d\n", timeInAnalogRangeUs, analogRangeFrame, sampleDigitalBegin, data.endPoint);
+						//printStr(strBuffer, currXfb);
+						sprintf(strBuffer, "Digital PS: %3.1f%% | ADT PS: %3.1f%% | No PS: %3.1f%%", psDigital, psADT, psNone);
+						printStr(strBuffer, currXfb);
+						
 					}
 					if (!buttonLock) {
 						if (*pressed & PAD_TRIGGER_Z) {
