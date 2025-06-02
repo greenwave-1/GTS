@@ -2,6 +2,13 @@
 // Created on 5/16/25.
 //
 
+// Code in use from the PhobGCC project is licensed under GPLv3. A copy of this license is provided in the root
+// directory of this project's repository.
+
+// Upstream URL for the PhobGCC project is: https://github.com/PhobGCC/PhobGCC-SW
+
+// Other than adt ps math, this mostly clones the visual side of phobvision
+
 #include "trigger.h"
 
 #include <ogc/lwp_watchdog.h>
@@ -263,6 +270,8 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 						}
 						
 						// calculate projectile powershield percentages
+						// mostly based on phobvision code:
+						// https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/main.cpp#L581
 						float psDigital = 0.0, psADT = 0.0, psNone = 0.0;
 						u64 timeInAnalogRangeUs = 0;
 						int sampleDigitalBegin = -1;
