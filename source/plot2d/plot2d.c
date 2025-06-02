@@ -16,6 +16,9 @@
 // close enough...
 #define FRAME_TIME (1000.0 / 60.0)
 
+// orange for button press samples
+#define COLOR_ORANGE 0xAD1EADBA
+
 static char strBuffer[100];
 
 static u32 *pressed = NULL;
@@ -342,19 +345,21 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 								timeFromFirstSampleDraw += data->data[i].timeDiffUs;
 							}
 
+							// is this a frame interval?
 							if ((timeFromFirstSampleDraw / 16666) > frameCounter) {
 								if (data->data[i].buttonsHeld != 0) {
 									DrawFilledCircle(COORD_CIRCLE_CENTER_X + data->data[i].ax,
-									                 SCREEN_POS_CENTER_Y - data->data[i].ay, 2, COLOR_YELLOW, currXfb);
+									                 SCREEN_POS_CENTER_Y - data->data[i].ay, 2, COLOR_ORANGE, currXfb);
 								} else {
 									DrawFilledCircle(COORD_CIRCLE_CENTER_X + data->data[i].ax,
 									                 SCREEN_POS_CENTER_Y - data->data[i].ay, 2, COLOR_WHITE, currXfb);
 								}
 								frameCounter++;
+							// not a frame interval
 							} else {
 								if (data->data[i].buttonsHeld != 0) {
 									DrawDot(COORD_CIRCLE_CENTER_X + data->data[i].ax,
-									        SCREEN_POS_CENTER_Y - data->data[i].ay, COLOR_YELLOW, currXfb);
+									        SCREEN_POS_CENTER_Y - data->data[i].ay, COLOR_ORANGE, currXfb);
 								} else {
 									DrawDot(COORD_CIRCLE_CENTER_X + data->data[i].ax,
 									        SCREEN_POS_CENTER_Y - data->data[i].ay, COLOR_WHITE, currXfb);
