@@ -378,4 +378,8 @@ void menu_triggerOscilloscopeEnd() {
 	pressed = NULL;
 	held = NULL;
 	menuState = TRIG_SETUP;
+	if (!data.isDataReady) {
+		data.endPoint = 0;
+		startedCapture = false;
+	}
 }
