@@ -28,9 +28,6 @@ functions at some point
   - [Follow the instructions for your device from here](https://devkitpro.org/wiki/devkitPro_pacman)
 - Install libogc2
   - [Add the extremscorner repo](https://github.com/extremscorner/pacman-packages#readme)
-  - NOTE: A recent change to libogc2 [exposed a bug in dolphin](https://github.com/dolphin-emu/dolphin/pull/13650) that 
-will cause incorrect behavior. Until this fix is in a release version, dolphin will be
-considered an unsupported platform
 - Run ```sudo (dkp-)pacman -S libogc2 libogc2-libdvm-git```
   - The ```(dkp-)``` is for systems that don't normally have pacman. On those systems, any command should use
 ```dkp-pacman```
