@@ -44,7 +44,6 @@ static bool captureStart = false;
 static WaveformDatapoint convertedCoords;
 static int map2dStartIndex = 0;
 static int lastDrawPoint = -1;
-static int *indexPointer = NULL;
 
 
 // enum for what image to draw in 2d plot

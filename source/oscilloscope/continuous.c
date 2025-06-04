@@ -95,7 +95,7 @@ void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
 			setup(p, h);
 			break;
 		case CONT_POST_SETUP:
-			setCursorPos(3, 0);
+			setCursorPos(20, 0);
 			if (!showCStick) {
 				printStr("Analog Stick", currXfb);
 			} else {
@@ -137,13 +137,22 @@ void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
 					startPoint += WAVEFORM_SAMPLES;
 				}
 				
-				setCursorPos(20,0);
-				sprintf(strBuffer, "Scaling Factor: %d\n", waveformScaleFactor);
+				if (cState == INPUT_LOCK && waveformScaleFactor != 6) {
+					// draw scroll bar
+					DrawFilledBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 142, SCREEN_TIMEPLOT_START + 499, SCREEN_POS_CENTER_Y - 140, COLOR_GRAY, currXfb);
+					// calculate scroll bar position
+					int scrollBarPosX = 500 - ((dataScrollOffset / (3000.0 - (500 * waveformScaleFactor))) * 500);
+					DrawFilledBox(SCREEN_TIMEPLOT_START + (scrollBarPosX - 1), SCREEN_POS_CENTER_Y - 144, SCREEN_TIMEPLOT_START + scrollBarPosX, SCREEN_POS_CENTER_Y - 138, COLOR_WHITE, currXfb);
+				}
+				
+				setCursorPos(21,0);
+				sprintf(strBuffer, "Scaling Factor: %dx", waveformScaleFactor);
 				printStr(strBuffer, currXfb);
 				if (cState == INPUT_LOCK) {
-					sprintf(strBuffer, "Offset: %d", dataScrollOffset);
+					sprintf(strBuffer, " | Offset: %d", dataScrollOffset);
 					printStr(strBuffer, currXfb);
 				}
+				
 				
 				for (int i = 0; i < 500; i++) {
 					int currX, currY;
