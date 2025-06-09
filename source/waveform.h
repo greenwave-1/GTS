@@ -43,6 +43,25 @@ typedef struct WaveformData {
 
 } WaveformData;
 
+typedef struct TriggerDatapoint {
+	u8 triggerLAnalog;
+	u8 triggerRAnalog;
+	bool triggerLDigital;
+	bool triggerRDigital;
+	u64 timeDiffUs;
+} TriggerDatapoint;
+
+typedef struct TriggerData {
+	TriggerDatapoint data[WAVEFORM_SAMPLES];
+	unsigned int startPoint;
+	unsigned int curr;
+	unsigned int endPoint;
+	
+	u64 totalTimeUs;
+	
+	bool isDataReady;
+} TriggerData;
+
 //enum CONTROLLER_STICKS_XY { A_STICK_X, A_STICK_Y, C_STICK_X, C_STICK_Y };
 
 // function that reads inputs at a high rate

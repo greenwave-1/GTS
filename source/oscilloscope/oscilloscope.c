@@ -16,6 +16,8 @@ const static u8 STICK_ORIGIN_TIME_THRESHOLD_MS = 50;
 const static u8 STICK_MOVEMENT_TIME_THRESHOLD_MS = 100;
 const static u8 MEASURE_COOLDOWN_FRAMES = 5;
 
+static const float FRAME_TIME_MS = (1000/60.0);
+
 const static u8 SCREEN_TIMEPLOT_START = 70;
 
 static const uint32_t COLOR_RED_C = 0x846084d7;

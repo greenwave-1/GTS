@@ -18,13 +18,14 @@
 
 #include "oscilloscope/oscilloscope.h"
 #include "oscilloscope/continuous.h"
+#include "oscilloscope/trigger.h"
 #include "plot2d/plot2d.h"
 
 #ifndef VERSION_NUMBER
 #define VERSION_NUMBER "NOVERS_DEV"
 #endif
 
-#define MENUITEMS_LEN 6
+#define MENUITEMS_LEN 7
 #define TEST_LEN 5
 
 // 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
@@ -72,7 +73,7 @@ static u8 stickheld = 0;
 
 // menu item strings
 //static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Coordinate Viewer", "2D Plot", "Export Data", "Continuous Waveform" };
-static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Continuous Oscilloscope",
+static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Continuous Stick Oscilloscope", "Trigger Oscilloscope",
                                                 "Coordinate Viewer", "2D Plot", "Export Data"};
 
 
@@ -136,7 +137,9 @@ bool menu_runMenu(void *currXfb) {
 	
 	// check for any buttons pressed/held
 	// don't update if we are on a menu with its own callback
-	if (currentMenu != WAVEFORM && currentMenu != CONTINUOUS_WAVEFORM && currentMenu != PLOT_2D) {
+	// TODO: eventually I'd like each menu entry to be in its own file, would that affect this?
+	if (currentMenu != WAVEFORM && currentMenu != CONTINUOUS_WAVEFORM &&
+			currentMenu != PLOT_2D && currentMenu != TRIGGER_WAVEFORM) {
 		pressed = PAD_ButtonsDown(0);
 		held = PAD_ButtonsHeld(0);
 	}
@@ -188,6 +191,9 @@ bool menu_runMenu(void *currXfb) {
 			break;
 		case CONTINUOUS_WAVEFORM:
 			menu_continuousWaveform(currXfb, &pressed, &held);
+			break;
+		case TRIGGER_WAVEFORM:
+			menu_triggerOscilloscope(currXfb, &pressed, &held);
 			break;
 		default:
 			printStr("HOW DID WE END UP HERE?\n", currXfb);
@@ -275,6 +281,9 @@ bool menu_runMenu(void *currXfb) {
 					break;
 				case PLOT_2D:
 					menu_plot2dEnd();
+					break;
+				case TRIGGER_WAVEFORM:
+					menu_triggerOscilloscopeEnd();
 					break;
 				default:
 					break;
@@ -373,12 +382,15 @@ void menu_mainMenu(void *currXfb) {
 				currentMenu = CONTINUOUS_WAVEFORM;
 				break;
 			case 3:
-				currentMenu = COORD_MAP;
+				currentMenu = TRIGGER_WAVEFORM;
 				break;
 			case 4:
-				currentMenu = PLOT_2D;
+				currentMenu = COORD_MAP;
 				break;
 			case 5:
+				currentMenu = PLOT_2D;
+				break;
+			case 6:
 				currentMenu = FILE_EXPORT;
 				break;
 		}
