@@ -43,6 +43,7 @@ typedef struct WaveformData {
 
 } WaveformData;
 
+#define TRIGGER_SAMPLES 500
 typedef struct TriggerDatapoint {
 	u8 triggerLAnalog;
 	u8 triggerRAnalog;
@@ -52,7 +53,7 @@ typedef struct TriggerDatapoint {
 } TriggerDatapoint;
 
 typedef struct TriggerData {
-	TriggerDatapoint data[WAVEFORM_SAMPLES];
+	TriggerDatapoint data[TRIGGER_SAMPLES];
 	unsigned int startPoint;
 	unsigned int curr;
 	unsigned int endPoint;

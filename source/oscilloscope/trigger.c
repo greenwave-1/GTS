@@ -23,6 +23,7 @@ static u32 *pressed = NULL;
 static u32 *held = NULL;
 static bool buttonLock = false;
 static u8 buttonPressCooldown = 0;
+static u8 captureStartFrameCooldown = 0;
 
 static enum TRIG_MENU_STATE menuState = TRIG_SETUP;
 static enum TRIG_STATE trigState = TRIG_INPUT;
@@ -32,14 +33,13 @@ static enum TRIG_CAPTURE_SELECTION captureSelection = TRIGGER_L;
 //static int triggerValuesPointer = 0;
 static TriggerData data = { {{0}}, 0, 0, 0, 0, false };
 static TriggerDatapoint curr;
-static TriggerDatapoint startingLoop[20];
+static TriggerDatapoint startingLoop[100];
 static int startingLoopIndex = 0;
 static bool startedCapture = false;
 
 static sampling_callback cb;
 static u64 prevSampleCallbackTick = 0;
 static u64 sampleCallbackTick = 0;
-static u64 captureEndTimer = 0;
 static u64 pressedTimer = 0;
 static u8 ellipseCounter = 0;
 static bool pressLocked = false;
@@ -72,7 +72,7 @@ void triggerSamplingCallback() {
 	*held = PAD_ButtonsHeld(0);
 	
 	// detection logic
-	if (trigState != TRIG_DISPLAY_LOCK) {
+	if (trigState != TRIG_DISPLAY_LOCK && captureStartFrameCooldown == 0) {
 		// record current data
 		curr.triggerLAnalog = PAD_TriggerL(0);
 		curr.triggerRAnalog = PAD_TriggerR(0);
@@ -85,50 +85,42 @@ void triggerSamplingCallback() {
 			data.data[data.endPoint] = curr;
 			data.endPoint++;
 			
-			// has the trigger moved back within bounds and triggers not being pressed anymore
-			switch (captureSelection) {
-				case TRIGGER_L:
-					if ((curr.triggerLAnalog < 43 && !curr.triggerLDigital) || data.endPoint == WAVEFORM_SAMPLES) {
-						// add to timer
-						captureEndTimer += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-						if (captureEndTimer >= 20000 || data.endPoint == WAVEFORM_SAMPLES) {
-							trigState = TRIG_DISPLAY;
-							startedCapture = false;
-							data.isDataReady = true;
-							captureEndTimer = 0;
-						}
-					} else {
-						captureEndTimer = 0;
-					}
-					break;
-				case TRIGGER_R:
-					if ((curr.triggerRAnalog < 43 && !curr.triggerRDigital) || data.endPoint == WAVEFORM_SAMPLES) {
-						// add to timer
-						captureEndTimer += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-						if (captureEndTimer >= 20000 || data.endPoint == WAVEFORM_SAMPLES) {
-							trigState = TRIG_DISPLAY;
-							startedCapture = false;
-							data.isDataReady = true;
-							captureEndTimer = 0;
-						}
-					} else {
-						captureEndTimer = 0;
-					}
-					break;
+			// fill buffer
+			if (data.endPoint == TRIGGER_SAMPLES) {
+				trigState = TRIG_DISPLAY;
+				startedCapture = false;
+				data.isDataReady = true;
+				captureStartFrameCooldown = 5;
 			}
 		} else {
 			// continuously capture data
 			startingLoop[startingLoopIndex] = curr;
 			startingLoopIndex++;
-			if (startingLoopIndex == 20) {
+			if (startingLoopIndex == 100) {
 				startingLoopIndex = 0;
 			}
 			// check for analog value above 42, or for any digital trigger
 			if (curr.triggerLAnalog >= 43 || curr.triggerLDigital) {
 				captureSelection = TRIGGER_L;
 				data.endPoint = 0;
-				for (int i = 0; i < 20; i++) {
-					data.data[data.endPoint] = startingLoop[(startingLoopIndex + i) % 20];
+				// prepend ~50 ms of data to the recording
+				int loopStartIndex = startingLoopIndex - 1;
+				if (loopStartIndex == -1) {
+					loopStartIndex = 100;
+				}
+				int loopPrependCount = 0;
+				u64 prependedTimeUs = 0;
+				// go back 50 ms
+				while (prependedTimeUs < 50000) {
+					prependedTimeUs += startingLoop[loopStartIndex].timeDiffUs;
+					loopStartIndex--;
+					if (loopStartIndex == -1) {
+						loopStartIndex = 100;
+					}
+					loopPrependCount++;
+				}
+				for (int i = 0; i < loopPrependCount; i++ ) {
+					data.data[data.endPoint] = startingLoop[(loopStartIndex + i) % 100];
 					if (data.endPoint == 0) {
 						data.data[0].timeDiffUs = 0;
 					}
@@ -140,8 +132,24 @@ void triggerSamplingCallback() {
 			} else if (curr.triggerRAnalog >= 43 || curr.triggerRDigital) {
 				captureSelection = TRIGGER_R;
 				data.endPoint = 0;
-				for (int i = 0; i < 20; i++) {
-					data.data[data.endPoint] = startingLoop[(startingLoopIndex + i) % 20];
+				// prepend ~50 ms of data to the recording
+				int loopStartIndex = startingLoopIndex - 1;
+				if (loopStartIndex == -1) {
+					loopStartIndex = 100;
+				}
+				int loopPrependCount = 0;
+				u64 prependedTimeUs = 0;
+				// go back 50 ms
+				while (prependedTimeUs < 50000) {
+					loopStartIndex--;
+					if (loopStartIndex == -1) {
+						loopStartIndex = 100;
+					}
+					loopPrependCount++;
+					prependedTimeUs += startingLoop[loopStartIndex].timeDiffUs;
+				}
+				for (int i = 0; i < loopPrependCount; i++ ) {
+					data.data[data.endPoint] = startingLoop[(loopStartIndex + i) % 100];
 					if (data.endPoint == 0) {
 						data.data[0].timeDiffUs = 0;
 					}
@@ -158,7 +166,7 @@ void triggerSamplingCallback() {
 static void setup(u32 *p, u32 *h) {
 	pressed = p;
 	held = h;
-	//data.endPoint = WAVEFORM_SAMPLES - 1;
+	//data.endPoint = TRIGGER_SAMPLES - 1;
 	setSamplingRateHigh();
 	cb = PAD_SetSamplingCallback(triggerSamplingCallback);
 	menuState = TRIG_POST_SETUP;
@@ -172,8 +180,7 @@ void displayInstructions(void *currXfb) {
 			 "A Green line indicates when a digital press is detected.\n"
 			 "A Gray line shows the minimum value Melee uses for Analog\n"
 			 "shield (43 or above).\n\n"
-			 "Percents for projectile powershields are shown at the bottom.\n\n"
-			 "Use DPAD Left and Right to scroll the capture, if needed.\n", currXfb);
+			 "Percents for projectile powershields are shown at the bottom.\n", currXfb);
 	
 	if (!buttonLock) {
 		if (*pressed & PAD_TRIGGER_Z) {
@@ -341,17 +348,8 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 							buttonPressCooldown = 5;
 						}
 					}
-					if (data.endPoint >= 500 ) {
-						// does the user want to scroll the waveform?
-						if (*held & PAD_BUTTON_RIGHT) {
-							if (dataScrollOffset + 510 < data.endPoint) {
-								dataScrollOffset += 10;
-							}
-						} else if (*held & PAD_BUTTON_LEFT) {
-							if (dataScrollOffset - 10 >= 0) {
-								dataScrollOffset -= 10;
-							}
-						}
+					if (captureStartFrameCooldown != 0 && PAD_TriggerL(0) < 43 && PAD_TriggerR(0) < 43) {
+						captureStartFrameCooldown--;
 					}
 					break;
 				default:
