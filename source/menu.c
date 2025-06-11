@@ -416,9 +416,6 @@ void menu_mainMenu(void *currXfb) {
 	} else {
 		stickheld = 0;
 	}
-	
-	sprintf(strBuffer, "Lockout Count: %u", stickLockoutCounter);
-	printStr(strBuffer, currXfb);
 }
 
 void menu_controllerTest(void *currXfb) {
