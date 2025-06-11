@@ -47,10 +47,6 @@ static bool lockExitControllerTest = false;
 static bool startHeldAfter = false;
 static u8 startHeldCounter = 0;
 
-// enum for what image to draw in 2d plot
-static enum IMAGE selectedImage = SNAPBACK;
-static int map2dStartIndex = 0;
-
 static enum STICKMAP_LIST selectedStickmap = NONE;
 // will be casted to whichever stickmap is selected
 static int selectedStickmapSub = 0;
@@ -70,6 +66,9 @@ static u32 held = 0;
 
 // var for counting how long the stick has been held away from neutral
 static u8 stickheld = 0;
+static int stickYPos = 0, stickYPrevPos = 0;
+static u8 stickLockoutCounter = 0;
+static bool stickLockout = false;
 
 // menu item strings
 //static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Coordinate Viewer", "2D Plot", "Export Data", "Continuous Waveform" };
@@ -331,14 +330,29 @@ bool menu_runMenu(void *currXfb) {
 }
 
 void menu_mainMenu(void *currXfb) {
-	int stickY = PAD_StickY(0);
-
+	stickYPrevPos = stickYPos;
+	stickYPos = PAD_StickY(0);
+	int stickDiff = abs(stickYPos - stickYPrevPos);
+	
 	// flags which tell whether the stick is held in an up or down position
-	u8 up = stickY > MENU_STICK_THRESHOLD;
-	u8 down = stickY < -MENU_STICK_THRESHOLD;
+	u8 up = stickYPos > MENU_STICK_THRESHOLD;
+	u8 down = stickYPos < -MENU_STICK_THRESHOLD;
+	
+	// check if we're outside the deadzone, and the stick hasn't moved past a threshold since last frame
+	if (stickDiff < MENU_STICK_THRESHOLD && (up || down)) {
+		// 120 frames == ~2 seconds
+		if (stickLockoutCounter < 120) {
+			stickLockoutCounter++;
+		} else if (stickLockoutCounter == 120) {
+			stickLockout = true;
+		}
+	} else {
+		stickLockout = false;
+		stickLockoutCounter = 0;
+	}
 
 	// only move the stick if it wasn't already held for the last 10 ticks
-	u8 movable = stickheld % 10 == 0;
+	u8 movable = stickheld % 10 == 0 && !stickLockout;
 	
 	// iterate over the menu items array as defined in menu.c
 	for (int i = 0; i < MENUITEMS_LEN; i++) {
@@ -402,6 +416,9 @@ void menu_mainMenu(void *currXfb) {
 	} else {
 		stickheld = 0;
 	}
+	
+	sprintf(strBuffer, "Lockout Count: %u", stickLockoutCounter);
+	printStr(strBuffer, currXfb);
 }
 
 void menu_controllerTest(void *currXfb) {
@@ -733,234 +750,6 @@ void menu_controllerTest(void *currXfb) {
 	                 CONT_TEST_STICK_RAD / 2, COLOR_YELLOW, currXfb); // smaller circle
 }
 
-void menu_2dPlot(void *currXfb) {
-	return;
-	
-	static WaveformDatapoint convertedCoords;
-
-	// display instructions and data for user
-	printStr("Press A to start read, press Z for instructions", currXfb);
-
-	// do we have data that we can display?
-	if (data.isDataReady) {
-		if (lastDrawPoint == -1) {
-			lastDrawPoint = data.endPoint - 1;
-		}
-		convertedCoords = convertStickValues(&data.data[lastDrawPoint]);
-		// TODO: move instructions under different prompt, so I don't have to keep messing with text placement
-		
-		setCursorPos(5, 0);
-		sprintf(strBuffer, "Total samples: %04u\n", data.endPoint);
-		printStr(strBuffer, currXfb);
-		sprintf(strBuffer, "Start sample: %04u\n", map2dStartIndex + 1);
-		printStr(strBuffer, currXfb);
-		sprintf(strBuffer, "End sample: %04u\n", lastDrawPoint + 1);
-		printStr(strBuffer, currXfb);
-		
-		u64 timeFromStart = 0;
-		for (int i = map2dStartIndex + 1; i <= lastDrawPoint; i++) {
-			timeFromStart += data.data[i].timeDiffUs;
-		}
-		float timeFromStartMs = timeFromStart / 1000.0;
-		sprintf(strBuffer, "Total MS: %6.2f\n", timeFromStartMs);
-		printStr(strBuffer, currXfb);
-		sprintf(strBuffer, "Total frames: %2.2f", timeFromStartMs / frameTime);
-		printStr(strBuffer, currXfb);
-		
-		// print coordinates of last drawn point
-		// raw stick coordinates
-		setCursorPos(19, 0);
-		sprintf(strBuffer, "Raw XY: (%04d,%04d)\n", data.data[lastDrawPoint].ax, data.data[lastDrawPoint].ay);
-		printStr(strBuffer, currXfb);
-		printStr("Melee XY: (", currXfb);
-		// is the value negative?
-		if (data.data[lastDrawPoint].ax < 0) {
-			printStr("-", currXfb);
-		} else {
-			printStr("0", currXfb);
-		}
-		// is this a 1.0 value?
-		if (convertedCoords.ax == 10000) {
-			printStr("1.0000", currXfb);
-		} else {
-			sprintf(strBuffer, "0.%04d", convertedCoords.ax);
-			printStr(strBuffer, currXfb);
-		}
-		printStr(",", currXfb);
-		
-		// is the value negative?
-		if (data.data[lastDrawPoint].ay < 0) {
-			printStr("-", currXfb);
-		} else {
-			printStr("0", currXfb);
-		}
-		// is this a 1.0 value?
-		if (convertedCoords.ay == 10000) {
-			printStr("1.0000", currXfb);
-		} else {
-			sprintf(strBuffer, "0.%04d", convertedCoords.ay);
-			printStr(strBuffer, currXfb);
-		}
-		printStr(")\n", currXfb);
-		printStr("Stickmap: ", currXfb);
-
-		// draw image below 2d plot, and print while we're at it
-		switch (selectedImage) {
-			case A_WAIT:
-				printStr("Wait Attacks", currXfb);
-				drawImage(currXfb, await_image, await_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
-				break;
-			case CROUCH:
-				printStr("Crouch", currXfb);
-				drawImage(currXfb, crouch_image, crouch_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
-				break;
-			case DEADZONE:
-				printStr("Deadzones", currXfb);
-				drawImage(currXfb, deadzone_image, deadzone_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
-				break;
-			case LEDGE_L:
-				printStr("Left Ledge", currXfb);
-				drawImage(currXfb, ledgeL_image, ledgeL_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
-				break;
-			case LEDGE_R:
-				printStr("Right Ledge", currXfb);
-				drawImage(currXfb, ledgeR_image, ledgeR_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
-				break;
-			case MOVE_WAIT:
-				printStr("Wait Movement", currXfb);
-				drawImage(currXfb, movewait_image, movewait_indexes, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
-				break;
-			case NO_IMAGE:
-				printStr("None", currXfb);
-			default:
-				break;
-		}
-		
-		// draw box around plot area
-		DrawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
-				COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
-				COLOR_WHITE, currXfb);
-		
-		
-		// draw plot
-		// y is negated because of how the graph is drawn
-		// TODO: why does this need to be <= to avoid an off-by-one? step through logic later this is bugging me
-		for (int i = 0; i <= lastDrawPoint; i++) {
-			if (i >= map2dStartIndex) {
-				DrawDot(COORD_CIRCLE_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay, COLOR_WHITE, currXfb);
-			} else {
-				DrawDot(COORD_CIRCLE_CENTER_X + data.data[i].ax, SCREEN_POS_CENTER_Y - data.data[i].ay, COLOR_GRAY, currXfb);
-			}
-		}
-
-		// TODO: refactor this, its a mess
-		// does the user want to change what data is drawn?
-		// single movements with L
-		if (held & PAD_TRIGGER_L) {
-			if (pressed & PAD_BUTTON_RIGHT) {
-				if (held & PAD_BUTTON_Y) {
-					if (map2dStartIndex + 1 < lastDrawPoint) {
-						map2dStartIndex++;
-					} else {
-						map2dStartIndex = lastDrawPoint;
-					}
-				} else {
-					if (lastDrawPoint + 1 < data.endPoint) {
-						lastDrawPoint++;
-					} else {
-						lastDrawPoint = data.endPoint - 1;
-					}
-				}
-			} else if (pressed & PAD_BUTTON_LEFT) {
-				if (held & PAD_BUTTON_Y) {
-					if (map2dStartIndex - 1 >= 0) {
-						map2dStartIndex--;
-					}
-				} else {
-					if (lastDrawPoint - 1 >= 0) {
-						lastDrawPoint--;
-					}
-				}
-			}
-		} else if (held & PAD_BUTTON_RIGHT) {
-			if (held & PAD_TRIGGER_R) {
-				if (held & PAD_BUTTON_Y) {
-					if (map2dStartIndex + 5 < lastDrawPoint) {
-						map2dStartIndex += 5;
-					} else {
-						map2dStartIndex = lastDrawPoint;
-					}
-				} else {
-					if (lastDrawPoint + 5 < data.endPoint) {
-						lastDrawPoint += 5;
-					} else {
-						lastDrawPoint = data.endPoint - 1;
-					}
-				}
-			} else {
-				if (held & PAD_BUTTON_Y) {
-					if (map2dStartIndex + 1 < lastDrawPoint) {
-						map2dStartIndex++;
-					}
-				} else {
-					if (lastDrawPoint + 1 < data.endPoint) {
-						lastDrawPoint++;
-					}
-				}
-			}
-		} else if (held & PAD_BUTTON_LEFT) {
-			if (held & PAD_TRIGGER_R) {
-				if (held & PAD_BUTTON_Y) {
-					if (map2dStartIndex - 5 >= 0) {
-						map2dStartIndex -= 5;
-					} else {
-						map2dStartIndex = 0;
-					}
-				} else {
-					if (lastDrawPoint - 5 >= 0) {
-						lastDrawPoint -= 5;
-					} else {
-						lastDrawPoint = 0;
-						map2dStartIndex = 0;
-					}
-				}
-			} else {
-				if (held & PAD_BUTTON_Y) {
-					if (map2dStartIndex - 1 >= 0) {
-						map2dStartIndex--;
-					}
-				} else {
-					if (lastDrawPoint - 1 >= 0) {
-						lastDrawPoint--;
-					}
-				}
-			}
-		}
-		
-		// hacky fix to make sure start isn't after end
-		// TODO: this should be fixed when the above is refactored
-		if (lastDrawPoint <= map2dStartIndex && lastDrawPoint != 0) {
-			map2dStartIndex = lastDrawPoint - 1;
-		}
-
-		// does the user want to change what stickmap is displayed?
-		if (pressed & PAD_BUTTON_X) {
-			selectedImage++;
-			if (selectedImage == IMAGE_LEN) {
-				selectedImage = NO_IMAGE;
-			}
-		}
-	}
-
-	// only start reading if A is pressed
-	// TODO: figure out if this can be removed without having to gut the current poll logic, would be better for the user to not have to do this
-	if (pressed & PAD_BUTTON_A) {
-		data.fullMeasure = false;
-		previousMenu = PLOT_2D;
-		currentMenu = WAITING_MEASURE;
-	}
-}
-
 void menu_fileExport(void *currXfb) {
 	// run if we have a result
 	//if (exportReturnCode >= 0) {
@@ -1005,7 +794,6 @@ void menu_waitingMeasure(void *currXfb) {
 	measureWaveform(&data);
 	dataScrollOffset = 0;
 	lastDrawPoint = data.endPoint - 1;
-	map2dStartIndex = 0;
 	assert(data.endPoint < 5000);
 	currentMenu = previousMenu;
 	displayedWaitingInputMessage = false;
