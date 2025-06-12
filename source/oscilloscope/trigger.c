@@ -175,8 +175,8 @@ static void setup(u32 *p, u32 *h) {
 void displayInstructions(void *currXfb) {
 	printStr("Press and release either trigger to capture. A capture will\n"
 			 "start if a digital press is detected, or if the analog value\n"
-			 "is above 42. Capture will stop if the analog value is below\n"
-			 "43 and the digital trigger is not pressed.\n\n"
+			 "is above 42. Capture will once the buffer fills\n"
+			 "(500 samples).\n\n"
 			 "A Green line indicates when a digital press is detected.\n"
 			 "A Gray line shows the minimum value Melee uses for Analog\n"
 			 "shield (43 or above).\n\n"
