@@ -43,7 +43,6 @@ static u64 sampleCallbackTick = 0;
 static u64 pressedTimer = 0;
 static u8 ellipseCounter = 0;
 static bool pressLocked = false;
-static int dataScrollOffset = 0;
 
 static char strBuffer[100];
 
@@ -228,12 +227,10 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 						bool currDigital = false;
 						int waveformXPos = 1, waveformPrevXPos = 0;
 						
-						if (data.endPoint < 500) {
-							dataScrollOffset = 0;
-						}
+						u64 totalTime = 0;
 						
-						// draw 500 datapoints from the scroll offset
-						for (int i = dataScrollOffset + 1; i < dataScrollOffset + 500; i++) {
+						// draw 500 datapoints
+						for (int i = 0; i < 500; i++) {
 							// make sure we haven't gone outside our bounds
 							if (i == data.endPoint || waveformXPos >= 500) {
 								break;
@@ -249,6 +246,16 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 									currDigital = data.data[i].triggerRDigital;
 									break;
 							}
+							
+							// frame intervals
+							totalTime += data.data[i].timeDiffUs;
+							if (totalTime >= 16666) {
+								DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
+								         SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
+								         COLOR_GRAY, currXfb);
+								totalTime = 0;
+							}
+							
 							// analog
 							DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, (SCREEN_POS_CENTER_Y + 128) - prev,
 							         SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y + 128) - curr,
