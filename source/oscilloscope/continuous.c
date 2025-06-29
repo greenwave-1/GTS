@@ -73,6 +73,7 @@ static void contSamplingCallback() {
 		data.data[dataIndex].ay = PAD_StickY(0);
 		data.data[dataIndex].cx = PAD_SubStickX(0);
 		data.data[dataIndex].cy = PAD_SubStickY(0);
+		data.data[dataIndex].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 		dataIndex++;
 		if (dataIndex == WAVEFORM_SAMPLES) {
 			dataIndex = 0;
@@ -153,7 +154,9 @@ void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
 					printStr(strBuffer, currXfb);
 				}
 				
-				
+				int prevIndex = -1;
+				u64 frameTimeUs = 0;
+				// draw graph
 				for (int i = 0; i < 500; i++) {
 					int currX, currY;
 					if (!showCStick) {
@@ -174,6 +177,22 @@ void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
 					         SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currX,
 					         COLOR_RED_C, currXfb);
 					prevX = currX;
+					
+					// frame interval stuff
+					if (prevIndex != -1) {
+						for (int i = 0; i < waveformScaleFactor; i++) {
+							frameTimeUs += data.data[(prevIndex + i) % WAVEFORM_SAMPLES].timeDiffUs;
+							if (frameTimeUs >= 16666) {
+								if (waveformScaleFactor <= 2) {
+									DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
+									        SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
+									        COLOR_GRAY, currXfb);
+								}
+								frameTimeUs = 0;
+							}
+						}
+					}
+					prevIndex = (startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES;
 					
 					// update scaling factor
 					waveformPrevXPos = waveformXPos;
