@@ -38,6 +38,7 @@ static u32 *held = NULL;
 static u64 prevSampleCallbackTick = 0;
 static u64 sampleCallbackTick = 0;
 static u64 pressedTimer = 0;
+static u64 frameCounter = 0;
 
 static sampling_callback cb;
 
@@ -73,7 +74,11 @@ static void contSamplingCallback() {
 		data.data[dataIndex].ay = PAD_StickY(0);
 		data.data[dataIndex].cx = PAD_SubStickX(0);
 		data.data[dataIndex].cy = PAD_SubStickY(0);
-		data.data[dataIndex].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+		frameCounter += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+		if (frameCounter >= 16666) {
+			data.data[dataIndex].timeDiffUs = 1;
+			frameCounter = 0;
+		}
 		dataIndex++;
 		if (dataIndex == WAVEFORM_SAMPLES) {
 			dataIndex = 0;
@@ -155,7 +160,6 @@ void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
 				}
 				
 				int prevIndex = -1;
-				u64 frameTimeUs = 0;
 				// draw graph
 				for (int i = 0; i < 500; i++) {
 					int currX, currY;
@@ -181,14 +185,12 @@ void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
 					// frame interval stuff
 					if (prevIndex != -1) {
 						for (int i = 0; i < waveformScaleFactor; i++) {
-							frameTimeUs += data.data[(prevIndex + i) % WAVEFORM_SAMPLES].timeDiffUs;
-							if (frameTimeUs >= 16666) {
+							if (data.data[(prevIndex + i) % WAVEFORM_SAMPLES].timeDiffUs == 1) {
 								if (waveformScaleFactor <= 2) {
 									DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
 									        SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
 									        COLOR_GRAY, currXfb);
 								}
-								frameTimeUs = 0;
 							}
 						}
 					}
