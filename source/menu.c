@@ -20,6 +20,10 @@
 #include "oscilloscope/continuous.h"
 #include "oscilloscope/trigger.h"
 #include "plot2d/plot2d.h"
+#include "submenu/oscilloscope.h"
+#include "submenu/continuous.h"
+#include "submenu/trigger.h"
+#include "submenu/plot2d.h"
 
 #ifndef VERSION_NUMBER
 #define VERSION_NUMBER "NOVERS_DEV"
