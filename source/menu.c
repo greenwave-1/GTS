@@ -16,10 +16,6 @@
 #include "file/file.h"
 #include "stickmap_coordinates.h"
 
-#include "oscilloscope/oscilloscope.h"
-#include "oscilloscope/continuous.h"
-#include "oscilloscope/trigger.h"
-#include "plot2d/plot2d.h"
 #include "submenu/oscilloscope.h"
 #include "submenu/continuous.h"
 #include "submenu/trigger.h"
