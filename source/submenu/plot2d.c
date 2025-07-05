@@ -177,7 +177,7 @@ static void setup(WaveformData *d, u32 *p, u32 *h) {
 	plotState = PLOT_DISPLAY;
 }
 
-void printInstructions(void *currXfb) {
+static void displayInstructions(void *currXfb) {
 	printStr("Press X to cycle the stickmap background. Use DPAD\n"
 			 "left/right to change what the last point drawn is.\n"
 			 "Information on the last chosen point is displayed\n"
@@ -205,7 +205,7 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 			setup(d, p, h);
 			break;
 		case PLOT_INSTRUCTIONS:
-			printInstructions(currXfb);
+			displayInstructions(currXfb);
 			break;
 		case PLOT_POST_SETUP:
 			switch(plotState) {

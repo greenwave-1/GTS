@@ -171,7 +171,7 @@ static void setup(u32 *p, u32 *h) {
 	menuState = TRIG_POST_SETUP;
 }
 
-void displayInstructions(void *currXfb) {
+static void displayInstructions(void *currXfb) {
 	printStr("Press and release either trigger to capture. A capture will\n"
 			 "start if a digital press is detected, or if the analog value\n"
 			 "is above 42. Capture will once the buffer fills\n"

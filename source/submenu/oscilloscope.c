@@ -389,7 +389,7 @@ static void oscilloscopeCallback() {
 	}
 }
 
-static void printInstructions(void *currXfb) {
+static void displayInstructions(void *currXfb) {
 	setCursorPos(2, 0);
 	printStr("Press X to cycle the current test, results will show above the\n"
 			"waveform. Press Y to cycle between Analog Stick and C-Stick.\n"
@@ -891,7 +891,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 			//	}
 			break;
 		case OSC_INSTRUCTIONS:
-			printInstructions(currXfb);
+			displayInstructions(currXfb);
 			break;
 		default:
 			printStr("How did we get here?", currXfb);
