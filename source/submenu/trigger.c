@@ -111,6 +111,10 @@ void triggerSamplingCallback() {
 				u64 prependedTimeUs = 0;
 				// go back 50 ms
 				while (prependedTimeUs < 50000) {
+					// break out of loop if data doesn't exist
+					if (startingLoop[loopStartIndex].timeDiffUs == 0) {
+						break;
+					}
 					prependedTimeUs += startingLoop[loopStartIndex].timeDiffUs;
 					loopStartIndex--;
 					if (loopStartIndex == -1) {
@@ -124,6 +128,14 @@ void triggerSamplingCallback() {
 						data.data[0].timeDiffUs = 0;
 					}
 					data.endPoint++;
+				}
+				// clear startingLoop
+				for (int i = 0; i < 100; i++) {
+					startingLoop[i].triggerLAnalog = 0;
+					startingLoop[i].triggerRAnalog = 0;
+					startingLoop[i].triggerLDigital = false;
+					startingLoop[i].triggerRDigital = false;
+					startingLoop[i].timeDiffUs = 0;
 				}
 				data.isDataReady = false;
 				trigState = TRIG_INPUT;
@@ -140,6 +152,10 @@ void triggerSamplingCallback() {
 				u64 prependedTimeUs = 0;
 				// go back 50 ms
 				while (prependedTimeUs < 50000) {
+					// break out of loop if data doesn't exist
+					if (startingLoop[loopStartIndex].timeDiffUs == 0) {
+						break;
+					}
 					loopStartIndex--;
 					if (loopStartIndex == -1) {
 						loopStartIndex = 100;
@@ -153,6 +169,14 @@ void triggerSamplingCallback() {
 						data.data[0].timeDiffUs = 0;
 					}
 					data.endPoint++;
+				}
+				// clear startingLoop
+				for (int i = 0; i < 100; i++) {
+					startingLoop[i].triggerLAnalog = 0;
+					startingLoop[i].triggerRAnalog = 0;
+					startingLoop[i].triggerLDigital = false;
+					startingLoop[i].triggerRDigital = false;
+					startingLoop[i].timeDiffUs = 0;
 				}
 				data.isDataReady = false;
 				trigState = TRIG_INPUT;
