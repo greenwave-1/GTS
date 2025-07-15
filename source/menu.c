@@ -73,7 +73,7 @@ static bool stickLockout = false;
 // menu item strings
 //static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Coordinate Viewer", "2D Plot", "Export Data", "Continuous Waveform" };
 static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Continuous Stick Oscilloscope", "Trigger Oscilloscope",
-                                                "Coordinate Viewer", "2D Plot", "Gate Visualiser", "Export Data"};
+                                                "Coordinate Viewer", "2D Plot", "Gate Visualizer", "Export Data"};
 
 
 static bool displayedWaitingInputMessage = false;
