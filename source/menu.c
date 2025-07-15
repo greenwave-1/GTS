@@ -549,7 +549,7 @@ void menu_controllerTest(void *currXfb) {
 		}
 		if (!(held & PAD_TRIGGER_R)) {
 			setCursorPos(18, 44);
-			sprintf(strBuffer, "L Origin: %d", origin[0].triggerR);
+			sprintf(strBuffer, "R Origin: %d", origin[0].triggerR);
 			printStr(strBuffer, currXfb);
 		}
 	}
