@@ -95,6 +95,8 @@ static char strBuffer[100];
 
 static bool setDrawInterlaceMode = false;
 
+static u8 thanksPageCounter = 0;
+
 // the "main" for the menus
 // other menu functions are called from here
 // this also handles moving between menus and exiting
@@ -193,6 +195,9 @@ bool menu_runMenu(void *currXfb) {
 			break;
 		case TRIGGER_WAVEFORM:
 			menu_triggerOscilloscope(currXfb, &pressed, &held);
+			break;
+		case THANKS_PAGE:
+			menu_thanksPage(currXfb);
 			break;
 		default:
 			printStr("HOW DID WE END UP HERE?\n", currXfb);
@@ -416,6 +421,17 @@ void menu_mainMenu(void *currXfb) {
 	} else {
 		stickheld = 0;
 	}
+	
+	// thanks page logic: if Z is held on port 4 for 2 seconds on the main menu
+	if (PAD_ButtonsHeld(3) == PAD_TRIGGER_Z) {
+		thanksPageCounter++;
+		if (thanksPageCounter == 120) {
+			currentMenu = THANKS_PAGE;
+			thanksPageCounter = 0;
+		}
+	} else {
+		thanksPageCounter = 0;
+	}
 }
 
 void menu_controllerTest(void *currXfb) {
@@ -513,6 +529,17 @@ void menu_controllerTest(void *currXfb) {
 		setCursorPos(21, 35);
 		sprintf(strBuffer, "C-Origin XY: (%04d,%04d)", origin[0].substickX, origin[0].substickY);
 		printStr(strBuffer, currXfb);
+		
+		if (!(held & PAD_TRIGGER_L)) {
+			setCursorPos(18, 2);
+			sprintf(strBuffer, "L Origin: %d", origin[0].triggerL);
+			printStr(strBuffer, currXfb);
+		}
+		if (!(held & PAD_TRIGGER_R)) {
+			setCursorPos(18, 44);
+			sprintf(strBuffer, "L Origin: %d", origin[0].triggerR);
+			printStr(strBuffer, currXfb);
+		}
 	}
 	
 
@@ -975,4 +1002,13 @@ void menu_coordinateViewer(void *currXfb) {
 				break;
 		}
 	}
+}
+
+void menu_thanksPage(void *currXfb) {
+	printStr("Thanks to:\n"
+			 "PhobGCC team and Discord\n"
+			 "DevkitPro team\n"
+			 "Extrems\n"
+			 "SmashScope\n"
+			 "Z. B. Wells", currXfb);
 }
