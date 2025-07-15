@@ -196,6 +196,7 @@ static void setup(u32 *p, u32 *h) {
 }
 
 static void displayInstructions(void *currXfb) {
+	setCursorPos(2, 0);
 	printStr("Press and release either trigger to capture. A capture will\n"
 			 "start if a digital press is detected, or if the analog value\n"
 			 "is above 42. Capture will once the buffer fills\n"
@@ -204,6 +205,9 @@ static void displayInstructions(void *currXfb) {
 			 "A Gray line shows the minimum value Melee uses for Analog\n"
 			 "shield (43 or above).\n\n"
 			 "Percents for projectile powershields are shown at the bottom.\n", currXfb);
+	
+	setCursorPos(21, 0);
+	printStr("Press Z to close instructions.", currXfb);
 	
 	if (!buttonLock) {
 		if (*pressed & PAD_TRIGGER_Z) {

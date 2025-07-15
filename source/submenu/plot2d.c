@@ -178,6 +178,7 @@ static void setup(WaveformData *d, u32 *p, u32 *h) {
 }
 
 static void displayInstructions(void *currXfb) {
+	setCursorPos(2, 0);
 	printStr("Press X to cycle the stickmap background. Use DPAD\n"
 			 "left/right to change what the last point drawn is.\n"
 			 "Information on the last chosen point is displayed\n"

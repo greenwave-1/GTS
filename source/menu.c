@@ -20,13 +20,13 @@
 #include "submenu/continuous.h"
 #include "submenu/trigger.h"
 #include "submenu/plot2d.h"
+#include "submenu/gate.h"
 
 #ifndef VERSION_NUMBER
 #define VERSION_NUMBER "NOVERS_DEV"
 #endif
 
-#define MENUITEMS_LEN 7
-#define TEST_LEN 5
+#define MENUITEMS_LEN 8
 
 // 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
 #define SCREEN_TIMEPLOT_START 70
@@ -73,7 +73,7 @@ static bool stickLockout = false;
 // menu item strings
 //static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Coordinate Viewer", "2D Plot", "Export Data", "Continuous Waveform" };
 static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Continuous Stick Oscilloscope", "Trigger Oscilloscope",
-                                                "Coordinate Viewer", "2D Plot", "Export Data"};
+                                                "Coordinate Viewer", "2D Plot", "Gate Visualiser", "Export Data"};
 
 
 static bool displayedWaitingInputMessage = false;
@@ -140,7 +140,8 @@ bool menu_runMenu(void *currXfb) {
 	// don't update if we are on a menu with its own callback
 	// TODO: eventually I'd like each menu entry to be in its own file, would that affect this?
 	if (currentMenu != WAVEFORM && currentMenu != CONTINUOUS_WAVEFORM &&
-			currentMenu != PLOT_2D && currentMenu != TRIGGER_WAVEFORM) {
+			currentMenu != PLOT_2D && currentMenu != TRIGGER_WAVEFORM &&
+			currentMenu != GATE_MEASURE) {
 		pressed = PAD_ButtonsDown(0);
 		held = PAD_ButtonsHeld(0);
 	}
@@ -198,6 +199,9 @@ bool menu_runMenu(void *currXfb) {
 			break;
 		case THANKS_PAGE:
 			menu_thanksPage(currXfb);
+			break;
+		case GATE_MEASURE:
+			menu_gateMeasure(currXfb, &pressed, &held);
 			break;
 		default:
 			printStr("HOW DID WE END UP HERE?\n", currXfb);
@@ -289,6 +293,8 @@ bool menu_runMenu(void *currXfb) {
 				case TRIGGER_WAVEFORM:
 					menu_triggerOscilloscopeEnd();
 					break;
+				case GATE_MEASURE:
+					menu_gateMeasureEnd();
 				default:
 					break;
 			}
@@ -410,6 +416,9 @@ void menu_mainMenu(void *currXfb) {
 				currentMenu = PLOT_2D;
 				break;
 			case 6:
+				currentMenu = GATE_MEASURE;
+				break;
+			case 7:
 				currentMenu = FILE_EXPORT;
 				break;
 		}
