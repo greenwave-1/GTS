@@ -201,6 +201,9 @@ bool menu_runMenu(void *currXfb) {
 			menu_thanksPage(currXfb);
 			break;
 		case GATE_MEASURE:
+			if (originRead == false) {
+				menu_gateControllerDisconnected();
+			}
 			menu_gateMeasure(currXfb, &pressed, &held);
 			break;
 		default:

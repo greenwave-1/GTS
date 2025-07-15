@@ -117,6 +117,12 @@ static void displayInstructions(void *currXfb) {
 	}
 }
 
+void menu_gateControllerDisconnected() {
+	if (menuState == GATE_POST_SETUP) {
+		state = GATE_INIT;
+	}
+}
+
 void menu_gateMeasure(void *currXfb, u32 *p, u32 *h) {
 	switch (menuState) {
 		case GATE_SETUP:
