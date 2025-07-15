@@ -101,7 +101,10 @@ void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
 			setup(p, h);
 			break;
 		case CONT_POST_SETUP:
+			setCursorPos(2, 0);
+			printStr("A to freeze. Y to toggle.", currXfb);
 			setCursorPos(20, 0);
+			printStr("Current Stick: ", currXfb);
 			if (!showCStick) {
 				printStr("Analog Stick", currXfb);
 			} else {
