@@ -21,15 +21,13 @@
 #include "submenu/trigger.h"
 #include "submenu/plot2d.h"
 #include "submenu/gate.h"
+#include "submenu/plotbutton.h"
 
 #ifndef VERSION_NUMBER
 #define VERSION_NUMBER "NOVERS_DEV"
 #endif
 
-#define MENUITEMS_LEN 8
-
-// 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
-#define SCREEN_TIMEPLOT_START 70
+#define MENUITEMS_LEN 9
 
 // macro for how far the stick has to go before it counts as a movement
 #define MENU_STICK_THRESHOLD 10
@@ -70,7 +68,7 @@ static bool stickLockout = false;
 // menu item strings
 //static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Coordinate Viewer", "2D Plot", "Export Data", "Continuous Waveform" };
 static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Continuous Stick Oscilloscope", "Trigger Oscilloscope",
-                                                "Coordinate Viewer", "2D Plot", "Gate Visualizer", "Export Data"};
+                                                "Coordinate Viewer", "2D Plot", "Button Timing Viewer", "Gate Visualizer", "Export Data"};
 
 
 static bool displayInstructions = false;
@@ -131,9 +129,10 @@ bool menu_runMenu(void *currXfb) {
 	// check for any buttons pressed/held
 	// don't update if we are on a menu with its own callback
 	// TODO: eventually I'd like each menu entry to be in its own file, would that affect this?
+	// TODO: This is getting messy, there's probably a better way to do this...
 	if (currentMenu != WAVEFORM && currentMenu != CONTINUOUS_WAVEFORM &&
 			currentMenu != PLOT_2D && currentMenu != TRIGGER_WAVEFORM &&
-			currentMenu != GATE_MEASURE) {
+			currentMenu != GATE_MEASURE && currentMenu != PLOT_BUTTON) {
 		pressed = PAD_ButtonsDown(0);
 		held = PAD_ButtonsHeld(0);
 	}
@@ -194,6 +193,9 @@ bool menu_runMenu(void *currXfb) {
 				menu_gateControllerDisconnected();
 			}
 			menu_gateMeasure(currXfb, &pressed, &held);
+			break;
+		case PLOT_BUTTON:
+			menu_plotButton(currXfb, &pressed, &held);
 			break;
 		default:
 			printStr("HOW DID WE END UP HERE?\n", currXfb);
@@ -287,6 +289,10 @@ bool menu_runMenu(void *currXfb) {
 					break;
 				case GATE_MEASURE:
 					menu_gateMeasureEnd();
+					break;
+				case PLOT_BUTTON:
+					menu_plotButtonEnd();
+					break;
 				default:
 					break;
 			}
@@ -408,9 +414,12 @@ void menu_mainMenu(void *currXfb) {
 				currentMenu = PLOT_2D;
 				break;
 			case 6:
-				currentMenu = GATE_MEASURE;
+				currentMenu = PLOT_BUTTON;
 				break;
 			case 7:
+				currentMenu = GATE_MEASURE;
+				break;
+			case 8:
 				currentMenu = FILE_EXPORT;
 				break;
 		}
