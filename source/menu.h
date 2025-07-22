@@ -18,7 +18,6 @@ bool menu_runMenu(void *currXfb);
 void menu_mainMenu(void *currXfb);
 void menu_controllerTest(void *currXfb);
 void menu_fileExport(void *currXfb);
-void menu_waitingMeasure(void *currXfb);
 void menu_coordinateViewer(void *currXfb);
 void menu_thanksPage(void *currXfb);
 

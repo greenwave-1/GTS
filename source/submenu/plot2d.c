@@ -14,7 +14,7 @@
 #include "../images/stickmaps.h"
 
 // close enough...
-#define FRAME_TIME (1000.0 / 60.0)
+static const float FRAME_TIME = (1000.0 / 60.0);
 
 // orange for button press samples
 #define COLOR_ORANGE 0xAD1EADBA
@@ -26,8 +26,8 @@ static u32 *held = NULL;
 static bool buttonLock = false;
 static u8 buttonPressCooldown = 0;
 
-static enum PLOT_MENU_STATE menuState = PLOT_SETUP;
-static enum PLOT_STATE plotState = PLOT_INPUT;
+static enum PLOT_2D_MENU_STATE menuState = PLOT_SETUP;
+static enum PLOT_2D_STATE plotState = PLOT_INPUT;
 
 static WaveformData *data = NULL;
 static int prevPosX = 0, prevPosY = 0;

@@ -65,9 +65,6 @@ typedef struct TriggerData {
 
 //enum CONTROLLER_STICKS_XY { A_STICK_X, A_STICK_Y, C_STICK_X, C_STICK_Y };
 
-// function that reads inputs at a high rate
-void measureWaveform(WaveformData *data);
-
 // converts raw input values to melee coordinates
 WaveformDatapoint convertStickValues(WaveformDatapoint *data);
 

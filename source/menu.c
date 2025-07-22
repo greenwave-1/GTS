@@ -39,9 +39,6 @@ const float frameTime = (1000.0 / 60.0);
 // enum to keep track of what menu to display, and what logic to run
 static enum CURRENT_MENU currentMenu = MAIN_MENU;
 
-// enum for previous menu, we move to it when we're waiting for user input
-static enum CURRENT_MENU previousMenu = MAIN_MENU;
-
 // lock var for controller test
 static bool lockExitControllerTest = false;
 static bool startHeldAfter = false;
@@ -76,12 +73,7 @@ static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscill
                                                 "Coordinate Viewer", "2D Plot", "Gate Visualizer", "Export Data"};
 
 
-static bool displayedWaitingInputMessage = false;
-
 static bool displayInstructions = false;
-
-static int lastDrawPoint = -1;
-static int dataScrollOffset = 0;
 
 static int exportReturnCode = -1;
 
@@ -162,9 +154,6 @@ bool menu_runMenu(void *currXfb) {
 			break;
 		case FILE_EXPORT:
 			menu_fileExport(currXfb);
-			break;
-		case WAITING_MEASURE:
-			menu_waitingMeasure(currXfb);
 			break;
 		case COORD_MAP:
 			if (displayInstructions) {
@@ -819,22 +808,6 @@ void menu_fileExport(void *currXfb) {
 		printStr("No data to export, record an input first.", currXfb);
 	}
 }
-
-
-void menu_waitingMeasure(void *currXfb) {
-	if (!displayedWaitingInputMessage) {
-		printStr("\nWaiting for user input...", currXfb);
-		displayedWaitingInputMessage = true;
-		return;
-	}
-	measureWaveform(&data);
-	dataScrollOffset = 0;
-	lastDrawPoint = data.endPoint - 1;
-	assert(data.endPoint < 5000);
-	currentMenu = previousMenu;
-	displayedWaitingInputMessage = false;
-}
-
 
 void menu_coordinateViewer(void *currXfb) {
 	// melee stick coordinates stuff
