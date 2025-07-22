@@ -209,7 +209,7 @@ void menu_plotButton(void *currXfb, u32 *p, u32 *h) {
 							frameIntervalTime += data[i].timeDiffUs;
 							if (frameIntervalTime >= 16666) {
 								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_Y_TOP, SCREEN_TIMEPLOT_Y_BOTTOM,
-										  COLOR_SILVER, currXfb);
+										  COLOR_GRAY, currXfb);
 								frameIntervalTime = 0;
 							}
 							
