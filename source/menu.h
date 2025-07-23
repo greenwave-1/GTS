@@ -2,6 +2,8 @@
 // Created on 2023/10/25.
 //
 
+// Handles the main menu and other basic menus that I haven't moved yet
+
 #ifndef GTS_MENU_H
 #define GTS_MENU_H
 

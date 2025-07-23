@@ -2,6 +2,9 @@
 // Created on 5/16/25.
 //
 
+// Trigger oscilloscope submenu
+// graphs analog trigger values over time
+
 #ifndef GTS_TRIGGER_H
 #define GTS_TRIGGER_H
 

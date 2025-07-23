@@ -2,6 +2,8 @@
 // Created on 2025/03/14.
 //
 
+// utilities for drawing the phobvision font, and handing a virtual cursor
+
 // the majority of this was adapted from the Phobgcc PhobVision code:
 // https://github.com/PhobGCC/PhobGCC-SW/tree/main/PhobGCC/rp2040
 

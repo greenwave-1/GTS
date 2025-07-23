@@ -1,6 +1,8 @@
 #ifndef GTS_STICKMAPS_H
 #define GTS_STICKMAPS_H
 
+// constants for the "stickmaps" in 2d Plot submenu
+
 // Code in use from the PhobGCC project is licensed under GPLv3. A copy of this license is provided in the root
 // directory of this project's repository.
 

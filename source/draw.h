@@ -2,6 +2,8 @@
 // Created on 2025/02/14.
 //
 
+// Drawing utilities and constants
+
 #ifndef GTS_DRAW_H
 #define GTS_DRAW_H
 

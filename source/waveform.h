@@ -2,6 +2,9 @@
 // Created on 2023/10/30.
 //
 
+// defines structs for holding controller data
+// TODO: this needs an overhaul, this hasn't been changed significantly since the polling change
+
 #ifndef GTS_WAVEFORM_H
 #define GTS_WAVEFORM_H
 

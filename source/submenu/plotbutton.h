@@ -2,6 +2,9 @@
 // Created on 7/22/25.
 //
 
+// Button Timing Viewer submenu
+// plots buttons and binary stick states over time
+
 #ifndef GTS_PLOTBUTTON_H
 #define GTS_PLOTBUTTON_H
 

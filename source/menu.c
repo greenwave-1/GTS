@@ -77,12 +77,15 @@ static int exportReturnCode = -1;
 
 static u32 padsConnected = 0;
 
+// stores the controller origin values
 static PADStatus origin[PAD_CHANMAX];
 static bool originRead = false;
 
 // buffer for strings with numbers and stuff using sprintf
 static char strBuffer[100];
 
+// some consumer crt tvs have alignment issues,
+// this determines if certain vertical lines are doubled
 static bool setDrawInterlaceMode = false;
 
 static u8 thanksPageCounter = 0;
@@ -214,6 +217,7 @@ bool menu_runMenu(void *currXfb) {
 		printStr("Exiting...", currXfb);
 		return true;
 	}
+	
 	// controller test lock stuff
 	else if (held == PAD_BUTTON_START && currentMenu == CONTROLLER_TEST && !startHeldAfter) {
 		if (lockExitControllerTest) {
@@ -232,17 +236,15 @@ bool menu_runMenu(void *currXfb) {
 	}
 
 	// does the user want to move back to the main menu?
+	// this shouldn't trigger when certain menus are currently recording an input
 	else if (held == PAD_BUTTON_B && currentMenu != MAIN_MENU &&
 			!lockExitControllerTest &&
 			!menu_plotButtonHasCaptureStarted()) {
 
 		// give user feedback that they are holding the button
 		printStr("Moving back to main menu", currXfb);
-
-		// TODO: I know there's a better way to do this but I can't think of it right now...
 		printEllipse(bHeldCounter, 15, currXfb);
 		bHeldCounter++;
-		
 		
 		// has the button been held long enough?
 		if (bHeldCounter > 46) {
@@ -283,6 +285,8 @@ bool menu_runMenu(void *currXfb) {
 				displayInstructions = !displayInstructions;
 			}
 		}
+		
+		// change bottom message depending on what menu we are in
 		switch (currentMenu) {
 			case MAIN_MENU:
 				printStr("Press Start to exit.", currXfb);
@@ -306,6 +310,7 @@ bool menu_runMenu(void *currXfb) {
 				}
 				break;
 			case PLOT_BUTTON:
+				// don't print anything when exiting is disabled
 				if (menu_plotButtonHasCaptureStarted()) {
 					break;
 				}
@@ -316,6 +321,7 @@ bool menu_runMenu(void *currXfb) {
 		bHeldCounter = 0;
 	}
 
+	// default case, tells main.c while loop to continue
 	return false;
 }
 
@@ -374,6 +380,7 @@ void menu_mainMenu(void *currXfb) {
 
 	// does the user want to move into another menu?
 	// else if to ensure that the A press is separate from any dpad stuff
+	// TODO: maybe reorder the enum so that the number and enum match up?
 	else if (pressed & PAD_BUTTON_A) {
 		switch (mainMenuSelection) {
 			case 0:
@@ -425,6 +432,9 @@ void menu_mainMenu(void *currXfb) {
 	}
 }
 
+// controller test submenu
+// basic visual button and stick test
+// also shows coordinates (raw and melee converted), and origin values
 void menu_controllerTest(void *currXfb) {
 	// melee stick coordinates stuff
 	// a lot of this comes from github.com/phobgcc/phobconfigtool
@@ -690,21 +700,12 @@ void menu_controllerTest(void *currXfb) {
 				COLOR_RED, currXfb);
 	}
 	
-	
 	setCursorPos(17,2);
 	sprintf(strBuffer, "Analog L: %d", PAD_TriggerL(0));
 	printStr(strBuffer, currXfb);
 	if (held & PAD_TRIGGER_L) {
 		setCursorPos(18, 2);
 		printStr("Digital L Pressed", currXfb);
-	}
-	
-	setCursorPos(17,44);
-	sprintf(strBuffer, "Analog R: %d", PAD_TriggerR(0));
-	printStr(strBuffer, currXfb);
-	if (held & PAD_TRIGGER_R) {
-		setCursorPos(18, 40);
-		printStr("Digital R Pressed", currXfb);
 	}
 	
 	// Analog R Slider
@@ -719,6 +720,14 @@ void menu_controllerTest(void *currXfb) {
 		DrawFilledBox(CONT_TEST_TRIGGER_R_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerR(0)),
 		              CONT_TEST_TRIGGER_R_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
 		              COLOR_RED, currXfb);
+	}
+	
+	setCursorPos(17,44);
+	sprintf(strBuffer, "Analog R: %d", PAD_TriggerR(0));
+	printStr(strBuffer, currXfb);
+	if (held & PAD_TRIGGER_R) {
+		setCursorPos(18, 40);
+		printStr("Digital R Pressed", currXfb);
 	}
 
 	// Analog Stick
@@ -766,10 +775,10 @@ void menu_controllerTest(void *currXfb) {
 }
 
 void menu_fileExport(void *currXfb) {
-	// run if we have a result
-	//if (exportReturnCode >= 0) {
+	// make sure data is actually present
 	if (data.isDataReady) {
 		if (data.exported) {
+			// print status after print
 			switch (exportReturnCode) {
 				case 0:
 					printStr("File exported successfully.", currXfb);
@@ -799,6 +808,9 @@ void menu_fileExport(void *currXfb) {
 	}
 }
 
+// coordinate viewer submenu
+// draws melee coordinates for both sticks on a circle
+// "overlays" can be toggled to show specific coordinate groups (shield drop, for example)
 void menu_coordinateViewer(void *currXfb) {
 	// melee stick coordinates stuff
 	// a lot of this comes from github.com/phobgcc/phobconfigtool
@@ -979,6 +991,7 @@ void menu_coordinateViewer(void *currXfb) {
 	}
 }
 
+// self-explanatory
 void menu_thanksPage(void *currXfb) {
 	printStr("Thanks to:\n"
 			 "PhobGCC team and Discord\n"

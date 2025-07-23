@@ -133,7 +133,8 @@ static void plot2dSamplingCallback() {
 			bool setStartPoint = false;
 			// just wait for stick to return to center
 			if (autoCapture) {
-				// 23 is the melee deadzone
+				// using the melee deadzone values (+-23) instead of +-10,
+				// since most controllers will be configured to not go past these values
 				if (abs(PAD_StickX(0)) < 23 && abs(PAD_StickY(0)) < 23) {
 					setStartPoint = true;
 					// needed since stick will move fast if released, triggering another capture

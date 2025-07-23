@@ -2,6 +2,9 @@
 // Created on 2025/03/17.
 //
 
+// Continuous Oscilloscope submenu
+// continuously displays stick and c-stick coordinates over time
+
 #ifndef GTS_CONTINUOUS_H
 #define GTS_CONTINUOUS_H
 
