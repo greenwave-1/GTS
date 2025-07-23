@@ -133,8 +133,11 @@ static void plot2dSamplingCallback() {
 			bool setStartPoint = false;
 			// just wait for stick to return to center
 			if (autoCapture) {
-				if (abs(PAD_StickX(0)) < 10 && abs(PAD_StickY(0) < 10)) {
+				// 23 is the melee deadzone
+				if (abs(PAD_StickX(0)) < 23 && abs(PAD_StickY(0)) < 23) {
 					setStartPoint = true;
+					// needed since stick will move fast if released, triggering another capture
+					captureStartFrameCooldown = 5;
 				}
 			// wait for A to be released before allowing data capture
 			} else if (*held == 0) {
@@ -176,6 +179,9 @@ static void plot2dSamplingCallback() {
 			noMovementTimer = 0;
 			captureStart = false;
 		}
+	} else {
+		// added to reset values to look for after captureStartFrameCooldown finishes when autocapturing
+		prevPosX = 0, prevPosY = 0;
 	}
 }
 
@@ -543,6 +549,8 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 						autoCaptureCounter++;
 						if (autoCaptureCounter == 120) {
 							autoCapture = !autoCapture;
+							captureStart = false;
+							haveStartPoint = false;
 							buttonLock = true;
 							buttonPressCooldown = 5;
 							autoCaptureCounter = 0;
