@@ -574,8 +574,6 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 					if (ellipseCounter == 60) {
 						ellipseCounter = 0;
 					}
-					sprintf(strBuffer, "\nCapStart: %d, haveStart: %d, initX: %d, initY: %d", captureStart, haveStartPoint, prevPosX, prevPosY);
-					printStr(strBuffer, currXfb);
 					break;
 				default:
 					printStr("how did we get here?", currXfb);
