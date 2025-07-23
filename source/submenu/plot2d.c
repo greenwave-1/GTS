@@ -25,6 +25,7 @@ static u32 *pressed = NULL;
 static u32 *held = NULL;
 static bool buttonLock = false;
 static u8 buttonPressCooldown = 0;
+static u8 captureStartFrameCooldown = 0;
 
 static enum PLOT_2D_MENU_STATE menuState = PLOT_SETUP;
 static enum PLOT_2D_STATE plotState = PLOT_INPUT;
@@ -45,6 +46,8 @@ static WaveformDatapoint convertedCoords;
 static int map2dStartIndex = 0;
 static int lastDrawPoint = -1;
 
+static bool autoCapture = false;
+static int autoCaptureCounter = 0;
 
 // enum for what image to draw in 2d plot
 static enum IMAGE selectedImage = NO_IMAGE;
@@ -81,7 +84,7 @@ static void plot2dSamplingCallback() {
 	
 	*held = PAD_ButtonsHeld(0);
 	
-	if (plotState == PLOT_INPUT) {
+	if ((plotState == PLOT_INPUT || autoCapture) && captureStartFrameCooldown == 0) {
 		// are we already capturing data?
 		if (captureStart) {
 			prevPosX = currPosX;
@@ -117,6 +120,7 @@ static void plot2dSamplingCallback() {
 						data->endPoint = noMovementStartIndex;
 					}
 					data->isDataReady = true;
+					captureStartFrameCooldown = 5;
 					plotState = PLOT_DISPLAY;
 				}
 			} else {
@@ -126,11 +130,19 @@ static void plot2dSamplingCallback() {
 		
 		// get our initial start point, needed to know when to start actually recording
 		} else if (!haveStartPoint) {
+			bool setStartPoint = false;
+			// just wait for stick to return to center
+			if (autoCapture) {
+				if (abs(PAD_StickX(0)) < 10 && abs(PAD_StickY(0) < 10)) {
+					setStartPoint = true;
+				}
 			// wait for A to be released before allowing data capture
-			if (*held == 0) {
+			} else if (*held == 0) {
+				setStartPoint = true;
+			}
+			if (setStartPoint) {
 				prevPosX = PAD_StickX(0);
 				prevPosY = PAD_StickY(0);
-				data->isDataReady = false;
 				data->exported = false;
 				haveStartPoint = true;
 			}
@@ -138,7 +150,8 @@ static void plot2dSamplingCallback() {
 		} else {
 			currPosX = PAD_StickX(0);
 			currPosY = PAD_StickY(0);
-			if ( abs(currPosX - prevPosX) >= 10 || abs (currPosY - prevPosY) >= 10 || *held != 0) {
+			if ( abs(currPosX - prevPosX) >= 10 || abs (currPosY - prevPosY) >= 10 ||
+					(*held != 0 && !autoCapture)) {
 				captureStart = true;
 				data->data[0].ax = currPosX;
 				data->data[0].ay = currPosY;
@@ -147,10 +160,11 @@ static void plot2dSamplingCallback() {
 				data->data[0].buttonsHeld = *held;
 				data->data[0].timeDiffUs = 0;
 				data->endPoint = 1;
+				data->isDataReady = false;
 			}
 		}
 		
-		if (data->isDataReady) {
+		if (data->isDataReady && captureStart) {
 			// calculate total read time
 			for (int i = 0; i < data->endPoint; i++) {
 				data->totalTimeUs += data->data[i].timeDiffUs;
@@ -179,14 +193,19 @@ static void setup(WaveformData *d, u32 *p, u32 *h) {
 
 static void displayInstructions(void *currXfb) {
 	setCursorPos(2, 0);
-	printStr("Press X to cycle the stickmap background. Use DPAD\n"
-			 "left/right to change what the last point drawn is.\n"
-			 "Information on the last chosen point is displayed\n"
-			 "at the bottom. Hold R to add or remove points faster.\n"
+	printStr("Press A to prepare a recording. Recording will start with\n"
+			 "any button press, or the stick moving.\n"
+			 "Press X to cycle the stickmap background. Use DPAD left/right\n"
+			 "to change what the last point drawn is. Information on the\n"
+			 "last chosen point is shown on the left.\n\n"
+			 "Hold R to add or remove points faster.\n"
 	         "Hold L to move one point at a time.\n\n"
 			 "Hold Y to move the \"starting sample\" with the\n"
 	         "same controls as above. Information for the selected\n"
-			 "range is shown on the left.", currXfb);
+			 "range is shown on the left.\n\n"
+	         "Hold Start to toggle Auto-Trigger. Enabling this removes\n"
+	         "the need to press A, but disables the instruction menu and\n"
+	         "only allows the stick to start a recording.\n", currXfb);
 	
 	setCursorPos(21, 0);
 	printStr("Press Z to close instructions.", currXfb);
@@ -211,7 +230,9 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 		case PLOT_POST_SETUP:
 			switch(plotState) {
 				case PLOT_DISPLAY:
-					printStr("Press A to start read, press Z for instructions", currXfb);
+					if (!autoCapture) {
+						printStr("Press A to start read, press Z for instructions", currXfb);
+					}
 					
 					// check if last draw point needs to be reset
 					if (lastDrawPoint == -1) {
@@ -229,7 +250,7 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 						printStr(strBuffer, currXfb);
 						
 						// show button presses of last drawn point
-						setCursorPos(15,0);
+						setCursorPos(11,0);
 						printStr("Buttons Pressed:\n", currXfb);
 						if (data->data[lastDrawPoint].buttonsHeld & PAD_BUTTON_A) {
 							printStr("A ", currXfb);
@@ -255,7 +276,7 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 						
 						// print coordinates of last drawn point
 						// raw stick coordinates
-						setCursorPos(19, 0);
+						setCursorPos(14, 0);
 						sprintf(strBuffer, "Raw XY: (%04d,%04d)\n", data->data[lastDrawPoint].ax,
 						        data->data[lastDrawPoint].ay);
 						printStr(strBuffer, currXfb);
@@ -288,7 +309,7 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 							sprintf(strBuffer, "0.%04d", convertedCoords.ay);
 							printStr(strBuffer, currXfb);
 						}
-						printStr(")\n", currXfb);
+						printStr(")\n\n", currXfb);
 						printStr("Stickmap: ", currXfb);
 						
 						// draw image below 2d plot, and print while we're at it
@@ -493,14 +514,14 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 					}
 					
 					if (!buttonLock) {
-						if (*pressed & PAD_TRIGGER_Z) {
+						if (*pressed & PAD_TRIGGER_Z && !autoCapture) {
 							menuState = PLOT_INSTRUCTIONS;
 							buttonLock = true;
 							buttonPressCooldown = 5;
 						}
 					}
 					
-					if (*pressed & PAD_BUTTON_A && !buttonLock) {
+					if ((*pressed & PAD_BUTTON_A && !buttonLock && !autoCapture) || captureStart) {
 						plotState = PLOT_INPUT;
 						lastDrawPoint = -1;
 						map2dStartIndex = 0;
@@ -508,17 +529,53 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 						buttonLock = true;
 						buttonPressCooldown = 5;
 					}
-					break;
+					
+					// toggle auto-capture
+					setCursorPos(21, 0);
+					if (*held == PAD_BUTTON_START && !buttonLock && !captureStart) {
+						if (autoCapture) {
+							printStr("Disabling ", currXfb);
+						} else {
+							printStr("Enabling ", currXfb);
+						}
+						printStr("Auto-Trigger", currXfb);
+						printEllipse(autoCaptureCounter, 40, currXfb);
+						autoCaptureCounter++;
+						if (autoCaptureCounter == 120) {
+							autoCapture = !autoCapture;
+							buttonLock = true;
+							buttonPressCooldown = 5;
+							autoCaptureCounter = 0;
+						}
+					} else {
+						printStr("Hold start to toggle Auto-Trigger.", currXfb);
+						autoCaptureCounter = 0;
+					}
+					
+					if (captureStartFrameCooldown != 0) {
+						captureStartFrameCooldown--;
+					}
+					
+					if (!autoCapture) {
+						break;
+					}
 				case PLOT_INPUT:
 					// nothing happens here other than showing the message about waiting for an input
 					// the sampling callback function will change the plotState enum when an input is done
 					setCursorPos(2,0);
-					printStr("Waiting for input.", currXfb);
+					if (autoCapture) {
+						printStr("Auto-Trigger enabled, w", currXfb);
+					} else {
+						printStr("W", currXfb);
+					}
+					printStr("aiting for input.", currXfb);
 					printEllipse(ellipseCounter, 20, currXfb);
 					ellipseCounter++;
 					if (ellipseCounter == 60) {
 						ellipseCounter = 0;
 					}
+					sprintf(strBuffer, "\nCapStart: %d, haveStart: %d, initX: %d, initY: %d", captureStart, haveStartPoint, prevPosX, prevPosY);
+					printStr(strBuffer, currXfb);
 					break;
 				default:
 					printStr("how did we get here?", currXfb);
@@ -551,6 +608,8 @@ void menu_plot2dEnd() {
 	held = NULL;
 	menuState = PLOT_SETUP;
 	lastDrawPoint = -1;
+	autoCaptureCounter = 0;
+	autoCapture = false;
 	if (!data->isDataReady) {
 		// reset stuff
 		data->endPoint = 0;

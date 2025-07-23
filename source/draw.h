@@ -12,7 +12,7 @@
 // TODO: replace this with a function call that takes into account other tv modes (pal)
 #define SCREEN_POS_CENTER_X 320
 #define SCREEN_POS_CENTER_Y 240
-#define COORD_CIRCLE_CENTER_X 400
+#define COORD_CIRCLE_CENTER_X 450
 
 // Controller Test coordinates
 // analog triggers
