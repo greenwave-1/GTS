@@ -218,59 +218,32 @@ bool menu_runMenu(void *currXfb) {
 	else if (held == PAD_BUTTON_START && currentMenu == CONTROLLER_TEST && !startHeldAfter) {
 		if (lockExitControllerTest) {
 			printStr("Enabling exit, hold for 2 seconds", currXfb);
-			startHeldCounter++;
-			if (startHeldCounter > 40) {
-				printStr(".", currXfb);
-			}
-			if (startHeldCounter > 80) {
-				printStr(".", currXfb);
-			}
-			if (startHeldCounter > 120) {
-				printStr(".", currXfb);
-			}
-			if (startHeldCounter > 121) {
-				lockExitControllerTest = false;
-				startHeldCounter = 0;
-				startHeldAfter = true;
-			}
 		} else {
 			printStr("Disabling exit, hold for 2 seconds", currXfb);
-			startHeldCounter++;
-			if (startHeldCounter > 40) {
-				printStr(".", currXfb);
-			}
-			if (startHeldCounter > 80) {
-				printStr(".", currXfb);
-			}
-			if (startHeldCounter > 120) {
-				printStr(".", currXfb);
-			}
-			if (startHeldCounter > 121) {
-				lockExitControllerTest = true;
-				startHeldCounter = 0;
-				startHeldAfter = true;
-			}
+		}
+		printEllipse(startHeldCounter, 40, currXfb);
+		
+		startHeldCounter++;
+		if (startHeldCounter > 121) {
+			lockExitControllerTest = !lockExitControllerTest;
+			startHeldCounter = 0;
+			startHeldAfter = true;
 		}
 	}
 
 	// does the user want to move back to the main menu?
-	else if (held & PAD_BUTTON_B && currentMenu != MAIN_MENU && !lockExitControllerTest) {
-		bHeldCounter++;
+	else if (held == PAD_BUTTON_B && currentMenu != MAIN_MENU &&
+			!lockExitControllerTest &&
+			!menu_plotButtonHasCaptureStarted()) {
 
 		// give user feedback that they are holding the button
 		printStr("Moving back to main menu", currXfb);
 
 		// TODO: I know there's a better way to do this but I can't think of it right now...
-		if (bHeldCounter > 15) {
-			printStr(".", currXfb);
-		}
-		if (bHeldCounter > 30) {
-			printStr(".", currXfb);
-		}
-		if (bHeldCounter > 45) {
-			printStr(".", currXfb);
-		}
-
+		printEllipse(bHeldCounter, 15, currXfb);
+		bHeldCounter++;
+		
+		
 		// has the button been held long enough?
 		if (bHeldCounter > 46) {
 			// special exit stuff that needs to happen for certain menus
@@ -310,27 +283,35 @@ bool menu_runMenu(void *currXfb) {
 				displayInstructions = !displayInstructions;
 			}
 		}
-		if (currentMenu == CONTROLLER_TEST) {
-			if (lockExitControllerTest) {
-				printStr("Exiting disabled, hold Start to re-enable.", currXfb);
-			} else {
-				printStr("Hold B to return to main menu, hold start to disable.", currXfb);
-			}
-			startHeldCounter = 0;
-			
-			if (startHeldAfter && held ^ PAD_BUTTON_START) {
-				startHeldAfter = false;
-			}
-		} else if (currentMenu != MAIN_MENU) {
-			printStr("Hold B to return to main menu.", currXfb);
-		} else {
-			printStr("Press Start to exit.", currXfb);
-			int col = 55 - (sizeof(VERSION_NUMBER));
-			if (col > 25) {
-				setCursorPos(22, col);
-				printStr("Ver: ", currXfb);
-				printStr(VERSION_NUMBER, currXfb);
-			}
+		switch (currentMenu) {
+			case MAIN_MENU:
+				printStr("Press Start to exit.", currXfb);
+				int col = 55 - (sizeof(VERSION_NUMBER));
+				if (col > 25) {
+					setCursorPos(22, col);
+					printStr("Ver: ", currXfb);
+					printStr(VERSION_NUMBER, currXfb);
+				}
+				break;
+			case CONTROLLER_TEST:
+				if (lockExitControllerTest) {
+					printStr("Exiting disabled, hold Start to re-enable.", currXfb);
+				} else {
+					printStr("Hold B to return to main menu, hold start to disable.", currXfb);
+				}
+				startHeldCounter = 0;
+				
+				if (startHeldAfter && held ^ PAD_BUTTON_START) {
+					startHeldAfter = false;
+				}
+				break;
+			case PLOT_BUTTON:
+				if (menu_plotButtonHasCaptureStarted()) {
+					break;
+				}
+			default:
+				printStr("Hold B to return to main menu.", currXfb);
+				break;
 		}
 		bHeldCounter = 0;
 	}
