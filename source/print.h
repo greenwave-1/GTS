@@ -35,6 +35,8 @@ void drawString(unsigned char bitmap[],
 void printStr(const char* str, void *xfb);
 void printStrColor(const char* str, void *xfb, const uint32_t bg_color, const uint32_t fg_color);
 
+void printEllipse(const int counter, const int interval, void *currXfb);
+
 void resetCursor();
 void setCursorPos(int row, int col);
 
