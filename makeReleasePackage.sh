@@ -1,7 +1,7 @@
 #!/bin/bash
 # this script will make a zip for uploading to github as a release.
 # this script expects to be ran from the root directory of the project,
-# and expects 1 argument, a version number
+# and expects 1 argument, a version string
 
 if [ $# -ne 1 ]
 then
@@ -12,7 +12,7 @@ fi
 #FILENAME=`basename "$PWD"`
 DATE=`date -I`
 
-make release version=$1
+make release version=$1 -j$(nproc)
 
 mkdir -p release/wii/apps/GTS
 cp wii-homebrew-channel-data/meta.xml release/wii/apps/GTS/
