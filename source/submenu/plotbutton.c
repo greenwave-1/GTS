@@ -22,9 +22,9 @@ const static int SCREEN_CHAR_SIZE = 14;
 const static char* BUTTON_STR[13] = { "A", "B", "X", "Y",
 									  "L", "La", "R", "Ra", "Z",
 									  "AX", "AY", "CX", "CY"};
-
-//const static u32 DETECTABLE_BUTTONS = PAD_BUTTON_A | PAD_BUTTON_B | PAD_BUTTON_X | PAD_BUTTON_Y |
-//		PAD_TRIGGER_L | PAD_TRIGGER_R | PAD_TRIGGER_Z;
+const static u32 BUTTON_MASKS[13] = { PAD_BUTTON_A, PAD_BUTTON_B, PAD_BUTTON_X, PAD_BUTTON_Y,
+									  PAD_TRIGGER_L, 0, PAD_TRIGGER_R, 0, PAD_TRIGGER_Z,
+									  0, 0, 0, 0 };
 
 static char strBuffer[100];
 
@@ -280,233 +280,62 @@ void menu_plotButton(void *currXfb, u32 *p, u32 *h) {
 							}
 							
 							// button press lines
-							// each is separated by a multiple of 17, since that's the spacing between drawn chars
 							// we also get frame count here
-							
-							// A
-							if (data[i].buttonsHeld & PAD_BUTTON_A) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP,
-										  SCREEN_TIMEPLOT_CHAR_TOP + SCREEN_CHAR_SIZE,
-										  COLOR_WHITE, currXfb);
-								if (!buttons[0].pressFinished) {
-									if (A == triggeringInputDisplay) {
-										buttons[0].timeHeld += data[i].timeDiffUs;
-									} else {
-										buttons[0].timeHeld = totalTimeUs;
-										buttons[0].pressFinished = true;
+							for (enum PLOT_BUTTON_LIST currButton = A; currButton < NO_BUTTON; currButton++) {
+								bool result = false;
+								switch (currButton) {
+									// handle all specific cases
+									case AX:
+										result = abs(data[i].ax) >= stickThreshold;
+										break;
+									case AY:
+										result = abs(data[i].ay) >= stickThreshold;
+										break;
+									case CX:
+										result = abs(data[i].cx) >= stickThreshold;
+										break;
+									case CY:
+										result = abs(data[i].cy) >= stickThreshold;
+										break;
+									case La:
+										result = data[i].triggers.triggerLAnalog >= triggerThreshold;
+										break;
+									case Ra:
+										result = data[i].triggers.triggerRAnalog >= triggerThreshold;
+										break;
+										// "normal" cases
+									default:
+										result = data[i].buttonsHeld & BUTTON_MASKS[currButton];
+										break;
+								}
+								
+								// draw bar if button state was triggered
+								if (result) {
+									DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
+									          SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
+									          COLOR_WHITE, currXfb);
+									
+									// check timing stuff
+									if (!buttons[currButton].pressFinished) {
+										// triggering input should have length of time that the first input was held
+										if (currButton == triggeringInputDisplay) {
+											buttons[currButton].timeHeld += data[i].timeDiffUs;
+										}
+										// other buttons should have time from start to first poll
+										else {
+											buttons[currButton].timeHeld = totalTimeUs;
+											buttons[currButton].pressFinished = true;
+										}
+									}
+									// mark button as finished for timing when let go, only triggering input
+									else if (buttons[currButton].timeHeld != 0) {
+										buttons[currButton].pressFinished = true;
 									}
 								}
-							} else if (buttons[0].timeHeld != 0) {
-								buttons[0].pressFinished = true;
-							}
-							
-							// B
-							if (data[i].buttonsHeld & PAD_BUTTON_B) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + 17,
-								          SCREEN_TIMEPLOT_CHAR_TOP + 17 + SCREEN_CHAR_SIZE,
-								          COLOR_WHITE, currXfb);
-								if (!buttons[1].pressFinished) {
-									if (B == triggeringInputDisplay) {
-										buttons[1].timeHeld += data[i].timeDiffUs;
-									} else {
-										buttons[1].timeHeld = totalTimeUs;
-										buttons[1].pressFinished = true;
-									}
-								}
-							} else if (buttons[1].timeHeld != 0) {
-								buttons[1].pressFinished = true;
-							}
-							
-							// X
-							if (data[i].buttonsHeld & PAD_BUTTON_X) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + 34,
-								          SCREEN_TIMEPLOT_CHAR_TOP + 34 + SCREEN_CHAR_SIZE,
-								          COLOR_WHITE, currXfb);
-								if (!buttons[2].pressFinished) {
-									if (X == triggeringInputDisplay) {
-										buttons[2].timeHeld += data[i].timeDiffUs;
-									} else {
-										buttons[2].timeHeld = totalTimeUs;
-										buttons[2].pressFinished = true;
-									}
-								}
-							} else if (buttons[2].timeHeld != 0) {
-								buttons[2].pressFinished = true;
-							}
-							
-							// Y
-							if (data[i].buttonsHeld & PAD_BUTTON_Y) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + 51,
-								          SCREEN_TIMEPLOT_CHAR_TOP + 51 + SCREEN_CHAR_SIZE,
-								          COLOR_WHITE, currXfb);
-								if (!buttons[3].pressFinished) {
-									if (Y == triggeringInputDisplay) {
-										buttons[3].timeHeld += data[i].timeDiffUs;
-									} else {
-										buttons[3].timeHeld = totalTimeUs;
-										buttons[3].pressFinished = true;
-									}
-								}
-							} else if (buttons[3].timeHeld != 0) {
-								buttons[3].pressFinished = true;
-							}
-							
-							// Digital L
-							if (data[i].buttonsHeld & PAD_TRIGGER_L) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + 68,
-								          SCREEN_TIMEPLOT_CHAR_TOP + 68 + SCREEN_CHAR_SIZE,
-								          COLOR_WHITE, currXfb);
-								if (!buttons[4].pressFinished) {
-									if (L == triggeringInputDisplay) {
-										buttons[4].timeHeld += data[i].timeDiffUs;
-									} else {
-										buttons[4].timeHeld = totalTimeUs;
-										buttons[4].pressFinished = true;
-									}
-								}
-							} else if (buttons[4].timeHeld != 0) {
-								buttons[4].pressFinished = true;
-							}
-							
-							// Analog L
-							if (data[i].triggers.triggerLAnalog >= triggerThreshold) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + 85,
-								          SCREEN_TIMEPLOT_CHAR_TOP + 85 + SCREEN_CHAR_SIZE,
-								          COLOR_WHITE, currXfb);
-								if (!buttons[5].pressFinished) {
-									if (La == triggeringInputDisplay) {
-										buttons[5].timeHeld += data[i].timeDiffUs;
-									} else {
-										buttons[5].timeHeld = totalTimeUs;
-										buttons[5].pressFinished = true;
-									}
-								}
-							} else if (buttons[5].timeHeld != 0) {
-								buttons[5].pressFinished = true;
-							}
-							
-							// Digital R
-							if (data[i].buttonsHeld & PAD_TRIGGER_R) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + 102,
-								          SCREEN_TIMEPLOT_CHAR_TOP + 102 + SCREEN_CHAR_SIZE,
-								          COLOR_WHITE, currXfb);
-								if (!buttons[6].pressFinished) {
-									if (R == triggeringInputDisplay) {
-										buttons[6].timeHeld += data[i].timeDiffUs;
-									} else {
-										buttons[6].timeHeld = totalTimeUs;
-										buttons[6].pressFinished = true;
-									}
-								}
-							} else if (buttons[6].timeHeld != 0) {
-								buttons[6].pressFinished = true;
-							}
-							
-							// Analog R
-							if (data[i].triggers.triggerRAnalog >= triggerThreshold) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + 119,
-								          SCREEN_TIMEPLOT_CHAR_TOP + 119 + SCREEN_CHAR_SIZE,
-								          COLOR_WHITE, currXfb);
-								if (!buttons[7].pressFinished) {
-									if (Ra == triggeringInputDisplay) {
-										buttons[7].timeHeld += data[i].timeDiffUs;
-									} else {
-										buttons[7].timeHeld = totalTimeUs;
-										buttons[7].pressFinished = true;
-									}
-								}
-							} else if (buttons[7].timeHeld != 0) {
-								buttons[7].pressFinished = true;
-							}
-							
-							// Z
-							if (data[i].buttonsHeld & PAD_TRIGGER_Z) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + 136,
-								          SCREEN_TIMEPLOT_CHAR_TOP + 136 + SCREEN_CHAR_SIZE,
-								          COLOR_WHITE, currXfb);
-								if (!buttons[8].pressFinished) {
-									if (Z == triggeringInputDisplay) {
-										buttons[8].timeHeld += data[i].timeDiffUs;
-									} else {
-										buttons[8].timeHeld = totalTimeUs;
-										buttons[8].pressFinished = true;
-									}
-								}
-							} else if (buttons[8].timeHeld != 0) {
-								buttons[8].pressFinished = true;
-							}
-							
-							// Stick X Axis
-							if (data[i].ax >= stickThreshold || data[i].ax <= -stickThreshold) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + 153,
-								          SCREEN_TIMEPLOT_CHAR_TOP + 153 + SCREEN_CHAR_SIZE,
-								          COLOR_WHITE, currXfb);
-								if (!buttons[9].pressFinished) {
-									if (AX == triggeringInputDisplay) {
-										buttons[9].timeHeld += data[i].timeDiffUs;
-									} else {
-										buttons[9].timeHeld = totalTimeUs;
-										buttons[9].pressFinished = true;
-									}
-								}
-							} else if (buttons[9].timeHeld != 0) {
-								buttons[9].pressFinished = true;
-							}
-							
-							// Stick Y Axis
-							if (data[i].ay >= stickThreshold || data[i].ay <= -stickThreshold) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + 170,
-								          SCREEN_TIMEPLOT_CHAR_TOP + 170 + SCREEN_CHAR_SIZE,
-								          COLOR_WHITE, currXfb);
-								if (!buttons[10].pressFinished) {
-									if (AY == triggeringInputDisplay) {
-										buttons[10].timeHeld += data[i].timeDiffUs;
-									} else {
-										buttons[10].timeHeld = totalTimeUs;
-										buttons[10].pressFinished = true;
-									}
-								}
-							} else if (buttons[10].timeHeld != 0) {
-								buttons[10].pressFinished = true;
-							}
-							
-							// C-Stick X Axis
-							if (data[i].cx >= stickThreshold || data[i].cx <= -stickThreshold) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + 187,
-								          SCREEN_TIMEPLOT_CHAR_TOP + 187 + SCREEN_CHAR_SIZE,
-								          COLOR_WHITE, currXfb);
-								if (!buttons[11].pressFinished) {
-									if (CX == triggeringInputDisplay) {
-										buttons[11].timeHeld += data[i].timeDiffUs;
-									} else {
-										buttons[11].timeHeld = totalTimeUs;
-										buttons[11].pressFinished = true;
-									}
-								}
-							} else if (buttons[11].timeHeld != 0) {
-								buttons[11].pressFinished = true;
-							}
-							
-							// C-Stick Y Axis
-							if (data[i].cy >= stickThreshold || data[i].cy <= -stickThreshold) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + 204,
-								          SCREEN_TIMEPLOT_CHAR_TOP + 204 + SCREEN_CHAR_SIZE,
-								          COLOR_WHITE, currXfb);
-								if (!buttons[12].pressFinished) {
-									if (CY == triggeringInputDisplay) {
-										buttons[12].timeHeld += data[i].timeDiffUs;
-									} else {
-										buttons[12].timeHeld = totalTimeUs;
-										buttons[12].pressFinished = true;
-									}
-								}
-							} else if (buttons[12].timeHeld != 0) {
-								buttons[12].pressFinished = true;
 							}
 						}
 						
 						// draw frame durations
-						
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
 							if (buttons[button].timeHeld != 0) {
 								setCursorPos(7 + button, 52);
