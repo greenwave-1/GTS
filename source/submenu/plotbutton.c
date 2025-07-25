@@ -303,7 +303,7 @@ void menu_plotButton(void *currXfb, u32 *p, u32 *h) {
 									case Ra:
 										result = data[i].triggers.triggerRAnalog >= triggerThreshold;
 										break;
-										// "normal" cases
+									// "normal" cases
 									default:
 										result = data[i].buttonsHeld & BUTTON_MASKS[currButton];
 										break;
