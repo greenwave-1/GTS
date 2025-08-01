@@ -2,6 +2,8 @@
 // Created on 2025/03/14.
 //
 
+// utilities for drawing the phobvision font, and handing a virtual cursor
+
 // the majority of this was adapted from the Phobgcc PhobVision code:
 // https://github.com/PhobGCC/PhobGCC-SW/tree/main/PhobGCC/rp2040
 
@@ -34,6 +36,8 @@ void drawString(unsigned char bitmap[],
 
 void printStr(const char* str, void *xfb);
 void printStrColor(const char* str, void *xfb, const uint32_t bg_color, const uint32_t fg_color);
+
+void printEllipse(const int counter, const int interval, void *currXfb);
 
 void resetCursor();
 void setCursorPos(int row, int col);

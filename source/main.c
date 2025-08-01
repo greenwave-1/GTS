@@ -203,6 +203,7 @@ int main(int argc, char **argv) {
 	}
 	
 	// main loop of the program
+	// exits when menu_runMenu() returns true, or when either power or reset are pressed
 	while (true) {
 		#if defined(HW_RVL)
 		if (powerButtonPressed) {

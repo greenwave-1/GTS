@@ -21,15 +21,13 @@
 #include "submenu/trigger.h"
 #include "submenu/plot2d.h"
 #include "submenu/gate.h"
+#include "submenu/plotbutton.h"
 
 #ifndef VERSION_NUMBER
 #define VERSION_NUMBER "NOVERS_DEV"
 #endif
 
-#define MENUITEMS_LEN 8
-
-// 500 values displayed at once, SCREEN_POS_CENTER_X +/- 250
-#define SCREEN_TIMEPLOT_START 70
+#define MENUITEMS_LEN 9
 
 // macro for how far the stick has to go before it counts as a movement
 #define MENU_STICK_THRESHOLD 10
@@ -70,7 +68,7 @@ static bool stickLockout = false;
 // menu item strings
 //static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Coordinate Viewer", "2D Plot", "Export Data", "Continuous Waveform" };
 static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Continuous Stick Oscilloscope", "Trigger Oscilloscope",
-                                                "Coordinate Viewer", "2D Plot", "Gate Visualizer", "Export Data"};
+                                                "Coordinate Viewer", "2D Plot", "Button Timing Viewer", "Gate Visualizer", "Export Data"};
 
 
 static bool displayInstructions = false;
@@ -79,12 +77,15 @@ static int exportReturnCode = -1;
 
 static u32 padsConnected = 0;
 
+// stores the controller origin values
 static PADStatus origin[PAD_CHANMAX];
 static bool originRead = false;
 
 // buffer for strings with numbers and stuff using sprintf
 static char strBuffer[100];
 
+// some consumer crt tvs have alignment issues,
+// this determines if certain vertical lines are doubled
 static bool setDrawInterlaceMode = false;
 
 static u8 thanksPageCounter = 0;
@@ -131,9 +132,10 @@ bool menu_runMenu(void *currXfb) {
 	// check for any buttons pressed/held
 	// don't update if we are on a menu with its own callback
 	// TODO: eventually I'd like each menu entry to be in its own file, would that affect this?
+	// TODO: This is getting messy, there's probably a better way to do this...
 	if (currentMenu != WAVEFORM && currentMenu != CONTINUOUS_WAVEFORM &&
 			currentMenu != PLOT_2D && currentMenu != TRIGGER_WAVEFORM &&
-			currentMenu != GATE_MEASURE) {
+			currentMenu != GATE_MEASURE && currentMenu != PLOT_BUTTON) {
 		pressed = PAD_ButtonsDown(0);
 		held = PAD_ButtonsHeld(0);
 	}
@@ -195,6 +197,9 @@ bool menu_runMenu(void *currXfb) {
 			}
 			menu_gateMeasure(currXfb, &pressed, &held);
 			break;
+		case PLOT_BUTTON:
+			menu_plotButton(currXfb, &pressed, &held);
+			break;
 		default:
 			printStr("HOW DID WE END UP HERE?\n", currXfb);
 			break;
@@ -212,63 +217,35 @@ bool menu_runMenu(void *currXfb) {
 		printStr("Exiting...", currXfb);
 		return true;
 	}
+	
 	// controller test lock stuff
 	else if (held == PAD_BUTTON_START && currentMenu == CONTROLLER_TEST && !startHeldAfter) {
 		if (lockExitControllerTest) {
 			printStr("Enabling exit, hold for 2 seconds", currXfb);
-			startHeldCounter++;
-			if (startHeldCounter > 40) {
-				printStr(".", currXfb);
-			}
-			if (startHeldCounter > 80) {
-				printStr(".", currXfb);
-			}
-			if (startHeldCounter > 120) {
-				printStr(".", currXfb);
-			}
-			if (startHeldCounter > 121) {
-				lockExitControllerTest = false;
-				startHeldCounter = 0;
-				startHeldAfter = true;
-			}
 		} else {
 			printStr("Disabling exit, hold for 2 seconds", currXfb);
-			startHeldCounter++;
-			if (startHeldCounter > 40) {
-				printStr(".", currXfb);
-			}
-			if (startHeldCounter > 80) {
-				printStr(".", currXfb);
-			}
-			if (startHeldCounter > 120) {
-				printStr(".", currXfb);
-			}
-			if (startHeldCounter > 121) {
-				lockExitControllerTest = true;
-				startHeldCounter = 0;
-				startHeldAfter = true;
-			}
+		}
+		printEllipse(startHeldCounter, 40, currXfb);
+		
+		startHeldCounter++;
+		if (startHeldCounter > 121) {
+			lockExitControllerTest = !lockExitControllerTest;
+			startHeldCounter = 0;
+			startHeldAfter = true;
 		}
 	}
 
 	// does the user want to move back to the main menu?
-	else if (held & PAD_BUTTON_B && currentMenu != MAIN_MENU && !lockExitControllerTest) {
-		bHeldCounter++;
+	// this shouldn't trigger when certain menus are currently recording an input
+	else if (held == PAD_BUTTON_B && currentMenu != MAIN_MENU &&
+			!lockExitControllerTest &&
+			!menu_plotButtonHasCaptureStarted()) {
 
 		// give user feedback that they are holding the button
 		printStr("Moving back to main menu", currXfb);
-
-		// TODO: I know there's a better way to do this but I can't think of it right now...
-		if (bHeldCounter > 15) {
-			printStr(".", currXfb);
-		}
-		if (bHeldCounter > 30) {
-			printStr(".", currXfb);
-		}
-		if (bHeldCounter > 45) {
-			printStr(".", currXfb);
-		}
-
+		printEllipse(bHeldCounter, 15, currXfb);
+		bHeldCounter++;
+		
 		// has the button been held long enough?
 		if (bHeldCounter > 46) {
 			// special exit stuff that needs to happen for certain menus
@@ -287,6 +264,10 @@ bool menu_runMenu(void *currXfb) {
 					break;
 				case GATE_MEASURE:
 					menu_gateMeasureEnd();
+					break;
+				case PLOT_BUTTON:
+					menu_plotButtonEnd();
+					break;
 				default:
 					break;
 			}
@@ -304,31 +285,43 @@ bool menu_runMenu(void *currXfb) {
 				displayInstructions = !displayInstructions;
 			}
 		}
-		if (currentMenu == CONTROLLER_TEST) {
-			if (lockExitControllerTest) {
-				printStr("Exiting disabled, hold Start to re-enable.", currXfb);
-			} else {
-				printStr("Hold B to return to main menu, hold start to disable.", currXfb);
-			}
-			startHeldCounter = 0;
-			
-			if (startHeldAfter && held ^ PAD_BUTTON_START) {
-				startHeldAfter = false;
-			}
-		} else if (currentMenu != MAIN_MENU) {
-			printStr("Hold B to return to main menu.", currXfb);
-		} else {
-			printStr("Press Start to exit.", currXfb);
-			int col = 55 - (sizeof(VERSION_NUMBER));
-			if (col > 25) {
-				setCursorPos(22, col);
-				printStr("Ver: ", currXfb);
-				printStr(VERSION_NUMBER, currXfb);
-			}
+		
+		// change bottom message depending on what menu we are in
+		switch (currentMenu) {
+			case MAIN_MENU:
+				printStr("Press Start to exit.", currXfb);
+				int col = 55 - (sizeof(VERSION_NUMBER));
+				if (col > 25) {
+					setCursorPos(22, col);
+					printStr("Ver: ", currXfb);
+					printStr(VERSION_NUMBER, currXfb);
+				}
+				break;
+			case CONTROLLER_TEST:
+				if (lockExitControllerTest) {
+					printStr("Exiting disabled, hold Start to re-enable.", currXfb);
+				} else {
+					printStr("Hold B to return to main menu, hold start to disable.", currXfb);
+				}
+				startHeldCounter = 0;
+				
+				if (startHeldAfter && held ^ PAD_BUTTON_START) {
+					startHeldAfter = false;
+				}
+				break;
+			case PLOT_BUTTON:
+				// don't print anything when exiting is disabled
+				if (menu_plotButtonHasCaptureStarted()) {
+					break;
+				}
+			default:
+				printStr("Hold B to return to main menu.", currXfb);
+				break;
 		}
 		bHeldCounter = 0;
 	}
 
+	// default case, tells main.c while loop to continue
 	return false;
 }
 
@@ -387,6 +380,7 @@ void menu_mainMenu(void *currXfb) {
 
 	// does the user want to move into another menu?
 	// else if to ensure that the A press is separate from any dpad stuff
+	// TODO: maybe reorder the enum so that the number and enum match up?
 	else if (pressed & PAD_BUTTON_A) {
 		switch (mainMenuSelection) {
 			case 0:
@@ -408,9 +402,12 @@ void menu_mainMenu(void *currXfb) {
 				currentMenu = PLOT_2D;
 				break;
 			case 6:
-				currentMenu = GATE_MEASURE;
+				currentMenu = PLOT_BUTTON;
 				break;
 			case 7:
+				currentMenu = GATE_MEASURE;
+				break;
+			case 8:
 				currentMenu = FILE_EXPORT;
 				break;
 		}
@@ -435,6 +432,9 @@ void menu_mainMenu(void *currXfb) {
 	}
 }
 
+// controller test submenu
+// basic visual button and stick test
+// also shows coordinates (raw and melee converted), and origin values
 void menu_controllerTest(void *currXfb) {
 	// melee stick coordinates stuff
 	// a lot of this comes from github.com/phobgcc/phobconfigtool
@@ -700,21 +700,12 @@ void menu_controllerTest(void *currXfb) {
 				COLOR_RED, currXfb);
 	}
 	
-	
 	setCursorPos(17,2);
 	sprintf(strBuffer, "Analog L: %d", PAD_TriggerL(0));
 	printStr(strBuffer, currXfb);
 	if (held & PAD_TRIGGER_L) {
 		setCursorPos(18, 2);
 		printStr("Digital L Pressed", currXfb);
-	}
-	
-	setCursorPos(17,44);
-	sprintf(strBuffer, "Analog R: %d", PAD_TriggerR(0));
-	printStr(strBuffer, currXfb);
-	if (held & PAD_TRIGGER_R) {
-		setCursorPos(18, 40);
-		printStr("Digital R Pressed", currXfb);
 	}
 	
 	// Analog R Slider
@@ -729,6 +720,14 @@ void menu_controllerTest(void *currXfb) {
 		DrawFilledBox(CONT_TEST_TRIGGER_R_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerR(0)),
 		              CONT_TEST_TRIGGER_R_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
 		              COLOR_RED, currXfb);
+	}
+	
+	setCursorPos(17,44);
+	sprintf(strBuffer, "Analog R: %d", PAD_TriggerR(0));
+	printStr(strBuffer, currXfb);
+	if (held & PAD_TRIGGER_R) {
+		setCursorPos(18, 40);
+		printStr("Digital R Pressed", currXfb);
 	}
 
 	// Analog Stick
@@ -776,10 +775,10 @@ void menu_controllerTest(void *currXfb) {
 }
 
 void menu_fileExport(void *currXfb) {
-	// run if we have a result
-	//if (exportReturnCode >= 0) {
+	// make sure data is actually present
 	if (data.isDataReady) {
 		if (data.exported) {
+			// print status after print
 			switch (exportReturnCode) {
 				case 0:
 					printStr("File exported successfully.", currXfb);
@@ -809,6 +808,9 @@ void menu_fileExport(void *currXfb) {
 	}
 }
 
+// coordinate viewer submenu
+// draws melee coordinates for both sticks on a circle
+// "overlays" can be toggled to show specific coordinate groups (shield drop, for example)
 void menu_coordinateViewer(void *currXfb) {
 	// melee stick coordinates stuff
 	// a lot of this comes from github.com/phobgcc/phobconfigtool
@@ -989,6 +991,7 @@ void menu_coordinateViewer(void *currXfb) {
 	}
 }
 
+// self-explanatory
 void menu_thanksPage(void *currXfb) {
 	printStr("Thanks to:\n"
 			 "PhobGCC team and Discord\n"

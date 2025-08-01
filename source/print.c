@@ -100,6 +100,14 @@ void printStrColor(const char* str, void *xfb, const uint32_t bg_color, const ui
 	drawString(xfb, bg_color, fg_color, str);
 }
 
+void printEllipse(const int counter, const int interval, void *currXfb) {
+	int remainder = counter / interval;
+	while (remainder != 0) {
+		printStr(".", currXfb);
+		remainder--;
+	}
+}
+
 void resetCursor() {
 	setCursorPos(0,0);
 }

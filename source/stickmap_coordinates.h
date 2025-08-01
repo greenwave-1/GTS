@@ -2,6 +2,8 @@
 // Created on 2025/02/22.
 //
 
+// constants for coordinate viewer drawing
+
 #include "waveform.h"
 
 #ifndef GTS_STICKMAP_COORDINATES_H

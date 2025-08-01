@@ -2,6 +2,9 @@
 // Created on 7/4/25.
 //
 
+// Gate Visualizer submenu
+// shows the bounds of a given stick gate, helpful for checking wear
+
 #ifndef GTS_GATE_H
 #define GTS_GATE_H
 

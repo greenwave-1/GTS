@@ -230,12 +230,7 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 					// the sampling callback function will change the trigState enum when an input is done
 					setCursorPos(2,0);
 					printStr("Waiting for input.", currXfb);
-					if (ellipseCounter > 20) {
-						printStr(".", currXfb);
-					}
-					if (ellipseCounter > 40) {
-						printStr(".", currXfb);
-					}
+					printEllipse(ellipseCounter, 20, currXfb);
 					ellipseCounter++;
 					if (ellipseCounter == 60) {
 						ellipseCounter = 0;

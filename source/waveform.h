@@ -2,10 +2,33 @@
 // Created on 2023/10/30.
 //
 
+// defines structs for holding controller data
+// TODO: this needs an overhaul, this hasn't been changed significantly since the polling change
+
 #ifndef GTS_WAVEFORM_H
 #define GTS_WAVEFORM_H
 
 #include <gccore.h>
+
+#define TRIGGER_SAMPLES 500
+typedef struct TriggerDatapoint {
+	u8 triggerLAnalog;
+	u8 triggerRAnalog;
+	bool triggerLDigital;
+	bool triggerRDigital;
+	u64 timeDiffUs;
+} TriggerDatapoint;
+
+typedef struct TriggerData {
+	TriggerDatapoint data[TRIGGER_SAMPLES];
+	unsigned int startPoint;
+	unsigned int curr;
+	unsigned int endPoint;
+	
+	u64 totalTimeUs;
+	
+	bool isDataReady;
+} TriggerData;
 
 #define WAVEFORM_SAMPLES 3000
 // individual datapoint from polling
@@ -18,6 +41,8 @@ typedef struct WaveformDatapoint {
 	int cy;
 	// buttons held
 	u32 buttonsHeld;
+	// triggers
+	TriggerDatapoint triggers;
 	// time from last datapoint
 	u64 timeDiffUs;
 	// for converted values
@@ -42,26 +67,6 @@ typedef struct WaveformData {
 	bool exported;
 
 } WaveformData;
-
-#define TRIGGER_SAMPLES 500
-typedef struct TriggerDatapoint {
-	u8 triggerLAnalog;
-	u8 triggerRAnalog;
-	bool triggerLDigital;
-	bool triggerRDigital;
-	u64 timeDiffUs;
-} TriggerDatapoint;
-
-typedef struct TriggerData {
-	TriggerDatapoint data[TRIGGER_SAMPLES];
-	unsigned int startPoint;
-	unsigned int curr;
-	unsigned int endPoint;
-	
-	u64 totalTimeUs;
-	
-	bool isDataReady;
-} TriggerData;
 
 //enum CONTROLLER_STICKS_XY { A_STICK_X, A_STICK_Y, C_STICK_X, C_STICK_Y };
 

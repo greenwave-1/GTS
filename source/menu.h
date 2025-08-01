@@ -2,6 +2,8 @@
 // Created on 2023/10/25.
 //
 
+// Handles the main menu and other basic menus that I haven't moved yet
+
 #ifndef GTS_MENU_H
 #define GTS_MENU_H
 
@@ -9,7 +11,7 @@
 
 // enum for keeping track of the currently displayed menu
 enum CURRENT_MENU { MAIN_MENU, CONTROLLER_TEST, WAVEFORM, PLOT_2D,
-		IMAGE_TEST, FILE_EXPORT, WAITING_MEASURE, COORD_MAP,
+		PLOT_BUTTON, IMAGE_TEST, FILE_EXPORT, COORD_MAP,
 		CONTINUOUS_WAVEFORM, TRIGGER_WAVEFORM, GATE_MEASURE, 
 		THANKS_PAGE, ERR };
 

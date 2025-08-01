@@ -155,11 +155,7 @@ void menu_gateMeasure(void *currXfb, u32 *p, u32 *h) {
 					if (yPressFrameCounter != 0) {
 						setCursorPos(20, 0);
 						printStr("Resetting", currXfb);
-						int remainder = yPressFrameCounter / 30;
-						while (remainder != 0) {
-							printStr(".", currXfb);
-							remainder--;
-						}
+						printEllipse(yPressFrameCounter, 30, currXfb);
 					}
 					// draw box around plot area
 					DrawBox(SCREEN_POS_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,

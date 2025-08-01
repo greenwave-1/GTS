@@ -2,6 +2,9 @@
 // Created on 2025/05/09.
 //
 
+// 2d Plot submenu
+// plots stick coordinates on a 2d "graph"
+
 #ifndef GTS_PLOT2D_H
 #define GTS_PLOT2D_H
 
