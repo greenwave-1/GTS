@@ -41,7 +41,7 @@ void drawImage(void *currXfb, const unsigned char image[], const unsigned char c
 	for (int row = offsetY; row < imageEndpointY; row++) {
 		for (int column = offsetX; column < imageEndpointX; column++) {
 			// is there a pixel to actually draw? (0-4 is transparency)
-			if (color >= 5) {
+			if (color > 5) {
 				DrawDotAccurate(column, row, CUSTOM_COLORS[color - 5], currXfb);
 			}
 			
