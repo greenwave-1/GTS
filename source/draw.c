@@ -11,12 +11,12 @@ void setInterlaced(bool interlaced) {
 	do2xHorizontalDraw = interlaced;
 }
 
+// draws a "runlength encoded" image, with top-left at the provided coordinates
 // most of this is taken from
 // https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
-// TODO: this is easily the most costly function in here. single main loop goes from 4ms to 10 ms from calling this,
-// TODO: see if this can be improved
 void drawImage(void *currXfb, const unsigned char image[], const unsigned char colorIndex[8], u16 offsetX, u16 offsetY) {
 	// get information on the image to be drawn
+	// first four bytes are dimensions
 	u32 width = image[0] << 8 | image[1];
 	u32 height = image[2] << 8 | image[3];
 	
@@ -31,21 +31,45 @@ void drawImage(void *currXfb, const unsigned char image[], const unsigned char c
 		//printf("Image with given parameters will write incorrectly\n");
 	}
 	
+	// start index for actual draw data
 	u32 byte = 4;
+	
+	// counts how many pixels we've been through for a given byte
 	u8 runIndex = 0;
+	
+	// how many pixels does a given byte draw?
 	// first five bits are runlength
 	u8 runLength = (image[byte] >> 3) + 1;
+	
 	// last three bits are color, lookup color in index
 	u8 color = colorIndex[ image[byte] & 0b111];
+	
+	// used for skipping sections of no drawing that extend beyond a single row
+	int carryover = 0;
+	
 	// begin processing data
 	for (int row = offsetY; row < imageEndpointY; row++) {
-		for (int column = offsetX; column < imageEndpointX; column++) {
+		// carryover will be added to column and then be reset immediately
+		for (int column = offsetX + carryover; column < imageEndpointX; column++) {
+			// reset carryover if its been set
+			carryover = 0;
+			
 			// is there a pixel to actually draw? (0-4 is transparency)
 			if (color > 5) {
 				DrawDotAccurate(column, row, CUSTOM_COLORS[color - 5], currXfb);
+				runIndex++;
+			} else {
+				// skip idle loop and move to next position
+				column += runLength - 1;
+				runIndex = runLength;
+				// did we go outside the bounds of this row?
+				if (column >= imageEndpointX) {
+					// set carryover
+					carryover = column - imageEndpointX + 1;
+				}
 			}
 			
-			runIndex++;
+			// set up for the next byte of information/drawing
 			if (runIndex >= runLength) {
 				runIndex = 0;
 				byte++;
