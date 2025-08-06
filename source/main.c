@@ -4,13 +4,12 @@
 #include <ogc/video.h>
 #include <ogc/lwp_watchdog.h>
 #include "menu.h"
-#include "gecko.h"
 #include "polling.h"
 #include "print.h"
 
 
 #ifdef DEBUGLOG
-#include <ogc/lwp_watchdog.h>
+#include "logging.h"
 #endif
 
 #ifdef DEBUGGDB
@@ -86,11 +85,32 @@ int main(int argc, char **argv) {
 	
 	// there is a makefile target that will enable this
 	#ifdef DEBUGLOG
-	sendMessage("USB Gecko Debug output enabled");
+	
+	// only one of these should be used
+	setupLogging(USBGECKO_B);
+	//setupLogging(NETWORKSOCK);
+	
+	if (getLoggingType() == NETWORKSOCK) {
+		printStr("Setting up network...\n", xfb1);
+		while (!isNetworkConfigured()) {
+			VIDEO_WaitVSync();
+		}
+		
+		printStr("Waiting for connection...\n", xfb1);
+		char *ip = getConfiguredIP();
+		// TODO: this definitely isn't safe...
+		printStr(ip, xfb1);
+		printStr(":43256", xfb1);
+		
+		while (!isConnectionMade()) {
+			VIDEO_WaitVSync();
+		}
+	}
+	debugLog("Debug output enabled");
 	#ifdef HW_RVL
-	sendMessage("Running on Wii");
+	debugLog("Running on Wii");
 	#elifdef HW_DOL
-	sendMessage("Running on GC");
+	debugLog("Running on GC");
 	#endif
 	#endif
 	
@@ -164,24 +184,22 @@ int main(int argc, char **argv) {
 		case VI_NTSC:
 		case VI_EURGB60:
 			#ifdef DEBUGLOG
-			sendMessage("Video mode is NTSC/EURGB60");
+			debugLog("Video mode is NTSC/EURGB60");
 			#endif
 			break;
 		case VI_MPAL: // no idea if this should be a supported mode...
 			#ifdef DEBUGLOG
-			sendMessage("Video mode is MPAL");
+			debugLog("Video mode is MPAL");
 			#endif
 			break;
 		case VI_PAL:
 			#ifdef DEBUGLOG
-			sendMessage("Video mode is PAL");
+			debugLog("Video mode is PAL");
 			#endif
 		default:
-			VIDEO_SetNextFramebuffer(xfb2);
-			VIDEO_Flush();
 			resetCursor();
 			printStr("\n\nUnsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n"
-					 "Program will exit in 5 seconds...", xfb2);
+					 "Program will exit in 5 seconds...", xfb1);
 			VIDEO_WaitVSync();
 			u64 timer = gettime();
 			while (ticks_to_secs(gettime() - timer) < 5) ;
@@ -191,11 +209,9 @@ int main(int argc, char **argv) {
 	
 	setSamplingRateNormal();
 	if (isUnsupportedMode()) { // unsupported mode is probably 240p? no idea
-		VIDEO_SetNextFramebuffer(xfb2);
-		VIDEO_Flush();
 		resetCursor();
 		printStr("\n\nUnsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n"
-				 "Program will exit in 5 seconds...", xfb2);
+				 "Program will exit in 5 seconds...", xfb1);
 		VIDEO_WaitVSync();
 		u64 timer = gettime();
 		while (ticks_to_secs(gettime() - timer) < 5) ;
@@ -266,6 +282,10 @@ int main(int argc, char **argv) {
 		VIDEO_Flush();
 		VIDEO_WaitVSync();
 	}
+	
+	#ifdef DEBUGLOG
+	stopLogging();
+	#endif
 
 	return 0;
 }

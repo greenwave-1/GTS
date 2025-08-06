@@ -7,7 +7,7 @@
 #include <gccore.h>
 #include <math.h>
 #include <ogc/lwp_watchdog.h>
-#include "gecko.h"
+#include "logging.h"
 #include "polling.h"
 
 

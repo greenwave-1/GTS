@@ -60,6 +60,10 @@ ifeq ($(DEBUG), 2)
 	LIBS	:=	-lfat -ldb -logc -lm
 endif
 
+ifeq ($(DEBUG), 1)
+	LIBS    :=  -lfat -lbba -logc -lm
+endif
+
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib
