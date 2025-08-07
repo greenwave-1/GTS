@@ -19,7 +19,7 @@ TARGET		:=	GTS_gc
 BUILD		:=	build_gc
 SOURCES		:=	source source/submenu source/file source/images
 DATA		:=	data
-INCLUDES	:=
+INCLUDES	:=  include include/submenu include/file include/images
 
 #---------------------------------------------------------------------------------
 # options for code generation

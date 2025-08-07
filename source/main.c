@@ -107,11 +107,13 @@ int main(int argc, char **argv) {
 		}
 	}
 	debugLog("Debug output enabled");
+	
 	#ifdef HW_RVL
 	debugLog("Running on Wii");
 	#elifdef HW_DOL
 	debugLog("Running on GC");
 	#endif
+	
 	#endif
 	
 	

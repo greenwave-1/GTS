@@ -19,7 +19,7 @@ TARGET		:=	GTS_wii
 BUILD		:=	build_wii
 SOURCES		:=	source source/submenu source/file source/images
 DATA		:=	data
-INCLUDES	:=
+INCLUDES	:=  include include/submenu include/file include/images
 
 #---------------------------------------------------------------------------------
 # options for code generation
