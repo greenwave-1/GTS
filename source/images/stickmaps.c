@@ -7,7 +7,7 @@
 
 // Upstream URL for the PhobGCC project is: https://github.com/PhobGCC/PhobGCC-SW
 
-#include "stickmaps.h"
+#include "images/stickmaps.h"
 #include <ogc/color.h>
 
 // PhobGCC/rp2040/include/images/await255.h

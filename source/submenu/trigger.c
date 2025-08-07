@@ -9,12 +9,12 @@
 
 // Other than adt ps math, this mostly clones the visual side of phobvision
 
-#include "trigger.h"
+#include "submenu/trigger.h"
 
 #include <ogc/lwp_watchdog.h>
-#include "../draw.h"
-#include "../polling.h"
-#include "../print.h"
+#include "draw.h"
+#include "polling.h"
+#include "print.h"
 
 static const float FRAME_TIME_MS = (1000/60.0);
 const static u8 SCREEN_TIMEPLOT_START = 70;

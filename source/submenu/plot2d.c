@@ -2,16 +2,16 @@
 // Created on 2025/05/09.
 //
 
-#include "plot2d.h"
+#include "submenu/plot2d.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <gccore.h>
 #include <ogc/lwp_watchdog.h>
-#include "../print.h"
-#include "../polling.h"
-#include "../draw.h"
-#include "../images/stickmaps.h"
+#include "print.h"
+#include "polling.h"
+#include "draw.h"
+#include "images/stickmaps.h"
 
 // close enough...
 static const float FRAME_TIME = (1000.0 / 60.0);

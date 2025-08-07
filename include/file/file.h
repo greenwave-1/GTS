@@ -1,5 +1,5 @@
 // file io stuff
-#include "../waveform.h"
+#include "waveform.h"
 #include <stdbool.h>
 
 #ifndef GTS_FILE_H

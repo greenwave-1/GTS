@@ -2,12 +2,12 @@
 // Created on 7/4/25.
 //
 
-#include "gate.h"
+#include "submenu/gate.h"
 #include <gccore.h>
 #include <ogc/lwp_watchdog.h>
-#include "../draw.h"
-#include "../polling.h"
-#include "../print.h"
+#include "draw.h"
+#include "polling.h"
+#include "print.h"
 
 static enum GATE_MENU_STATE menuState = GATE_SETUP;
 static enum GATE_STATE state = GATE_INIT;

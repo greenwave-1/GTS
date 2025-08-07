@@ -1,11 +1,11 @@
 
-#include "file.h"
+#include "file/file.h"
 
 #include <fat.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../waveform.h"
-#include "../print.h"
+#include "waveform.h"
+#include "print.h"
 #include <stdbool.h>
 #include <string.h>
 #include <sys/stat.h>

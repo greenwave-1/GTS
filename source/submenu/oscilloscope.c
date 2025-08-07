@@ -2,13 +2,13 @@
 // Created on 2025/03/18.
 //
 
-#include "oscilloscope.h"
+#include "submenu/oscilloscope.h"
 #include <ogc/lwp_watchdog.h>
 #include <stdlib.h>
-#include "../print.h"
-#include "../draw.h"
-#include "../polling.h"
-#include "../stickmap_coordinates.h"
+#include "print.h"
+#include "draw.h"
+#include "polling.h"
+#include "stickmap_coordinates.h"
 //#include "../waveform.h"
 
 const static u8 STICK_MOVEMENT_THRESHOLD = 5;

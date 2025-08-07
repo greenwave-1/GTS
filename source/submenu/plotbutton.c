@@ -2,14 +2,14 @@
 // Created on 7/22/25.
 //
 
-#include "plotbutton.h"
+#include "submenu/plotbutton.h"
 
 #include <gccore.h>
 #include <ogc/lwp_watchdog.h>
 #include <stdlib.h>
-#include "../polling.h"
-#include "../print.h"
-#include "../draw.h"
+#include "polling.h"
+#include "print.h"
+#include "draw.h"
 
 static const float FRAME_TIME_MS = (1000/60.0);
 

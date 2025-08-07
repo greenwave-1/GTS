@@ -7,8 +7,8 @@
 // https://github.com/extremscorner/libogc2/commit/c93feb0a7a588bce13a8d89117d5ff531f1b70a7
 // TODO: 2) Can this be configured to print to a network device (eg eth2gc)? Probably not without something custom.
 
-#ifndef GTS_GECKO_H
-#define GTS_GECKO_H
+#ifndef GTS_LOGGING_H
+#define GTS_LOGGING_H
 
 #define NETWORKSOCK_PORT 43256
 
@@ -31,4 +31,4 @@ char* getConfiguredIP();
 
 //bool attemptConnect();
 
-#endif //GTS_GECKO_H
+#endif //GTS_LOGGING_H

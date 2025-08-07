@@ -8,7 +8,7 @@
 #ifndef GTS_PLOT2D_H
 #define GTS_PLOT2D_H
 
-#include "../waveform.h"
+#include "waveform.h"
 
 enum PLOT_2D_MENU_STATE { PLOT_SETUP, PLOT_POST_SETUP, PLOT_INSTRUCTIONS };
 enum PLOT_2D_STATE { PLOT_DISPLAY, PLOT_INPUT };

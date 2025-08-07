@@ -2,8 +2,8 @@
 // Created on 2025/03/17.
 //
 
-#include "continuous.h"
-#include "../print.h"
+#include "submenu/continuous.h"
+#include "print.h"
 
 #include <stdio.h>
 #include <gccore.h>
