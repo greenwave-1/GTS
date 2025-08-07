@@ -78,6 +78,8 @@ static void contSamplingCallback() {
 		if (frameCounter >= 16666) {
 			data.data[dataIndex].timeDiffUs = 1;
 			frameCounter = 0;
+		} else {
+			data.data[dataIndex].timeDiffUs = 0;
 		}
 		dataIndex++;
 		if (dataIndex == WAVEFORM_SAMPLES) {
@@ -187,8 +189,8 @@ void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
 					
 					// frame interval stuff
 					if (prevIndex != -1) {
-						for (int i = 0; i < waveformScaleFactor; i++) {
-							if (data.data[(prevIndex + i) % WAVEFORM_SAMPLES].timeDiffUs == 1) {
+						for (int j = 0; j < waveformScaleFactor; j++) {
+							if (data.data[(prevIndex + j) % WAVEFORM_SAMPLES].timeDiffUs == 1) {
 								if (waveformScaleFactor <= 2) {
 									DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
 									        SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
