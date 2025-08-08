@@ -15,6 +15,38 @@
 // technically this can only occur if someone exports multiple in one second
 static unsigned int increment = 0;
 
+static bool initSuccess = false, initAttempted = false;
+
+bool initFilesystem() {
+	if (!initAttempted) {
+		initSuccess = fatInitDefault();
+		initAttempted = true;
+	}
+	return initSuccess;
+}
+
+FILE *openFile(char *filename, char *modes) {
+	if (!initFilesystem()) {
+		return NULL;
+	}
+	
+	{
+		struct stat st = {0};
+		// check if file already exists
+		if (stat(filename, &st) == 0) {
+			return NULL;
+		}
+	}
+	
+	FILE *retFile = fopen(filename, modes);
+	
+	if (!retFile) {
+		return NULL;
+	}
+	
+	return retFile;
+}
+
 int exportData(WaveformData *data) {
 	data->exported = true;
 	// do we have data to begin with?
@@ -22,7 +54,7 @@ int exportData(WaveformData *data) {
 		return 1;
 	}
 	
-	if (!fatInitDefault()) {
+	if (!initFilesystem()) {
 		return 2;
 	}
 	
@@ -72,7 +104,7 @@ int exportData(WaveformData *data) {
 		}
 	}
 	
-	FILE *fptr = fopen(fileStr, "w");
+	FILE *fptr = openFile(fileStr, "w");
 	
 	// first row is: datetime, number of polls
 	fprintf(fptr, "%s,%u\n", timeStr, data->endPoint);
@@ -110,5 +142,6 @@ int exportData(WaveformData *data) {
 	}
 	fprintf(fptr, "\n");
 	fclose(fptr);
+	
 	return 0;
 }

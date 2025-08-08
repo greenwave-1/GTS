@@ -6,6 +6,7 @@
 
 #include "logging.h"
 
+#include "file/file.h"
 #include <stdio.h>
 #include <gccore.h>
 #include <string.h>
@@ -27,6 +28,8 @@ static char netmask[16] = {0};
 static s32 sock, csock;
 static struct sockaddr_in client, server;
 static u32 clientlen;
+
+static FILE *logFile = NULL;
 
 static void attemptConnect() {
 	if (networkSetupSuccess) {
@@ -88,17 +91,26 @@ void setupLogging(enum LOGGING_DEVICE device) {
 	switch (dev) {
 		case USBGECKO_B:
 			SYS_EnableGecko(EXI_CHANNEL_1, true);
+			deviceSet = true;
 			break;
 		case NETWORKSOCK:
 			if (!networkSetupSuccess) {
 				// called in a thread so that we can print while we wait
 				LWP_CreateThread(&socket_thread, setupNetwork, NULL, NULL, 2048, 50);
+				deviceSet = true;
+			}
+			break;
+		case LOGFILE:
+			if (initFilesystem()) {
+				logFile = openFile("/GTS/debug.log", "a");
+			}
+			if (logFile != NULL) {
+				deviceSet = true;
 			}
 			break;
 		default:
 			break;
 	}
-	deviceSet = true;
 }
 
 static u32 sum = 0;
@@ -126,15 +138,27 @@ void debugLog(char *msg, ...) {
 			case NETWORKSOCK:
 				networkMessage(msg, list);
 				break;
+			case LOGFILE:
+				vfprintf(logFile, msg, list);
+				fprintf(logFile, "\n");
+				break;
 		}
 		va_end(list);
 	}
 }
 
 void stopLogging() {
-	if (dev == NETWORKSOCK) {
-		net_close(csock);
-		net_close(sock);
+	debugLog("End of log.");
+	switch (dev) {
+		case NETWORKSOCK:
+			net_close(csock);
+			net_close(sock);
+			break;
+		case LOGFILE:
+			fclose(logFile);
+			break;
+		default:
+			break;
 	}
 }
 

@@ -86,9 +86,8 @@ int main(int argc, char **argv) {
 	// there is a makefile target that will enable this
 	#ifdef DEBUGLOG
 	
-	// only one of these should be used
+	// options are defined in logging.h
 	setupLogging(USBGECKO_B);
-	//setupLogging(NETWORKSOCK);
 	
 	if (getLoggingType() == NETWORKSOCK) {
 		printStr("Setting up network...\n", xfb1);
@@ -225,7 +224,6 @@ int main(int argc, char **argv) {
 	while (true) {
 		#if defined(HW_RVL)
 		if (powerButtonPressed) {
-			SYS_ResetSystem(SYS_POWEROFF, 0, 0);
 			break;
 		}
 		#endif
@@ -287,6 +285,14 @@ int main(int argc, char **argv) {
 	
 	#ifdef DEBUGLOG
 	stopLogging();
+	#endif
+	
+	// issue poweroff if the power button was pressed
+	// done here so that any logging stuff can finish cleanly
+	#if defined(HW_RVL)
+	if (powerButtonPressed) {
+		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
+	}
 	#endif
 
 	return 0;
