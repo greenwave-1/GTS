@@ -7,8 +7,6 @@
 #ifndef GTS_MENU_H
 #define GTS_MENU_H
 
-#include <stdbool.h>
-
 // enum for keeping track of the currently displayed menu
 enum CURRENT_MENU { MAIN_MENU, CONTROLLER_TEST, WAVEFORM, PLOT_2D,
 		PLOT_BUTTON, IMAGE_TEST, FILE_EXPORT, COORD_MAP,

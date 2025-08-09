@@ -4,9 +4,13 @@
 
 #include "submenu/plotbutton.h"
 
-#include <gccore.h>
-#include <ogc/lwp_watchdog.h>
+#include <stdio.h>
 #include <stdlib.h>
+
+#include <ogc/pad.h>
+#include <ogc/timesupp.h>
+#include <ogc/color.h>
+
 #include "polling.h"
 #include "print.h"
 #include "draw.h"

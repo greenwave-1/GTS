@@ -3,13 +3,18 @@
 //
 
 #include "submenu/oscilloscope.h"
-#include <ogc/lwp_watchdog.h>
+
+#include <stdio.h>
 #include <stdlib.h>
+
+#include <ogc/pad.h>
+#include <ogc/timesupp.h>
+#include <ogc/color.h>
+
 #include "print.h"
 #include "draw.h"
 #include "polling.h"
 #include "stickmap_coordinates.h"
-//#include "../waveform.h"
 
 const static u8 STICK_MOVEMENT_THRESHOLD = 5;
 const static u8 STICK_ORIGIN_TIME_THRESHOLD_MS = 50;

@@ -7,8 +7,6 @@
 #ifndef GTS_POLLING_H
 #define GTS_POLLING_H
 
-#include <stdbool.h>
-
 void setSamplingRateHigh();
 void setSamplingRateNormal();
 

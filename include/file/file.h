@@ -1,10 +1,10 @@
-// file io stuff
-#include "waveform.h"
-#include <stdbool.h>
-//#include <fat.h>
-
 #ifndef GTS_FILE_H
 #define GTS_FILE_H
+
+// file io stuff
+#include "waveform.h"
+
+#include <stdio.h>
 
 // generic filesystem utils
 bool initFilesystem();

@@ -1,12 +1,10 @@
 #include <stdio.h>
-#include <string.h>
+
 #include <gccore.h>
-#include <ogc/video.h>
-#include <ogc/lwp_watchdog.h>
+
 #include "menu.h"
 #include "polling.h"
 #include "print.h"
-
 
 #ifdef DEBUGLOG
 #include "logging.h"
@@ -201,9 +199,9 @@ int main(int argc, char **argv) {
 			resetCursor();
 			printStr("\n\nUnsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n"
 					 "Program will exit in 5 seconds...", xfb1);
-			VIDEO_WaitVSync();
-			u64 timer = gettime();
-			while (ticks_to_secs(gettime() - timer) < 5) ;
+			for (int i = 0; i < 300; i++) {
+				VIDEO_WaitVSync();
+			}
 			return 0;
 			break; // unnecessary
 	}
@@ -213,9 +211,9 @@ int main(int argc, char **argv) {
 		resetCursor();
 		printStr("\n\nUnsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n"
 				 "Program will exit in 5 seconds...", xfb1);
-		VIDEO_WaitVSync();
-		u64 timer = gettime();
-		while (ticks_to_secs(gettime() - timer) < 5) ;
+		for (int i = 0; i < 300; i++) {
+			VIDEO_WaitVSync();
+		}
 		return 0;
 	}
 	

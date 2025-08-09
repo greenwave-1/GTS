@@ -3,8 +3,11 @@
 //
 
 #include "submenu/gate.h"
-#include <gccore.h>
-#include <ogc/lwp_watchdog.h>
+
+#include <ogc/pad.h>
+#include <ogc/timesupp.h>
+#include <ogc/color.h>
+
 #include "draw.h"
 #include "polling.h"
 #include "print.h"

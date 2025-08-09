@@ -3,13 +3,9 @@
 //
 
 #include "waveform.h"
-#include <stdlib.h>
-#include <gccore.h>
-#include <math.h>
-#include <ogc/lwp_watchdog.h>
-#include "logging.h"
-#include "polling.h"
 
+#include <stdlib.h>
+#include <math.h>
 
 // a lot of this comes from github.com/phobgcc/phobconfigtool
 WaveformDatapoint convertStickValues(WaveformDatapoint *data) {

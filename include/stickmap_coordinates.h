@@ -4,14 +4,12 @@
 
 // constants for coordinate viewer drawing
 
-#include "waveform.h"
-
 #ifndef GTS_STICKMAP_COORDINATES_H
 #define GTS_STICKMAP_COORDINATES_H
 
+#include "waveform.h"
 
 enum STICKMAP_LIST { NONE, FF_WD, SHIELDDROP };
-
 
 // Firefox and Wavedash min/max
 

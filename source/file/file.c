@@ -3,13 +3,10 @@
 
 #include <fat.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
+
 #include "waveform.h"
 #include "print.h"
-#include <stdbool.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <time.h>
 
 // appended to the file, in order to prevent files from being overwritten
 // technically this can only occur if someone exports multiple in one second

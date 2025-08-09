@@ -6,8 +6,11 @@
 #include "print.h"
 
 #include <stdio.h>
-#include <gccore.h>
-#include <ogc/lwp_watchdog.h>
+
+#include <ogc/pad.h>
+#include <ogc/timesupp.h>
+#include <ogc/color.h>
+
 #include "../polling.h"
 #include "../draw.h"
 #include "../waveform.h"

@@ -6,12 +6,16 @@
 
 #include "logging.h"
 
-#include "file/file.h"
 #include <stdio.h>
-#include <gccore.h>
 #include <string.h>
 #include <network.h>
 #include <stdarg.h>
+
+#include <ogc/lwp.h>
+#include <ogc/exi.h>
+#include <ogc/system.h>
+
+#include "file/file.h"
 
 static lwp_t socket_thread = (lwp_t) NULL;
 

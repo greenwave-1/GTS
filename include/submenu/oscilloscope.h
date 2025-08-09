@@ -8,7 +8,8 @@
 #ifndef GTS_OSCILLOSCOPE_H
 #define GTS_OSCILLOSCOPE_H
 
-#include <gccore.h>
+#include <gctypes.h>
+
 #include "waveform.h"
 
 enum OSC_MENU_STATE { OSC_SETUP, OSC_POST_SETUP, OSC_INSTRUCTIONS };

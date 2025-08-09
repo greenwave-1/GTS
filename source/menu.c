@@ -3,19 +3,24 @@
 //
 
 #include "menu.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <ogc/color.h>
-#include <ogc/lwp_watchdog.h>
-#include "waveform.h"
-#include "images/stickmaps.h"
-#include "draw.h"
-#include "print.h"
-#include "file/file.h"
-#include "stickmap_coordinates.h"
 
+#include <ogc/color.h>
+#include <ogc/pad.h>
+#include <ogc/video.h>
+
+#include "waveform.h"
+#include "print.h"
+
+// TODO: these should go away once all menus have been moved to a separate file
+#include "stickmap_coordinates.h"
+#include "draw.h"
+#include "file/file.h"
+
+// should I have a "parent" header that includes these?
 #include "submenu/oscilloscope.h"
 #include "submenu/continuous.h"
 #include "submenu/trigger.h"

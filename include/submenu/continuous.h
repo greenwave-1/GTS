@@ -8,7 +8,7 @@
 #ifndef GTS_CONTINUOUS_H
 #define GTS_CONTINUOUS_H
 
-#include <gccore.h>
+#include <gctypes.h>
 
 enum CONT_MENU_STATE { CONT_SETUP, CONT_POST_SETUP };
 enum CONT_STATE { INPUT, INPUT_LOCK };

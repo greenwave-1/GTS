@@ -8,7 +8,7 @@
 #ifndef GTS_WAVEFORM_H
 #define GTS_WAVEFORM_H
 
-#include <gccore.h>
+#include <gctypes.h>
 
 #define TRIGGER_SAMPLES 500
 typedef struct TriggerDatapoint {

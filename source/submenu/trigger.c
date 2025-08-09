@@ -11,7 +11,12 @@
 
 #include "submenu/trigger.h"
 
-#include <ogc/lwp_watchdog.h>
+#include <stdio.h>
+
+#include <ogc/pad.h>
+#include <ogc/timesupp.h>
+#include <ogc/color.h>
+
 #include "draw.h"
 #include "polling.h"
 #include "print.h"

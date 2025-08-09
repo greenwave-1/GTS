@@ -8,6 +8,8 @@
 #ifndef GTS_PLOTBUTTON_H
 #define GTS_PLOTBUTTON_H
 
+#include <gctypes.h>
+
 #include "waveform.h"
 
 enum PLOT_BUTTON_MENU_STATE { BUTTON_SETUP, BUTTON_POST_SETUP, BUTTON_INSTRUCTIONS };

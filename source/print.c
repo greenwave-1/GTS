@@ -11,9 +11,11 @@
 // https://github.com/PhobGCC/PhobGCC-SW/tree/main/PhobGCC/rp2040
 
 #include "print.h"
+
+#include <ogc/color.h>
+
 #include "font.h"
 #include "draw.h"
-#include <ogc/color.h>
 
 static int currX = 0;
 static int currY = 0;
