@@ -14,6 +14,11 @@
 #include <debug.h>
 #endif
 
+#ifdef BENCH
+#include <string.h>
+#include <ogc/timesupp.h>
+#endif
+
 // basic stuff from the template
 static void *xfb1 = NULL;
 static void *xfb2 = NULL;
