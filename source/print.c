@@ -31,29 +31,29 @@ void drawChar(unsigned char bitmap[],
 	if (character == '\n' || currX + 10 > (640 - (PRINT_PADDING_HORIZONTAL * 2))) {
 		currY += 15 + LINE_SPACING;
 		currX = 0;
-		if (character != '\n') {
-			drawChar(bitmap, color, character);
+		if (character == '\n') {
+			return;
 		}
-		return;
 	}
 	// stop drawing altogether if row is too far
 	if ((currY + 15) >= (479 - (PRINT_PADDING_VERTICAL * 2))) {
 		return;
 	}
-
-	//if (character == ' ' && currX == 0) {
-	//	return;
-	//}
 	
-	for(int row = 0; row < 15; row++) {
-		uint32_t rowOffset = (row+currY + PRINT_PADDING_VERTICAL);
-		for(int col = 0; col < 8; col++) {
-			if((font[(character-0x20)*15+row] << col) & 0b10000000) {
-				uint16_t colOffset = col+currX + PRINT_PADDING_HORIZONTAL;
-				DrawDotAccurate(colOffset, rowOffset, color, bitmap);
+	// skip "drawing" if its just a space
+	if (character != ' ') {
+		// decode font character and draw it
+		for (int row = 0; row < 15; row++) {
+			uint32_t rowOffset = (row + currY + PRINT_PADDING_VERTICAL);
+			for (int col = 0; col < 8; col++) {
+				if ((font[(character - 0x20) * 15 + row] << col) & 0b10000000) {
+					uint16_t colOffset = col + currX + PRINT_PADDING_HORIZONTAL;
+					DrawDotAccurate(colOffset, rowOffset, color, bitmap);
+				}
 			}
 		}
 	}
+	
 	currX += 10;
 }
 
