@@ -58,7 +58,7 @@ static uint8_t mainMenuSelection = 0;
 static uint8_t bHeldCounter = 0;
 
 // data for drawing a waveform
-static WaveformData data = { {{ 0 }}, 0, 500, false, false };
+static WaveformData data = { {{ 0 }}, 0, 0, false, false };
 
 // vars for what buttons are pressed or held
 static uint32_t pressed = 0;

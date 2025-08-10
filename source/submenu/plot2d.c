@@ -166,6 +166,7 @@ static void plot2dSamplingCallback() {
 				data->data[0].cy = 0;
 				data->data[0].buttonsHeld = *held;
 				data->data[0].timeDiffUs = 0;
+				data->totalTimeUs = 0;
 				data->endPoint = 1;
 				data->isDataReady = false;
 			}

@@ -16,6 +16,7 @@
 #include "draw.h"
 #include "polling.h"
 #include "stickmap_coordinates.h"
+#include "logging.h"
 
 const static uint8_t STICK_MOVEMENT_THRESHOLD = 5;
 const static uint8_t STICK_ORIGIN_TIME_THRESHOLD_MS = 50;
@@ -187,6 +188,7 @@ static void oscilloscopeCallback() {
 							data->data[0].cx = cx;
 							data->data[0].cy = cy;
 							data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
+							data->totalTimeUs = 0;
 							//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 							data->endPoint = 1;
 							data->isDataReady = false;
@@ -210,6 +212,7 @@ static void oscilloscopeCallback() {
 							data->data[0].cx = cx;
 							data->data[0].cy = cy;
 							data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
+							data->totalTimeUs = 0;
 							//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 							data->endPoint = 1;
 							data->isDataReady = false;
@@ -299,6 +302,7 @@ static void oscilloscopeCallback() {
 						data->data[0].cx = cx;
 						data->data[0].cy = cy;
 						data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
+						data->totalTimeUs = 0;
 						//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 						data->endPoint = 1;
 						data->isDataReady = false;
@@ -359,6 +363,7 @@ static void oscilloscopeCallback() {
 							data->data[0].cx = cx;
 							data->data[0].cy = cy;
 							data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
+							data->totalTimeUs = 0;
 							//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 							data->endPoint = 1;
 							data->isDataReady = false;
@@ -382,6 +387,7 @@ static void oscilloscopeCallback() {
 							data->data[0].cx = cx;
 							data->data[0].cy = cy;
 							data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
+							data->totalTimeUs = 0;
 							//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 							data->endPoint = 1;
 							data->isDataReady = false;
@@ -391,6 +397,11 @@ static void oscilloscopeCallback() {
 					}
 				}
 				break;
+		}
+	}
+	if (data->isDataReady && data->totalTimeUs == 0) {
+		for (int i = 0; i < data->endPoint; i++) {
+			data->totalTimeUs += data->data[i].timeDiffUs;
 		}
 	}
 }
@@ -645,7 +656,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 						}
 						sprintf(strBuffer, "total: %u, %0.3f ms | Start: %d, Shown: %0.3f ms\n", data->endPoint, (data->totalTimeUs / ((float) 1000)), dataScrollOffset + 1, (drawnTicksUs / ((float) 1000)));
 						printStr(strBuffer, currXfb);
-
+						
 						// print test data
 						setCursorPos(20, 0);
 						switch (currentTest) {
