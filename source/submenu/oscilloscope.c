@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
@@ -16,14 +17,14 @@
 #include "polling.h"
 #include "stickmap_coordinates.h"
 
-const static u8 STICK_MOVEMENT_THRESHOLD = 5;
-const static u8 STICK_ORIGIN_TIME_THRESHOLD_MS = 50;
-const static u8 STICK_MOVEMENT_TIME_THRESHOLD_MS = 100;
-const static u8 MEASURE_COOLDOWN_FRAMES = 5;
+const static uint8_t STICK_MOVEMENT_THRESHOLD = 5;
+const static uint8_t STICK_ORIGIN_TIME_THRESHOLD_MS = 50;
+const static uint8_t STICK_MOVEMENT_TIME_THRESHOLD_MS = 100;
+const static uint8_t MEASURE_COOLDOWN_FRAMES = 5;
 
 static const float FRAME_TIME_MS = (1000/60.0);
 
-const static u8 SCREEN_TIMEPLOT_START = 70;
+const static uint8_t SCREEN_TIMEPLOT_START = 70;
 
 static const uint32_t COLOR_RED_C = 0x846084d7;
 static const uint32_t COLOR_BLUE_C = 0x6dd26d72;
@@ -37,25 +38,25 @@ static int waveformScaleFactor = 1;
 static int dataScrollOffset = 0;
 static char strBuffer[100];
 
-static u8 stickCooldown = 0;
-static s8 snapbackStartPosX = 0, snapbackStartPosY = 0;
-static s8 snapbackPrevPosX = 0, snapbackPrevPosY = 0;
+static uint8_t stickCooldown = 0;
+static int8_t snapbackStartPosX = 0, snapbackStartPosY = 0;
+static int8_t snapbackPrevPosX = 0, snapbackPrevPosY = 0;
 static bool pressLocked = false;
 static bool stickMove = false;
 static bool showCStick = false;
 static bool display = false;
 
-static u8 ellipseCounter = 0;
-static u64 pressedTimer = 0;
-static u64 prevSampleCallbackTick = 0;
-static u64 sampleCallbackTick = 0;
-static u64 timeStickInOrigin = 0;
-static u64 timeStoppedMoving = 0;
+static uint8_t ellipseCounter = 0;
+static uint64_t pressedTimer = 0;
+static uint64_t prevSampleCallbackTick = 0;
+static uint64_t sampleCallbackTick = 0;
+static uint64_t timeStickInOrigin = 0;
+static uint64_t timeStoppedMoving = 0;
 
-static u32 *pressed = NULL;
-static u32 *held = NULL;
+static uint32_t *pressed = NULL;
+static uint32_t *held = NULL;
 static bool buttonLock = false;
-static u8 buttonPressCooldown = 0;
+static uint8_t buttonPressCooldown = 0;
 
 static sampling_callback cb;
 static void oscilloscopeCallback() {
@@ -66,7 +67,7 @@ static void oscilloscopeCallback() {
 		prevSampleCallbackTick = sampleCallbackTick;
 	}
 
-	static s8 x, y, cx, cy;
+	static int8_t x, y, cx, cy;
 	PAD_ScanPads();
 
 	// keep buttons in a "pressed" state long enough for code to see it
@@ -237,9 +238,9 @@ static void oscilloscopeCallback() {
 					if (data->endPoint == WAVEFORM_SAMPLES || (timeStickInOrigin / 1000) >= STICK_ORIGIN_TIME_THRESHOLD_MS) {
 						// TODO: replace this with something proper, wip is already there with the switch case
 						// this will truncate the recording to just the pivot input
-						u64 timeFromOriginCross = 0;
+						uint64_t timeFromOriginCross = 0;
 						bool crossed64Range = false;
-						s8 inputSign = 0;
+						int8_t inputSign = 0;
 						int pivotStartIndex = 0;
 						bool hasCrossedOrigin = false;
 						for (int i = data->endPoint - 1; i >= 0; i--) {
@@ -440,7 +441,7 @@ static void displayInstructions(void *currXfb) {
 }
 
 // only run once
-static void setup(WaveformData *d, u32 *p, u32 *h) {
+static void setup(WaveformData *d, uint32_t *p, uint32_t *h) {
 	setSamplingRateHigh();
 	pressed = p;
 	held = h;
@@ -455,7 +456,7 @@ static void setup(WaveformData *d, u32 *p, u32 *h) {
 }
 
 // function called from outside
-void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
+void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t *h) {
 	switch (state) {
 		case OSC_SETUP:
 			setup(data, p, h);
@@ -557,7 +558,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 
 						int waveformPrevXPos = 0;
 						int waveformXPos = waveformScaleFactor;
-						u64 drawnTicksUs = 0;
+						uint64_t drawnTicksUs = 0;
 
 						// draw 500 datapoints from the scroll offset
 						for (int i = dataScrollOffset + 1; i < dataScrollOffset + 500; i++) {
@@ -707,7 +708,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 									float pivotPercent = 0;
 									float dashbackPercent = 0;
 
-									u64 timeInPivotRangeUs = 0;
+									uint64_t timeInPivotRangeUs = 0;
 									for (int i = pivotStartIndex; i <= pivotEndIndex; i++) {
 										timeInPivotRangeUs += data->data[i].timeDiffUs;
 									}
@@ -746,7 +747,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 							case DASHBACK:
 								// go forward in list
 								int dashbackStartIndex = -1, dashbackEndIndex = -1;
-								u64 timeInRange = 0;
+								uint64_t timeInRange = 0;
 								for (int i = 0; i < data->endPoint; i++) {
 									// is the stick in the range
 									if ((data->data[i].ax >= 23 && data->data[i].ax < 64) || (data->data[i].ax <= -23 && data->data[i].ax > -64)) {
@@ -772,11 +773,11 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, u32 *p, u32 *h) {
 									dashbackPercent = (1.0 - (timeInRangeMs / FRAME_TIME_MS)) * 100;
 
 									// ucf dashback is a little more involved
-									u64 ucfTimeInRange = timeInRange;
+									uint64_t ucfTimeInRange = timeInRange;
 									for (int i = dashbackStartIndex; i <= dashbackEndIndex; i++) {
 										// we're gonna assume that the previous frame polled around the origin, because i cant be bothered
 										// it also makes the math easier
-										u64 usFromPoll = 0;
+										uint64_t usFromPoll = 0;
 										int nextPollIndex = i;
 										// we need the sample that would occur around 1f after
 										while (usFromPoll < 16666) {

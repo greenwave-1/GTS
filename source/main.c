@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <stdint.h>
 
 #include <gccore.h>
 
@@ -27,8 +27,13 @@ static GXRModeObj *rmode = NULL;
 
 static VIRetraceCallback cb;
 
-void retraceCallback(u32 retraceCnt) {
+void retraceCallback(uint32_t retraceCnt) {
 	setSamplingRate();
+	//#ifdef DEBUGGDB
+	//if (SYS_ResetButtonDown()) {
+		//_break();
+	//}
+	//#endif
 }
 
 #if defined(HW_RVL)
@@ -131,15 +136,15 @@ int main(int argc, char **argv) {
 	VIDEO_WaitVSync();
 	PAD_ScanPads();
 	
-	u32 buttons = PAD_ButtonsHeld(0);
-	//u32 useless = 42069;
+	uint32_t buttons = PAD_ButtonsHeld(0);
+	//uint32_t useless = 42069;
 	
 	// check if b is held and we are in progressive scan
 	if (buttons & PAD_BUTTON_B) {
 		char msg[500];
 		memset(msg, 0, sizeof(msg));
-		u32 scanMode = VIDEO_GetScanMode();
-		u32 tvMode = VIDEO_GetCurrentTvMode();
+		uint32_t scanMode = VIDEO_GetScanMode();
+		uint32_t tvMode = VIDEO_GetCurrentTvMode();
 		snprintf(msg, 500, "B held, Progressive scan: %d | TV Mode: %d\r\n\0", scanMode, tvMode);
 		usb_sendbuffer(1, msg, 500);
 		usb_flush(EXI_CHANNEL_1);
@@ -271,7 +276,7 @@ int main(int argc, char **argv) {
 		printStrColor(msg, currXfb, COLOR_WHITE, COLOR_BLACK);
 		#endif
 		
-		
+		//#ifndef DEBUGGDB
 		if (SYS_ResetButtonDown()) {
 			VIDEO_ClearFrameBuffer(rmode, currXfb, COLOR_BLACK);
 			setCursorPos(10, 15);
@@ -280,6 +285,7 @@ int main(int argc, char **argv) {
 			VIDEO_WaitVSync();
 			break;
 		}
+		//#endif
 
 		// Wait for the next frame
 		VIDEO_Flush();

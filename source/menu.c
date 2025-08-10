@@ -45,29 +45,29 @@ static enum CURRENT_MENU currentMenu = MAIN_MENU;
 // lock var for controller test
 static bool lockExitControllerTest = false;
 static bool startHeldAfter = false;
-static u8 startHeldCounter = 0;
+static uint8_t startHeldCounter = 0;
 
 static enum STICKMAP_LIST selectedStickmap = NONE;
 // will be casted to whichever stickmap is selected
 static int selectedStickmapSub = 0;
 
 // main menu counter
-static u8 mainMenuSelection = 0;
+static uint8_t mainMenuSelection = 0;
 
 // counter for how many frames b or start have been held
-static u8 bHeldCounter = 0;
+static uint8_t bHeldCounter = 0;
 
 // data for drawing a waveform
 static WaveformData data = { {{ 0 }}, 0, 500, false, false };
 
 // vars for what buttons are pressed or held
-static u32 pressed = 0;
-static u32 held = 0;
+static uint32_t pressed = 0;
+static uint32_t held = 0;
 
 // var for counting how long the stick has been held away from neutral
-static u8 stickheld = 0;
+static uint8_t stickheld = 0;
 static int stickYPos = 0, stickYPrevPos = 0;
-static u8 stickLockoutCounter = 0;
+static uint8_t stickLockoutCounter = 0;
 static bool stickLockout = false;
 
 // menu item strings
@@ -80,7 +80,7 @@ static bool displayInstructions = false;
 
 static int exportReturnCode = -1;
 
-static u32 padsConnected = 0;
+static uint32_t padsConnected = 0;
 
 // stores the controller origin values
 static PADStatus origin[PAD_CHANMAX];
@@ -93,7 +93,7 @@ static char strBuffer[100];
 // this determines if certain vertical lines are doubled
 static bool setDrawInterlaceMode = false;
 
-static u8 thanksPageCounter = 0;
+static uint8_t thanksPageCounter = 0;
 
 // the "main" for the menus
 // other menu functions are called from here
@@ -336,8 +336,8 @@ void menu_mainMenu(void *currXfb) {
 	int stickDiff = abs(stickYPos - stickYPrevPos);
 	
 	// flags which tell whether the stick is held in an up or down position
-	u8 up = stickYPos > MENU_STICK_THRESHOLD;
-	u8 down = stickYPos < -MENU_STICK_THRESHOLD;
+	uint8_t up = stickYPos > MENU_STICK_THRESHOLD;
+	uint8_t down = stickYPos < -MENU_STICK_THRESHOLD;
 	
 	// check if we're outside the deadzone, and the stick hasn't moved past a threshold since last frame
 	if (stickDiff < MENU_STICK_THRESHOLD && (up || down)) {
@@ -353,7 +353,7 @@ void menu_mainMenu(void *currXfb) {
 	}
 
 	// only move the stick if it wasn't already held for the last 10 ticks
-	u8 movable = stickheld % 10 == 0 && !stickLockout;
+	uint8_t movable = stickheld % 10 == 0 && !stickLockout;
 	
 	// iterate over the menu items array as defined in menu.c
 	for (int i = 0; i < MENUITEMS_LEN; i++) {

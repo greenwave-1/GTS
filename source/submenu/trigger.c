@@ -12,6 +12,7 @@
 #include "submenu/trigger.h"
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
@@ -22,20 +23,18 @@
 #include "print.h"
 
 static const float FRAME_TIME_MS = (1000/60.0);
-const static u8 SCREEN_TIMEPLOT_START = 70;
+const static uint8_t SCREEN_TIMEPLOT_START = 70;
 
-static u32 *pressed = NULL;
-static u32 *held = NULL;
+static uint32_t *pressed = NULL;
+static uint32_t *held = NULL;
 static bool buttonLock = false;
-static u8 buttonPressCooldown = 0;
-static u8 captureStartFrameCooldown = 0;
+static uint8_t buttonPressCooldown = 0;
+static uint8_t captureStartFrameCooldown = 0;
 
 static enum TRIG_MENU_STATE menuState = TRIG_SETUP;
 static enum TRIG_STATE trigState = TRIG_INPUT;
 static enum TRIG_CAPTURE_SELECTION captureSelection = TRIGGER_L;
 
-//static u8 triggerValues[500] = {0};
-//static int triggerValuesPointer = 0;
 static TriggerData data = { {{0}}, 0, 0, 0, 0, false };
 static TriggerDatapoint curr;
 static TriggerDatapoint startingLoop[100];
@@ -43,10 +42,10 @@ static int startingLoopIndex = 0;
 static bool startedCapture = false;
 
 static sampling_callback cb;
-static u64 prevSampleCallbackTick = 0;
-static u64 sampleCallbackTick = 0;
-static u64 pressedTimer = 0;
-static u8 ellipseCounter = 0;
+static uint64_t prevSampleCallbackTick = 0;
+static uint64_t sampleCallbackTick = 0;
+static uint64_t pressedTimer = 0;
+static uint8_t ellipseCounter = 0;
 static bool pressLocked = false;
 
 static char strBuffer[100];
@@ -56,7 +55,6 @@ void triggerSamplingCallback() {
 	prevSampleCallbackTick = sampleCallbackTick;
 	sampleCallbackTick = gettime();
 	
-	//static s8 x, y, cx, cy;
 	PAD_ScanPads();
 	
 	// keep buttons in a "pressed" state long enough for code to see it
@@ -113,7 +111,7 @@ void triggerSamplingCallback() {
 					loopStartIndex = 100;
 				}
 				int loopPrependCount = 0;
-				u64 prependedTimeUs = 0;
+				uint64_t prependedTimeUs = 0;
 				// go back 50 ms
 				while (prependedTimeUs < 50000) {
 					// break out of loop if data doesn't exist
@@ -154,7 +152,7 @@ void triggerSamplingCallback() {
 					loopStartIndex = 100;
 				}
 				int loopPrependCount = 0;
-				u64 prependedTimeUs = 0;
+				uint64_t prependedTimeUs = 0;
 				// go back 50 ms
 				while (prependedTimeUs < 50000) {
 					// break out of loop if data doesn't exist
@@ -191,7 +189,7 @@ void triggerSamplingCallback() {
 	}
 }
 
-static void setup(u32 *p, u32 *h) {
+static void setup(uint32_t *p, uint32_t *h) {
 	pressed = p;
 	held = h;
 	//data.endPoint = TRIGGER_SAMPLES - 1;
@@ -223,7 +221,7 @@ static void displayInstructions(void *currXfb) {
 	}
 }
 
-void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
+void menu_triggerOscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 	switch (menuState) {
 		case TRIG_SETUP:
 			setup(p, h);
@@ -251,11 +249,11 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 						// line at 43, start of melee analog shield range
 						DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 499, (SCREEN_POS_CENTER_Y + 85), COLOR_GRAY, currXfb);
 						
-						u8 curr = 0, prev = 0;
+						uint8_t curr = 0, prev = 0;
 						bool currDigital = false;
 						int waveformXPos = 1, waveformPrevXPos = 0;
 						
-						u64 totalTime = 0;
+						uint64_t totalTime = 0;
 						
 						// draw 500 datapoints
 						for (int i = 0; i < 500; i++) {
@@ -315,7 +313,7 @@ void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h) {
 						// mostly based on phobvision code:
 						// https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/main.cpp#L581
 						float psDigital = 0.0, psADT = 0.0, psNone = 0.0;
-						u64 timeInAnalogRangeUs = 0;
+						uint64_t timeInAnalogRangeUs = 0;
 						int sampleDigitalBegin = -1;
 						switch (captureSelection) {
 							case TRIGGER_L:

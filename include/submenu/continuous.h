@@ -8,12 +8,12 @@
 #ifndef GTS_CONTINUOUS_H
 #define GTS_CONTINUOUS_H
 
-#include <gctypes.h>
+#include <stdint.h>
 
 enum CONT_MENU_STATE { CONT_SETUP, CONT_POST_SETUP };
 enum CONT_STATE { INPUT, INPUT_LOCK };
 
-void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h);
+void menu_continuousWaveform(void *currXfb, uint32_t *p, uint32_t *h);
 void menu_continuousEnd();
 
 

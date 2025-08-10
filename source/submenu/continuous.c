@@ -6,6 +6,7 @@
 #include "print.h"
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
@@ -17,7 +18,7 @@
 
 static char strBuffer[100];
 
-const static u8 SCREEN_TIMEPLOT_START = 70;
+const static uint8_t SCREEN_TIMEPLOT_START = 70;
 
 static const uint32_t COLOR_RED_C = 0x846084d7;
 static const uint32_t COLOR_BLUE_C = 0x6dd26d72;
@@ -35,13 +36,13 @@ static bool freeze = false;
 static bool showCStick = false;
 
 static bool buttonLock = false;
-static u32 *pressed = NULL;
-static u32 *held = NULL;
+static uint32_t *pressed = NULL;
+static uint32_t *held = NULL;
 
-static u64 prevSampleCallbackTick = 0;
-static u64 sampleCallbackTick = 0;
-static u64 pressedTimer = 0;
-static u64 frameCounter = 0;
+static uint64_t prevSampleCallbackTick = 0;
+static uint64_t sampleCallbackTick = 0;
+static uint64_t pressedTimer = 0;
+static uint64_t frameCounter = 0;
 
 static sampling_callback cb;
 
@@ -91,7 +92,7 @@ static void contSamplingCallback() {
 	}
 }
 
-static void setup(u32 *p, u32 *h) {
+static void setup(uint32_t *p, uint32_t *h) {
 	pressed = p;
 	held = h;
 	data.endPoint = WAVEFORM_SAMPLES - 1;
@@ -100,7 +101,7 @@ static void setup(u32 *p, u32 *h) {
 	state = CONT_POST_SETUP;
 }
 
-void menu_continuousWaveform(void *currXfb, u32 *p, u32 *h) {
+void menu_continuousWaveform(void *currXfb, uint32_t *p, uint32_t *h) {
 	switch (state) {
 		case CONT_SETUP:
 			setup(p, h);

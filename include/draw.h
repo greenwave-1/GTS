@@ -7,7 +7,7 @@
 #ifndef GTS_DRAW_H
 #define GTS_DRAW_H
 
-#include <gctypes.h>
+#include <stdint.h>
 #include "stickmap_coordinates.h"
 
 // center of screen, 640x480
@@ -81,7 +81,7 @@ void setInterlaced(bool interlaced);
 
 // draw functions
 
-void drawImage(void *currXfb, const unsigned char image[], const unsigned char colorIndex[8], u16 offsetX, u16 offsetY);
+void drawImage(void *currXfb, const unsigned char image[], const unsigned char colorIndex[8], uint16_t offsetX, uint16_t offsetY);
 
 // drawing functions from phobconfigtool
 void DrawHLine (int x1, int x2, int y, int color, void *xfb);

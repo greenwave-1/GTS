@@ -8,7 +8,7 @@
 
 // Upstream URL for the PhobGCC project is: https://github.com/PhobGCC/PhobGCC-SW
 
-#include <gctypes.h>
+#include <stdint.h>
 
 // PhobGCC/rp2040/include/images/await255.h
 // 'await255', 255x255px
@@ -40,7 +40,7 @@ extern const unsigned char ledgeR_image[];
 extern const unsigned char movewait_indexes[];
 extern const unsigned char movewait_image[];
 
-extern const u32 CUSTOM_COLORS[];
+extern const uint32_t CUSTOM_COLORS[];
 
 #define IMAGE_LEN 7
 enum IMAGE { NO_IMAGE, DEADZONE, A_WAIT, MOVE_WAIT, CROUCH, LEDGE_L, LEDGE_R  };

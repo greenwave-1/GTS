@@ -4,6 +4,8 @@
 
 #include "draw.h"
 
+#include <stdint.h>
+
 #include <ogc/color.h>
 
 #include "images/stickmaps.h"
@@ -17,16 +19,16 @@ void setInterlaced(bool interlaced) {
 // draws a "runlength encoded" image, with top-left at the provided coordinates
 // most of this is taken from
 // https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
-void drawImage(void *currXfb, const unsigned char image[], const unsigned char colorIndex[8], u16 offsetX, u16 offsetY) {
+void drawImage(void *currXfb, const unsigned char image[], const unsigned char colorIndex[8], uint16_t offsetX, uint16_t offsetY) {
 	// get information on the image to be drawn
 	// first four bytes are dimensions
-	u32 width = image[0] << 8 | image[1];
-	u32 height = image[2] << 8 | image[3];
+	uint32_t width = image[0] << 8 | image[1];
+	uint32_t height = image[2] << 8 | image[3];
 	
 	// where image drawing ends
 	// calculated in advance for use in the loop
-	u32 imageEndpointX = offsetX + width;
-	u32 imageEndpointY = offsetY + height;
+	uint32_t imageEndpointX = offsetX + width;
+	uint32_t imageEndpointY = offsetY + height;
 	
 	// ensure image won't go out of bounds
 	if (imageEndpointX > 640 || imageEndpointY > 480) {
@@ -35,17 +37,17 @@ void drawImage(void *currXfb, const unsigned char image[], const unsigned char c
 	}
 	
 	// start index for actual draw data
-	u32 byte = 4;
+	uint32_t byte = 4;
 	
 	// counts how many pixels we've been through for a given byte
-	u8 runIndex = 0;
+	uint8_t runIndex = 0;
 	
 	// how many pixels does a given byte draw?
 	// first five bits are runlength
-	u8 runLength = (image[byte] >> 3) + 1;
+	uint8_t runLength = (image[byte] >> 3) + 1;
 	
 	// last three bits are color, lookup color in index
-	u8 color = colorIndex[ image[byte] & 0b111];
+	uint8_t color = colorIndex[ image[byte] & 0b111];
 	
 	// used for skipping sections of no drawing that extend beyond a single row
 	int carryover = 0;
@@ -191,7 +193,7 @@ void DrawLine(int x1, int y1, int x2, int y2, int color, void *xfb) {
 void DrawDot (int x, int y, int color, void *xfb) {
 	if (do2xHorizontalDraw) {
 		x >>= 1;
-		u32 *tmpfb = xfb;
+		uint32_t *tmpfb = xfb;
 		tmpfb[x + (640 * y) / 2] = color;
 	} else {
 		DrawDotAccurate(x, y, color, xfb);

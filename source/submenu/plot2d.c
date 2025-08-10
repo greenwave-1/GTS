@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
@@ -24,11 +25,11 @@ static const float FRAME_TIME = (1000.0 / 60.0);
 
 static char strBuffer[100];
 
-static u32 *pressed = NULL;
-static u32 *held = NULL;
+static uint32_t *pressed = NULL;
+static uint32_t *held = NULL;
 static bool buttonLock = false;
-static u8 buttonPressCooldown = 0;
-static u8 captureStartFrameCooldown = 0;
+static uint8_t buttonPressCooldown = 0;
+static uint8_t captureStartFrameCooldown = 0;
 
 static enum PLOT_2D_MENU_STATE menuState = PLOT_SETUP;
 static enum PLOT_2D_STATE plotState = PLOT_INPUT;
@@ -37,9 +38,9 @@ static WaveformData *data = NULL;
 static int prevPosX = 0, prevPosY = 0;
 static int currPosX = 0, currPosY = 0;
 static int prevPosDiffX = 0, prevPosDiffY = 0;
-static u32 currMovementHeldState = 0;
-static u32 prevMovementHeldState = 0;
-static u64 noMovementTimer = 0;
+static uint32_t currMovementHeldState = 0;
+static uint32_t prevMovementHeldState = 0;
+static uint64_t noMovementTimer = 0;
 
 static int noMovementStartIndex = -1;
 static bool haveStartPoint = false;
@@ -57,10 +58,10 @@ static enum IMAGE selectedImage = NO_IMAGE;
 
 
 static sampling_callback cb;
-static u64 prevSampleCallbackTick = 0;
-static u64 sampleCallbackTick = 0;
-static u64 pressedTimer = 0;
-static u8 ellipseCounter = 0;
+static uint64_t prevSampleCallbackTick = 0;
+static uint64_t sampleCallbackTick = 0;
+static uint64_t pressedTimer = 0;
+static uint8_t ellipseCounter = 0;
 static bool pressLocked = false;
 
 static void plot2dSamplingCallback() {
@@ -68,7 +69,6 @@ static void plot2dSamplingCallback() {
 	prevSampleCallbackTick = sampleCallbackTick;
 	sampleCallbackTick = gettime();
 	
-	//static s8 x, y, cx, cy;
 	PAD_ScanPads();
 	
 	// keep buttons in a "pressed" state long enough for code to see it
@@ -189,7 +189,7 @@ static void plot2dSamplingCallback() {
 	}
 }
 
-static void setup(WaveformData *d, u32 *p, u32 *h) {
+static void setup(WaveformData *d, uint32_t *p, uint32_t *h) {
 	setSamplingRateHigh();
 	pressed = p;
 	held = h;
@@ -229,7 +229,7 @@ static void displayInstructions(void *currXfb) {
 	}
 }
 
-void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
+void menu_plot2d(void *currXfb, WaveformData *d, uint32_t *p, uint32_t *h) {
 	switch (menuState) {
 		case PLOT_SETUP:
 			setup(d, p, h);
@@ -365,7 +365,7 @@ void menu_plot2d(void *currXfb, WaveformData *d, u32 *p, u32 *h) {
 						        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
 						        COLOR_WHITE, currXfb);
 						
-						u64 timeFromFirstSampleDraw = 0;
+						uint64_t timeFromFirstSampleDraw = 0;
 						int frameCounter = 0;
 						// draw plot
 						// y is negated because of how the graph is drawn

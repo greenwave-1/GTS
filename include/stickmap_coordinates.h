@@ -22,7 +22,7 @@ extern const char* STICKMAP_FF_WD_RETVALS[];
 // 0 -> no color
 // 1 -> black text on green background
 // 2 -> black text on yellow background
-extern const u32 STICKMAP_FF_WD_RETCOLORS[][2];
+extern const uint32_t STICKMAP_FF_WD_RETCOLORS[][2];
 
 // enum for the two above
 enum STICKMAP_FF_WD_ENUM { FF_WD_MISS, FF_WD_SAFE, FF_WD_UNSAFE };
@@ -48,7 +48,7 @@ extern const char* STICKMAP_SHIELDDROP_RETVALS[];
 // 1 -> black text on green background
 // 2 -> white text on blue background
 // 3 -> black text on yellow background
-extern const u32 STICKMAP_SHIELDDROP_RETCOLORS[][2];
+extern const uint32_t STICKMAP_SHIELDDROP_RETCOLORS[][2];
 
 enum STICKMAP_SHIELDDROP_ENUM { SHIELDDROP_MISS, SHIELDDROP_VANILLA, SHIELDDROP_UCF_LOWER, SHIELDDROP_UCF_UPPER };
 extern const int STICKMAP_SHIELDDROP_ENUM_LEN;

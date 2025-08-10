@@ -4,6 +4,8 @@
 
 #include "submenu/gate.h"
 
+#include <stdint.h>
+
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
 #include <ogc/color.h>
@@ -15,17 +17,17 @@
 static enum GATE_MENU_STATE menuState = GATE_SETUP;
 static enum GATE_STATE state = GATE_INIT;
 
-static u32 *pressed = NULL;
-static u32 *held = NULL;
+static uint32_t *pressed = NULL;
+static uint32_t *held = NULL;
 static bool buttonLock = false;
-static u8 buttonPressCooldown = 0;
-static u8 yPressFrameCounter = 0;
+static uint8_t buttonPressCooldown = 0;
+static uint8_t yPressFrameCounter = 0;
 static bool yHeldAfterReset = false;
 
 static sampling_callback cb;
-static u64 prevSampleCallbackTick = 0;
-static u64 sampleCallbackTick = 0;
-static u64 pressedTimer = 0;
+static uint64_t prevSampleCallbackTick = 0;
+static uint64_t sampleCallbackTick = 0;
+static uint64_t pressedTimer = 0;
 static bool pressLocked = false;
 
 typedef struct GateMinMax {
@@ -43,7 +45,6 @@ void gateSamplingCallback() {
 	prevSampleCallbackTick = sampleCallbackTick;
 	sampleCallbackTick = gettime();
 	
-	//static s8 x, y, cx, cy;
 	PAD_ScanPads();
 	
 	// keep buttons in a "pressed" state long enough for code to see it
@@ -92,7 +93,7 @@ void gateSamplingCallback() {
 	
 }
 
-static void setup(u32 *p, u32 *h) {
+static void setup(uint32_t *p, uint32_t *h) {
 	pressed = p;
 	held = h;
 	//data.endPoint = TRIGGER_SAMPLES - 1;
@@ -126,7 +127,7 @@ void menu_gateControllerDisconnected() {
 	}
 }
 
-void menu_gateMeasure(void *currXfb, u32 *p, u32 *h) {
+void menu_gateMeasure(void *currXfb, uint32_t *p, uint32_t *h) {
 	switch (menuState) {
 		case GATE_SETUP:
 			setup(p, h);

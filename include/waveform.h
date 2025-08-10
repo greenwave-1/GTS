@@ -8,15 +8,15 @@
 #ifndef GTS_WAVEFORM_H
 #define GTS_WAVEFORM_H
 
-#include <gctypes.h>
+#include <stdint.h>
 
 #define TRIGGER_SAMPLES 500
 typedef struct TriggerDatapoint {
-	u8 triggerLAnalog;
-	u8 triggerRAnalog;
+	uint8_t triggerLAnalog;
+	uint8_t triggerRAnalog;
 	bool triggerLDigital;
 	bool triggerRDigital;
-	u64 timeDiffUs;
+	uint64_t timeDiffUs;
 } TriggerDatapoint;
 
 typedef struct TriggerData {
@@ -25,7 +25,7 @@ typedef struct TriggerData {
 	unsigned int curr;
 	unsigned int endPoint;
 	
-	u64 totalTimeUs;
+	uint64_t totalTimeUs;
 	
 	bool isDataReady;
 } TriggerData;
@@ -40,11 +40,11 @@ typedef struct WaveformDatapoint {
 	int cx;
 	int cy;
 	// buttons held
-	u32 buttonsHeld;
+	uint32_t buttonsHeld;
 	// triggers
 	TriggerDatapoint triggers;
 	// time from last datapoint
-	u64 timeDiffUs;
+	uint64_t timeDiffUs;
 	// for converted values
 	bool isAXNegative;
 	bool isAYNegative;
@@ -57,7 +57,7 @@ typedef struct WaveformData {
 	unsigned int endPoint;
 
 	// total time the read took
-	u64 totalTimeUs;
+	uint64_t totalTimeUs;
 	
 	bool isDataReady;
 	

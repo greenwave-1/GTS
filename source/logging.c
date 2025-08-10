@@ -7,6 +7,7 @@
 #include "logging.h"
 
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <network.h>
 #include <stdarg.h>
@@ -29,9 +30,9 @@ static char localip[16] = {0};
 static char gateway[16] = {0};
 static char netmask[16] = {0};
 
-static s32 sock, csock;
+static int32_t sock, csock;
 static struct sockaddr_in client, server;
-static u32 clientlen;
+static uint32_t clientlen;
 
 static FILE *logFile = NULL;
 
@@ -117,12 +118,12 @@ void setupLogging(enum LOGGING_DEVICE device) {
 	}
 }
 
-static u32 sum = 0;
+static uint32_t sum = 0;
 
 void debugLog(char *msg, ...) {
 	if (deviceSet) {
 		// ensure we don't send duplicate messages
-		u32 temp = 0;
+		uint32_t temp = 0;
 		for (int i = 0; i < strlen(msg); i++) {
 			temp += msg[i];
 		}

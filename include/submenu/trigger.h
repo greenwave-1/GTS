@@ -8,13 +8,13 @@
 #ifndef GTS_TRIGGER_H
 #define GTS_TRIGGER_H
 
-#include <gctypes.h>
+#include <stdint.h>
 
 enum TRIG_MENU_STATE { TRIG_SETUP, TRIG_POST_SETUP, TRIG_INSTRUCTIONS };
 enum TRIG_STATE { TRIG_INPUT, TRIG_DISPLAY, TRIG_DISPLAY_LOCK };
 enum TRIG_CAPTURE_SELECTION { TRIGGER_L, TRIGGER_R };
 
-void menu_triggerOscilloscope(void *currXfb, u32 *p, u32 *h);
+void menu_triggerOscilloscope(void *currXfb, uint32_t *p, uint32_t *h);
 void menu_triggerOscilloscopeEnd();
 
 #endif //GTS_TRIGGER_H

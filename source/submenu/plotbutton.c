@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
@@ -26,22 +27,22 @@ const static int SCREEN_CHAR_SIZE = 14;
 const static char* BUTTON_STR[13] = { "A", "B", "X", "Y",
 									  "L", "La", "R", "Ra", "Z",
 									  "AX", "AY", "CX", "CY"};
-const static u32 BUTTON_MASKS[13] = { PAD_BUTTON_A, PAD_BUTTON_B, PAD_BUTTON_X, PAD_BUTTON_Y,
+const static uint32_t BUTTON_MASKS[13] = { PAD_BUTTON_A, PAD_BUTTON_B, PAD_BUTTON_X, PAD_BUTTON_Y,
 									  PAD_TRIGGER_L, 0, PAD_TRIGGER_R, 0, PAD_TRIGGER_Z,
 									  0, 0, 0, 0 };
 
 static char strBuffer[100];
 
-static u32 *pressed = NULL;
-static u32 *held = NULL;
+static uint32_t *pressed = NULL;
+static uint32_t *held = NULL;
 static bool buttonLock = false;
-static u8 buttonPressCooldown = 0;
+static uint8_t buttonPressCooldown = 0;
 
-static u8 stickThreshold = 23;
-static u8 triggerThreshold = 255;
+static uint8_t stickThreshold = 23;
+static uint8_t triggerThreshold = 255;
 // since there are two options, this can be a bool. false = trigger selected
 static bool stickThresholdSelected = true;
-static u8 thresholdFrameCounter = 0;
+static uint8_t thresholdFrameCounter = 0;
 
 static enum PLOT_BUTTON_MENU_STATE menuState = BUTTON_SETUP;
 static enum PLOT_BUTTON_STATE state = BUTTON_INPUT;
@@ -53,22 +54,22 @@ static enum PLOT_BUTTON_LIST triggeringInputDisplay = NO_BUTTON;
 static WaveformDatapoint data[500];
 static int dataIndex = 0;
 static bool dataIsReady = false;
-static u8 triggerLAnalog = 0, triggerRAnalog = 0;
-static u64 totalCaptureTimeUs = 0;
+static uint8_t triggerLAnalog = 0, triggerRAnalog = 0;
+static uint64_t totalCaptureTimeUs = 0;
 static bool captureStart = false;
 static bool captureButtonsReleased = false;
 static bool autoCapture = false;
-static u8 autoCaptureCounter = 0;
+static uint8_t autoCaptureCounter = 0;
 
 static sampling_callback cb;
-static u64 prevSampleCallbackTick = 0;
-static u64 sampleCallbackTick = 0;
-static u64 pressedTimer = 0;
-static u8 ellipseCounter = 0;
+static uint64_t prevSampleCallbackTick = 0;
+static uint64_t sampleCallbackTick = 0;
+static uint64_t pressedTimer = 0;
+static uint8_t ellipseCounter = 0;
 static bool pressLocked = false;
 
 typedef struct ButtonPressedTime {
-	u64 timeHeld;
+	uint64_t timeHeld;
 	bool pressFinished;
 } ButtonPressedTime;
 
@@ -77,7 +78,6 @@ static void plotButtonSamplingCallback() {
 	prevSampleCallbackTick = sampleCallbackTick;
 	sampleCallbackTick = gettime();
 	
-	//static s8 x, y, cx, cy;
 	PAD_ScanPads();
 	
 	// keep buttons in a "pressed" state long enough for code to see it
@@ -184,7 +184,7 @@ static void plotButtonSamplingCallback() {
 	}
 }
 
-static void setup(u32 *p, u32 *h) {
+static void setup(uint32_t *p, uint32_t *h) {
 	setSamplingRateHigh();
 	pressed = p;
 	held = h;
@@ -222,7 +222,7 @@ static void displayInstructions(void *currXfb) {
 	}
 }
 
-void menu_plotButton(void *currXfb, u32 *p, u32 *h) {
+void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 	switch (menuState) {
 		case BUTTON_SETUP:
 			setup(p, h);
@@ -269,8 +269,8 @@ void menu_plotButton(void *currXfb, u32 *p, u32 *h) {
 						}
 						//printStr("   A\n   B\n   X\n   Y\n   L\n   La\n   R\n   Ra\n   Z\n   AX\n   AY\n   CX\n   CY", currXfb);
 						
-						u64 frameIntervalTime = 16666;
-						u64 totalTimeUs = 0;
+						uint64_t frameIntervalTime = 16666;
+						uint64_t totalTimeUs = 0;
 						ButtonPressedTime buttons[13] = {{ 0, false }};
 						// draw data
 						for (int i = 0; i < dataIndex; i++) {
