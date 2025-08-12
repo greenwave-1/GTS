@@ -4,6 +4,8 @@
 #include <fat.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <sys/stat.h>
 
 #include "waveform.h"
 #include "print.h"
