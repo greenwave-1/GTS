@@ -10,6 +10,80 @@
 
 #include <stdint.h>
 
+// individual datapoint from a given controller poll
+typedef struct ControllerSample {
+	// all analog values
+	// analog stick
+	int8_t stickX;
+	int8_t stickY;
+	
+	// c-stick
+	int8_t cStickX;
+	int8_t cStickY;
+	
+	// analog triggers
+	uint8_t triggerL;
+	uint8_t triggerR;
+	
+	// all digital buttons
+	uint32_t buttons;
+	
+	// time in microseconds from last sample
+	// this will be zero for the first sample
+	uint64_t timeDiffUs;
+	
+} ControllerSample;
+
+typedef struct MeleeCoordinates {
+	// valid values for melee units are 0 -> 10000 in multiples of 125
+	uint16_t stickXUnit;
+	uint16_t stickYUnit;
+	uint16_t cStickXUnit;
+	uint16_t cStickYUnit;
+	
+} MeleeCoordinates;
+
+// allocated/max size of the data array
+#define REC_SAMPLE_MAX 3000
+
+// the type of recording created
+enum RECORDING_TYPE { REC_CLEAR, REC_OSCILLOSCOPE, REC_TRIGGER, REC_2DPLOT, REC_BUTTONTIME };
+
+// recording structure
+// holds all datapoints (ControllerSample) captured, along with what type of recording (RECORDING_TYPE) and total datapoints
+typedef struct ControllerRec {
+	// array of datapoints
+	ControllerSample samples[REC_SAMPLE_MAX];
+	
+	// the total number of samples (IE: the last capture index)
+	int sampleEnd;
+	
+	// total time in microseconds that a given recording lasts
+	uint64_t totalTimeUs;
+	
+	// recording type
+	enum RECORDING_TYPE recordingType;
+	
+	// flag for if contents are considered "ready"
+	bool isRecordingReady;
+	
+	// flag for exporting
+	bool dataExported;
+	
+} ControllerRec;
+
+void initData();
+
+ControllerRec** getRecordingData();
+ControllerRec** getTempData();
+void clearRecordingArray(ControllerRec *recording);
+
+// flips pointers in static memory
+// allows menus to get a double pointer and not have to change them in each menu
+void flipData();
+
+MeleeCoordinates convertStickRawToMelee(ControllerSample sample);
+
 #define TRIGGER_SAMPLES 500
 typedef struct TriggerDatapoint {
 	uint8_t triggerLAnalog;
@@ -68,13 +142,8 @@ typedef struct WaveformData {
 
 } WaveformData;
 
-//enum CONTROLLER_STICKS_XY { A_STICK_X, A_STICK_Y, C_STICK_X, C_STICK_Y };
-
 // converts raw input values to melee coordinates
 WaveformDatapoint convertStickValues(WaveformDatapoint *data);
-
-//char* meleeCoord(WaveformDatapoint data, enum CONTROLLER_STICKS_XY axis);
-//char* meleeCoord(int coord);
 
 
 #endif //GTS_WAVEFORM_H

@@ -5,6 +5,7 @@
 #include "menu.h"
 #include "polling.h"
 #include "print.h"
+#include "waveform.h"
 
 #ifdef DEBUGLOG
 #include "logging.h"
@@ -226,6 +227,9 @@ int main(int argc, char **argv) {
 		}
 		return 0;
 	}
+	
+	// init recording data structs
+	initData();
 	
 	// main loop of the program
 	// exits when menu_runMenu() returns true, or when either power or reset are pressed
