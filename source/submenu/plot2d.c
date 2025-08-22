@@ -123,6 +123,7 @@ static void plot2dSamplingCallback() {
 						(*temp)->sampleEnd = noMovementStartIndex;
 					}
 					(*temp)->isRecordingReady = true;
+					(*temp)->recordingType = REC_2DPLOT;
 					captureStartFrameCooldown = 5;
 					plotState = PLOT_DISPLAY;
 				}

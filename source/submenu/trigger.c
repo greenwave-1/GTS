@@ -33,11 +33,12 @@ static uint8_t captureStartFrameCooldown = 0;
 
 static enum TRIG_MENU_STATE menuState = TRIG_SETUP;
 static enum TRIG_STATE trigState = TRIG_INPUT;
-static enum TRIG_CAPTURE_SELECTION captureSelection = TRIGGER_L;
+static enum TRIG_CAPTURE_SELECTION captureSelection = TRIGGER_NONE;
+static enum TRIG_CAPTURE_SELECTION displaySelection = TRIGGER_NONE;
 
-static TriggerData data = { {{0}}, 0, 0, 0, 0, false };
-static TriggerDatapoint curr;
-static TriggerDatapoint startingLoop[100];
+static ControllerRec **data = NULL, **temp = NULL;
+static ControllerSample curr;
+static ControllerSample startingLoop[100];
 static int startingLoopIndex = 0;
 static bool startedCapture = false;
 
@@ -76,22 +77,25 @@ void triggerSamplingCallback() {
 	// detection logic
 	if (trigState != TRIG_DISPLAY_LOCK && captureStartFrameCooldown == 0) {
 		// record current data
-		curr.triggerLAnalog = PAD_TriggerL(0);
-		curr.triggerRAnalog = PAD_TriggerR(0);
-		curr.triggerLDigital = (*held & PAD_TRIGGER_L);
-		curr.triggerRDigital = (*held & PAD_TRIGGER_R);
+		curr.triggerL = PAD_TriggerL(0);
+		curr.triggerR = PAD_TriggerR(0);
+		curr.buttons = *held;
 		curr.timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 		
 		if (startedCapture) {
 			// capture data
-			data.data[data.endPoint] = curr;
-			data.endPoint++;
+			(*temp)->samples[(*temp)->sampleEnd] = curr;
+			(*temp)->sampleEnd++;
 			
 			// fill buffer
-			if (data.endPoint == TRIGGER_SAMPLES) {
+			if ((*temp)->sampleEnd == TRIGGER_SAMPLES) {
 				trigState = TRIG_DISPLAY;
 				startedCapture = false;
-				data.isDataReady = true;
+				(*temp)->isRecordingReady = true;
+				(*temp)->recordingType = REC_TRIGGER;
+				displaySelection = captureSelection;
+				captureSelection = TRIGGER_NONE;
+				flipData();
 				captureStartFrameCooldown = 5;
 			}
 		} else {
@@ -102,50 +106,13 @@ void triggerSamplingCallback() {
 				startingLoopIndex = 0;
 			}
 			// check for analog value above 42, or for any digital trigger
-			if (curr.triggerLAnalog >= 43 || curr.triggerLDigital) {
+			if (curr.triggerL >= 43 || curr.buttons & PAD_TRIGGER_L) {
 				captureSelection = TRIGGER_L;
-				data.endPoint = 0;
-				// prepend ~50 ms of data to the recording
-				int loopStartIndex = startingLoopIndex - 1;
-				if (loopStartIndex == -1) {
-					loopStartIndex = 100;
-				}
-				int loopPrependCount = 0;
-				uint64_t prependedTimeUs = 0;
-				// go back 50 ms
-				while (prependedTimeUs < 50000) {
-					// break out of loop if data doesn't exist
-					if (startingLoop[loopStartIndex].timeDiffUs == 0) {
-						break;
-					}
-					prependedTimeUs += startingLoop[loopStartIndex].timeDiffUs;
-					loopStartIndex--;
-					if (loopStartIndex == -1) {
-						loopStartIndex = 100;
-					}
-					loopPrependCount++;
-				}
-				for (int i = 0; i < loopPrependCount; i++ ) {
-					data.data[data.endPoint] = startingLoop[(loopStartIndex + i) % 100];
-					if (data.endPoint == 0) {
-						data.data[0].timeDiffUs = 0;
-					}
-					data.endPoint++;
-				}
-				// clear startingLoop
-				for (int i = 0; i < 100; i++) {
-					startingLoop[i].triggerLAnalog = 0;
-					startingLoop[i].triggerRAnalog = 0;
-					startingLoop[i].triggerLDigital = false;
-					startingLoop[i].triggerRDigital = false;
-					startingLoop[i].timeDiffUs = 0;
-				}
-				data.isDataReady = false;
-				trigState = TRIG_INPUT;
-				startedCapture = true;
-			} else if (curr.triggerRAnalog >= 43 || curr.triggerRDigital) {
+			} else if (curr.triggerR >= 43 || curr.buttons & PAD_TRIGGER_R) {
 				captureSelection = TRIGGER_R;
-				data.endPoint = 0;
+			}
+			if (captureSelection != TRIGGER_NONE) {
+				(*temp)->sampleEnd = 0;
 				// prepend ~50 ms of data to the recording
 				int loopStartIndex = startingLoopIndex - 1;
 				if (loopStartIndex == -1) {
@@ -159,29 +126,28 @@ void triggerSamplingCallback() {
 					if (startingLoop[loopStartIndex].timeDiffUs == 0) {
 						break;
 					}
+					prependedTimeUs += startingLoop[loopStartIndex].timeDiffUs;
 					loopStartIndex--;
 					if (loopStartIndex == -1) {
 						loopStartIndex = 100;
 					}
 					loopPrependCount++;
-					prependedTimeUs += startingLoop[loopStartIndex].timeDiffUs;
 				}
 				for (int i = 0; i < loopPrependCount; i++ ) {
-					data.data[data.endPoint] = startingLoop[(loopStartIndex + i) % 100];
-					if (data.endPoint == 0) {
-						data.data[0].timeDiffUs = 0;
+					(*temp)->samples[(*temp)->sampleEnd] = startingLoop[(loopStartIndex + i) % 100];
+					if ((*temp)->sampleEnd == 0) {
+						(*temp)->samples[0].timeDiffUs = 0;
 					}
-					data.endPoint++;
+					(*temp)->sampleEnd++;
 				}
 				// clear startingLoop
 				for (int i = 0; i < 100; i++) {
-					startingLoop[i].triggerLAnalog = 0;
-					startingLoop[i].triggerRAnalog = 0;
-					startingLoop[i].triggerLDigital = false;
-					startingLoop[i].triggerRDigital = false;
+					startingLoop[i].triggerL = 0;
+					startingLoop[i].triggerR = 0;
+					startingLoop[i].buttons = 0;
 					startingLoop[i].timeDiffUs = 0;
 				}
-				data.isDataReady = false;
+				(*temp)->isRecordingReady = false;
 				trigState = TRIG_INPUT;
 				startedCapture = true;
 			}
@@ -192,9 +158,19 @@ void triggerSamplingCallback() {
 static void setup(uint32_t *p, uint32_t *h) {
 	pressed = p;
 	held = h;
-	//data.endPoint = TRIGGER_SAMPLES - 1;
 	setSamplingRateHigh();
 	cb = PAD_SetSamplingCallback(triggerSamplingCallback);
+	if (data == NULL) {
+		data = getRecordingData();
+		temp = getTempData();
+	}
+	
+	// don't use data not recorded for triggers
+	// _technically_ this doesn't need to happen, but other recording types are basically useless here
+	if ((*data)->recordingType != REC_TRIGGER) {
+		clearRecordingArray(*data);
+		trigState = TRIG_INPUT;
+	}
 	menuState = TRIG_POST_SETUP;
 }
 
@@ -238,12 +214,14 @@ void menu_triggerOscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 					if (ellipseCounter == 60) {
 						ellipseCounter = 0;
 					}
-					break;
 				case TRIG_DISPLAY_LOCK:
-					setCursorPos(2, 28);
-					printStrColor("LOCKED", currXfb, COLOR_WHITE, COLOR_BLACK);
+					// TODO: this is dumb, do this a better way to fit better
+					if (trigState == TRIG_DISPLAY_LOCK) {
+						setCursorPos(2, 28);
+						printStrColor("LOCKED", currXfb, COLOR_WHITE, COLOR_BLACK);
+					}
 				case TRIG_DISPLAY:
-					if (data.isDataReady) {
+					if ((*data)->isRecordingReady) {
 						// bounding box
 						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
 						// line at 43, start of melee analog shield range
@@ -258,23 +236,27 @@ void menu_triggerOscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 						// draw 500 datapoints
 						for (int i = 0; i < 500; i++) {
 							// make sure we haven't gone outside our bounds
-							if (i == data.endPoint || waveformXPos >= 500) {
+							if (i == (*data)->sampleEnd || waveformXPos >= 500) {
 								break;
 							}
 							
-							switch (captureSelection) {
+							switch (displaySelection) {
 								case TRIGGER_L:
-									curr = data.data[i].triggerLAnalog;
-									currDigital = data.data[i].triggerLDigital;
+									curr = (*data)->samples[i].triggerL;
+									currDigital = (*data)->samples[i].buttons & PAD_TRIGGER_L;
 									break;
 								case TRIGGER_R:
-									curr = data.data[i].triggerRAnalog;
-									currDigital = data.data[i].triggerRDigital;
+									curr = (*data)->samples[i].triggerR;
+									currDigital = (*data)->samples[i].buttons & PAD_TRIGGER_R;
+									break;
+								default:
+									//(*data)->isRecordingReady = false;
+									printStr("Data ready but selection is not valid.", currXfb);
 									break;
 							}
 							
 							// frame intervals
-							totalTime += data.data[i].timeDiffUs;
+							totalTime += (*data)->samples[i].timeDiffUs;
 							if (totalTime >= 16666) {
 								DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
 								         SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
@@ -300,12 +282,15 @@ void menu_triggerOscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 						}
 						
 						setCursorPos(3, 27);
-						switch (captureSelection) {
+						switch (displaySelection) {
 							case TRIGGER_L:
 								printStr("L Trigger", currXfb);
 								break;
 							case TRIGGER_R:
 								printStr("R Trigger", currXfb);
+								break;
+							default:
+								printStr("Capture selection invalid", currXfb);
 								break;
 						}
 						
@@ -315,28 +300,31 @@ void menu_triggerOscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 						float psDigital = 0.0, psADT = 0.0, psNone = 0.0;
 						uint64_t timeInAnalogRangeUs = 0;
 						int sampleDigitalBegin = -1;
-						switch (captureSelection) {
+						switch (displaySelection) {
 							case TRIGGER_L:
-								for (int i = 0; i < data.endPoint; i++) {
-									if (data.data[i].triggerLDigital) {
+								for (int i = 0; i < (*data)->sampleEnd; i++) {
+									if ((*data)->samples[i].buttons & PAD_TRIGGER_L) {
 										sampleDigitalBegin = i;
 										break;
 									}
-									if (data.data[i].triggerLAnalog > 42) {
-										timeInAnalogRangeUs += data.data[i].timeDiffUs;
+									if ((*data)->samples[i].triggerL > 42) {
+										timeInAnalogRangeUs += (*data)->samples[i].timeDiffUs;
 									}
 								}
 								break;
 							case TRIGGER_R:
-								for (int i = 0; i < data.endPoint; i++) {
-									if (data.data[i].triggerRDigital) {
+								for (int i = 0; i < (*data)->sampleEnd; i++) {
+									if ((*data)->samples[i].buttons & PAD_TRIGGER_R) {
 										sampleDigitalBegin = i;
 										break;
 									}
-									if (data.data[i].triggerRAnalog > 42) {
-										timeInAnalogRangeUs += data.data[i].timeDiffUs;
+									if ((*data)->samples[i].triggerR > 42) {
+										timeInAnalogRangeUs += (*data)->samples[i].timeDiffUs;
 									}
 								}
+								break;
+							default:
+								printStr("Capture selection invalid", currXfb);
 								break;
 						}
 						
@@ -365,18 +353,21 @@ void menu_triggerOscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 						sprintf(strBuffer, "Digital PS: %3.1f%% | ADT PS: %3.1f%% | No PS: %3.1f%%", psDigital, psADT, psNone);
 						printStr(strBuffer, currXfb);
 						
+						if (!buttonLock) {
+							if (*pressed & PAD_BUTTON_A) {
+								if (trigState == TRIG_DISPLAY) {
+									trigState = TRIG_DISPLAY_LOCK;
+								} else {
+									trigState = TRIG_DISPLAY;
+								}
+								buttonLock = true;
+								buttonPressCooldown = 5;
+							}
+						}
 					}
 					if (!buttonLock) {
 						if (*pressed & PAD_TRIGGER_Z) {
 							menuState = TRIG_INSTRUCTIONS;
-							buttonLock = true;
-							buttonPressCooldown = 5;
-						} else if (*pressed & PAD_BUTTON_A) {
-							if (trigState == TRIG_DISPLAY) {
-								trigState = TRIG_DISPLAY_LOCK;
-							} else {
-								trigState = TRIG_DISPLAY;
-							}
 							buttonLock = true;
 							buttonPressCooldown = 5;
 						}
@@ -418,8 +409,8 @@ void menu_triggerOscilloscopeEnd() {
 	pressed = NULL;
 	held = NULL;
 	menuState = TRIG_SETUP;
-	if (!data.isDataReady) {
-		data.endPoint = 0;
+	if (!(*data)->isRecordingReady) {
+		(*data)->sampleEnd = 0;
 		startedCapture = false;
 	}
 }
