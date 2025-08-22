@@ -157,7 +157,7 @@ bool menu_runMenu(void *currXfb) {
 			menu_oscilloscope(currXfb, &data, &pressed, &held);
 			break;
 		case PLOT_2D:
-			menu_plot2d(currXfb, &data, &pressed, &held);
+			menu_plot2d(currXfb, &pressed, &held);
 			break;
 		case FILE_EXPORT:
 			menu_fileExport(currXfb);
