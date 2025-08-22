@@ -318,22 +318,27 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 									DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
 									          SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
 									          COLOR_WHITE, currXfb);
-									
-									// check timing stuff
-									if (!buttons[currButton].pressFinished) {
-										// triggering input should have length of time that the first input was held
-										if (currButton == triggeringInputDisplay) {
-											buttons[currButton].timeHeld += data[i].timeDiffUs;
-										}
-										// other buttons should have time from start to first poll
-										else {
-											buttons[currButton].timeHeld = totalTimeUs;
+								}
+								
+								// calculate what timing to show if not marked done
+								if (!buttons[currButton].pressFinished) {
+									// triggering button
+									if (currButton == triggeringInputDisplay) {
+										if (result) {
+											// triggering input should have length of time that the first input was held
+											if (currButton == triggeringInputDisplay) {
+												buttons[currButton].timeHeld += data[i].timeDiffUs;
+											}
+										} else if (buttons[currButton].timeHeld != 0) {
 											buttons[currButton].pressFinished = true;
 										}
 									}
-									// mark button as finished for timing when let go, only triggering input
-									else if (buttons[currButton].timeHeld != 0) {
-										buttons[currButton].pressFinished = true;
+									// literally everything else
+									else {
+										if (result) {
+											buttons[currButton].timeHeld = totalTimeUs;
+											buttons[currButton].pressFinished = true;
+										}
 									}
 								}
 							}
