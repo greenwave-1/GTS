@@ -131,7 +131,7 @@ static void oscilloscopeCallback() {
 					snapbackPrevPosY = selectedStickY;
 					
 					// have we either run out of data, or has the stick stopped moving for long enough?
-					if ((*temp)->sampleEnd == WAVEFORM_SAMPLES || ((timeStoppedMoving / 1000)) >= STICK_MOVEMENT_TIME_THRESHOLD_MS) {
+					if ((*temp)->sampleEnd == REC_SAMPLE_MAX || ((timeStoppedMoving / 1000)) >= STICK_MOVEMENT_TIME_THRESHOLD_MS) {
 						// are we stopped near the origin?
 						if ((abs(selectedStickX) < STICK_MOVEMENT_THRESHOLD) && (abs(selectedStickY) < STICK_MOVEMENT_THRESHOLD)) {
 							(*temp)->isRecordingReady = true;
@@ -156,7 +156,7 @@ static void oscilloscopeCallback() {
 					}
 					
 					// have we met conditions to end recording?
-					if ((*temp)->sampleEnd == WAVEFORM_SAMPLES || (timeStickInOrigin / 1000) >= STICK_ORIGIN_TIME_THRESHOLD_MS) {
+					if ((*temp)->sampleEnd == REC_SAMPLE_MAX || (timeStickInOrigin / 1000) >= STICK_ORIGIN_TIME_THRESHOLD_MS) {
 						// this will truncate the recording to just the pivot input
 						uint64_t timeFromOriginCross = 0;
 						bool crossed64Range = false;
@@ -205,7 +205,7 @@ static void oscilloscopeCallback() {
 						timeStickInOrigin = 0;
 					}
 					
-					if ((*temp)->sampleEnd == WAVEFORM_SAMPLES || (timeStickInOrigin / 1000) >= STICK_ORIGIN_TIME_THRESHOLD_MS) {
+					if ((*temp)->sampleEnd == REC_SAMPLE_MAX || (timeStickInOrigin / 1000) >= STICK_ORIGIN_TIME_THRESHOLD_MS) {
 						(*temp)->isRecordingReady = true;
 					}
 					break;

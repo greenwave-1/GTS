@@ -24,6 +24,7 @@
 
 static const float FRAME_TIME_MS = (1000/60.0);
 const static uint8_t SCREEN_TIMEPLOT_START = 70;
+const static int TRIGGER_SAMPLES = 500;
 
 static uint32_t *pressed = NULL;
 static uint32_t *held = NULL;

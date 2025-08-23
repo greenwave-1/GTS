@@ -11,6 +11,7 @@ static bool init = false;
 static ControllerRec *recordingData;
 static ControllerRec *tempData;
 
+// allocate memory for and initialize recording structs
 void initData() {
 	if (!init) {
 		recordingData = malloc(sizeof(ControllerRec));
@@ -49,6 +50,8 @@ void clearRecordingArray(ControllerRec *recording) {
 	recording->dataExported = false;
 }
 
+// change what static pointers are pointing to
+// this allow a double pointer only get an address once, and still be able to swap values
 void flipData() {
 	// switch pointers
 	ControllerRec *temp = tempData;
@@ -57,6 +60,7 @@ void flipData() {
 	
 	// mark "old" data as not ready for display
 	tempData->isRecordingReady = false;
+	tempData->dataExported = false;
 }
 
 // a lot of this comes from github.com/phobgcc/phobconfigtool

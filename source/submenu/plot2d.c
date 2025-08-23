@@ -112,7 +112,7 @@ static void plot2dSamplingCallback() {
 			(*temp)->sampleEnd++;
 			
 			// are we currently checking if the stick has stopped moving?
-			if ((prevPosDiffX < 2 && prevPosDiffY < 2 && prevMovementHeldState == currMovementHeldState) || (*temp)->sampleEnd == WAVEFORM_SAMPLES) {
+			if ((prevPosDiffX < 2 && prevPosDiffY < 2 && prevMovementHeldState == currMovementHeldState) || (*temp)->sampleEnd == REC_SAMPLE_MAX) {
 				if (noMovementStartIndex == -1) {
 					noMovementStartIndex = (*temp)->sampleEnd;
 				} else {

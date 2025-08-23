@@ -88,7 +88,7 @@ static void contSamplingCallback() {
 			data->samples[dataIndex].timeDiffUs = 0;
 		}
 		dataIndex++;
-		if (dataIndex == WAVEFORM_SAMPLES) {
+		if (dataIndex == REC_SAMPLE_MAX) {
 			dataIndex = 0;
 		}
 	}
@@ -140,8 +140,8 @@ void menu_continuousWaveform(void *currXfb, uint32_t *p, uint32_t *h) {
 				// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
 				
 				// reset offset if its invalid
-				if (dataScrollOffset > (WAVEFORM_SAMPLES - (500 * waveformScaleFactor))) {
-					dataScrollOffset = (WAVEFORM_SAMPLES - (500 * waveformScaleFactor));
+				if (dataScrollOffset > (REC_SAMPLE_MAX - (500 * waveformScaleFactor))) {
+					dataScrollOffset = (REC_SAMPLE_MAX - (500 * waveformScaleFactor));
 				} else if (dataScrollOffset < 0) {
 					dataScrollOffset = 0;
 				}
@@ -156,7 +156,7 @@ void menu_continuousWaveform(void *currXfb, uint32_t *p, uint32_t *h) {
 				// waveformScaleFactor determines how much information is shown by only drawing every x point
 				int startPoint = (dataIndex - (500 * waveformScaleFactor) - dataScrollOffset);
 				if (startPoint < 0) {
-					startPoint += WAVEFORM_SAMPLES;
+					startPoint += REC_SAMPLE_MAX;
 				}
 				
 				if (cState == INPUT_LOCK && waveformScaleFactor != 6) {
@@ -180,11 +180,11 @@ void menu_continuousWaveform(void *currXfb, uint32_t *p, uint32_t *h) {
 				for (int i = 0; i < 500; i++) {
 					int currX, currY;
 					if (!showCStick) {
-						currX = data->samples[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].stickX;
-						currY = data->samples[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].stickY;
+						currX = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].stickX;
+						currY = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].stickY;
 					} else {
-						currX = data->samples[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].cStickX;
-						currY = data->samples[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].cStickY;
+						currX = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].cStickX;
+						currY = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].cStickY;
 					}
 					
 					// y first
@@ -201,7 +201,7 @@ void menu_continuousWaveform(void *currXfb, uint32_t *p, uint32_t *h) {
 					// frame interval stuff
 					if (prevIndex != -1) {
 						for (int j = 0; j < waveformScaleFactor; j++) {
-							if (data->samples[(prevIndex + j) % WAVEFORM_SAMPLES].timeDiffUs == 1) {
+							if (data->samples[(prevIndex + j) % REC_SAMPLE_MAX].timeDiffUs == 1) {
 								if (waveformScaleFactor <= 2) {
 									DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
 									        SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
@@ -210,7 +210,7 @@ void menu_continuousWaveform(void *currXfb, uint32_t *p, uint32_t *h) {
 							}
 						}
 					}
-					prevIndex = (startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES;
+					prevIndex = (startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX;
 					
 					// update scaling factor
 					waveformPrevXPos = waveformXPos;
