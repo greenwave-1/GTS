@@ -10,6 +10,6 @@
 bool initFilesystem();
 FILE *openFile(char *filename, char *modes);
 
-int exportData(WaveformData *data);
+int exportData();
 
 #endif //GTS_FILE_H

@@ -57,8 +57,8 @@ static uint8_t mainMenuSelection = 0;
 // counter for how many frames b or start have been held
 static uint8_t bHeldCounter = 0;
 
-// data for drawing a waveform
-static WaveformData data = { {{ 0 }}, 0, 0, false, false };
+// displayed struct
+static ControllerRec **data = NULL;
 
 // vars for what buttons are pressed or held
 static uint32_t pressed = 0;
@@ -99,6 +99,11 @@ static uint8_t thanksPageCounter = 0;
 // other menu functions are called from here
 // this also handles moving between menus and exiting
 bool menu_runMenu(void *currXfb) {
+	if (data == NULL) {
+		initData();
+		data = getRecordingData();
+	}
+	
 	if (!setDrawInterlaceMode) {
 		if (VIDEO_GetScanMode() == VI_INTERLACE) {
 			setInterlaced(true);
@@ -122,11 +127,11 @@ bool menu_runMenu(void *currXfb) {
 	if ((padsConnected & 1) == 0) {
 		setCursorPos(0, 38);
 		printStr("Controller Disconnected!", currXfb);
-		data.isDataReady = false;
+		(*data)->isRecordingReady = false;
 		originRead = false;
 	}
 	
-	if (data.isDataReady) {
+	if ((*data)->isRecordingReady) {
 		setCursorPos(0, 31);
 		printStr("Oscilloscope Capture in memory!", currXfb);
 	} else {
@@ -444,53 +449,53 @@ void menu_controllerTest(void *currXfb) {
 	// melee stick coordinates stuff
 	// a lot of this comes from github.com/phobgcc/phobconfigtool
 
-	static WaveformDatapoint stickCoordinatesRaw;
-	static WaveformDatapoint stickCoordinatesMelee;
+	static ControllerSample stickRaw;
+	static MeleeCoordinates stickMelee;
 
 	// get raw stick values
-	stickCoordinatesRaw.ax = PAD_StickX(0), stickCoordinatesRaw.ay = PAD_StickY(0);
-	stickCoordinatesRaw.cx = PAD_SubStickX(0), stickCoordinatesRaw.cy = PAD_SubStickY(0);
+	stickRaw.stickX = PAD_StickX(0), stickRaw.stickY = PAD_StickY(0);
+	stickRaw.cStickX = PAD_SubStickX(0), stickRaw.cStickY = PAD_SubStickY(0);
 
 	// get converted stick values
-	stickCoordinatesMelee = convertStickValues(&stickCoordinatesRaw);
+	stickMelee = convertStickRawToMelee(stickRaw);
 	
 	// print raw stick coordinates
 	setCursorPos(19, 0);
-	sprintf(strBuffer, "Raw XY: (%04d,%04d)", stickCoordinatesRaw.ax, stickCoordinatesRaw.ay);
+	sprintf(strBuffer, "Raw XY: (%04d,%04d)", stickRaw.stickX, stickRaw.stickY);
 	printStr(strBuffer, currXfb);
 	setCursorPos(19, 38);
-	sprintf(strBuffer, "C-Raw XY: (%04d,%04d)", stickCoordinatesRaw.cx, stickCoordinatesRaw.cy);
+	sprintf(strBuffer, "C-Raw XY: (%04d,%04d)", stickRaw.cStickX, stickRaw.cStickY);
 	printStr(strBuffer, currXfb);
 	
 	// print melee coordinates
 	setCursorPos(20, 0);
 	printStr("Melee: (", currXfb);
 	// is the value negative?
-	if (stickCoordinatesRaw.ax < 0) {
+	if (stickRaw.stickX < 0) {
 		printStr("-", currXfb);
 	} else {
 		printStr("0", currXfb);
 	}
 	// is this a 1.0 value?
-	if (stickCoordinatesMelee.ax == 10000) {
+	if (stickMelee.stickXUnit == 10000) {
 		printStr("1.0000", currXfb);
 	} else {
-		sprintf(strBuffer, "0.%04d", stickCoordinatesMelee.ax);
+		sprintf(strBuffer, "0.%04d", stickMelee.stickXUnit);
 		printStr(strBuffer, currXfb);
 	}
 	printStr(",", currXfb);
 	
 	// is the value negative?
-	if (stickCoordinatesRaw.ay < 0) {
+	if (stickRaw.stickY < 0) {
 		printStr("-", currXfb);
 	} else {
 		printStr("0", currXfb);
 	}
 	// is this a 1.0 value?
-	if (stickCoordinatesMelee.ay == 10000) {
+	if (stickMelee.stickYUnit == 10000) {
 		printStr("1.0000", currXfb);
 	} else {
-		sprintf(strBuffer, "0.%04d", stickCoordinatesMelee.ay);
+		sprintf(strBuffer, "0.%04d", stickMelee.stickYUnit);
 		printStr(strBuffer, currXfb);
 	}
 	printStr(")", currXfb);
@@ -499,31 +504,31 @@ void menu_controllerTest(void *currXfb) {
 	sprintf(strBuffer, "C-Melee: (");
 	printStr(strBuffer, currXfb);
 	// is the value negative?
-	if (stickCoordinatesRaw.cx < 0) {
+	if (stickRaw.cStickX < 0) {
 		printStr("-", currXfb);
 	} else {
 		printStr("0", currXfb);
 	}
 	// is this a 1.0 value?
-	if (stickCoordinatesMelee.cx == 10000) {
+	if (stickMelee.cStickXUnit == 10000) {
 		printStr("1.0000", currXfb);
 	} else {
-		sprintf(strBuffer, "0.%04d", stickCoordinatesMelee.cx);
+		sprintf(strBuffer, "0.%04d", stickMelee.cStickXUnit);
 		printStr(strBuffer, currXfb);
 	}
 	printStr(",", currXfb);
 	
 	// is the value negative?
-	if (stickCoordinatesRaw.cy < 0) {
+	if (stickRaw.cStickY < 0) {
 		printStr("-", currXfb);
 	} else {
 		printStr("0", currXfb);
 	}
 	// is this a 1.0 value?
-	if (stickCoordinatesMelee.cy == 10000) {
+	if (stickMelee.cStickYUnit == 10000) {
 		printStr("1.0000", currXfb);
 	} else {
-		sprintf(strBuffer, "0.%04d", stickCoordinatesMelee.cy);
+		sprintf(strBuffer, "0.%04d", stickMelee.cStickYUnit);
 		printStr(strBuffer, currXfb);
 	}
 	printStr(")", currXfb);
@@ -737,26 +742,26 @@ void menu_controllerTest(void *currXfb) {
 
 	// Analog Stick
 	// calculate screen coordinates for stick position drawing
-	int xfbCoordX = (stickCoordinatesMelee.ax / 250);
-	if (stickCoordinatesRaw.ax < 0) {
+	int xfbCoordX = (stickMelee.stickXUnit / 250);
+	if (stickRaw.stickX < 0) {
 		xfbCoordX *= -1;
 	}
 	xfbCoordX += CONT_TEST_STICK_CENTER_X;
 	
-	int xfbCoordY = (stickCoordinatesMelee.ay / 250);
-	if (stickCoordinatesRaw.ay > 0) {
+	int xfbCoordY = (stickMelee.stickYUnit / 250);
+	if (stickRaw.stickY > 0) {
 		xfbCoordY *= -1;
 	}
 	xfbCoordY += CONT_TEST_STICK_CENTER_Y;
 	
-	int xfbCoordCX = (stickCoordinatesMelee.cx / 250);
-	if (stickCoordinatesRaw.cx < 0) {
+	int xfbCoordCX = (stickMelee.cStickXUnit / 250);
+	if (stickRaw.cStickX < 0) {
 		xfbCoordCX *= -1;
 	}
 	xfbCoordCX += CONT_TEST_CSTICK_CENTER_X;
 	
-	int xfbCoordCY = (stickCoordinatesMelee.cy / 250);
-	if (stickCoordinatesRaw.cy > 0) {
+	int xfbCoordCY = (stickMelee.cStickYUnit / 250);
+	if (stickRaw.cStickY > 0) {
 		xfbCoordCY *= -1;
 	}
 	xfbCoordCY += CONT_TEST_CSTICK_CENTER_Y;
@@ -764,25 +769,25 @@ void menu_controllerTest(void *currXfb) {
 	// analog stick
 	DrawOctagonalGate(CONT_TEST_STICK_CENTER_X, CONT_TEST_STICK_CENTER_Y, 2, COLOR_GRAY, currXfb); // perimeter
 	DrawLine(CONT_TEST_STICK_CENTER_X, CONT_TEST_STICK_CENTER_Y,
-	         CONT_TEST_STICK_CENTER_X + (stickCoordinatesRaw.ax / 2), CONT_TEST_STICK_CENTER_Y - (stickCoordinatesRaw.ay / 2),
+	         CONT_TEST_STICK_CENTER_X + (stickRaw.stickX / 2), CONT_TEST_STICK_CENTER_Y - (stickRaw.stickY / 2),
 			 COLOR_SILVER, currXfb); // line from center
 	for (int i = CONT_TEST_STICK_RAD / 2; i > 0; i -= 5) {
-		DrawCircle(CONT_TEST_STICK_CENTER_X + (stickCoordinatesRaw.ax / 2), CONT_TEST_STICK_CENTER_Y - (stickCoordinatesRaw.ay / 2), i, COLOR_WHITE, currXfb);
+		DrawCircle(CONT_TEST_STICK_CENTER_X + (stickRaw.stickX / 2), CONT_TEST_STICK_CENTER_Y - (stickRaw.stickY / 2), i, COLOR_WHITE, currXfb);
 	} // smaller circle
 	
 	// c-stick
 	DrawOctagonalGate(CONT_TEST_CSTICK_CENTER_X, CONT_TEST_CSTICK_CENTER_Y, 2, COLOR_GRAY, currXfb); // perimeter
 	DrawLine(CONT_TEST_CSTICK_CENTER_X, CONT_TEST_CSTICK_CENTER_Y,
-	         CONT_TEST_CSTICK_CENTER_X + (stickCoordinatesRaw.cx / 2), CONT_TEST_CSTICK_CENTER_Y - (stickCoordinatesRaw.cy / 2),
+	         CONT_TEST_CSTICK_CENTER_X + (stickRaw.cStickX / 2), CONT_TEST_CSTICK_CENTER_Y - (stickRaw.cStickY / 2),
 	         COLOR_MEDGRAY, currXfb); // line from center
-	DrawFilledCircle(CONT_TEST_CSTICK_CENTER_X + (stickCoordinatesRaw.cx / 2), CONT_TEST_CSTICK_CENTER_Y - (stickCoordinatesRaw.cy / 2),
+	DrawFilledCircle(CONT_TEST_CSTICK_CENTER_X + (stickRaw.cStickX / 2), CONT_TEST_CSTICK_CENTER_Y - (stickRaw.cStickY / 2),
 	                 CONT_TEST_STICK_RAD / 2, COLOR_YELLOW, currXfb); // smaller circle
 }
 
 void menu_fileExport(void *currXfb) {
 	// make sure data is actually present
-	if (data.isDataReady) {
-		if (data.exported) {
+	if ((*data)->isRecordingReady) {
+		if ((*data)->dataExported) {
 			// print status after print
 			switch (exportReturnCode) {
 				case 0:
@@ -806,7 +811,7 @@ void menu_fileExport(void *currXfb) {
 			}
 		} else {
 			printStr("Attempting to export data...", currXfb);
-			exportReturnCode = exportData(&data);
+			exportReturnCode = exportData();
 		}
 	} else {
 		printStr("No data to export, record an input first.", currXfb);
@@ -822,76 +827,76 @@ void menu_coordinateViewer(void *currXfb) {
 	
 	printStr("Press Z for instructions", currXfb);
 	
-	static WaveformDatapoint stickCoordinatesRaw;
-	static WaveformDatapoint stickCoordinatesMelee;
+	static ControllerSample stickRaw;
+	static MeleeCoordinates stickMelee;
 	
 	// get raw stick values
-	stickCoordinatesRaw.ax = PAD_StickX(0), stickCoordinatesRaw.ay = PAD_StickY(0);
-	stickCoordinatesRaw.cx = PAD_SubStickX(0), stickCoordinatesRaw.cy = PAD_SubStickY(0);
+	stickRaw.stickX = PAD_StickX(0), stickRaw.stickY = PAD_StickY(0);
+	stickRaw.cStickX = PAD_SubStickX(0), stickRaw.cStickY = PAD_SubStickY(0);
 	
 	// get converted stick values
-	stickCoordinatesMelee = convertStickValues(&stickCoordinatesRaw);
+	stickMelee = convertStickRawToMelee(stickRaw);
 	
 	// print melee coordinates
 	setCursorPos(4, 0);
 	printStr("Stick X: ", currXfb);
 	// is the value negative?
-	if (stickCoordinatesRaw.ax < 0) {
+	if (stickRaw.stickX < 0) {
 		printStr("-", currXfb);
 	}
 	// is this a 1.0 value?
-	if (stickCoordinatesMelee.ax == 10000) {
+	if (stickMelee.stickXUnit == 10000) {
 		printStr("1.0\n", currXfb);
 	} else {
-		sprintf(strBuffer, "0.%04d\n", stickCoordinatesMelee.ax);
+		sprintf(strBuffer, "0.%04d\n", stickMelee.stickXUnit);
 		printStr(strBuffer, currXfb);
 	}
 	
 	// print melee coordinates
 	printStr("Stick Y: ", currXfb);
 	// is the value negative?
-	if (stickCoordinatesRaw.ay < 0) {
+	if (stickRaw.stickY < 0) {
 		printStr("-", currXfb);
 	}
 	// is this a 1.0 value?
-	if (stickCoordinatesMelee.ay == 10000) {
+	if (stickMelee.stickYUnit == 10000) {
 		printStr("1.0\n", currXfb);
 	} else {
-		sprintf(strBuffer, "0.%04d\n", stickCoordinatesMelee.ay);
+		sprintf(strBuffer, "0.%04d\n", stickMelee.stickYUnit);
 		printStr(strBuffer, currXfb);
 	}
 	
 	// print melee coordinates
 	printStr("\nC-Stick X: ", currXfb);
 	// is the value negative?
-	if (stickCoordinatesRaw.cx < 0) {
+	if (stickRaw.cStickX < 0) {
 		printStr("-", currXfb);
 	}
 	// is this a 1.0 value?
-	if (stickCoordinatesMelee.cx == 10000) {
+	if (stickMelee.cStickXUnit == 10000) {
 		printStr("1.0\n", currXfb);
 	} else {
-		sprintf(strBuffer, "0.%04d\n", stickCoordinatesMelee.cx);
+		sprintf(strBuffer, "0.%04d\n", stickMelee.cStickXUnit);
 		printStr(strBuffer, currXfb);
 	}
 	
 	// print melee coordinates
 	printStr("C-Stick Y: ", currXfb);
 	// is the value negative?
-	if (stickCoordinatesRaw.cy < 0) {
+	if (stickRaw.cStickY < 0) {
 		printStr("-", currXfb);
 	}
 	// is this a 1.0 value?
-	if (stickCoordinatesMelee.cy == 10000) {
+	if (stickMelee.cStickYUnit == 10000) {
 		printStr("1.0\n", currXfb);
 	} else {
-		sprintf(strBuffer, "0.%04d\n", stickCoordinatesMelee.cy);
+		sprintf(strBuffer, "0.%04d\n", stickMelee.cStickYUnit);
 		printStr(strBuffer, currXfb);
 	}
 	
 	setCursorPos(19, 0);
 	printStr("Stickmap: ", currXfb);
-	int stickmapRetVal = isCoordValid(selectedStickmap, stickCoordinatesMelee);
+	int stickmapRetVal = isCoordValid(selectedStickmap, stickMelee);
 	switch (selectedStickmap) {
 		case FF_WD:
 			printStr("Firefox/Wavedash\n", currXfb);
@@ -931,26 +936,26 @@ void menu_coordinateViewer(void *currXfb) {
 	
 	
 	// calculate screen coordinates for stick position drawing
-	int xfbCoordX = (stickCoordinatesMelee.ax / 125) * 2;
-	if (stickCoordinatesRaw.ax < 0) {
+	int xfbCoordX = (stickMelee.stickXUnit / 125) * 2;
+	if (stickRaw.stickX < 0) {
 		xfbCoordX *= -1;
 	}
 	xfbCoordX += COORD_CIRCLE_CENTER_X;
 	
-	int xfbCoordY = (stickCoordinatesMelee.ay / 125) * 2;
-	if (stickCoordinatesRaw.ay > 0) {
+	int xfbCoordY = (stickMelee.stickYUnit / 125) * 2;
+	if (stickRaw.stickY > 0) {
 		xfbCoordY *= -1;
 	}
 	xfbCoordY += SCREEN_POS_CENTER_Y;
 	
-	int xfbCoordCX = (stickCoordinatesMelee.cx / 125) * 2;
-	if (stickCoordinatesRaw.cx < 0) {
+	int xfbCoordCX = (stickMelee.cStickXUnit / 125) * 2;
+	if (stickRaw.cStickX < 0) {
 		xfbCoordCX *= -1;
 	}
 	xfbCoordCX += COORD_CIRCLE_CENTER_X;
 	
-	int xfbCoordCY = (stickCoordinatesMelee.cy / 125) * 2;
-	if (stickCoordinatesRaw.cy > 0) {
+	int xfbCoordCY = (stickMelee.cStickYUnit / 125) * 2;
+	if (stickRaw.cStickY > 0) {
 		xfbCoordCY *= -1;
 	}
 	xfbCoordCY += SCREEN_POS_CENTER_Y;

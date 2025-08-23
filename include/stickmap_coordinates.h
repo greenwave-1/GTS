@@ -63,7 +63,7 @@ extern const int STICKMAP_SHIELDDROP_COORD_UCF_UPPER[][2];
 extern const int STICKMAP_SHIELDDROP_COORD_UCF_UPPER_LEN;
 
 
-int isCoordValid(enum STICKMAP_LIST, WaveformDatapoint);
+int isCoordValid(enum STICKMAP_LIST, MeleeCoordinates coords);
 int toStickmap(int meleeCoord);
 
 #endif //GTS_STICKMAP_COORDINATES_H

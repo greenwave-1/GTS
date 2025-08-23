@@ -34,12 +34,19 @@ typedef struct ControllerSample {
 	
 } ControllerSample;
 
+// TODO: would a bitfield be better here?
 typedef struct MeleeCoordinates {
 	// valid values for melee units are 0 -> 10000 in multiples of 125
 	uint16_t stickXUnit;
 	uint16_t stickYUnit;
 	uint16_t cStickXUnit;
 	uint16_t cStickYUnit;
+	
+	// since we're storing the values as unsigned, we need these to know direction
+	bool stickXNegative;
+	bool stickYNegative;
+	bool cStickXNegative;
+	bool cStickYNegative;
 	
 } MeleeCoordinates;
 
@@ -146,9 +153,6 @@ typedef struct WaveformData {
 	bool exported;
 
 } WaveformData;
-
-// converts raw input values to melee coordinates
-WaveformDatapoint convertStickValues(WaveformDatapoint *data);
 
 
 #endif //GTS_WAVEFORM_H

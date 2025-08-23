@@ -46,10 +46,15 @@ FILE *openFile(char *filename, char *modes) {
 	return retFile;
 }
 
-int exportData(WaveformData *data) {
-	data->exported = true;
+int exportData() {
+	ControllerRec *data = *(getRecordingData());
+	data->dataExported = true;
 	// do we have data to begin with?
-	if (!data->isDataReady) {
+	// TODO: this needs reworked to export different captures in different ways
+	if (!data->isRecordingReady ||
+			data->recordingType == REC_BUTTONTIME ||
+			data->recordingType == REC_TRIGGER ||
+			data->recordingType == REC_CLEAR) {
 		return 1;
 	}
 	
@@ -106,37 +111,37 @@ int exportData(WaveformData *data) {
 	FILE *fptr = openFile(fileStr, "w");
 	
 	// first row is: datetime, number of polls
-	fprintf(fptr, "%s,%u\n", timeStr, data->endPoint);
+	fprintf(fptr, "%s,%u\n", timeStr, data->sampleEnd);
 	
 	// actual data
 	// second row is x coords, third row is y coords, fourth row is time from last poll
 	
 	// x
-	for (int i = 0; i < data->endPoint; i++) {
+	for (int i = 0; i < data->sampleEnd; i++) {
 		if (i == 0) {
-				fprintf(fptr, "%d", data->data[i].ax);
+				fprintf(fptr, "%d", data->samples[i].stickX);
 		} else {
-			fprintf(fptr, ",%d", data->data[i].ax);
+			fprintf(fptr, ",%d", data->samples[i].stickX);
 		}
 	}
 	fprintf(fptr, "\n");
 	
 	// y
-	for (int i = 0; i < data->endPoint; i++) {
+	for (int i = 0; i < data->sampleEnd; i++) {
 		if (i == 0) {
-			fprintf(fptr, "%d", data->data[i].ay);
+			fprintf(fptr, "%d", data->samples[i].stickY);
 		} else {
-			fprintf(fptr, ",%d", data->data[i].ay);
+			fprintf(fptr, ",%d", data->samples[i].stickY);
 		}
 	}
 	fprintf(fptr, "\n");
 	
 	// time between polls
-	for (int i = 0; i < data->endPoint; i++) {
+	for (int i = 0; i < data->sampleEnd; i++) {
 		if (i == 0) {
-			fprintf(fptr, "%llu", data->data[i].timeDiffUs);
+			fprintf(fptr, "%llu", data->samples[i].timeDiffUs);
 		} else {
-			fprintf(fptr, ",%llu", data->data[i].timeDiffUs);
+			fprintf(fptr, ",%llu", data->samples[i].timeDiffUs);
 		}
 	}
 	fprintf(fptr, "\n");
