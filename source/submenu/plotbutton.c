@@ -24,9 +24,12 @@ const static int SCREEN_TIMEPLOT_Y_BOTTOM = 380;
 const static int SCREEN_TIMEPLOT_CHAR_TOP = 159;
 const static int SCREEN_CHAR_SIZE = 14;
 
+enum PLOT_BUTTON_LIST { A, B, X, Y, L, La, R, Ra, Z, AX, AY, CX, CY, NO_BUTTON };
+
 const static char* BUTTON_STR[13] = { "A", "B", "X", "Y",
 									  "L", "La", "R", "Ra", "Z",
 									  "AX", "AY", "CX", "CY"};
+
 const static uint32_t BUTTON_MASKS[13] = { PAD_BUTTON_A, PAD_BUTTON_B, PAD_BUTTON_X, PAD_BUTTON_Y,
 									  PAD_TRIGGER_L, 0, PAD_TRIGGER_R, 0, PAD_TRIGGER_Z,
 									  0, 0, 0, 0 };
@@ -51,11 +54,12 @@ static enum PLOT_BUTTON_STATE state = BUTTON_INPUT;
 static enum PLOT_BUTTON_LIST triggeringInput = NO_BUTTON;
 static enum PLOT_BUTTON_LIST triggeringInputDisplay = NO_BUTTON;
 
-static WaveformDatapoint data[500];
-static int dataIndex = 0;
-static bool dataIsReady = false;
+// structs for storing controller data
+// data: used for display once marked ready
+// temp: used by the callback function while data is being collected
+// structs are flipped silently by calling flipData() from waveform.h, so we don't have to change anything here
+static ControllerRec **data = NULL, **temp = NULL;
 static uint8_t triggerLAnalog = 0, triggerRAnalog = 0;
-static uint64_t totalCaptureTimeUs = 0;
 static bool captureStart = false;
 static bool captureButtonsReleased = false;
 static bool autoCapture = false;
@@ -106,79 +110,97 @@ static void plotButtonSamplingCallback() {
 			}
 		// are we already capturing data?
 		} else if (captureStart) {
-			data[dataIndex].ax = PAD_StickX(0);
-			data[dataIndex].ay = PAD_StickY(0);
-			data[dataIndex].cx = PAD_SubStickX(0);
-			data[dataIndex].cy = PAD_SubStickY(0);
-			data[dataIndex].triggers.triggerLAnalog = PAD_TriggerL(0);
-			data[dataIndex].triggers.triggerRAnalog = PAD_TriggerR(0);
-			data[dataIndex].triggers.triggerLDigital = (*held & PAD_TRIGGER_L);
-			data[dataIndex].triggers.triggerRDigital = (*held & PAD_TRIGGER_R);
-			data[dataIndex].buttonsHeld = *held;
-			data[dataIndex].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-			dataIndex++;
+			(*temp)->samples[(*temp)->sampleEnd].stickX = PAD_StickX(0);
+			(*temp)->samples[(*temp)->sampleEnd].stickY = PAD_StickY(0);
+			(*temp)->samples[(*temp)->sampleEnd].cStickX = PAD_SubStickX(0);
+			(*temp)->samples[(*temp)->sampleEnd].cStickY = PAD_SubStickY(0);
+			(*temp)->samples[(*temp)->sampleEnd].triggerL = PAD_TriggerL(0);
+			(*temp)->samples[(*temp)->sampleEnd].triggerR = PAD_TriggerR(0);
+			(*temp)->samples[(*temp)->sampleEnd].buttons = *held;
+			(*temp)->samples[(*temp)->sampleEnd].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+			(*temp)->sampleEnd++;
 			
-			totalCaptureTimeUs += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+			(*temp)->totalTimeUs += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 			
 			// not moving for 300 ms
-			if (totalCaptureTimeUs >= 300000 || dataIndex == 500) {
-				totalCaptureTimeUs = 0;
-				dataIsReady = true;
+			if ((*temp)->totalTimeUs >= 300000 || (*temp)->sampleEnd == 500) {
+				(*temp)->totalTimeUs = 0;
+				(*temp)->isRecordingReady = true;
+				(*temp)->recordingType = REC_BUTTONTIME;
+				flipData();
 				captureStart = false;
 				captureButtonsReleased = false;
-				state = BUTTON_DISPLAY;
+				if (!autoCapture) {
+					state = BUTTON_DISPLAY;
+				}
 			}
 
 		// we haven't started recording yet, wait for stick/trigger to move outside user-defined range, or a button press
 		} else {
 			// determine what triggered the input
-			// TODO: there has to be a better way to do this...
-			if (*held & PAD_BUTTON_A) {
-				triggeringInput = A;
-			} else if (*held & PAD_BUTTON_B) {
-				triggeringInput = B;
-			} else if (*held & PAD_BUTTON_X) {
-				triggeringInput = X;
-			} else if (*held & PAD_BUTTON_Y) {
-				triggeringInput = Y;
-			} else if (*held & PAD_TRIGGER_L) {
-				triggeringInput = L;
-			} else if (PAD_TriggerL(0) >= triggerThreshold) {
-				triggeringInput = La;
-			} else if (*held & PAD_TRIGGER_R) {
-				triggeringInput = R;
-			} else if (PAD_TriggerR(0) >= triggerThreshold) {
-				triggeringInput = Ra;
-			} else if (*held & PAD_TRIGGER_Z) {
-				triggeringInput = Z;
-			} else if (abs(PAD_StickX(0)) >= stickThreshold) {
-				triggeringInput = AX;
-			} else if (abs(PAD_StickY(0)) >= stickThreshold) {
-				triggeringInput = AY;
-			} else if (abs(PAD_SubStickX(0)) >= stickThreshold) {
-				triggeringInput = CX;
-			} else if (abs(PAD_SubStickY(0)) >= stickThreshold) {
-				triggeringInput = CY;
-			} else {
-				triggeringInput = NO_BUTTON;
+			triggeringInput = NO_BUTTON;
+
+			for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
+				switch (button) {
+					// analog values
+					case AX:
+						if (abs(PAD_StickX(0)) >= stickThreshold) {
+							triggeringInput = button;
+						}
+						break;
+					case AY:
+						if (abs(PAD_StickY(0)) >= stickThreshold) {
+							triggeringInput = button;
+						}
+						break;
+					case CX:
+						if (abs(PAD_SubStickX(0)) >= stickThreshold) {
+							triggeringInput = button;
+						}
+						break;
+					case CY:
+						if (abs(PAD_SubStickY(0)) >= stickThreshold) {
+							triggeringInput = button;
+						}
+						break;
+					case La:
+						if (PAD_TriggerL(0) >= triggerThreshold) {
+							triggeringInput = button;
+						}
+						break;
+					case Ra:
+						if (PAD_TriggerR(0) >= triggerThreshold) {
+							triggeringInput = button;
+						}
+						break;
+					// digital values/buttons
+					default:
+						if (*held & BUTTON_MASKS[button]) {
+							triggeringInput = button;
+							break;
+						}
+				}
+				
+				// leave loop if we've found our triggering input
+				if (triggeringInput != NO_BUTTON) {
+					break;
+				}
 			}
 			
 			// write our data if an input was detected
 			if (triggeringInput != NO_BUTTON) {
 				triggeringInputDisplay = triggeringInput;
 				captureStart = true;
-				data[0].ax = PAD_StickX(0);
-				data[0].ay = PAD_StickY(0);
-				data[0].cx = PAD_SubStickX(0);
-				data[0].cy = PAD_SubStickY(0);
-				data[0].triggers.triggerLAnalog = triggerLAnalog;
-				data[0].triggers.triggerRAnalog = triggerRAnalog;
-				data[0].triggers.triggerLDigital = (*held & PAD_TRIGGER_L);
-				data[0].triggers.triggerRDigital = (*held & PAD_TRIGGER_R);
-				data[0].buttonsHeld = *held;
-				data[0].timeDiffUs = 0;
-				dataIndex = 1;
-				dataIsReady = false;
+				(*temp)->samples[0].stickX = PAD_StickX(0);
+				(*temp)->samples[0].stickY = PAD_StickY(0);
+				(*temp)->samples[0].cStickX = PAD_SubStickX(0);
+				(*temp)->samples[0].cStickY = PAD_SubStickY(0);
+				(*temp)->samples[0].triggerL = triggerLAnalog;
+				(*temp)->samples[0].triggerR = triggerRAnalog;
+				(*temp)->samples[0].buttons = *held;
+				(*temp)->samples[0].timeDiffUs = 0;
+				(*temp)->sampleEnd = 1;
+				(*temp)->isRecordingReady = false;
 			}
 		}
 	}
@@ -189,8 +211,18 @@ static void setup(uint32_t *p, uint32_t *h) {
 	pressed = p;
 	held = h;
 	cb = PAD_SetSamplingCallback(plotButtonSamplingCallback);
+	if (data == NULL) {
+		data = getRecordingData();
+		temp = getTempData();
+	}
 	menuState = BUTTON_POST_SETUP;
 	state = BUTTON_DISPLAY;
+	
+	// don't use data from trigger menu
+	// _technically_ this doesn't need to happen, but trigger recording is basically useless here
+	if ((*data)->recordingType != REC_BUTTONTIME) {
+		clearRecordingArray(*data);
+	}
 }
 
 static void displayInstructions(void *currXfb) {
@@ -223,6 +255,10 @@ static void displayInstructions(void *currXfb) {
 }
 
 void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
+	// we're getting the address of the object itself here, not the address of the pointer,
+	// which means we will always point to the same object, regardless of a flip
+	ControllerRec *dispData = *data;
+	
 	switch (menuState) {
 		case BUTTON_SETUP:
 			setup(p, h);
@@ -232,8 +268,23 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 			break;
 		case BUTTON_POST_SETUP:
 			switch (state) {
+				case BUTTON_INPUT:
+					// nothing happens here other than showing the message about waiting for an input
+					// the sampling callback function will change the plotState enum when an input is done
+					setCursorPos(2,0);
+					if (autoCapture) {
+						printStr("Auto-Trigger enabled, w", currXfb);
+					} else {
+						printStr("W", currXfb);
+					}
+					printStr("aiting for input.", currXfb);
+					printEllipse(ellipseCounter, 20, currXfb);
+					ellipseCounter++;
+					if (ellipseCounter == 60) {
+						ellipseCounter = 0;
+					}
 				case BUTTON_DISPLAY:
-					if (!autoCapture) {
+					if (!autoCapture && state != BUTTON_INPUT) {
 						printStr("Press A to start read, press Z for instructions", currXfb);
 					}
 					
@@ -256,7 +307,7 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 						printStr(strBuffer, currXfb);
 					}
 					
-					if (dataIsReady) {
+					if (dispData->isRecordingReady) {
 						DrawBox(SCREEN_TIMEPLOT_START - 40, SCREEN_TIMEPLOT_Y_TOP - 1, 600, SCREEN_TIMEPLOT_Y_BOTTOM + 1, COLOR_WHITE, currXfb);
 						
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
@@ -267,16 +318,15 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 								printStr(BUTTON_STR[button], currXfb);
 							}
 						}
-						//printStr("   A\n   B\n   X\n   Y\n   L\n   La\n   R\n   Ra\n   Z\n   AX\n   AY\n   CX\n   CY", currXfb);
 						
 						uint64_t frameIntervalTime = 16666;
 						uint64_t totalTimeUs = 0;
 						ButtonPressedTime buttons[13] = {{ 0, false }};
 						// draw data
-						for (int i = 0; i < dataIndex; i++) {
+						for (int i = 0; i < dispData->sampleEnd; i++) {
 							// frame intervals first
-							frameIntervalTime += data[i].timeDiffUs;
-							totalTimeUs += data[i].timeDiffUs;
+							frameIntervalTime += dispData->samples[i].timeDiffUs;
+							totalTimeUs += dispData->samples[i].timeDiffUs;
 							if (frameIntervalTime >= 16666) {
 								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_Y_TOP, SCREEN_TIMEPLOT_Y_BOTTOM,
 										  COLOR_GRAY, currXfb);
@@ -290,26 +340,26 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 								switch (currButton) {
 									// handle all specific cases
 									case AX:
-										result = abs(data[i].ax) >= stickThreshold;
+										result = abs(dispData->samples[i].stickX) >= stickThreshold;
 										break;
 									case AY:
-										result = abs(data[i].ay) >= stickThreshold;
+										result = abs(dispData->samples[i].stickY) >= stickThreshold;
 										break;
 									case CX:
-										result = abs(data[i].cx) >= stickThreshold;
+										result = abs(dispData->samples[i].cStickX) >= stickThreshold;
 										break;
 									case CY:
-										result = abs(data[i].cy) >= stickThreshold;
+										result = abs(dispData->samples[i].cStickY) >= stickThreshold;
 										break;
 									case La:
-										result = data[i].triggers.triggerLAnalog >= triggerThreshold;
+										result = dispData->samples[i].triggerL >= triggerThreshold;
 										break;
 									case Ra:
-										result = data[i].triggers.triggerRAnalog >= triggerThreshold;
+										result = dispData->samples[i].triggerR >= triggerThreshold;
 										break;
 									// "normal" cases
 									default:
-										result = data[i].buttonsHeld & BUTTON_MASKS[currButton];
+										result = dispData->samples[i].buttons & BUTTON_MASKS[currButton];
 										break;
 								}
 								
@@ -327,7 +377,7 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 										if (result) {
 											// triggering input should have length of time that the first input was held
 											if (currButton == triggeringInputDisplay) {
-												buttons[currButton].timeHeld += data[i].timeDiffUs;
+												buttons[currButton].timeHeld += dispData->samples[i].timeDiffUs;
 											}
 										} else if (buttons[currButton].timeHeld != 0) {
 											buttons[currButton].pressFinished = true;
@@ -452,6 +502,11 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 						autoCaptureCounter++;
 						if (autoCaptureCounter == 120) {
 							autoCapture = !autoCapture;
+							if (autoCapture) {
+								state = BUTTON_INPUT;
+							} else {
+								state = BUTTON_DISPLAY;
+							}
 							captureButtonsReleased = false;
 							buttonLock = true;
 							buttonPressCooldown = 5;
@@ -461,26 +516,8 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 						printStr("Hold start to toggle Auto-Trigger.", currXfb);
 						autoCaptureCounter = 0;
 					}
-					
-					if (!autoCapture) {
-						break;
-					}
-				case BUTTON_INPUT:
-					// nothing happens here other than showing the message about waiting for an input
-					// the sampling callback function will change the plotState enum when an input is done
-					setCursorPos(2,0);
-					if (autoCapture) {
-						printStr("Auto-Trigger enabled, w", currXfb);
-					} else {
-						printStr("W", currXfb);
-					}
-					printStr("aiting for input.", currXfb);
-					printEllipse(ellipseCounter, 20, currXfb);
-					ellipseCounter++;
-					if (ellipseCounter == 60) {
-						ellipseCounter = 0;
-					}
 					break;
+
 				default:
 					printStr("button plot default case?", currXfb);
 					break;
@@ -506,8 +543,9 @@ void menu_plotButtonEnd() {
 	PAD_SetSamplingCallback(cb);
 	captureStart = false;
 	captureButtonsReleased = false;
-	dataIndex = 0;
-	dataIsReady = false;
+	if (!(*temp)->isRecordingReady) {
+		(*temp)->sampleEnd = 0;
+	}
 	autoCaptureCounter = 0;
 	autoCapture = false;
 	pressed = NULL;

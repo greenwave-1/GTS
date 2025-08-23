@@ -72,10 +72,15 @@ typedef struct ControllerRec {
 	
 } ControllerRec;
 
+// calls malloc and inits structs
 void initData();
 
+// returns address of static pointers in waveform.c
+// using double pointer so that the two structs can be swapped silently via flipData()
 ControllerRec** getRecordingData();
 ControllerRec** getTempData();
+
+// resets given data
 void clearRecordingArray(ControllerRec *recording);
 
 // flips pointers in static memory

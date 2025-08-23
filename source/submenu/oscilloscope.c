@@ -32,6 +32,10 @@ static const uint32_t COLOR_BLUE_C = 0x6dd26d72;
 static enum OSC_MENU_STATE state = OSC_SETUP;
 static enum OSC_STATE oState = PRE_INPUT;
 
+// structs for storing controller data
+// data: used for display once marked ready
+// temp: used by the callback function while data is being collected
+// structs are flipped silently by calling flipData() from waveform.h, so we don't have to change anything here
 static ControllerRec **data = NULL, **temp = NULL;
 static enum OSCILLOSCOPE_TEST currentTest = SNAPBACK;
 static int waveformScaleFactor = 1;
@@ -250,9 +254,6 @@ static void oscilloscopeCallback() {
 			}
 			
 			if (stickMove) {
-				// reset samples
-				clearRecordingArray(*temp);
-				
 				// assign first value
 				(*temp)->samples[0].stickX = stickX;
 				(*temp)->samples[0].stickY = stickY;
@@ -792,8 +793,8 @@ void menu_oscilloscopeEnd() {
 	pressed = NULL;
 	held = NULL;
 	state = OSC_SETUP;
-	if (!(*data)->isRecordingReady) {
-		(*data)->sampleEnd = 0;
+	if (!(*temp)->isRecordingReady) {
+		(*temp)->sampleEnd = 0;
 		stickMove = false;
 	}
 }

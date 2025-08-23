@@ -36,8 +36,15 @@ static enum TRIG_STATE trigState = TRIG_INPUT;
 static enum TRIG_CAPTURE_SELECTION captureSelection = TRIGGER_NONE;
 static enum TRIG_CAPTURE_SELECTION displaySelection = TRIGGER_NONE;
 
+// structs for storing controller data
+// data: used for display once marked ready
+// temp: used by the callback function while data is being collected
+// structs are flipped silently by calling flipData() from waveform.h, so we don't have to change anything here
 static ControllerRec **data = NULL, **temp = NULL;
+// stores current captured data
 static ControllerSample curr;
+// acts as a prepend loop
+// once conditions are met, ~50ms of previous data is added to the start of the capture from here
 static ControllerSample startingLoop[100];
 static int startingLoopIndex = 0;
 static bool startedCapture = false;
@@ -413,8 +420,8 @@ void menu_triggerOscilloscopeEnd() {
 	pressed = NULL;
 	held = NULL;
 	menuState = TRIG_SETUP;
-	if (!(*data)->isRecordingReady) {
-		(*data)->sampleEnd = 0;
+	if (!(*temp)->isRecordingReady) {
+		(*temp)->sampleEnd = 0;
 		startedCapture = false;
 	}
 }

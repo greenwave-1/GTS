@@ -34,6 +34,10 @@ static uint8_t captureStartFrameCooldown = 0;
 static enum PLOT_2D_MENU_STATE menuState = PLOT_SETUP;
 static enum PLOT_2D_STATE plotState = PLOT_INPUT;
 
+// structs for storing controller data
+// data: used for display once marked ready
+// temp: used by the callback function while data is being collected
+// structs are flipped silently by calling flipData() from waveform.h, so we don't have to change anything here
 static ControllerRec **data = NULL, **temp = NULL;
 static int prevPosX = 0, prevPosY = 0;
 static int currPosX = 0, currPosY = 0;
@@ -630,9 +634,9 @@ void menu_plot2dEnd() {
 	lastDrawPoint = -1;
 	autoCaptureCounter = 0;
 	autoCapture = false;
-	if (!(*data)->isRecordingReady) {
+	if (!(*temp)->isRecordingReady) {
 		// reset stuff
-		(*data)->sampleEnd = 0;
+		(*temp)->sampleEnd = 0;
 		haveStartPoint = false;
 		noMovementStartIndex = -1;
 		noMovementTimer = 0;
