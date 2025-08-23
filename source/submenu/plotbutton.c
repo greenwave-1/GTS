@@ -201,6 +201,7 @@ static void plotButtonSamplingCallback() {
 				(*temp)->samples[0].timeDiffUs = 0;
 				(*temp)->sampleEnd = 1;
 				(*temp)->isRecordingReady = false;
+				(*temp)->dataExported = false;
 			}
 		}
 	}

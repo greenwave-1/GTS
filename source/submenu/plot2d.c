@@ -155,7 +155,6 @@ static void plot2dSamplingCallback() {
 			if (setStartPoint) {
 				prevPosX = PAD_StickX(0);
 				prevPosY = PAD_StickY(0);
-				(*temp)->dataExported = false;
 				haveStartPoint = true;
 			}
 		// wait for stick to move outside ~10 units, or for buttons to be pressed to start recording
@@ -174,6 +173,7 @@ static void plot2dSamplingCallback() {
 				(*temp)->totalTimeUs = 0;
 				(*temp)->sampleEnd = 1;
 				(*temp)->isRecordingReady = false;
+				(*temp)->dataExported = false;
 			}
 		}
 		

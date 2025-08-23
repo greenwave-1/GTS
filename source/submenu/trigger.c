@@ -155,6 +155,7 @@ void triggerSamplingCallback() {
 					startingLoop[i].timeDiffUs = 0;
 				}
 				(*temp)->isRecordingReady = false;
+				(*temp)->dataExported = false;
 				trigState = TRIG_INPUT;
 				startedCapture = true;
 			}

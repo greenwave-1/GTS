@@ -219,6 +219,7 @@ static void oscilloscopeCallback() {
 				stickCooldown = MEASURE_COOLDOWN_FRAMES;
 				snapbackStartPosX = 0;
 				snapbackStartPosY = 0;
+				(*temp)->recordingType = REC_OSCILLOSCOPE;
 				
 				// calculate total recording time
 				for (int i = 0; i < (*temp)->sampleEnd; i++) {
