@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <malloc.h>
 
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
@@ -26,7 +27,7 @@ static const uint32_t COLOR_BLUE_C = 0x6dd26d72;
 static enum CONT_MENU_STATE state = CONT_SETUP;
 static enum CONT_STATE cState = INPUT;
 
-static WaveformData data = { {{ 0 }}, 0, 500, true, false, false };
+static ControllerRec *data = NULL;
 static int dataIndex = 0;
 
 static int waveformScaleFactor = 6;
@@ -74,16 +75,17 @@ static void contSamplingCallback() {
 	
 	
 	if (!freeze) {
-		data.data[dataIndex].ax = PAD_StickX(0);
-		data.data[dataIndex].ay = PAD_StickY(0);
-		data.data[dataIndex].cx = PAD_SubStickX(0);
-		data.data[dataIndex].cy = PAD_SubStickY(0);
+		data->samples[dataIndex].stickX = PAD_StickX(0);
+		data->samples[dataIndex].stickY = PAD_StickY(0);
+		data->samples[dataIndex].cStickX = PAD_SubStickX(0);
+		data->samples[dataIndex].cStickY = PAD_SubStickY(0);
 		frameCounter += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+		// abusing timeDiffUs here, 1 means this poll is considered a frame interval, 0 otherwise
 		if (frameCounter >= 16666) {
-			data.data[dataIndex].timeDiffUs = 1;
+			data->samples[dataIndex].timeDiffUs = 1;
 			frameCounter = 0;
 		} else {
-			data.data[dataIndex].timeDiffUs = 0;
+			data->samples[dataIndex].timeDiffUs = 0;
 		}
 		dataIndex++;
 		if (dataIndex == WAVEFORM_SAMPLES) {
@@ -95,7 +97,12 @@ static void contSamplingCallback() {
 static void setup(uint32_t *p, uint32_t *h) {
 	pressed = p;
 	held = h;
-	data.endPoint = WAVEFORM_SAMPLES - 1;
+	if (data == NULL) {
+		data = malloc(sizeof(ControllerRec));
+		clearRecordingArray(data);
+		data->isRecordingReady = true;
+	}
+	data->sampleEnd = REC_SAMPLE_MAX - 1;
 	setSamplingRateHigh();
 	cb = PAD_SetSamplingCallback(contSamplingCallback);
 	state = CONT_POST_SETUP;
@@ -124,7 +131,7 @@ void menu_continuousWaveform(void *currXfb, uint32_t *p, uint32_t *h) {
 				freeze = false;
 			}
 
-			if (data.isDataReady) {
+			if (data->isRecordingReady) {
 				// draw guidelines based on selected test
 				DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500,
 				        SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
@@ -173,11 +180,11 @@ void menu_continuousWaveform(void *currXfb, uint32_t *p, uint32_t *h) {
 				for (int i = 0; i < 500; i++) {
 					int currX, currY;
 					if (!showCStick) {
-						currX = data.data[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].ax;
-						currY = data.data[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].ay;
+						currX = data->samples[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].stickX;
+						currY = data->samples[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].stickY;
 					} else {
-						currX = data.data[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].cx;
-						currY = data.data[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].cy;
+						currX = data->samples[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].cStickX;
+						currY = data->samples[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].cStickY;
 					}
 					
 					// y first
@@ -194,7 +201,7 @@ void menu_continuousWaveform(void *currXfb, uint32_t *p, uint32_t *h) {
 					// frame interval stuff
 					if (prevIndex != -1) {
 						for (int j = 0; j < waveformScaleFactor; j++) {
-							if (data.data[(prevIndex + j) % WAVEFORM_SAMPLES].timeDiffUs == 1) {
+							if (data->samples[(prevIndex + j) % WAVEFORM_SAMPLES].timeDiffUs == 1) {
 								if (waveformScaleFactor <= 2) {
 									DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
 									        SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
