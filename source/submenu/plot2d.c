@@ -236,6 +236,10 @@ static void displayInstructions(void *currXfb) {
 }
 
 void menu_plot2d(void *currXfb, uint32_t *p, uint32_t *h) {
+	// we're getting the address of the object itself here, not the address of the pointer,
+	// which means we will always point to the same object, regardless of a flip
+	ControllerRec *dispData = *data;
+	
 	switch (menuState) {
 		case PLOT_SETUP:
 			setup(p, h);
@@ -266,13 +270,13 @@ void menu_plot2d(void *currXfb, uint32_t *p, uint32_t *h) {
 					
 					// check if last draw point needs to be reset
 					if (lastDrawPoint == -1) {
-						lastDrawPoint = (*data)->sampleEnd - 1;
+						lastDrawPoint = dispData->sampleEnd - 1;
 					}
-					if ((*data)->isRecordingReady) {
-						convertedCoords = convertStickRawToMelee((*data)->samples[lastDrawPoint]);
+					if (dispData->isRecordingReady) {
+						convertedCoords = convertStickRawToMelee(dispData->samples[lastDrawPoint]);
 						
 						setCursorPos(5, 0);
-						sprintf(strBuffer, "Total samples: %04u\n", (*data)->sampleEnd);
+						sprintf(strBuffer, "Total samples: %04u\n", dispData->sampleEnd);
 						printStr(strBuffer, currXfb);
 						sprintf(strBuffer, "Start sample: %04u\n", map2dStartIndex + 1);
 						printStr(strBuffer, currXfb);
@@ -282,37 +286,37 @@ void menu_plot2d(void *currXfb, uint32_t *p, uint32_t *h) {
 						// show button presses of last drawn point
 						setCursorPos(11,0);
 						printStr("Buttons Pressed:\n", currXfb);
-						if ((*data)->samples[lastDrawPoint].buttons & PAD_BUTTON_A) {
+						if (dispData->samples[lastDrawPoint].buttons & PAD_BUTTON_A) {
 							printStr("A ", currXfb);
 						}
-						if ((*data)->samples[lastDrawPoint].buttons & PAD_BUTTON_B) {
+						if (dispData->samples[lastDrawPoint].buttons & PAD_BUTTON_B) {
 							printStr("B ", currXfb);
 						}
-						if ((*data)->samples[lastDrawPoint].buttons & PAD_BUTTON_X) {
+						if (dispData->samples[lastDrawPoint].buttons & PAD_BUTTON_X) {
 							printStr("X ", currXfb);
 						}
-						if ((*data)->samples[lastDrawPoint].buttons & PAD_BUTTON_Y) {
+						if (dispData->samples[lastDrawPoint].buttons & PAD_BUTTON_Y) {
 							printStr("Y ", currXfb);
 						}
-						if ((*data)->samples[lastDrawPoint].buttons & PAD_TRIGGER_Z) {
+						if (dispData->samples[lastDrawPoint].buttons & PAD_TRIGGER_Z) {
 							printStr("Z ", currXfb);
 						}
-						if ((*data)->samples[lastDrawPoint].buttons & PAD_TRIGGER_L) {
+						if (dispData->samples[lastDrawPoint].buttons & PAD_TRIGGER_L) {
 							printStr("L ", currXfb);
 						}
-						if ((*data)->samples[lastDrawPoint].buttons & PAD_TRIGGER_R) {
+						if (dispData->samples[lastDrawPoint].buttons & PAD_TRIGGER_R) {
 							printStr("R ", currXfb);
 						}
 						
 						// print coordinates of last drawn point
 						// raw stick coordinates
 						setCursorPos(14, 0);
-						sprintf(strBuffer, "Raw XY: (%04d,%04d)\n", (*data)->samples[lastDrawPoint].stickX,
-						        (*data)->samples[lastDrawPoint].stickY);
+						sprintf(strBuffer, "Raw XY: (%04d,%04d)\n", dispData->samples[lastDrawPoint].stickX,
+						        dispData->samples[lastDrawPoint].stickY);
 						printStr(strBuffer, currXfb);
 						printStr("Melee XY: (", currXfb);
 						// is the value negative?
-						if ((*data)->samples[lastDrawPoint].stickX < 0) {
+						if (dispData->samples[lastDrawPoint].stickX < 0) {
 							printStr("-", currXfb);
 						} else {
 							printStr("0", currXfb);
@@ -327,7 +331,7 @@ void menu_plot2d(void *currXfb, uint32_t *p, uint32_t *h) {
 						printStr(",", currXfb);
 						
 						// is the value negative?
-						if ((*data)->samples[lastDrawPoint].stickY < 0) {
+						if (dispData->samples[lastDrawPoint].stickY < 0) {
 							printStr("-", currXfb);
 						} else {
 							printStr("0", currXfb);
@@ -393,36 +397,36 @@ void menu_plot2d(void *currXfb, uint32_t *p, uint32_t *h) {
 						for (int i = map2dStartIndex; i <= lastDrawPoint; i++) {
 							// don't add from the first value
 							if (i != map2dStartIndex) {
-								timeFromFirstSampleDraw += (*data)->samples[i].timeDiffUs;
+								timeFromFirstSampleDraw += dispData->samples[i].timeDiffUs;
 							}
 
 							// is this a frame interval?
 							if ((timeFromFirstSampleDraw / 16666) > frameCounter) {
-								if ((*data)->samples[i].buttons != 0) {
-									DrawFilledCircle(COORD_CIRCLE_CENTER_X + (*data)->samples[i].stickX,
-									                 SCREEN_POS_CENTER_Y - (*data)->samples[i].stickY, 2, COLOR_ORANGE, currXfb);
+								if (dispData->samples[i].buttons != 0) {
+									DrawFilledCircle(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
+									                 SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, 2, COLOR_ORANGE, currXfb);
 								} else {
-									DrawFilledCircle(COORD_CIRCLE_CENTER_X + (*data)->samples[i].stickX,
-									                 SCREEN_POS_CENTER_Y - (*data)->samples[i].stickY, 2, COLOR_WHITE, currXfb);
+									DrawFilledCircle(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
+									                 SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, 2, COLOR_WHITE, currXfb);
 								}
 								frameCounter++;
 							// not a frame interval
 							} else {
-								if ((*data)->samples[i].buttons != 0) {
-									DrawDot(COORD_CIRCLE_CENTER_X + (*data)->samples[i].stickX,
-									        SCREEN_POS_CENTER_Y - (*data)->samples[i].stickY, COLOR_ORANGE, currXfb);
+								if (dispData->samples[i].buttons != 0) {
+									DrawDot(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
+									        SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, COLOR_ORANGE, currXfb);
 								} else {
-									DrawDot(COORD_CIRCLE_CENTER_X + (*data)->samples[i].stickX,
-									        SCREEN_POS_CENTER_Y - (*data)->samples[i].stickY, COLOR_WHITE, currXfb);
+									DrawDot(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
+									        SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, COLOR_WHITE, currXfb);
 								}
 							}
 						}
 						
 						// highlight last sample with a box
-						DrawBox( (COORD_CIRCLE_CENTER_X + (*data)->samples[lastDrawPoint].stickX) - 3,
-						         (SCREEN_POS_CENTER_Y - (*data)->samples[lastDrawPoint].stickY) - 3,
-						         (COORD_CIRCLE_CENTER_X + (*data)->samples[lastDrawPoint].stickX) + 3,
-						         (SCREEN_POS_CENTER_Y - (*data)->samples[lastDrawPoint].stickY) + 3,
+						DrawBox( (COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].stickX) - 3,
+						         (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) - 3,
+						         (COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].stickX) + 3,
+						         (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) + 3,
 								 COLOR_WHITE, currXfb);
 						
 						float timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
@@ -466,7 +470,7 @@ void menu_plot2d(void *currXfb, uint32_t *p, uint32_t *h) {
 										map2dStartIndex++;
 									}
 								} else {
-									if (lastDrawPoint + 1 <= (*data)->sampleEnd) {
+									if (lastDrawPoint + 1 <= dispData->sampleEnd) {
 										lastDrawPoint++;
 									}
 								}
@@ -500,10 +504,10 @@ void menu_plot2d(void *currXfb, uint32_t *p, uint32_t *h) {
 										map2dStartIndex = lastDrawPoint;
 									}
 								} else {
-									if (lastDrawPoint + 5 < (*data)->sampleEnd) {
+									if (lastDrawPoint + 5 < dispData->sampleEnd) {
 										lastDrawPoint += 5;
 									} else {
-										lastDrawPoint = (*data)->sampleEnd - 1;
+										lastDrawPoint = dispData->sampleEnd - 1;
 									}
 								}
 							}
@@ -527,7 +531,7 @@ void menu_plot2d(void *currXfb, uint32_t *p, uint32_t *h) {
 										map2dStartIndex = lastDrawPoint;
 									}
 								} else {
-									if (lastDrawPoint + 1 < (*data)->sampleEnd) {
+									if (lastDrawPoint + 1 < dispData->sampleEnd) {
 										lastDrawPoint++;
 									} else {
 										lastDrawPoint = (*data)->sampleEnd - 1;

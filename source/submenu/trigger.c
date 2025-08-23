@@ -198,6 +198,10 @@ static void displayInstructions(void *currXfb) {
 }
 
 void menu_triggerOscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
+	// we're getting the address of the object itself here, not the address of the pointer,
+	// which means we will always point to the same object, regardless of a flip
+	ControllerRec *dispData = *data;
+	
 	switch (menuState) {
 		case TRIG_SETUP:
 			setup(p, h);
@@ -221,7 +225,7 @@ void menu_triggerOscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 						printStrColor("LOCKED", currXfb, COLOR_WHITE, COLOR_BLACK);
 					}
 				case TRIG_DISPLAY:
-					if ((*data)->isRecordingReady) {
+					if (dispData->isRecordingReady) {
 						// bounding box
 						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
 						// line at 43, start of melee analog shield range
@@ -236,27 +240,27 @@ void menu_triggerOscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 						// draw 500 datapoints
 						for (int i = 0; i < 500; i++) {
 							// make sure we haven't gone outside our bounds
-							if (i == (*data)->sampleEnd || waveformXPos >= 500) {
+							if (i == dispData->sampleEnd || waveformXPos >= 500) {
 								break;
 							}
 							
 							switch (displaySelection) {
 								case TRIGGER_L:
-									curr = (*data)->samples[i].triggerL;
-									currDigital = (*data)->samples[i].buttons & PAD_TRIGGER_L;
+									curr = dispData->samples[i].triggerL;
+									currDigital = dispData->samples[i].buttons & PAD_TRIGGER_L;
 									break;
 								case TRIGGER_R:
-									curr = (*data)->samples[i].triggerR;
-									currDigital = (*data)->samples[i].buttons & PAD_TRIGGER_R;
+									curr = dispData->samples[i].triggerR;
+									currDigital = dispData->samples[i].buttons & PAD_TRIGGER_R;
 									break;
 								default:
-									//(*data)->isRecordingReady = false;
+									//dispData->isRecordingReady = false;
 									printStr("Data ready but selection is not valid.", currXfb);
 									break;
 							}
 							
 							// frame intervals
-							totalTime += (*data)->samples[i].timeDiffUs;
+							totalTime += dispData->samples[i].timeDiffUs;
 							if (totalTime >= 16666) {
 								DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
 								         SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
@@ -302,24 +306,24 @@ void menu_triggerOscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 						int sampleDigitalBegin = -1;
 						switch (displaySelection) {
 							case TRIGGER_L:
-								for (int i = 0; i < (*data)->sampleEnd; i++) {
-									if ((*data)->samples[i].buttons & PAD_TRIGGER_L) {
+								for (int i = 0; i < dispData->sampleEnd; i++) {
+									if (dispData->samples[i].buttons & PAD_TRIGGER_L) {
 										sampleDigitalBegin = i;
 										break;
 									}
-									if ((*data)->samples[i].triggerL > 42) {
-										timeInAnalogRangeUs += (*data)->samples[i].timeDiffUs;
+									if (dispData->samples[i].triggerL > 42) {
+										timeInAnalogRangeUs += dispData->samples[i].timeDiffUs;
 									}
 								}
 								break;
 							case TRIGGER_R:
-								for (int i = 0; i < (*data)->sampleEnd; i++) {
-									if ((*data)->samples[i].buttons & PAD_TRIGGER_R) {
+								for (int i = 0; i < dispData->sampleEnd; i++) {
+									if (dispData->samples[i].buttons & PAD_TRIGGER_R) {
 										sampleDigitalBegin = i;
 										break;
 									}
-									if ((*data)->samples[i].triggerR > 42) {
-										timeInAnalogRangeUs += (*data)->samples[i].timeDiffUs;
+									if (dispData->samples[i].triggerR > 42) {
+										timeInAnalogRangeUs += dispData->samples[i].timeDiffUs;
 									}
 								}
 								break;

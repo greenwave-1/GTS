@@ -338,6 +338,10 @@ static void setup(uint32_t *p, uint32_t *h) {
 
 // function called from outside
 void menu_oscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
+	// we're getting the address of the object itself here, not the address of the pointer,
+	// which means we will always point to the same object, regardless of a flip
+	ControllerRec *dispData = *data;
+	
 	switch (state) {
 		case OSC_SETUP:
 			setup(p, h);
@@ -383,7 +387,7 @@ void menu_oscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 						}
 					}
 				case POST_INPUT:
-					if ((*data)->isRecordingReady) {
+					if (dispData->isRecordingReady) {
 						// draw guidelines based on selected test
 						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
 						DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY, currXfb);
@@ -420,15 +424,15 @@ void menu_oscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 						int maxX, maxY;
 
 						// show all data if it will fit
-						if ((*data)->sampleEnd < 500) {
+						if (dispData->sampleEnd < 500) {
 							dataScrollOffset = 0;
 						// move screen to end of data input if it was further from the last capture
-						} else if (dataScrollOffset > ((*data)->sampleEnd) - 500) {
-							dataScrollOffset = (*data)->sampleEnd - 501;
+						} else if (dataScrollOffset > (dispData->sampleEnd) - 500) {
+							dataScrollOffset = dispData->sampleEnd - 501;
 						}
 
-						int prevX = (*data)->samples[dataScrollOffset].stickX;
-						int prevY = (*data)->samples[dataScrollOffset].stickY;
+						int prevX = dispData->samples[dataScrollOffset].stickX;
+						int prevY = dispData->samples[dataScrollOffset].stickY;
 
 						// initialize stat values to first point
 						minX = prevX;
@@ -443,17 +447,17 @@ void menu_oscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 						// draw 500 datapoints from the scroll offset
 						for (int i = dataScrollOffset + 1; i < dataScrollOffset + 500; i++) {
 							// make sure we haven't gone outside our bounds
-							if (i == (*data)->sampleEnd || waveformXPos >= 500) {
+							if (i == dispData->sampleEnd || waveformXPos >= 500) {
 								break;
 							}
 							
 							int currY, currX;
 							if (!showCStick) {
-								currX = (*data)->samples[i].stickX;
-								currY = (*data)->samples[i].stickY;
+								currX = dispData->samples[i].stickX;
+								currY = dispData->samples[i].stickY;
 							} else {
-								currX = (*data)->samples[i].cStickX;
-								currY = (*data)->samples[i].cStickY;
+								currX = dispData->samples[i].cStickX;
+								currY = dispData->samples[i].cStickY;
 							}
 
 							// y first
@@ -482,7 +486,7 @@ void menu_oscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 							}
 
 							// adding time from drawn points, to show how long the current view is
-							drawnTicksUs += (*data)->samples[i].timeDiffUs;
+							drawnTicksUs += dispData->samples[i].timeDiffUs;
 
 							// update scaling factor
 							waveformPrevXPos = waveformXPos;
@@ -491,15 +495,15 @@ void menu_oscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 
 						// do we have enough data to enable scrolling?
 						// TODO: enable scrolling when scaled
-						if ((*data)->sampleEnd >= 500 ) {
+						if (dispData->sampleEnd >= 500 ) {
 							// does the user want to scroll the waveform?
 							if (*held & PAD_BUTTON_RIGHT) {
 								if (*held & PAD_TRIGGER_R) {
-									if (dataScrollOffset + 510 < (*data)->sampleEnd) {
+									if (dataScrollOffset + 510 < dispData->sampleEnd) {
 										dataScrollOffset += 10;
 									}
 								} else {
-									if (dataScrollOffset + 501 < (*data)->sampleEnd) {
+									if (dataScrollOffset + 501 < dispData->sampleEnd) {
 										dataScrollOffset++;
 									}
 								}
@@ -525,7 +529,7 @@ void menu_oscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 						}
 						setCursorPos(3, 0);
 						
-						sprintf(strBuffer, "Sample start: %04u/%04u | Time shown: %04llu/%04llu ms\n", dataScrollOffset, (*data)->sampleEnd, drawnTicksUs / 1000, (*data)->totalTimeUs / 1000);
+						sprintf(strBuffer, "Sample start: %04u/%04u | Time shown: %04llu/%04llu ms\n", dataScrollOffset, dispData->sampleEnd, drawnTicksUs / 1000, dispData->totalTimeUs / 1000);
 						printStr(strBuffer, currXfb);
 						
 						// print test data
@@ -545,20 +549,20 @@ void menu_oscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 								int pivotStartIndex = -1, pivotEndIndex = -1;
 								int pivotStartSign = 0;
 								// start from the back of the list
-								for (int i = (*data)->sampleEnd - 1; i >= 0; i--) {
+								for (int i = dispData->sampleEnd - 1; i >= 0; i--) {
 									// check x coordinate for +-64 (dash threshold)
-									if (abs(((*data)->samples[i].stickX) >= 64) && !leftPivotRange) {
+									if (abs((dispData->samples[i].stickX) >= 64) && !leftPivotRange) {
 										if (pivotEndIndex == -1) {
 											pivotEndIndex = i;
 										}
 										// pivot input must hit 80 on both sides
-										if (abs((*data)->samples[i].stickX) >= 80) {
+										if (abs(dispData->samples[i].stickX) >= 80) {
 											pivotHit80 = true;
 										}
 									}
 
 									// are we outside the pivot range and have already logged data of being in range
-									if (pivotEndIndex != -1 && abs((*data)->samples[i].stickX) < 64) {
+									if (pivotEndIndex != -1 && abs(dispData->samples[i].stickX) < 64) {
 										leftPivotRange = true;
 										if (pivotStartIndex == -1) {
 											// need the "previous" poll since this one is out of the range
@@ -570,13 +574,13 @@ void menu_oscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 									}
 
 									// look for the initial input
-									if (abs((*data)->samples[i].stickX) >= 64 && leftPivotRange) {
+									if (abs(dispData->samples[i].stickX) >= 64 && leftPivotRange) {
 										// used to ensure starting input is from the opposite side
 										if (pivotStartSign == 0) {
-											pivotStartSign = (*data)->samples[i].stickX;
+											pivotStartSign = dispData->samples[i].stickX;
 										}
 										prevLeftPivotRange = true;
-										if (abs((*data)->samples[i].stickX) >= 80) {
+										if (abs(dispData->samples[i].stickX) >= 80) {
 											prevPivotHit80 = true;
 											break;
 										}
@@ -585,14 +589,14 @@ void menu_oscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 
 								// phobvision doc says both sides need to hit 80 to succeed
 								// multiplication is to ensure signs are correct
-								if (prevPivotHit80 && pivotHit80 && ((*data)->samples[pivotEndIndex].stickX * pivotStartSign < 0)) {
+								if (prevPivotHit80 && pivotHit80 && (dispData->samples[pivotEndIndex].stickX * pivotStartSign < 0)) {
 									float noTurnPercent = 0;
 									float pivotPercent = 0;
 									float dashbackPercent = 0;
 
 									uint64_t timeInPivotRangeUs = 0;
 									for (int i = pivotStartIndex; i <= pivotEndIndex; i++) {
-										timeInPivotRangeUs += (*data)->samples[i].timeDiffUs;
+										timeInPivotRangeUs += dispData->samples[i].timeDiffUs;
 									}
 
 									// convert time to float in milliseconds
@@ -630,10 +634,10 @@ void menu_oscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 								// go forward in list
 								int dashbackStartIndex = -1, dashbackEndIndex = -1;
 								uint64_t timeInRange = 0;
-								for (int i = 0; i < (*data)->sampleEnd; i++) {
+								for (int i = 0; i < dispData->sampleEnd; i++) {
 									// is the stick in the range
-									if ((abs((*data)->samples[i].stickX) >= 23 && abs((*data)->samples[i].stickX) < 64)) {
-										timeInRange += (*data)->samples[i].timeDiffUs;
+									if ((abs(dispData->samples[i].stickX) >= 23 && abs(dispData->samples[i].stickX) < 64)) {
+										timeInRange += dispData->samples[i].timeDiffUs;
 										if (dashbackStartIndex == -1) {
 											dashbackStartIndex = i;
 										}
@@ -664,11 +668,11 @@ void menu_oscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
 										// we need the sample that would occur around 1f after
 										while (usFromPoll < 16666) {
 											nextPollIndex++;
-											usFromPoll += (*data)->samples[nextPollIndex].timeDiffUs;
+											usFromPoll += dispData->samples[nextPollIndex].timeDiffUs;
 										}
 										// the two frames need to move more than 75 units for UCF to convert it
-										if (abs((*data)->samples[i].stickX) + abs((*data)->samples[nextPollIndex].stickX) > 75) {
-											ucfTimeInRange -= (*data)->samples[i].timeDiffUs;
+										if (abs(dispData->samples[i].stickX) + abs(dispData->samples[nextPollIndex].stickX) > 75) {
+											ucfTimeInRange -= dispData->samples[i].timeDiffUs;
 										}
 									}
 
