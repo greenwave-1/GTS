@@ -205,6 +205,12 @@ static void setup(uint32_t *p, uint32_t *h) {
 		temp = getTempData();
 	}
 	plotState = PLOT_DISPLAY;
+	
+	// don't use data from trigger menu
+	// _technically_ this doesn't need to happen, but trigger recording is basically useless here
+	if ((*data)->recordingType == REC_TRIGGER) {
+		clearRecordingArray(*data);
+	}
 }
 
 static void displayInstructions(void *currXfb) {
