@@ -154,7 +154,7 @@ bool menu_runMenu(void *currXfb) {
 			menu_controllerTest(currXfb);
 			break;
 		case WAVEFORM:
-			menu_oscilloscope(currXfb, &data, &pressed, &held);
+			menu_oscilloscope(currXfb, &pressed, &held);
 			break;
 		case PLOT_2D:
 			menu_plot2d(currXfb, &pressed, &held);
