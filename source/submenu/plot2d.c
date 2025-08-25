@@ -25,8 +25,8 @@ static const float FRAME_TIME = (1000.0 / 60.0);
 
 static char strBuffer[100];
 
-static uint32_t *pressed = NULL;
-static uint32_t *held = NULL;
+static uint16_t *pressed = NULL;
+static uint16_t *held = NULL;
 static bool buttonLock = false;
 static uint8_t buttonPressCooldown = 0;
 static uint8_t captureStartFrameCooldown = 0;
@@ -42,8 +42,8 @@ static ControllerRec **data = NULL, **temp = NULL;
 static int prevPosX = 0, prevPosY = 0;
 static int currPosX = 0, currPosY = 0;
 static int prevPosDiffX = 0, prevPosDiffY = 0;
-static uint32_t currMovementHeldState = 0;
-static uint32_t prevMovementHeldState = 0;
+static uint16_t currMovementHeldState = 0;
+static uint16_t prevMovementHeldState = 0;
 static uint64_t noMovementTimer = 0;
 
 static int noMovementStartIndex = -1;
@@ -198,7 +198,7 @@ static void plot2dSamplingCallback() {
 	}
 }
 
-static void setup(uint32_t *p, uint32_t *h) {
+static void setup(uint16_t *p, uint16_t *h) {
 	setSamplingRateHigh();
 	pressed = p;
 	held = h;
@@ -245,7 +245,7 @@ static void displayInstructions(void *currXfb) {
 	}
 }
 
-void menu_plot2d(void *currXfb, uint32_t *p, uint32_t *h) {
+void menu_plot2d(void *currXfb, uint16_t *p, uint16_t *h) {
 	// we're getting the address of the object itself here, not the address of the pointer,
 	// which means we will always point to the same object, regardless of a flip
 	ControllerRec *dispData = *data;

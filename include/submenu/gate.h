@@ -13,7 +13,7 @@
 enum GATE_MENU_STATE { GATE_SETUP, GATE_POST_SETUP, GATE_INSTRUCTIONS };
 enum GATE_STATE { GATE_INIT, GATE_POST_INIT };
 
-void menu_gateMeasure(void *currXfb, uint32_t *p, uint32_t *h);
+void menu_gateMeasure(void *currXfb, uint16_t *p, uint16_t *h);
 void menu_gateControllerDisconnected();
 void menu_gateMeasureEnd();
 

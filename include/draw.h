@@ -8,6 +8,7 @@
 #define GTS_DRAW_H
 
 #include <stdint.h>
+
 #include "stickmap_coordinates.h"
 
 // center of screen, 640x480
@@ -75,6 +76,10 @@
 #define CONT_TEST_STICK_CENTER_Y 150
 #define CONT_TEST_CSTICK_CENTER_X 380
 #define CONT_TEST_CSTICK_CENTER_Y 280
+
+// Colors for X and Y graph
+#define COLOR_RED_C 0x846084d7
+#define COLOR_BLUE_C 0x6dd26d72
 
 
 void setInterlaced(bool interlaced);

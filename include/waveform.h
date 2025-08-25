@@ -9,6 +9,8 @@
 
 #include <stdint.h>
 
+// TODO: this file should be renamed, along with "ControllerRec". I can't think of something better right now...
+
 // individual datapoint from a given controller poll
 typedef struct ControllerSample {
 	// all analog values
@@ -25,7 +27,7 @@ typedef struct ControllerSample {
 	uint8_t triggerR;
 	
 	// all digital buttons
-	uint32_t buttons;
+	uint16_t buttons;
 	
 	// time in microseconds from last sample
 	// this will be zero for the first sample
@@ -79,7 +81,10 @@ typedef struct ControllerRec {
 } ControllerRec;
 
 // calls malloc and inits structs
-void initData();
+void initControllerRecStructs();
+
+// free memory
+void freeControllerRecStructs();
 
 // returns address of static pointers in waveform.c
 // using double pointer so that the two structs can be swapped silently via flipData()

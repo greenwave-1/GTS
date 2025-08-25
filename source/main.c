@@ -228,6 +228,9 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 	
+	// allocate memory for recording structs
+	initControllerRecStructs();
+	
 	// main loop of the program
 	// exits when menu_runMenu() returns true, or when either power or reset are pressed
 	while (true) {
@@ -292,6 +295,9 @@ int main(int argc, char **argv) {
 		VIDEO_Flush();
 		VIDEO_WaitVSync();
 	}
+	
+	// free memory (probably don't need to do this but eh)
+	freeControllerRecStructs();
 	
 	#ifdef DEBUGLOG
 	stopLogging();

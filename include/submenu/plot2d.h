@@ -15,7 +15,7 @@
 enum PLOT_2D_MENU_STATE { PLOT_SETUP, PLOT_POST_SETUP, PLOT_INSTRUCTIONS };
 enum PLOT_2D_STATE { PLOT_DISPLAY, PLOT_INPUT };
 
-void menu_plot2d(void *currXfb, uint32_t *p, uint32_t *h);
+void menu_plot2d(void *currXfb, uint16_t *p, uint16_t *h);
 void menu_plot2dEnd();
 
 #endif //GTS_PLOT2D_H

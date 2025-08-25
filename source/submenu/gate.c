@@ -17,8 +17,8 @@
 static enum GATE_MENU_STATE menuState = GATE_SETUP;
 static enum GATE_STATE state = GATE_INIT;
 
-static uint32_t *pressed = NULL;
-static uint32_t *held = NULL;
+static uint16_t *pressed = NULL;
+static uint16_t *held = NULL;
 static bool buttonLock = false;
 static uint8_t buttonPressCooldown = 0;
 static uint8_t yPressFrameCounter = 0;
@@ -93,7 +93,7 @@ void gateSamplingCallback() {
 	
 }
 
-static void setup(uint32_t *p, uint32_t *h) {
+static void setup(uint16_t *p, uint16_t *h) {
 	pressed = p;
 	held = h;
 	//data.endPoint = TRIGGER_SAMPLES - 1;
@@ -127,7 +127,7 @@ void menu_gateControllerDisconnected() {
 	}
 }
 
-void menu_gateMeasure(void *currXfb, uint32_t *p, uint32_t *h) {
+void menu_gateMeasure(void *currXfb, uint16_t *p, uint16_t *h) {
 	switch (menuState) {
 		case GATE_SETUP:
 			setup(p, h);

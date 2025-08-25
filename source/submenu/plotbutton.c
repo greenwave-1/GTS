@@ -30,14 +30,14 @@ const static char* BUTTON_STR[13] = { "A", "B", "X", "Y",
 									  "L", "La", "R", "Ra", "Z",
 									  "AX", "AY", "CX", "CY"};
 
-const static uint32_t BUTTON_MASKS[13] = { PAD_BUTTON_A, PAD_BUTTON_B, PAD_BUTTON_X, PAD_BUTTON_Y,
+const static uint16_t BUTTON_MASKS[13] = { PAD_BUTTON_A, PAD_BUTTON_B, PAD_BUTTON_X, PAD_BUTTON_Y,
 									  PAD_TRIGGER_L, 0, PAD_TRIGGER_R, 0, PAD_TRIGGER_Z,
 									  0, 0, 0, 0 };
 
 static char strBuffer[100];
 
-static uint32_t *pressed = NULL;
-static uint32_t *held = NULL;
+static uint16_t *pressed = NULL;
+static uint16_t *held = NULL;
 static bool buttonLock = false;
 static uint8_t buttonPressCooldown = 0;
 
@@ -207,7 +207,7 @@ static void plotButtonSamplingCallback() {
 	}
 }
 
-static void setup(uint32_t *p, uint32_t *h) {
+static void setup(uint16_t *p, uint16_t *h) {
 	setSamplingRateHigh();
 	pressed = p;
 	held = h;
@@ -255,7 +255,7 @@ static void displayInstructions(void *currXfb) {
 	}
 }
 
-void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
+void menu_plotButton(void *currXfb, uint16_t *p, uint16_t *h) {
 	// we're getting the address of the object itself here, not the address of the pointer,
 	// which means we will always point to the same object, regardless of a flip
 	ControllerRec *dispData = *data;
@@ -412,8 +412,8 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 					
 					// single presses
 					if (!buttonLock) {
-						// disable certain buttons if auto-capture is enabled
-						if (!autoCapture) {
+						// disable certain buttons a capture is occurring
+						if (!autoCapture && state != BUTTON_INPUT) {
 							if (*pressed & PAD_BUTTON_A) {
 								state = BUTTON_INPUT;
 								buttonLock = true;

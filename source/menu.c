@@ -61,8 +61,8 @@ static uint8_t bHeldCounter = 0;
 static ControllerRec **data = NULL;
 
 // vars for what buttons are pressed or held
-static uint32_t pressed = 0;
-static uint32_t held = 0;
+static uint16_t pressed = 0;
+static uint16_t held = 0;
 
 // var for counting how long the stick has been held away from neutral
 static uint8_t stickheld = 0;
@@ -100,7 +100,6 @@ static uint8_t thanksPageCounter = 0;
 // this also handles moving between menus and exiting
 bool menu_runMenu(void *currXfb) {
 	if (data == NULL) {
-		initData();
 		data = getRecordingData();
 	}
 	

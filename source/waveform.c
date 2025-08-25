@@ -8,11 +8,11 @@
 #include <math.h>
 
 static bool init = false;
-static ControllerRec *recordingData;
-static ControllerRec *tempData;
+static ControllerRec *recordingData = NULL;
+static ControllerRec *tempData = NULL;
 
 // allocate memory for and initialize recording structs
-void initData() {
+void initControllerRecStructs() {
 	if (!init) {
 		recordingData = malloc(sizeof(ControllerRec));
 		clearRecordingArray(recordingData);
@@ -20,6 +20,17 @@ void initData() {
 		clearRecordingArray(tempData);
 		
 		init = true;
+	}
+}
+
+void freeControllerRecStructs() {
+	if (recordingData != NULL) {
+		free(recordingData);
+		recordingData = NULL;
+	}
+	if (tempData != NULL) {
+		free(tempData);
+		tempData = NULL;
 	}
 }
 

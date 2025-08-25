@@ -2,9 +2,10 @@
 #define GTS_FILE_H
 
 // file io stuff
-#include "waveform.h"
 
 #include <stdio.h>
+
+#include "waveform.h"
 
 // generic filesystem utils
 bool initFilesystem();

@@ -26,8 +26,8 @@ static const float FRAME_TIME_MS = (1000/60.0);
 const static uint8_t SCREEN_TIMEPLOT_START = 70;
 const static int TRIGGER_SAMPLES = 500;
 
-static uint32_t *pressed = NULL;
-static uint32_t *held = NULL;
+static uint16_t *pressed = NULL;
+static uint16_t *held = NULL;
 static bool buttonLock = false;
 static uint8_t buttonPressCooldown = 0;
 static uint8_t captureStartFrameCooldown = 0;
@@ -164,7 +164,7 @@ void triggerSamplingCallback() {
 	}
 }
 
-static void setup(uint32_t *p, uint32_t *h) {
+static void setup(uint16_t *p, uint16_t *h) {
 	pressed = p;
 	held = h;
 	setSamplingRateHigh();
@@ -206,7 +206,7 @@ static void displayInstructions(void *currXfb) {
 	}
 }
 
-void menu_triggerOscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
+void menu_triggerOscilloscope(void *currXfb, uint16_t *p, uint16_t *h) {
 	// we're getting the address of the object itself here, not the address of the pointer,
 	// which means we will always point to the same object, regardless of a flip
 	ControllerRec *dispData = *data;

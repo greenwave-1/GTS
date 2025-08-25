@@ -13,16 +13,13 @@
 #include <ogc/timesupp.h>
 #include <ogc/color.h>
 
-#include "../polling.h"
-#include "../draw.h"
-#include "../waveform.h"
+#include "polling.h"
+#include "draw.h"
+#include "waveform.h"
 
 static char strBuffer[100];
 
 const static uint8_t SCREEN_TIMEPLOT_START = 70;
-
-static const uint32_t COLOR_RED_C = 0x846084d7;
-static const uint32_t COLOR_BLUE_C = 0x6dd26d72;
 
 static enum CONT_MENU_STATE state = CONT_SETUP;
 static enum CONT_STATE cState = INPUT;
@@ -37,8 +34,8 @@ static bool freeze = false;
 static bool showCStick = false;
 
 static bool buttonLock = false;
-static uint32_t *pressed = NULL;
-static uint32_t *held = NULL;
+static uint16_t *pressed = NULL;
+static uint16_t *held = NULL;
 
 static uint64_t prevSampleCallbackTick = 0;
 static uint64_t sampleCallbackTick = 0;
@@ -73,7 +70,6 @@ static void contSamplingCallback() {
 	
 	*held = PAD_ButtonsHeld(0);
 	
-	
 	if (!freeze) {
 		data->samples[dataIndex].stickX = PAD_StickX(0);
 		data->samples[dataIndex].stickY = PAD_StickY(0);
@@ -94,7 +90,7 @@ static void contSamplingCallback() {
 	}
 }
 
-static void setup(uint32_t *p, uint32_t *h) {
+static void setup(uint16_t *p, uint16_t *h) {
 	pressed = p;
 	held = h;
 	if (data == NULL) {
@@ -108,7 +104,7 @@ static void setup(uint32_t *p, uint32_t *h) {
 	state = CONT_POST_SETUP;
 }
 
-void menu_continuousWaveform(void *currXfb, uint32_t *p, uint32_t *h) {
+void menu_continuousWaveform(void *currXfb, uint16_t *p, uint16_t *h) {
 	switch (state) {
 		case CONT_SETUP:
 			setup(p, h);

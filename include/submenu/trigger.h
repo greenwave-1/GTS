@@ -14,7 +14,7 @@ enum TRIG_MENU_STATE { TRIG_SETUP, TRIG_POST_SETUP, TRIG_INSTRUCTIONS };
 enum TRIG_STATE { TRIG_INPUT, TRIG_DISPLAY, TRIG_DISPLAY_LOCK };
 enum TRIG_CAPTURE_SELECTION { TRIGGER_NONE, TRIGGER_L, TRIGGER_R };
 
-void menu_triggerOscilloscope(void *currXfb, uint32_t *p, uint32_t *h);
+void menu_triggerOscilloscope(void *currXfb, uint16_t *p, uint16_t *h);
 void menu_triggerOscilloscopeEnd();
 
 #endif //GTS_TRIGGER_H

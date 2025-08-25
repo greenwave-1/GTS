@@ -15,7 +15,7 @@
 enum PLOT_BUTTON_MENU_STATE { BUTTON_SETUP, BUTTON_POST_SETUP, BUTTON_INSTRUCTIONS };
 enum PLOT_BUTTON_STATE { BUTTON_DISPLAY, BUTTON_INPUT };
 
-void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h);
+void menu_plotButton(void *currXfb, uint16_t *p, uint16_t *h);
 void menu_plotButtonEnd();
 bool menu_plotButtonHasCaptureStarted();
 

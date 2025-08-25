@@ -3,6 +3,7 @@
 //
 
 #include "polling.h"
+
 #include <ogc/video.h>
 #include <ogc/video_types.h>
 #include <ogc/si.h>

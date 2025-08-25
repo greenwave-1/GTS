@@ -26,9 +26,6 @@ static const float FRAME_TIME_MS = (1000/60.0);
 
 const static uint8_t SCREEN_TIMEPLOT_START = 70;
 
-static const uint32_t COLOR_RED_C = 0x846084d7;
-static const uint32_t COLOR_BLUE_C = 0x6dd26d72;
-
 static enum OSC_MENU_STATE state = OSC_SETUP;
 static enum OSC_STATE oState = PRE_INPUT;
 
@@ -57,8 +54,8 @@ static uint64_t sampleCallbackTick = 0;
 static uint64_t timeStickInOrigin = 0;
 static uint64_t timeStoppedMoving = 0;
 
-static uint32_t *pressed = NULL;
-static uint32_t *held = NULL;
+static uint16_t *pressed = NULL;
+static uint16_t *held = NULL;
 static bool buttonLock = false;
 static uint8_t buttonPressCooldown = 0;
 
@@ -317,7 +314,7 @@ static void displayInstructions(void *currXfb) {
 }
 
 // only run once
-static void setup(uint32_t *p, uint32_t *h) {
+static void setup(uint16_t *p, uint16_t *h) {
 	setSamplingRateHigh();
 	pressed = p;
 	held = h;
@@ -339,7 +336,7 @@ static void setup(uint32_t *p, uint32_t *h) {
 }
 
 // function called from outside
-void menu_oscilloscope(void *currXfb, uint32_t *p, uint32_t *h) {
+void menu_oscilloscope(void *currXfb, uint16_t *p, uint16_t *h) {
 	// we're getting the address of the object itself here, not the address of the pointer,
 	// which means we will always point to the same object, regardless of a flip
 	ControllerRec *dispData = *data;
