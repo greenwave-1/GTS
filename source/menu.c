@@ -131,8 +131,30 @@ bool menu_runMenu(void *currXfb) {
 	}
 	
 	if ((*data)->isRecordingReady) {
-		setCursorPos(0, 31);
-		printStr("Oscilloscope Capture in memory!", currXfb);
+		switch ((*data)->recordingType) {
+			case REC_OSCILLOSCOPE:
+				setCursorPos(0, 31);
+				printStr("Oscilloscope", currXfb);
+				break;
+			case REC_2DPLOT:
+				setCursorPos(0, 36);
+				printStr("2D Plot", currXfb);
+				break;
+			case REC_BUTTONTIME:
+				setCursorPos(0, 30);
+				printStr("Button Viewer", currXfb);
+				break;
+			case REC_TRIGGER_L:
+			case REC_TRIGGER_R:
+				setCursorPos(0, 36);
+				printStr("Trigger", currXfb);
+				break;
+			default:
+				setCursorPos(0, 36);
+				printStr("Unknown", currXfb);
+				break;
+		}
+		printStr(" Capture in memory!", currXfb);
 	} else {
 		exportReturnCode = -1;
 	}
