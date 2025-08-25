@@ -164,13 +164,13 @@ static void plot2dSamplingCallback() {
 			if ( abs(currPosX - prevPosX) >= 10 || abs (currPosY - prevPosY) >= 10 ||
 					(*held != 0 && !autoCapture)) {
 				captureStart = true;
+				clearRecordingArray(*temp);
 				(*temp)->samples[0].stickX = currPosX;
 				(*temp)->samples[0].stickY = currPosY;
 				(*temp)->samples[0].cStickX = 0;
 				(*temp)->samples[0].cStickY = 0;
 				(*temp)->samples[0].buttons = *held;
 				(*temp)->samples[0].timeDiffUs = 0;
-				(*temp)->totalTimeUs = 0;
 				(*temp)->sampleEnd = 1;
 				(*temp)->isRecordingReady = false;
 				(*temp)->dataExported = false;

@@ -191,6 +191,7 @@ static void plotButtonSamplingCallback() {
 			if (triggeringInput != NO_BUTTON) {
 				triggeringInputDisplay = triggeringInput;
 				captureStart = true;
+				clearRecordingArray(*temp);
 				(*temp)->samples[0].stickX = PAD_StickX(0);
 				(*temp)->samples[0].stickY = PAD_StickY(0);
 				(*temp)->samples[0].cStickX = PAD_SubStickX(0);

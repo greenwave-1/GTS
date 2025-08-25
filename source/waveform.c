@@ -56,6 +56,7 @@ void clearRecordingArray(ControllerRec *recording) {
 	}
 	// set related values
 	recording->sampleEnd = 0;
+	recording->totalTimeUs = 0;
 	recording->recordingType = REC_CLEAR;
 	recording->isRecordingReady = false;
 	recording->dataExported = false;

@@ -125,6 +125,7 @@ void triggerSamplingCallback() {
 				captureSelection = TRIGGER_R;
 			}
 			if (captureSelection != TRIGGER_NONE) {
+				clearRecordingArray(*temp);
 				(*temp)->sampleEnd = 0;
 				// prepend ~50 ms of data to the recording
 				int loopStartIndex = startingLoopIndex - 1;

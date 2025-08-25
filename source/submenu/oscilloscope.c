@@ -253,12 +253,12 @@ static void oscilloscopeCallback() {
 			
 			if (stickMove) {
 				// assign first value
+				clearRecordingArray(*temp);
 				(*temp)->samples[0].stickX = stickX;
 				(*temp)->samples[0].stickY = stickY;
 				(*temp)->samples[0].cStickX = cStickX;
 				(*temp)->samples[0].cStickY = cStickY;
 				(*temp)->samples[0].timeDiffUs = 0;
-				(*temp)->totalTimeUs = 0;
 				(*temp)->sampleEnd = 1;
 				(*temp)->isRecordingReady = false;
 				(*temp)->dataExported = false;
