@@ -390,33 +390,42 @@ void menu_mainMenu(void *currXfb) {
 		} else {
 			setCursorPos(2 + i, 2);
 		}
-		printStr(menuItems[i], currXfb);
 		
+		bool valid = false;
 		// add indicator for menus that can view a given recording type
 		switch (i) {
 			case ENTRY_OSCILLOSCOPE:
 				if (RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_OSCILLOSCOPE_FLAG) {
-					printStr(" *", currXfb);
+					valid = true;
 				}
 				break;
 			case ENTRY_TRIGGER_OSCILLOSCOPE:
 				if (RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & (REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG)) {
-					printStr(" *", currXfb);
+					valid = true;
 				}
 				break;
 			case ENTRY_2D_PLOT:
 				if (RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_2DPLOT_FLAG) {
-					printStr(" *", currXfb);
+					valid = true;
 				}
 				break;
 			case ENTRY_BUTTON_PLOT:
 				if (RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_BUTTONTIME_FLAG) {
-					printStr(" *", currXfb);
+					valid = true;
 				}
 				break;
 			default:
 				break;
 		}
+		if (valid) {
+			printStr("* ", currXfb);
+		} else {
+			setCursorPos(2 + i, 4);
+		}
+		
+		printStr(menuItems[i], currXfb);
+		
+
 
 	}
 
