@@ -180,9 +180,8 @@ static void setup(uint16_t *p, uint16_t *h) {
 		temp = getTempData();
 	}
 	
-	// don't use data not recorded for triggers
-	// _technically_ this doesn't need to happen, but other recording types are basically useless here
-	if ((*data)->recordingType != REC_TRIGGER_L && (*data)->recordingType != REC_TRIGGER_R) {
+	// check if existing recording is valid for this menu
+	if (!(RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & (REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG))) {
 		clearRecordingArray(*data);
 		trigState = TRIG_INPUT;
 	}

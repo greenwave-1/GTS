@@ -210,9 +210,8 @@ static void setup(uint16_t *p, uint16_t *h) {
 	}
 	plotState = PLOT_DISPLAY;
 	
-	// don't use data from trigger menu
-	// _technically_ this doesn't need to happen, but trigger recording is basically useless here
-	if ((*data)->recordingType == REC_TRIGGER_L || (*data)->recordingType == REC_TRIGGER_R) {
+	// check if existing recording is valid for this menu
+	if (!(RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_2DPLOT_FLAG)) {
 		clearRecordingArray(*data);
 	}
 	
