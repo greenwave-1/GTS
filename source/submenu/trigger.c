@@ -100,7 +100,12 @@ void triggerSamplingCallback() {
 				trigState = TRIG_DISPLAY;
 				startedCapture = false;
 				(*temp)->isRecordingReady = true;
-				(*temp)->recordingType = REC_TRIGGER;
+				if (captureSelection == TRIGGER_L) {
+					(*temp)->recordingType = REC_TRIGGER_L;
+				} else {
+					(*temp)->recordingType = REC_TRIGGER_R;
+				}
+				
 				displaySelection = captureSelection;
 				captureSelection = TRIGGER_NONE;
 				flipData();
@@ -176,7 +181,7 @@ static void setup(uint16_t *p, uint16_t *h) {
 	
 	// don't use data not recorded for triggers
 	// _technically_ this doesn't need to happen, but other recording types are basically useless here
-	if ((*data)->recordingType != REC_TRIGGER) {
+	if ((*data)->recordingType != REC_TRIGGER_L && (*data)->recordingType != REC_TRIGGER_R) {
 		clearRecordingArray(*data);
 		trigState = TRIG_INPUT;
 	}

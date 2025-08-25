@@ -55,7 +55,7 @@ typedef struct MeleeCoordinates {
 #define REC_SAMPLE_MAX 3000
 
 // the type of recording created
-enum RECORDING_TYPE { REC_CLEAR, REC_OSCILLOSCOPE, REC_TRIGGER, REC_2DPLOT, REC_BUTTONTIME };
+enum RECORDING_TYPE { REC_CLEAR, REC_OSCILLOSCOPE, REC_TRIGGER_L, REC_TRIGGER_R, REC_2DPLOT, REC_BUTTONTIME };
 
 // recording structure
 // holds all datapoints (ControllerSample) captured, along with what type of recording (RECORDING_TYPE) and total datapoints

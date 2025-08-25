@@ -329,7 +329,7 @@ static void setup(uint16_t *p, uint16_t *h) {
 	}
 	// don't use data from trigger menu
 	// _technically_ this doesn't need to happen, but trigger recording is basically useless here
-	if ((*data)->recordingType == REC_TRIGGER) {
+	if ((*data)->recordingType == REC_TRIGGER_L || (*data)->recordingType == REC_TRIGGER_R) {
 		clearRecordingArray(*data);
 		oState = PRE_INPUT;
 	}

@@ -6,6 +6,9 @@
 #include <string.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <inttypes.h>
+
+#include <ogc/pad.h>
 
 #include "waveform.h"
 #include "print.h"
@@ -50,11 +53,7 @@ int exportData() {
 	ControllerRec *data = *(getRecordingData());
 	data->dataExported = true;
 	// do we have data to begin with?
-	// TODO: this needs reworked to export different captures in different ways
-	if (!data->isRecordingReady ||
-			data->recordingType == REC_BUTTONTIME ||
-			data->recordingType == REC_TRIGGER ||
-			data->recordingType == REC_CLEAR) {
+	if (!data->isRecordingReady || data->recordingType == REC_CLEAR) {
 		return 1;
 	}
 	
@@ -110,41 +109,83 @@ int exportData() {
 	
 	FILE *fptr = openFile(fileStr, "w");
 	
-	// first row is: datetime, number of polls
-	fprintf(fptr, "%s,%u\n", timeStr, data->sampleEnd);
+	// first row is: datetime, number of polls, total time in microseconds, type of recording
+	fprintf(fptr, "%s,%u,%" PRIu64 ",%d\n", timeStr, data->sampleEnd, data->totalTimeUs, data->recordingType);
 	
-	// actual data
-	// second row is x coords, third row is y coords, fourth row is time from last poll
-	
-	// x
-	for (int i = 0; i < data->sampleEnd; i++) {
-		if (i == 0) {
-				fprintf(fptr, "%d", data->samples[i].stickX);
-		} else {
-			fprintf(fptr, ",%d", data->samples[i].stickX);
-		}
+	switch (data->recordingType) {
+		case REC_OSCILLOSCOPE:
+			// X, Y, CX, CY, time from last poll
+			fprintf(fptr, "%d,%d,%d,%d,%" PRIu64 "\n",
+					data->samples[0].stickX, data->samples[0].stickY,
+					data->samples[0].cStickX, data->samples[0].cStickY,
+					data->samples[0].timeDiffUs);
+			for (int i = 1; i < data->sampleEnd; i++) {
+				fprintf(fptr, "%d,%d,%d,%d,%" PRIu64 "\n",
+				        data->samples[i].stickX, data->samples[i].stickY,
+				        data->samples[i].cStickX, data->samples[i].cStickY,
+				        data->samples[i].timeDiffUs);
+			}
+			break;
+		
+		case REC_2DPLOT:
+			// X, Y, buttons (decimal u16), time from last poll
+			fprintf(fptr, "%d,%d,%d,%" PRIu64 "\n",
+			        data->samples[0].stickX, data->samples[0].stickY,
+			        data->samples[0].buttons, data->samples[0].timeDiffUs);
+			for (int i = 1; i < data->sampleEnd; i++) {
+				fprintf(fptr, "%d,%d,%d,%" PRIu64 "\n",
+				        data->samples[i].stickX, data->samples[i].stickY,
+				        data->samples[i].buttons, data->samples[i].timeDiffUs);
+			}
+			break;
+		
+		case REC_TRIGGER_L:
+			// Analog L, Digital L, time from last poll
+			fprintf(fptr, "%u,%" PRIu16 ",%" PRIu64 "\n",
+			        data->samples[0].triggerL, data->samples[0].buttons & PAD_TRIGGER_L,
+					data->samples[0].timeDiffUs);
+			for (int i = 1; i < data->sampleEnd; i++) {
+				fprintf(fptr, "%u,%" PRIu16 ",%" PRIu64 "\n",
+				        data->samples[i].triggerL, data->samples[i].buttons & PAD_TRIGGER_L,
+				        data->samples[i].timeDiffUs);
+			}
+			break;
+		
+		case REC_TRIGGER_R:
+			// Analog L, Digital L, time from last poll
+			fprintf(fptr, "%u,%d,%" PRIu64 "\n",
+			        data->samples[0].triggerR, data->samples[0].buttons & PAD_TRIGGER_R,
+			        data->samples[0].timeDiffUs);
+			for (int i = 1; i < data->sampleEnd; i++) {
+				fprintf(fptr, "%u,%d,%" PRIu64 "\n",
+				        data->samples[i].triggerR, data->samples[i].buttons & PAD_TRIGGER_R,
+				        data->samples[i].timeDiffUs);
+			}
+			break;
+			
+		case REC_BUTTONTIME:
+			// X, Y, CX, CY, Analog L, Analog R, buttons (decimal u16), time from last poll
+			fprintf(fptr, "%d,%d,%d,%d,%u,%u,%" PRIu16 ",%" PRIu64 "\n",
+			        data->samples[0].stickX, data->samples[0].stickY,
+			        data->samples[0].cStickX, data->samples[0].cStickY,
+			        data->samples[0].triggerL, data->samples[0].triggerR,
+			        data->samples[0].buttons, data->samples[0].timeDiffUs);
+			for (int i = 1; i < data->sampleEnd; i++) {
+				fprintf(fptr, "%d,%d,%d,%d,%u,%u,%" PRIu16 ",%" PRIu64 "\n",
+				        data->samples[i].stickX, data->samples[i].stickY,
+				        data->samples[i].cStickX, data->samples[i].cStickY,
+				        data->samples[i].triggerL, data->samples[i].triggerR,
+				        data->samples[i].buttons, data->samples[i].timeDiffUs);
+			}
+			break;
+		
+		// this shouldn't happen??
+		case REC_CLEAR:
+		default:
+			fclose(fptr);
+			return 1;
 	}
-	fprintf(fptr, "\n");
 	
-	// y
-	for (int i = 0; i < data->sampleEnd; i++) {
-		if (i == 0) {
-			fprintf(fptr, "%d", data->samples[i].stickY);
-		} else {
-			fprintf(fptr, ",%d", data->samples[i].stickY);
-		}
-	}
-	fprintf(fptr, "\n");
-	
-	// time between polls
-	for (int i = 0; i < data->sampleEnd; i++) {
-		if (i == 0) {
-			fprintf(fptr, "%llu", data->samples[i].timeDiffUs);
-		} else {
-			fprintf(fptr, ",%llu", data->samples[i].timeDiffUs);
-		}
-	}
-	fprintf(fptr, "\n");
 	fclose(fptr);
 	
 	return 0;
