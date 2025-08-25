@@ -52,7 +52,7 @@ static enum STICKMAP_LIST selectedStickmap = NONE;
 static int selectedStickmapSub = 0;
 
 // main menu counter
-static uint8_t mainMenuSelection = 0;
+static enum MENU_MAIN_ENTRY_LIST mainMenuCursorPos = 0;
 
 // counter for how many frames b or start have been held
 static uint8_t bHeldCounter = 0;
@@ -385,27 +385,53 @@ void menu_mainMenu(void *currXfb) {
 	for (int i = 0; i < MENUITEMS_LEN; i++) {
 		setCursorPos(2 + i, 0);
 		// is the item we're about to print the currently selected menu?
-		if (mainMenuSelection == i) {
+		if (mainMenuCursorPos == i) {
 			printStr("> ", currXfb);
 		} else {
 			setCursorPos(2 + i, 2);
 		}
 		printStr(menuItems[i], currXfb);
+		
+		// add indicator for menus that can view a given recording type
+		switch (i) {
+			case ENTRY_OSCILLOSCOPE:
+				if (RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_OSCILLOSCOPE_FLAG) {
+					printStr(" *", currXfb);
+				}
+				break;
+			case ENTRY_TRIGGER_OSCILLOSCOPE:
+				if (RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & (REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG)) {
+					printStr(" *", currXfb);
+				}
+				break;
+			case ENTRY_2D_PLOT:
+				if (RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_2DPLOT_FLAG) {
+					printStr(" *", currXfb);
+				}
+				break;
+			case ENTRY_BUTTON_PLOT:
+				if (RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_BUTTONTIME_FLAG) {
+					printStr(" *", currXfb);
+				}
+				break;
+			default:
+				break;
+		}
 
 	}
 
 	// does the user move the cursor?
 	if (pressed & PAD_BUTTON_UP || (up && movable)) {
-		if (mainMenuSelection > 0) {
-			mainMenuSelection--;
+		if (mainMenuCursorPos > 0) {
+			mainMenuCursorPos--;
 		} else {
-			mainMenuSelection = MENUITEMS_LEN - 1;
+			mainMenuCursorPos = MENUITEMS_LEN - 1;
 		}
 	} else if (pressed & PAD_BUTTON_DOWN || (down && movable)) {
-		if (mainMenuSelection < MENUITEMS_LEN - 1) {
-			mainMenuSelection++;
+		if (mainMenuCursorPos < MENUITEMS_LEN - 1) {
+			mainMenuCursorPos++;
 		} else {
-			mainMenuSelection = 0;
+			mainMenuCursorPos = 0;
 		}
 	}
 
@@ -413,32 +439,32 @@ void menu_mainMenu(void *currXfb) {
 	// else if to ensure that the A press is separate from any dpad stuff
 	// TODO: maybe reorder the enum so that the number and enum match up?
 	else if (pressed & PAD_BUTTON_A) {
-		switch (mainMenuSelection) {
-			case 0:
+		switch (mainMenuCursorPos) {
+			case ENTRY_CONT_TEST:
 				currentMenu = CONTROLLER_TEST;
 				break;
-			case 1:
+			case ENTRY_OSCILLOSCOPE:
 				currentMenu = WAVEFORM;
 				break;
-			case 2:
+			case ENTRY_CONT_OSCILLOSCOPE:
 				currentMenu = CONTINUOUS_WAVEFORM;
 				break;
-			case 3:
+			case ENTRY_TRIGGER_OSCILLOSCOPE:
 				currentMenu = TRIGGER_WAVEFORM;
 				break;
-			case 4:
+			case ENTRY_COORD_VIEWER:
 				currentMenu = COORD_MAP;
 				break;
-			case 5:
+			case ENTRY_2D_PLOT:
 				currentMenu = PLOT_2D;
 				break;
-			case 6:
+			case ENTRY_BUTTON_PLOT:
 				currentMenu = PLOT_BUTTON;
 				break;
-			case 7:
+			case ENTRY_GATE_VIS:
 				currentMenu = GATE_MEASURE;
 				break;
-			case 8:
+			case ENTRY_DATA_EXPORT:
 				currentMenu = FILE_EXPORT;
 				break;
 		}

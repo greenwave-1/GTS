@@ -215,6 +215,10 @@ static void setup(uint16_t *p, uint16_t *h) {
 	if ((*data)->recordingType == REC_TRIGGER_L || (*data)->recordingType == REC_TRIGGER_R) {
 		clearRecordingArray(*data);
 	}
+	
+	// prevent pressing for a short time upon entering menu
+	buttonLock = true;
+	buttonPressCooldown = 5;
 }
 
 static void displayInstructions(void *currXfb) {

@@ -333,6 +333,10 @@ static void setup(uint16_t *p, uint16_t *h) {
 		clearRecordingArray(*data);
 		oState = PRE_INPUT;
 	}
+	
+	// prevent pressing for a short time upon entering menu
+	buttonLock = true;
+	buttonPressCooldown = 5;
 }
 
 // function called from outside

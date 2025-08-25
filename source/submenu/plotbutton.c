@@ -133,6 +133,7 @@ static void plotButtonSamplingCallback() {
 				if (!autoCapture) {
 					state = BUTTON_DISPLAY;
 				}
+				triggeringInputDisplay = triggeringInput;
 			}
 
 		// we haven't started recording yet, wait for stick/trigger to move outside user-defined range, or a button press
@@ -189,7 +190,6 @@ static void plotButtonSamplingCallback() {
 			
 			// write our data if an input was detected
 			if (triggeringInput != NO_BUTTON) {
-				triggeringInputDisplay = triggeringInput;
 				captureStart = true;
 				clearRecordingArray(*temp);
 				(*temp)->samples[0].stickX = PAD_StickX(0);
@@ -225,6 +225,10 @@ static void setup(uint16_t *p, uint16_t *h) {
 	if ((*data)->recordingType != REC_BUTTONTIME) {
 		clearRecordingArray(*data);
 	}
+	
+	// prevent pressing for a short time upon entering menu
+	buttonLock = true;
+	buttonPressCooldown = 5;
 }
 
 static void displayInstructions(void *currXfb) {

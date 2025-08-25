@@ -187,6 +187,10 @@ static void setup(uint16_t *p, uint16_t *h) {
 		trigState = TRIG_INPUT;
 	}
 	menuState = TRIG_POST_SETUP;
+	
+	// prevent pressing for a short time upon entering menu
+	buttonLock = true;
+	buttonPressCooldown = 5;
 }
 
 static void displayInstructions(void *currXfb) {

@@ -7,6 +7,14 @@
 #include <stdlib.h>
 #include <math.h>
 
+const uint8_t RECORDING_TYPE_VALID_MENUS[] = { 0,
+											   REC_OSCILLOSCOPE_FLAG | REC_2DPLOT_FLAG,
+											   REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG,
+											   REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG,
+											   REC_OSCILLOSCOPE_FLAG | REC_2DPLOT_FLAG,
+											   REC_2DPLOT_FLAG | REC_BUTTONTIME_FLAG };
+
+
 static bool init = false;
 static ControllerRec *recordingData = NULL;
 static ControllerRec *tempData = NULL;

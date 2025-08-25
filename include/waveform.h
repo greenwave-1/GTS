@@ -57,6 +57,16 @@ typedef struct MeleeCoordinates {
 // the type of recording created
 enum RECORDING_TYPE { REC_CLEAR, REC_OSCILLOSCOPE, REC_TRIGGER_L, REC_TRIGGER_R, REC_2DPLOT, REC_BUTTONTIME };
 
+#define REC_CLEAR_FLAG 0
+#define REC_OSCILLOSCOPE_FLAG 1
+#define REC_TRIGGER_L_FLAG 2
+#define REC_TRIGGER_R_FLAG 4
+#define REC_2DPLOT_FLAG 8
+#define REC_BUTTONTIME_FLAG 16
+
+// array that contains what menus are valid for a given recording
+extern const uint8_t RECORDING_TYPE_VALID_MENUS[7];
+
 // recording structure
 // holds all datapoints (ControllerSample) captured, along with what type of recording (RECORDING_TYPE) and total datapoints
 typedef struct ControllerRec {
