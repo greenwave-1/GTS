@@ -122,13 +122,13 @@ static void displayInstructions(void *currXfb) {
 	}
 }
 
-void menu_gateControllerDisconnected() {
-	if (menuState == GATE_POST_SETUP) {
-		state = GATE_INIT;
-	}
-}
 
 void menu_gateMeasure(void *currXfb) {
+	// reset measurement if controller is disconnected
+	if (!isControllerConnected(CONT_PORT_1)) {
+		state = GATE_INIT;
+	}
+	
 	switch (menuState) {
 		case GATE_SETUP:
 			setup();

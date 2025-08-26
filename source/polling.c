@@ -88,3 +88,37 @@ uint16_t* getButtonsDownPtr() {
 uint16_t* getButtonsHeldPtr() {
 	return &buttonsHeld;
 }
+
+static PADStatus origin[PAD_CHANMAX];
+
+PADStatus getOriginStatus(enum CONT_PORTS_BITFLAGS port) {
+	PADStatus ret;
+	
+	switch (port) {
+		case CONT_PORT_1:
+			ret = origin[0];
+			break;
+		case CONT_PORT_2:
+			ret = origin[1];
+			break;
+		case CONT_PORT_3:
+			ret = origin[2];
+			break;
+		case CONT_PORT_4:
+			ret = origin[3];
+			break;
+	}
+	
+	return ret;
+}
+
+static uint32_t padsConnected;
+
+void attemptReadOrigin() {
+	padsConnected = PAD_ScanPads();
+	PAD_GetOrigin(origin);
+}
+
+bool isControllerConnected(enum CONT_PORTS_BITFLAGS port) {
+	return ((padsConnected & port) == 1);
+}
