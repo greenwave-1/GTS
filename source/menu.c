@@ -11,6 +11,7 @@
 #include <ogc/color.h>
 #include <ogc/pad.h>
 #include <ogc/video.h>
+#include <ogc/libversion.h>
 
 #include "waveform.h"
 #include "print.h"
@@ -30,6 +31,14 @@
 
 #ifndef VERSION_NUMBER
 #define VERSION_NUMBER "NOVERS_DEV"
+#endif
+
+#ifndef COMMIT_ID
+#define COMMIT_ID "BAD_ID"
+#endif
+
+#ifndef BUILD_DATE
+#define BUILD_DATE "NO_DATE"
 #endif
 
 #define MENUITEMS_LEN 9
@@ -1065,4 +1074,13 @@ void menu_thanksPage(void *currXfb) {
 			 "Extrems\n"
 			 "SmashScope\n"
 			 "Z. B. Wells", currXfb);
+	
+	setCursorPos(18,0);
+	printStr("Compiled with: ", currXfb);
+	printStr(_V_STRING, currXfb);
+	printStr("\nBuild Date: ", currXfb);
+	printStr(BUILD_DATE, currXfb);
+	printStr("\nGTS Commit ID: ", currXfb);
+	printStr(COMMIT_ID, currXfb);
+
 }

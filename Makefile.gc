@@ -41,11 +41,16 @@ ifeq ($(BENCH), 1)
 	CFLAGS += -DBENCH
 endif
 
+BUILD_DATE = `date -u '+%F_%H:%M:%S'`
+CFLAGS += -DBUILD_DATE=\"$(BUILD_DATE)\"
+
 ifdef version
 	CFLAGS += -DVERSION_NUMBER=\"$(version)\"
 else
-	CFLAGS += -DVERSION_NUMBER=\"`date -u '+%F_%H:%M:%S'`\ DEV\"
+	CFLAGS += -DVERSION_NUMBER=\"$(BUILD_DATE)\ DEV\"
 endif
+
+CFLAGS += -DCOMMIT_ID=\"`git log --format=format:%h | head -n 1`\"
 
 CXXFLAGS	= $(CFLAGS)
 
