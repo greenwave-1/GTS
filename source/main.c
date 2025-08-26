@@ -107,10 +107,8 @@ int main(int argc, char **argv) {
 		}
 		
 		printStr("Waiting for connection...\n");
-		char *ip = getConfiguredIP();
-		// TODO: this definitely isn't safe...
-		printStr(ip, xfb1);
-		printStr(":43256", xfb1);
+		printStr(getConfiguredIP());
+		printStr(":43256");
 		
 		while (!isConnectionMade()) {
 			VIDEO_WaitVSync();
