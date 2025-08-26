@@ -90,9 +90,11 @@ static void contSamplingCallback() {
 	}
 }
 
-static void setup(uint16_t *p, uint16_t *h) {
-	pressed = p;
-	held = h;
+static void setup() {
+	if (pressed == NULL) {
+		pressed = getButtonsDownPtr();
+		held = getButtonsHeldPtr();
+	}
 	if (data == NULL) {
 		data = malloc(sizeof(ControllerRec));
 		clearRecordingArray(data);
@@ -104,10 +106,10 @@ static void setup(uint16_t *p, uint16_t *h) {
 	state = CONT_POST_SETUP;
 }
 
-void menu_continuousWaveform(void *currXfb, uint16_t *p, uint16_t *h) {
+void menu_continuousWaveform(void *currXfb) {
 	switch (state) {
 		case CONT_SETUP:
-			setup(p, h);
+			setup();
 			break;
 		case CONT_POST_SETUP:
 			setCursorPos(2, 0);

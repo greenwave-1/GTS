@@ -93,10 +93,11 @@ void gateSamplingCallback() {
 	
 }
 
-static void setup(uint16_t *p, uint16_t *h) {
-	pressed = p;
-	held = h;
-	//data.endPoint = TRIGGER_SAMPLES - 1;
+static void setup() {
+	if (pressed == NULL) {
+		pressed = getButtonsDownPtr();
+		held = getButtonsHeldPtr();
+	}
 	setSamplingRateHigh();
 	cb = PAD_SetSamplingCallback(gateSamplingCallback);
 	menuState = GATE_POST_SETUP;
@@ -127,10 +128,10 @@ void menu_gateControllerDisconnected() {
 	}
 }
 
-void menu_gateMeasure(void *currXfb, uint16_t *p, uint16_t *h) {
+void menu_gateMeasure(void *currXfb) {
 	switch (menuState) {
 		case GATE_SETUP:
-			setup(p, h);
+			setup();
 			break;
 		case GATE_POST_SETUP:
 			switch (state) {

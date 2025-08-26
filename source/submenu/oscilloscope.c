@@ -314,10 +314,12 @@ static void displayInstructions(void *currXfb) {
 }
 
 // only run once
-static void setup(uint16_t *p, uint16_t *h) {
+static void setup() {
 	setSamplingRateHigh();
-	pressed = p;
-	held = h;
+	if (pressed == NULL) {
+		pressed = getButtonsDownPtr();
+		held = getButtonsHeldPtr();
+	}
 	cb = PAD_SetSamplingCallback(oscilloscopeCallback);
 	state = OSC_POST_SETUP;
 	if(data == NULL) {
@@ -340,14 +342,14 @@ static void setup(uint16_t *p, uint16_t *h) {
 }
 
 // function called from outside
-void menu_oscilloscope(void *currXfb, uint16_t *p, uint16_t *h) {
+void menu_oscilloscope(void *currXfb) {
 	// we're getting the address of the object itself here, not the address of the pointer,
 	// which means we will always point to the same object, regardless of a flip
 	ControllerRec *dispData = *data;
 	
 	switch (state) {
 		case OSC_SETUP:
-			setup(p, h);
+			setup();
 			break;
 		case OSC_POST_SETUP:
 			switch (oState) {

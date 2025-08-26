@@ -198,10 +198,12 @@ static void plot2dSamplingCallback() {
 	}
 }
 
-static void setup(uint16_t *p, uint16_t *h) {
+static void setup() {
 	setSamplingRateHigh();
-	pressed = p;
-	held = h;
+	if (pressed == NULL) {
+		pressed = getButtonsDownPtr();
+		held = getButtonsHeldPtr();
+	}
 	cb = PAD_SetSamplingCallback(plot2dSamplingCallback);
 	menuState = PLOT_POST_SETUP;
 	if (data == NULL) {
@@ -248,14 +250,14 @@ static void displayInstructions(void *currXfb) {
 	}
 }
 
-void menu_plot2d(void *currXfb, uint16_t *p, uint16_t *h) {
+void menu_plot2d(void *currXfb) {
 	// we're getting the address of the object itself here, not the address of the pointer,
 	// which means we will always point to the same object, regardless of a flip
 	ControllerRec *dispData = *data;
 	
 	switch (menuState) {
 		case PLOT_SETUP:
-			setup(p, h);
+			setup();
 			break;
 		case PLOT_INSTRUCTIONS:
 			displayInstructions(currXfb);

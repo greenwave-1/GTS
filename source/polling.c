@@ -77,3 +77,14 @@ void setSamplingRate() {
 bool isUnsupportedMode() {
 	return unsupportedMode;
 }
+
+static uint16_t buttonsDown;
+static uint16_t buttonsHeld;
+
+uint16_t* getButtonsDownPtr() {
+	return &buttonsDown;
+}
+
+uint16_t* getButtonsHeldPtr() {
+	return &buttonsHeld;
+}

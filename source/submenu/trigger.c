@@ -170,9 +170,11 @@ void triggerSamplingCallback() {
 	}
 }
 
-static void setup(uint16_t *p, uint16_t *h) {
-	pressed = p;
-	held = h;
+static void setup() {
+	if (pressed == NULL) {
+		pressed = getButtonsDownPtr();
+		held = getButtonsHeldPtr();
+	}
 	setSamplingRateHigh();
 	cb = PAD_SetSamplingCallback(triggerSamplingCallback);
 	if (data == NULL) {
@@ -215,14 +217,14 @@ static void displayInstructions(void *currXfb) {
 	}
 }
 
-void menu_triggerOscilloscope(void *currXfb, uint16_t *p, uint16_t *h) {
+void menu_triggerOscilloscope(void *currXfb) {
 	// we're getting the address of the object itself here, not the address of the pointer,
 	// which means we will always point to the same object, regardless of a flip
 	ControllerRec *dispData = *data;
 	
 	switch (menuState) {
 		case TRIG_SETUP:
-			setup(p, h);
+			setup();
 			break;
 		case TRIG_POST_SETUP:
 			switch (trigState) {

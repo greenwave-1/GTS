@@ -15,6 +15,7 @@
 
 #include "waveform.h"
 #include "print.h"
+#include "polling.h"
 
 // TODO: these should go away once all menus have been moved to a separate file
 #include "stickmap_coordinates.h"
@@ -70,8 +71,8 @@ static uint8_t bHeldCounter = 0;
 static ControllerRec **data = NULL;
 
 // vars for what buttons are pressed or held
-static uint16_t pressed = 0;
-static uint16_t held = 0;
+static uint16_t *pressed = NULL;
+static uint16_t *held = NULL;
 
 // var for counting how long the stick has been held away from neutral
 static uint8_t stickheld = 0;
@@ -110,6 +111,11 @@ static uint8_t thanksPageCounter = 0;
 bool menu_runMenu(void *currXfb) {
 	if (data == NULL) {
 		data = getRecordingData();
+	}
+	
+	if (pressed == NULL) {
+		pressed = getButtonsDownPtr();
+		held = getButtonsHeldPtr();
 	}
 	
 	if (!setDrawInterlaceMode) {
@@ -176,8 +182,8 @@ bool menu_runMenu(void *currXfb) {
 	if (currentMenu != WAVEFORM && currentMenu != CONTINUOUS_WAVEFORM &&
 			currentMenu != PLOT_2D && currentMenu != TRIGGER_WAVEFORM &&
 			currentMenu != GATE_MEASURE && currentMenu != PLOT_BUTTON) {
-		pressed = PAD_ButtonsDown(0);
-		held = PAD_ButtonsHeld(0);
+		*pressed = PAD_ButtonsDown(0);
+		*held = PAD_ButtonsHeld(0);
 	}
 
 	// determine what menu we are in
@@ -189,10 +195,10 @@ bool menu_runMenu(void *currXfb) {
 			menu_controllerTest(currXfb);
 			break;
 		case WAVEFORM:
-			menu_oscilloscope(currXfb, &pressed, &held);
+			menu_oscilloscope(currXfb);
 			break;
 		case PLOT_2D:
-			menu_plot2d(currXfb, &pressed, &held);
+			menu_plot2d(currXfb);
 			break;
 		case FILE_EXPORT:
 			menu_fileExport(currXfb);
@@ -223,10 +229,10 @@ bool menu_runMenu(void *currXfb) {
 			}
 			break;
 		case CONTINUOUS_WAVEFORM:
-			menu_continuousWaveform(currXfb, &pressed, &held);
+			menu_continuousWaveform(currXfb);
 			break;
 		case TRIGGER_WAVEFORM:
-			menu_triggerOscilloscope(currXfb, &pressed, &held);
+			menu_triggerOscilloscope(currXfb);
 			break;
 		case THANKS_PAGE:
 			menu_thanksPage(currXfb);
@@ -235,10 +241,10 @@ bool menu_runMenu(void *currXfb) {
 			if (originRead == false) {
 				menu_gateControllerDisconnected();
 			}
-			menu_gateMeasure(currXfb, &pressed, &held);
+			menu_gateMeasure(currXfb);
 			break;
 		case PLOT_BUTTON:
-			menu_plotButton(currXfb, &pressed, &held);
+			menu_plotButton(currXfb);
 			break;
 		default:
 			printStr("HOW DID WE END UP HERE?\n", currXfb);
@@ -253,13 +259,13 @@ bool menu_runMenu(void *currXfb) {
 	setCursorPos(22, 0);
 
 	// exit the program if start is pressed
-	if (pressed & PAD_BUTTON_START && currentMenu == MAIN_MENU) {
+	if (*pressed & PAD_BUTTON_START && currentMenu == MAIN_MENU) {
 		printStr("Exiting...", currXfb);
 		return true;
 	}
 	
 	// controller test lock stuff
-	else if (held == PAD_BUTTON_START && currentMenu == CONTROLLER_TEST && !startHeldAfter) {
+	else if (*held == PAD_BUTTON_START && currentMenu == CONTROLLER_TEST && !startHeldAfter) {
 		if (lockExitControllerTest) {
 			printStr("Enabling exit, hold for 2 seconds", currXfb);
 		} else {
@@ -277,7 +283,7 @@ bool menu_runMenu(void *currXfb) {
 
 	// does the user want to move back to the main menu?
 	// this shouldn't trigger when certain menus are currently recording an input
-	else if (held == PAD_BUTTON_B && currentMenu != MAIN_MENU &&
+	else if (*held == PAD_BUTTON_B && currentMenu != MAIN_MENU &&
 			!lockExitControllerTest &&
 			!menu_plotButtonHasCaptureStarted()) {
 
@@ -320,7 +326,7 @@ bool menu_runMenu(void *currXfb) {
 
 	} else {
 		// does the user want to display instructions?
-		if (pressed & PAD_TRIGGER_Z) {
+		if (*pressed & PAD_TRIGGER_Z) {
 			if (currentMenu == COORD_MAP) {
 				displayInstructions = !displayInstructions;
 			}
@@ -345,7 +351,7 @@ bool menu_runMenu(void *currXfb) {
 				}
 				startHeldCounter = 0;
 				
-				if (startHeldAfter && held ^ PAD_BUTTON_START) {
+				if (startHeldAfter && *held ^ PAD_BUTTON_START) {
 					startHeldAfter = false;
 				}
 				break;
@@ -439,13 +445,13 @@ void menu_mainMenu(void *currXfb) {
 	}
 
 	// does the user move the cursor?
-	if (pressed & PAD_BUTTON_UP || (up && movable)) {
+	if (*pressed & PAD_BUTTON_UP || (up && movable)) {
 		if (mainMenuCursorPos > 0) {
 			mainMenuCursorPos--;
 		} else {
 			mainMenuCursorPos = MENUITEMS_LEN - 1;
 		}
-	} else if (pressed & PAD_BUTTON_DOWN || (down && movable)) {
+	} else if (*pressed & PAD_BUTTON_DOWN || (down && movable)) {
 		if (mainMenuCursorPos < MENUITEMS_LEN - 1) {
 			mainMenuCursorPos++;
 		} else {
@@ -456,7 +462,7 @@ void menu_mainMenu(void *currXfb) {
 	// does the user want to move into another menu?
 	// else if to ensure that the A press is separate from any dpad stuff
 	// TODO: maybe reorder the enum so that the number and enum match up?
-	else if (pressed & PAD_BUTTON_A) {
+	else if (*pressed & PAD_BUTTON_A) {
 		switch (mainMenuCursorPos) {
 			case ENTRY_CONT_TEST:
 				currentMenu = CONTROLLER_TEST;
@@ -606,12 +612,12 @@ void menu_controllerTest(void *currXfb) {
 		sprintf(strBuffer, "C-Origin XY: (%04d,%04d)", origin[0].substickX, origin[0].substickY);
 		printStr(strBuffer, currXfb);
 		
-		if (!(held & PAD_TRIGGER_L)) {
+		if (!(*held & PAD_TRIGGER_L)) {
 			setCursorPos(18, 2);
 			sprintf(strBuffer, "L Origin: %d", origin[0].triggerL);
 			printStr(strBuffer, currXfb);
 		}
-		if (!(held & PAD_TRIGGER_R)) {
+		if (!(*held & PAD_TRIGGER_R)) {
 			setCursorPos(18, 44);
 			sprintf(strBuffer, "R Origin: %d", origin[0].triggerR);
 			printStr(strBuffer, currXfb);
@@ -623,7 +629,7 @@ void menu_controllerTest(void *currXfb) {
 	// Buttons
 
     // A
-	if (held & PAD_BUTTON_A) {
+	if (*held & PAD_BUTTON_A) {
 		DrawFilledBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_A_Y1,
 					  CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_A_SIZE, CONT_TEST_BUTTON_A_Y1 + CONT_TEST_BUTTON_A_SIZE,
 					  COLOR_WHITE, currXfb);
@@ -636,7 +642,7 @@ void menu_controllerTest(void *currXfb) {
     }
 	
     // B
-	if (held & PAD_BUTTON_B) {
+	if (*held & PAD_BUTTON_B) {
 		DrawFilledBox(CONT_TEST_BUTTON_B_X1, CONT_TEST_BUTTON_B_Y1,
 		              CONT_TEST_BUTTON_B_X1 + CONT_TEST_BUTTON_B_SIZE, CONT_TEST_BUTTON_B_Y1 + CONT_TEST_BUTTON_B_SIZE,
 		              COLOR_WHITE, currXfb);
@@ -649,7 +655,7 @@ void menu_controllerTest(void *currXfb) {
 	}
 
 	// X
-	if (held & PAD_BUTTON_X) {
+	if (*held & PAD_BUTTON_X) {
 		DrawFilledBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_X_Y1,
 		              CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_X_Y1 + CONT_TEST_BUTTON_XY_LONG,
 		              COLOR_WHITE, currXfb);
@@ -662,7 +668,7 @@ void menu_controllerTest(void *currXfb) {
 	}
 
 	// Y
-	if (held & PAD_BUTTON_Y) {
+	if (*held & PAD_BUTTON_Y) {
 		DrawFilledBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_Y_Y1,
 		              CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_XY_LONG, CONT_TEST_BUTTON_Y_Y1 + CONT_TEST_BUTTON_XY_SHORT,
 		              COLOR_WHITE, currXfb);
@@ -675,7 +681,7 @@ void menu_controllerTest(void *currXfb) {
 	}
 
     // Z
-	if (held & PAD_TRIGGER_Z) {
+	if (*held & PAD_TRIGGER_Z) {
 		DrawFilledBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_Z_Y1,
 		              CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_Z_Y1 + CONT_TEST_BUTTON_XY_SHORT,
 		              COLOR_WHITE, currXfb);
@@ -687,12 +693,12 @@ void menu_controllerTest(void *currXfb) {
 		        CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_Z_Y1 + CONT_TEST_BUTTON_XY_SHORT,
 		        COLOR_WHITE, currXfb);
 		drawCharDirect(currXfb, CONT_TEST_BUTTON_Z_X1 + 7, CONT_TEST_BUTTON_Z_Y1 + 4, COLOR_WHITE, 'Z');
-		// stop rumble if z is not held
+		// stop rumble if z is not *held
 		PAD_ControlMotor(0, PAD_MOTOR_STOP);
 	}
 
 	// Start
-	if (held & PAD_BUTTON_START) {
+	if (*held & PAD_BUTTON_START) {
 		DrawFilledBox(CONT_TEST_BUTTON_START_X1, CONT_TEST_BUTTON_START_Y1,
 		              CONT_TEST_BUTTON_START_X1 + CONT_TEST_BUTTON_START_LEN, CONT_TEST_BUTTON_START_Y1 + CONT_TEST_BUTTON_START_WIDTH,
 		              COLOR_WHITE, currXfb);
@@ -715,7 +721,7 @@ void menu_controllerTest(void *currXfb) {
 	
 	// DPad
 	// up
-	if (held & PAD_BUTTON_UP) {
+	if (*held & PAD_BUTTON_UP) {
 		DrawFilledBox(CONT_TEST_DPAD_UP_X1, CONT_TEST_DPAD_UP_Y1,
 		        CONT_TEST_DPAD_UP_X1 + CONT_TEST_DPAD_SHORT, CONT_TEST_DPAD_UP_Y1 + CONT_TEST_DPAD_LONG,
 		        COLOR_WHITE, currXfb);
@@ -726,7 +732,7 @@ void menu_controllerTest(void *currXfb) {
 	}
 	
 	// down
-	if (held & PAD_BUTTON_DOWN) {
+	if (*held & PAD_BUTTON_DOWN) {
 		DrawFilledBox(CONT_TEST_DPAD_UP_X1, CONT_TEST_DPAD_DOWN_Y1,
 		              CONT_TEST_DPAD_UP_X1 + CONT_TEST_DPAD_SHORT, CONT_TEST_DPAD_DOWN_Y1 + CONT_TEST_DPAD_LONG,
 		              COLOR_WHITE, currXfb);
@@ -738,7 +744,7 @@ void menu_controllerTest(void *currXfb) {
 	
 	
 	//left
-	if (held & PAD_BUTTON_LEFT) {
+	if (*held & PAD_BUTTON_LEFT) {
 		DrawFilledBox(CONT_TEST_DPAD_LEFT_X1, CONT_TEST_DPAD_LEFT_Y1,
 		              CONT_TEST_DPAD_LEFT_X1 + CONT_TEST_DPAD_LONG, CONT_TEST_DPAD_LEFT_Y1 + CONT_TEST_DPAD_SHORT,
 		              COLOR_WHITE, currXfb);
@@ -749,7 +755,7 @@ void menu_controllerTest(void *currXfb) {
 	}
 	
 	// right
-	if (held & PAD_BUTTON_RIGHT) {
+	if (*held & PAD_BUTTON_RIGHT) {
 		DrawFilledBox(CONT_TEST_DPAD_RIGHT_X1, CONT_TEST_DPAD_LEFT_Y1,
 					  CONT_TEST_DPAD_RIGHT_X1 + CONT_TEST_DPAD_LONG, CONT_TEST_DPAD_LEFT_Y1 + CONT_TEST_DPAD_SHORT,
 		              COLOR_WHITE, currXfb);
@@ -765,7 +771,7 @@ void menu_controllerTest(void *currXfb) {
 	DrawBox(CONT_TEST_TRIGGER_L_X1, CONT_TEST_TRIGGER_Y1,
 			CONT_TEST_TRIGGER_L_X1 + CONT_TEST_TRIGGER_WIDTH + 1, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN + 1,
 			COLOR_WHITE, currXfb);
-	if (held & PAD_TRIGGER_L) {
+	if (*held & PAD_TRIGGER_L) {
 		DrawFilledBox(CONT_TEST_TRIGGER_L_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerL(0)),
 		              CONT_TEST_TRIGGER_L_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
 		              COLOR_BLUE, currXfb);
@@ -778,7 +784,7 @@ void menu_controllerTest(void *currXfb) {
 	setCursorPos(17,2);
 	sprintf(strBuffer, "Analog L: %d", PAD_TriggerL(0));
 	printStr(strBuffer, currXfb);
-	if (held & PAD_TRIGGER_L) {
+	if (*held & PAD_TRIGGER_L) {
 		setCursorPos(18, 2);
 		printStr("Digital L Pressed", currXfb);
 	}
@@ -787,7 +793,7 @@ void menu_controllerTest(void *currXfb) {
 	DrawBox(CONT_TEST_TRIGGER_R_X1, CONT_TEST_TRIGGER_Y1,
 	        CONT_TEST_TRIGGER_R_X1 + CONT_TEST_TRIGGER_WIDTH + 1, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN + 1,
 	        COLOR_WHITE, currXfb);
-	if (held & PAD_TRIGGER_R) {
+	if (*held & PAD_TRIGGER_R) {
 		DrawFilledBox(CONT_TEST_TRIGGER_R_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerR(0)),
 		              CONT_TEST_TRIGGER_R_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
 		              COLOR_BLUE, currXfb);
@@ -800,7 +806,7 @@ void menu_controllerTest(void *currXfb) {
 	setCursorPos(17,44);
 	sprintf(strBuffer, "Analog R: %d", PAD_TriggerR(0));
 	printStr(strBuffer, currXfb);
-	if (held & PAD_TRIGGER_R) {
+	if (*held & PAD_TRIGGER_R) {
 		setCursorPos(18, 40);
 		printStr("Digital R Pressed", currXfb);
 	}
@@ -1038,14 +1044,14 @@ void menu_coordinateViewer(void *currXfb) {
 	DrawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, COLOR_YELLOW, currXfb);
 	DrawFilledBox(xfbCoordCX - 2, xfbCoordCY - 2, xfbCoordCX + 2, xfbCoordCY + 2, COLOR_YELLOW, currXfb);
 	
-	if (pressed & PAD_BUTTON_X) {
+	if (*pressed & PAD_BUTTON_X) {
 		selectedStickmap++;
 		selectedStickmapSub = 0;
 		if (selectedStickmap == 3) {
 			selectedStickmap = 0;
 		}
 	}
-	if (pressed & PAD_BUTTON_Y) {
+	if (*pressed & PAD_BUTTON_Y) {
 		selectedStickmapSub++;
 		switch (selectedStickmap) {
 			case (FF_WD):

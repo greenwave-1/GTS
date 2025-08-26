@@ -19,7 +19,7 @@ static const uint8_t OSCILLOSCOPE_TEST_LEN = 3;
 // TODO: remove NO_TEST, since the Continuous Oscilloscope menu exists
 enum OSCILLOSCOPE_TEST { SNAPBACK, PIVOT, DASHBACK };
 
-void menu_oscilloscope(void *currXfb, uint16_t *p, uint16_t *h);
+void menu_oscilloscope(void *currXfb);
 void menu_oscilloscopeEnd();
 
 #endif //GTS_OSCILLOSCOPE_H
