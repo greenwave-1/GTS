@@ -278,10 +278,8 @@ int main(int argc, char **argv) {
 		
 		#ifdef BENCH
 		us = ticks_to_microsecs(gettime() - time);
-		char msg[100];
-		sprintf(msg, "%d", us);
-		setCursorPos(22, 62 - strlen(msg));
-		printStrColor(msg, COLOR_WHITE, COLOR_BLACK);
+		setCursorPos(22, 56);
+		printStrColor(COLOR_WHITE, COLOR_BLACK, "%d", us);
 		#endif
 		
 		//#ifndef DEBUGGDB

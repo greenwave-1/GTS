@@ -31,8 +31,8 @@ void drawString(const uint32_t bg_color,
 				const uint32_t fg_color,
                 const char string[]);
 
-void printStr(const char* str);
-void printStrColor(const char* str, const uint32_t bg_color, const uint32_t fg_color);
+void printStr(const char* str, ...);
+void printStrColor(const uint32_t bg_color, const uint32_t fg_color, const char* str, ...);
 
 void printEllipse(const int counter, const int interval);
 

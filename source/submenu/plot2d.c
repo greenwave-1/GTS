@@ -23,8 +23,6 @@ static const float FRAME_TIME = (1000.0 / 60.0);
 // orange for button press samples
 #define COLOR_ORANGE 0xAD1EADBA
 
-static char strBuffer[100];
-
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
 static bool buttonLock = false;
@@ -291,12 +289,9 @@ void menu_plot2d() {
 						convertedCoords = convertStickRawToMelee(dispData->samples[lastDrawPoint]);
 						
 						setCursorPos(5, 0);
-						sprintf(strBuffer, "Total samples: %04u\n", dispData->sampleEnd);
-						printStr(strBuffer);
-						sprintf(strBuffer, "Start sample: %04u\n", map2dStartIndex + 1);
-						printStr(strBuffer);
-						sprintf(strBuffer, "End sample: %04u\n", lastDrawPoint + 1);
-						printStr(strBuffer);
+						printStr("Total samples: %04u\n", dispData->sampleEnd);
+						printStr("Start sample: %04u\n", map2dStartIndex + 1);
+						printStr("End sample: %04u\n", lastDrawPoint + 1);
 						
 						// show button presses of last drawn point
 						setCursorPos(11,0);
@@ -326,9 +321,8 @@ void menu_plot2d() {
 						// print coordinates of last drawn point
 						// raw stick coordinates
 						setCursorPos(14, 0);
-						sprintf(strBuffer, "Raw XY: (%04d,%04d)\n", dispData->samples[lastDrawPoint].stickX,
+						printStr("Raw XY: (%04d,%04d)\n", dispData->samples[lastDrawPoint].stickX,
 						        dispData->samples[lastDrawPoint].stickY);
-						printStr(strBuffer);
 						printStr("Melee XY: (");
 						// is the value negative?
 						if (dispData->samples[lastDrawPoint].stickX < 0) {
@@ -340,8 +334,7 @@ void menu_plot2d() {
 						if (convertedCoords.stickXUnit == 10000) {
 							printStr("1.0000");
 						} else {
-							sprintf(strBuffer, "0.%04d", convertedCoords.stickXUnit);
-							printStr(strBuffer);
+							printStr("0.%04d", convertedCoords.stickXUnit);
 						}
 						printStr(",");
 						
@@ -355,8 +348,7 @@ void menu_plot2d() {
 						if (convertedCoords.stickYUnit == 10000) {
 							printStr("1.0000");
 						} else {
-							sprintf(strBuffer, "0.%04d", convertedCoords.stickYUnit);
-							printStr(strBuffer);
+							printStr("0.%04d", convertedCoords.stickYUnit);
 						}
 						printStr(")\n\n");
 						printStr("Stickmap: ");
@@ -446,10 +438,8 @@ void menu_plot2d() {
 						
 						float timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
 						setCursorPos(8, 0);
-						sprintf(strBuffer, "Total MS: %6.2f\n", timeFromStartMs);
-						printStr(strBuffer);
-						sprintf(strBuffer, "Total frames: %2.2f", timeFromStartMs / FRAME_TIME);
-						printStr(strBuffer);
+						printStr("Total MS: %6.2f\n", timeFromStartMs);
+						printStr("Total frames: %2.2f", timeFromStartMs / FRAME_TIME);
 						
 						// cycle the stickmap shown
 						if (*pressed & PAD_BUTTON_X && !buttonLock) {

@@ -34,8 +34,6 @@ const static uint16_t BUTTON_MASKS[13] = { PAD_BUTTON_A, PAD_BUTTON_B, PAD_BUTTO
 									  PAD_TRIGGER_L, 0, PAD_TRIGGER_R, 0, PAD_TRIGGER_Z,
 									  0, 0, 0, 0 };
 
-static char strBuffer[100];
-
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
 static bool buttonLock = false;
@@ -297,21 +295,15 @@ void menu_plotButton() {
 					
 					setCursorPos(4,7);
 					if (stickThresholdSelected) {
-						printStrColor("Stick Threshold:", COLOR_WHITE, COLOR_BLACK);
-						sprintf(strBuffer, " %3u", stickThreshold);
-						printStr(strBuffer);
+						printStrColor(COLOR_WHITE, COLOR_BLACK, "Stick Threshold:");
+						printStr(" %3u", stickThreshold);
 						setCursorPos(4, 32);
-						printStr("Trigger Threshold:");
-						sprintf(strBuffer, " %3u", triggerThreshold);
-						printStr(strBuffer);
+						printStr("Trigger Threshold: %3u", triggerThreshold);
 					} else {
-						printStr("Stick Threshold:");
-						sprintf(strBuffer, " %3u", stickThreshold);
-						printStr(strBuffer);
+						printStr("Stick Threshold: %3u", stickThreshold);
 						setCursorPos(4, 32);
-						printStrColor("Trigger Threshold:", COLOR_WHITE, COLOR_BLACK);
-						sprintf(strBuffer, " %3u", triggerThreshold);
-						printStr(strBuffer);
+						printStrColor(COLOR_WHITE, COLOR_BLACK, "Trigger Threshold:");
+						printStr(" %3u", triggerThreshold);
 					}
 					
 					if (dispData->isRecordingReady) {
@@ -320,7 +312,7 @@ void menu_plotButton() {
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
 							setCursorPos(7 + button, 4);
 							if (button == triggeringInputDisplay) {
-								printStrColor(BUTTON_STR[button], COLOR_WHITE, COLOR_BLACK);
+								printStrColor(COLOR_WHITE, COLOR_BLACK, BUTTON_STR[button]);
 							} else {
 								printStr(BUTTON_STR[button]);
 							}
@@ -405,12 +397,11 @@ void menu_plotButton() {
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
 							if (buttons[button].timeHeld != 0) {
 								setCursorPos(7 + button, 52);
-								sprintf(strBuffer, "%2.2ff", buttons[button].timeHeld / (FRAME_TIME_MS * 1000));
 								// indicate the initial input with black on white text
 								if (button == triggeringInputDisplay) {
-									printStrColor(strBuffer, COLOR_WHITE, COLOR_BLACK);
+									printStrColor(COLOR_WHITE, COLOR_BLACK, "%2.2ff", buttons[button].timeHeld / (FRAME_TIME_MS * 1000));
 								} else {
-									printStr(strBuffer);
+									printStr("%2.2ff", buttons[button].timeHeld / (FRAME_TIME_MS * 1000));
 								}
 							}
 						}

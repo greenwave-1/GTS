@@ -91,9 +91,6 @@ static bool displayInstructions = false;
 
 static int exportReturnCode = -1;
 
-// buffer for strings with numbers and stuff using sprintf
-static char strBuffer[100];
-
 // some consumer crt tvs have alignment issues,
 // this determines if certain vertical lines are doubled
 static bool setDrawInterlaceMode = false;
@@ -119,7 +116,6 @@ bool menu_runMenu() {
 		}
 		setDrawInterlaceMode = true;
 	}
-	memset(strBuffer, '\0', sizeof(strBuffer));
 	resetCursor();
 	// read inputs get origin status
 	// calls PAD_ScanPads() and PAD_GetOrigin()
@@ -569,8 +565,7 @@ void menu_coordinateViewer() {
 	if (stickMelee.stickXUnit == 10000) {
 		printStr("1.0\n");
 	} else {
-		sprintf(strBuffer, "0.%04d\n", stickMelee.stickXUnit);
-		printStr(strBuffer);
+		printStr("0.%04d\n", stickMelee.stickXUnit);
 	}
 	
 	// print melee coordinates
@@ -583,8 +578,7 @@ void menu_coordinateViewer() {
 	if (stickMelee.stickYUnit == 10000) {
 		printStr("1.0\n");
 	} else {
-		sprintf(strBuffer, "0.%04d\n", stickMelee.stickYUnit);
-		printStr(strBuffer);
+		printStr("0.%04d\n", stickMelee.stickYUnit);
 	}
 	
 	// print melee coordinates
@@ -597,8 +591,7 @@ void menu_coordinateViewer() {
 	if (stickMelee.cStickXUnit == 10000) {
 		printStr("1.0\n");
 	} else {
-		sprintf(strBuffer, "0.%04d\n", stickMelee.cStickXUnit);
-		printStr(strBuffer);
+		printStr("0.%04d\n", stickMelee.cStickXUnit);
 	}
 	
 	// print melee coordinates
@@ -611,8 +604,7 @@ void menu_coordinateViewer() {
 	if (stickMelee.cStickYUnit == 10000) {
 		printStr("1.0\n");
 	} else {
-		sprintf(strBuffer, "0.%04d\n", stickMelee.cStickYUnit);
-		printStr(strBuffer);
+		printStr("0.%04d\n", stickMelee.cStickYUnit);
 	}
 	
 	setCursorPos(19, 0);
@@ -625,14 +617,12 @@ void menu_coordinateViewer() {
 			if (selectedStickmapSub == 0) {
 				printStr("ALL");
 			} else {
-				printStrColor(STICKMAP_FF_WD_RETVALS[selectedStickmapSub],
-							  STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][0], STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][1]);
-				//sprintf(strBuffer, "%s\n");
-				//printStr(strBuffer);
+				printStrColor(STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][0], STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][1],
+							  STICKMAP_FF_WD_RETVALS[selectedStickmapSub]);
 			}
 			printStr("\nResult: ");
-			printStrColor(STICKMAP_FF_WD_RETVALS[stickmapRetVal],
-						  STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][0], STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][1]);
+			printStrColor(STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][0], STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][1],
+						  STICKMAP_FF_WD_RETVALS[stickmapRetVal]);
 			break;
 		case SHIELDDROP:
 			printStr("Shield Drop\n");
@@ -640,14 +630,12 @@ void menu_coordinateViewer() {
 			if (selectedStickmapSub == 0) {
 				printStr("ALL");
 			} else {
-				//sprintf(strBuffer, "%s\n", STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub]);
-				//printStr(strBuffer);
-				printStrColor(STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub],
-				              STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][0], STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][1]);
+				printStrColor(STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][0], STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][1],
+							  STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub]);
 			}
 			printStr("\nResult: ");
-			printStrColor(STICKMAP_SHIELDDROP_RETVALS[stickmapRetVal],
-						  STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][0], STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][1]);
+			printStrColor(STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][0], STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][1],
+						  STICKMAP_SHIELDDROP_RETVALS[stickmapRetVal]);
 			break;
 		case NONE:
 		default:

@@ -12,10 +12,15 @@
 
 #include "print.h"
 
+#include <stdio.h>
+#include <stdarg.h>
+
 #include <ogc/color.h>
 
 #include "font.h"
 #include "draw.h"
+
+static char strBuffer[1000];
 
 static int currX = 0;
 static int currY = 0;
@@ -91,12 +96,20 @@ void drawString(const uint32_t bg_color,
 	}
 }
 
-void printStr(const char* str) {
-	printStrColor(str, COLOR_BLACK, COLOR_WHITE);
+void printStr(const char* str, ...) {
+	va_list list;
+	va_start(list, str);
+	vsnprintf(strBuffer, 1000, str, list);
+	drawString(COLOR_BLACK, COLOR_WHITE, strBuffer);
+	va_end(list);
 }
 
-void printStrColor(const char* str, const uint32_t bg_color, const uint32_t fg_color) {
-	drawString(bg_color, fg_color, str);
+void printStrColor(const uint32_t bg_color, const uint32_t fg_color, const char* str, ...) {
+	va_list list;
+	va_start(list, str);
+	vsnprintf(strBuffer, 1000, str, list);
+	drawString(bg_color, fg_color, strBuffer);
+	va_end(list);
 }
 
 void printEllipse(const int counter, const int interval) {

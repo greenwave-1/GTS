@@ -37,7 +37,6 @@ static ControllerRec **data = NULL, **temp = NULL;
 static enum OSCILLOSCOPE_TEST currentTest = SNAPBACK;
 static int waveformScaleFactor = 1;
 static int dataScrollOffset = 0;
-static char strBuffer[100];
 
 static uint8_t stickCooldown = 0;
 static int8_t snapbackStartPosX = 0, snapbackStartPosY = 0;
@@ -388,7 +387,7 @@ void menu_oscilloscope() {
 							}
 						} else {
 							setCursorPos(2, 28);
-							printStrColor("LOCKED", COLOR_WHITE, COLOR_BLACK);
+							printStrColor(COLOR_WHITE, COLOR_BLACK, "LOCKED");
 						}
 					}
 				case POST_INPUT:
@@ -534,17 +533,14 @@ void menu_oscilloscope() {
 						}
 						setCursorPos(3, 0);
 						
-						sprintf(strBuffer, "Sample start: %04u/%04u | Time shown: %04llu/%04llu ms\n", dataScrollOffset, dispData->sampleEnd, drawnTicksUs / 1000, dispData->totalTimeUs / 1000);
-						printStr(strBuffer);
+						printStr("Sample start: %04u/%04u | Time shown: %04llu/%04llu ms\n", dataScrollOffset, dispData->sampleEnd, drawnTicksUs / 1000, dispData->totalTimeUs / 1000);
 						
 						// print test data
 						setCursorPos(20, 0);
 						switch (currentTest) {
 							case SNAPBACK:
-								sprintf(strBuffer, "Min X: %04d | Min Y: %04d   |   ", minX, minY);
-								printStr(strBuffer);
-								sprintf(strBuffer, "Max X: %04d | Max Y: %04d\n", maxX, maxY);
-								printStr(strBuffer);
+								printStr("Min X: %04d | Min Y: %04d   |   ", minX, minY);
+								printStr("Max X: %04d | Max Y: %04d\n", maxX, maxY);
 								break;
 							case PIVOT:
 								bool pivotHit80 = false;
@@ -627,10 +623,8 @@ void menu_oscilloscope() {
 										pivotPercent = 100 - noTurnPercent;
 									}
 
-									sprintf(strBuffer, "MS: %2.2f | No turn: %2.0f%% | Pivot: %2.0f%% | Dashback: %2.0f%%",
+									printStr("MS: %2.2f | No turn: %2.0f%% | Pivot: %2.0f%% | Dashback: %2.0f%%",
 											timeInPivotRangeMs, noTurnPercent, pivotPercent, dashbackPercent);
-									printStr(strBuffer);
-									//printf("\nUS Total: %llu, Start index: %d, End index: %d", timeInPivotRangeUs, pivotStartIndex, pivotEndIndex);
 								} else {
 									printStr("No pivot input detected.");
 								}
@@ -703,8 +697,7 @@ void menu_oscilloscope() {
 										ucfPercent = 0;
 									}
 								}
-								sprintf(strBuffer, "Vanilla Success: %2.0f%% | UCF Success: %2.0f%%", dashbackPercent, ucfPercent);
-								printStr(strBuffer);
+								printStr("Vanilla Success: %2.0f%% | UCF Success: %2.0f%%", dashbackPercent, ucfPercent);
 								break;
 							default:
 								printStr("Error?");

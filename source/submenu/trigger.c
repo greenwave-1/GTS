@@ -57,8 +57,6 @@ static uint64_t pressedTimer = 0;
 static uint8_t ellipseCounter = 0;
 static bool pressLocked = false;
 
-static char strBuffer[100];
-
 void triggerSamplingCallback() {
 	// time from last call of this function calculation
 	prevSampleCallbackTick = sampleCallbackTick;
@@ -242,7 +240,7 @@ void menu_triggerOscilloscope() {
 					// TODO: this is dumb, do this a better way to fit better
 					if (trigState == TRIG_DISPLAY_LOCK) {
 						setCursorPos(2, 28);
-						printStrColor("LOCKED", COLOR_WHITE, COLOR_BLACK);
+						printStrColor(COLOR_WHITE, COLOR_BLACK, "LOCKED");
 					}
 				case TRIG_DISPLAY:
 					if (dispData->isRecordingReady) {
@@ -372,10 +370,7 @@ void menu_triggerOscilloscope() {
 						}
 						
 						setCursorPos(20, 0);
-						//sprintf(strBuffer, "%llu %2.2f %d %d\n", timeInAnalogRangeUs, analogRangeFrame, sampleDigitalBegin, data.endPoint);
-						//printStr(strBuffer);
-						sprintf(strBuffer, "Digital PS: %3.1f%% | ADT PS: %3.1f%% | No PS: %3.1f%%", psDigital, psADT, psNone);
-						printStr(strBuffer);
+						printStr("Digital PS: %3.1f%% | ADT PS: %3.1f%% | No PS: %3.1f%%", psDigital, psADT, psNone);
 						
 						if (!buttonLock) {
 							if (*pressed & PAD_BUTTON_A) {

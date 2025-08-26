@@ -17,8 +17,6 @@
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
 
-static char strBuffer[100];
-
 static enum CONTROLLER_TEST_MENU_STATE menuState = CONT_TEST_SETUP;
 
 static void setup() {
@@ -54,11 +52,9 @@ void menu_controllerTest() {
 			
 			// print raw stick coordinates
 			setCursorPos(19, 0);
-			sprintf(strBuffer, "Raw XY: (%04d,%04d)", stickRaw.stickX, stickRaw.stickY);
-			printStr(strBuffer);
+			printStr("Raw XY: (%04d,%04d)", stickRaw.stickX, stickRaw.stickY);
 			setCursorPos(19, 38);
-			sprintf(strBuffer, "C-Raw XY: (%04d,%04d)", stickRaw.cStickX, stickRaw.cStickY);
-			printStr(strBuffer);
+			printStr("C-Raw XY: (%04d,%04d)", stickRaw.cStickX, stickRaw.cStickY);
 			
 			// print melee coordinates
 			setCursorPos(20, 0);
@@ -73,8 +69,7 @@ void menu_controllerTest() {
 			if (stickMelee.stickXUnit == 10000) {
 				printStr("1.0000");
 			} else {
-				sprintf(strBuffer, "0.%04d", stickMelee.stickXUnit);
-				printStr(strBuffer);
+				printStr("0.%04d", stickMelee.stickXUnit);
 			}
 			printStr(",");
 			
@@ -88,14 +83,12 @@ void menu_controllerTest() {
 			if (stickMelee.stickYUnit == 10000) {
 				printStr("1.0000");
 			} else {
-				sprintf(strBuffer, "0.%04d", stickMelee.stickYUnit);
-				printStr(strBuffer);
+				printStr("0.%04d", stickMelee.stickYUnit);
 			}
 			printStr(")");
 			
 			setCursorPos(20, 33);
-			sprintf(strBuffer, "C-Melee: (");
-			printStr(strBuffer);
+			printStr("C-Melee: (");
 			// is the value negative?
 			if (stickRaw.cStickX < 0) {
 				printStr("-");
@@ -106,8 +99,7 @@ void menu_controllerTest() {
 			if (stickMelee.cStickXUnit == 10000) {
 				printStr("1.0000");
 			} else {
-				sprintf(strBuffer, "0.%04d", stickMelee.cStickXUnit);
-				printStr(strBuffer);
+				printStr("0.%04d", stickMelee.cStickXUnit);
 			}
 			printStr(",");
 			
@@ -121,8 +113,7 @@ void menu_controllerTest() {
 			if (stickMelee.cStickYUnit == 10000) {
 				printStr("1.0000");
 			} else {
-				sprintf(strBuffer, "0.%04d", stickMelee.cStickYUnit);
-				printStr(strBuffer);
+				printStr("0.%04d", stickMelee.cStickYUnit);
 			}
 			printStr(")");
 			
@@ -130,21 +121,17 @@ void menu_controllerTest() {
 			if (isControllerConnected(CONT_PORT_1)) {
 				PADStatus origin = getOriginStatus(CONT_PORT_1);
 				setCursorPos(21, 0);
-				sprintf(strBuffer, "Origin XY: (%04d,%04d)", origin.stickX, origin.stickY);
-				printStr(strBuffer);
+				printStr("Origin XY: (%04d,%04d)", origin.stickX, origin.stickY);
 				setCursorPos(21, 35);
-				sprintf(strBuffer, "C-Origin XY: (%04d,%04d)", origin.substickX, origin.substickY);
-				printStr(strBuffer);
+				printStr("C-Origin XY: (%04d,%04d)", origin.substickX, origin.substickY);
 				
 				if (!(*held & PAD_TRIGGER_L)) {
 					setCursorPos(18, 2);
-					sprintf(strBuffer, "L Origin: %d", origin.triggerL);
-					printStr(strBuffer);
+					printStr("L Origin: %d", origin.triggerL);
 				}
 				if (!(*held & PAD_TRIGGER_R)) {
 					setCursorPos(18, 44);
-					sprintf(strBuffer, "R Origin: %d", origin.triggerR);
-					printStr(strBuffer);
+					printStr("R Origin: %d", origin.triggerR);
 				}
 			}
 			
@@ -306,8 +293,7 @@ void menu_controllerTest() {
 			}
 			
 			setCursorPos(17,2);
-			sprintf(strBuffer, "Analog L: %d", PAD_TriggerL(0));
-			printStr(strBuffer);
+			printStr("Analog L: %d", PAD_TriggerL(0));
 			if (*held & PAD_TRIGGER_L) {
 				setCursorPos(18, 2);
 				printStr("Digital L Pressed");
@@ -328,8 +314,7 @@ void menu_controllerTest() {
 			}
 			
 			setCursorPos(17,44);
-			sprintf(strBuffer, "Analog R: %d", PAD_TriggerR(0));
-			printStr(strBuffer);
+			printStr("Analog R: %d", PAD_TriggerR(0));
 			if (*held & PAD_TRIGGER_R) {
 				setCursorPos(18, 40);
 				printStr("Digital R Pressed");

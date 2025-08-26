@@ -17,8 +17,6 @@
 #include "draw.h"
 #include "waveform.h"
 
-static char strBuffer[100];
-
 const static uint8_t SCREEN_TIMEPLOT_START = 70;
 
 static enum CONT_MENU_STATE state = CONT_SETUP;
@@ -124,7 +122,7 @@ void menu_continuousWaveform() {
 			if (cState == INPUT_LOCK) {
 				freeze = true;
 				setCursorPos(2, 28);
-				printStrColor("LOCKED", COLOR_WHITE, COLOR_BLACK);
+				printStrColor(COLOR_WHITE, COLOR_BLACK, "LOCKED");
 			} else {
 				freeze = false;
 			}
@@ -166,11 +164,9 @@ void menu_continuousWaveform() {
 				}
 				
 				setCursorPos(21,0);
-				sprintf(strBuffer, "Scaling Factor: %dx", waveformScaleFactor);
-				printStr(strBuffer);
+				printStr("Scaling Factor: %dx", waveformScaleFactor);
 				if (cState == INPUT_LOCK) {
-					sprintf(strBuffer, " | Offset: %d", dataScrollOffset);
-					printStr(strBuffer);
+					printStr(" | Offset: %d", dataScrollOffset);
 				}
 				
 				int prevIndex = -1;
