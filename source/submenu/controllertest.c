@@ -128,7 +128,7 @@ void menu_controllerTest(void *currXfb) {
 			
 			// show origin info if controller is connected
 			if (isControllerConnected(CONT_PORT_1)) {
-				PADStatus origin = getOriginStatus(CONT_PORT_2);
+				PADStatus origin = getOriginStatus(CONT_PORT_1);
 				setCursorPos(21, 0);
 				sprintf(strBuffer, "Origin XY: (%04d,%04d)", origin.stickX, origin.stickY);
 				printStr(strBuffer, currXfb);
