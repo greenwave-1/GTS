@@ -268,41 +268,41 @@ static void oscilloscopeCallback() {
 	}
 }
 
-static void displayInstructions(void *currXfb) {
+static void displayInstructions() {
 	setCursorPos(2, 0);
 	printStr("Press X to cycle the current test, results will show above the\n"
 			"waveform. Press Y to cycle between Analog Stick and C-Stick.\n"
 			"Use DPAD left/right to scroll waveform when it is\n"
-			"larger than the displayed area, hold R to move faster.", currXfb);
-	printStr("\n\nCURRENT TEST: ", currXfb);
+			"larger than the displayed area, hold R to move faster.");
+	printStr("\n\nCURRENT TEST: ");
 	switch (currentTest) {
 		case SNAPBACK:
 			printStr("SNAPBACK\n"
 					"Check the min/max value on a given axis depending on where\n"
 					"the stick started. The range in which Melee will not register\n"
 					"a directional input is -22 to +22. Anything outside that range\n"
-					"risks the game registering a non-neutral stick input.", currXfb);
+					"risks the game registering a non-neutral stick input.");
 			break;
 		case PIVOT:
 			printStr("PIVOT\n"
 					"For a successful pivot, the stick's position should stay\n"
 					"above/below +64/-64 for ~16.6ms (1 frame). Less, and a pivot\n"
 					"may not occur; more, and a dashback may occur. The stick\n"
-					"should also hit 80/-80 on both sides.\n", currXfb);
+					"should also hit 80/-80 on both sides.\n");
 			break;
 		case DASHBACK:
 			printStr("DASHBACK\n"
 					"A (vanilla) dashback will be successful when the stick doesn't\n"
 					"get polled between 23 and 64, or -23 and -64.\n"
-					"Less time in this range is better.", currXfb);
+					"Less time in this range is better.");
 			break;
 		default:
-			printStr("NO TEST SELECTED", currXfb);
+			printStr("NO TEST SELECTED");
 			break;
 	}
 	
 	setCursorPos(21, 0);
-	printStr("Press Z to close instructions.", currXfb);
+	printStr("Press Z to close instructions.");
 	
 	if (!buttonLock) {
 		if (*pressed & PAD_TRIGGER_Z) {
@@ -342,7 +342,7 @@ static void setup() {
 }
 
 // function called from outside
-void menu_oscilloscope(void *currXfb) {
+void menu_oscilloscope() {
 	// we're getting the address of the object itself here, not the address of the pointer,
 	// which means we will always point to the same object, regardless of a flip
 	ControllerRec *dispData = *data;
@@ -354,27 +354,27 @@ void menu_oscilloscope(void *currXfb) {
 		case OSC_POST_SETUP:
 			switch (oState) {
 				case PRE_INPUT:
-					printStr("Waiting for input.", currXfb);
-					printEllipse(ellipseCounter, 20, currXfb);
+					printStr("Waiting for input.");
+					printEllipse(ellipseCounter, 20);
 					ellipseCounter++;
 					if (ellipseCounter == 60) {
 						ellipseCounter = 0;
 					}
 					
 					setCursorPos(21,0);
-					printStr("Current test: ", currXfb);
+					printStr("Current test: ");
 					switch (currentTest) {
 						case SNAPBACK:
-							printStr("Snapback", currXfb);
+							printStr("Snapback");
 							break;
 						case PIVOT:
-							printStr("Pivot", currXfb);
+							printStr("Pivot");
 							break;
 						case DASHBACK:
-							printStr("Dashback", currXfb);
+							printStr("Dashback");
 							break;
 						default:
-							printStr("Error", currXfb);
+							printStr("Error");
 							break;
 					}
 				case POST_INPUT_LOCK:
@@ -388,39 +388,39 @@ void menu_oscilloscope(void *currXfb) {
 							}
 						} else {
 							setCursorPos(2, 28);
-							printStrColor("LOCKED", currXfb, COLOR_WHITE, COLOR_BLACK);
+							printStrColor("LOCKED", COLOR_WHITE, COLOR_BLACK);
 						}
 					}
 				case POST_INPUT:
 					if (dispData->isRecordingReady) {
 						// draw guidelines based on selected test
-						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
-						DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY, currXfb);
+						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE);;
+						DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY);;
 						// lots of the specific values are taken from:
 						// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
 						switch (currentTest) {
 							case PIVOT:
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
+								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN);;
+								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN);;
 								setCursorPos(8, 0);
-								printStr("+64", currXfb);
+								printStr("+64");
 								setCursorPos(15, 0);
-								printStr("-64", currXfb);
+								printStr("-64");
 								break;
 							case DASHBACK:
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
+								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN);;
+								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN);;
 								setCursorPos(8, 0);
-								printStr("+64", currXfb);
+								printStr("+64");
 								setCursorPos(15, 0);
-								printStr("-64", currXfb);
+								printStr("-64");
 							case SNAPBACK:
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, COLOR_GREEN, currXfb);
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, COLOR_GREEN, currXfb);
+								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, COLOR_GREEN);;
+								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, COLOR_GREEN);;
 								setCursorPos(10, 0);
-								printStr("+23", currXfb);
+								printStr("+23");
 								setCursorPos(13, 0);
-								printStr("-23", currXfb);
+								printStr("-23");
 							default:
 								break;
 						}
@@ -468,12 +468,12 @@ void menu_oscilloscope(void *currXfb) {
 							// y first
 							DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevY,
 									SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currY,
-									COLOR_BLUE_C, currXfb);
+									COLOR_BLUE_C);
 							prevY = currY;
 							// then x
 							DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevX,
 									SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currX,
-									COLOR_RED_C, currXfb);
+									COLOR_RED_C);
 							prevX = currX;
 
 							// update stat values
@@ -528,23 +528,23 @@ void menu_oscilloscope(void *currXfb) {
 						setCursorPos(2, 45);
 						// total time is stored in microseconds, divide by 1000 for milliseconds
 						if (!showCStick) {
-							printStr("Shown: Stick", currXfb);
+							printStr("Shown: Stick");
 						} else {
-							printStr("Shown: C-Stick", currXfb);
+							printStr("Shown: C-Stick");
 						}
 						setCursorPos(3, 0);
 						
 						sprintf(strBuffer, "Sample start: %04u/%04u | Time shown: %04llu/%04llu ms\n", dataScrollOffset, dispData->sampleEnd, drawnTicksUs / 1000, dispData->totalTimeUs / 1000);
-						printStr(strBuffer, currXfb);
+						printStr(strBuffer);
 						
 						// print test data
 						setCursorPos(20, 0);
 						switch (currentTest) {
 							case SNAPBACK:
 								sprintf(strBuffer, "Min X: %04d | Min Y: %04d   |   ", minX, minY);
-								printStr(strBuffer, currXfb);
+								printStr(strBuffer);
 								sprintf(strBuffer, "Max X: %04d | Max Y: %04d\n", maxX, maxY);
-								printStr(strBuffer, currXfb);
+								printStr(strBuffer);
 								break;
 							case PIVOT:
 								bool pivotHit80 = false;
@@ -629,10 +629,10 @@ void menu_oscilloscope(void *currXfb) {
 
 									sprintf(strBuffer, "MS: %2.2f | No turn: %2.0f%% | Pivot: %2.0f%% | Dashback: %2.0f%%",
 											timeInPivotRangeMs, noTurnPercent, pivotPercent, dashbackPercent);
-									printStr(strBuffer, currXfb);
+									printStr(strBuffer);
 									//printf("\nUS Total: %llu, Start index: %d, End index: %d", timeInPivotRangeUs, pivotStartIndex, pivotEndIndex);
 								} else {
-									printStr("No pivot input detected.", currXfb);
+									printStr("No pivot input detected.");
 								}
 								break;
 							case DASHBACK:
@@ -704,27 +704,27 @@ void menu_oscilloscope(void *currXfb) {
 									}
 								}
 								sprintf(strBuffer, "Vanilla Success: %2.0f%% | UCF Success: %2.0f%%", dashbackPercent, ucfPercent);
-								printStr(strBuffer, currXfb);
+								printStr(strBuffer);
 								break;
 							default:
-								printStr("Error?", currXfb);
+								printStr("Error?");
 								break;
 
 						}
 						setCursorPos(21,0);
-						printStr("Current test: ", currXfb);
+						printStr("Current test: ");
 						switch (currentTest) {
 							case SNAPBACK:
-								printStr("Snapback", currXfb);
+								printStr("Snapback");
 								break;
 							case PIVOT:
-								printStr("Pivot", currXfb);
+								printStr("Pivot");
 								break;
 							case DASHBACK:
-								printStr("Dashback", currXfb);
+								printStr("Dashback");
 								break;
 							default:
-								printStr("Error", currXfb);
+								printStr("Error");
 								break;
 						}
 					} else {
@@ -732,7 +732,7 @@ void menu_oscilloscope(void *currXfb) {
 					}
 					break;
 				default:
-					printStr("How did we get here?", currXfb);
+					printStr("How did we get here?");
 					break;
 			}
 			if (!buttonLock) {
@@ -773,10 +773,10 @@ void menu_oscilloscope(void *currXfb) {
 			//	}
 			break;
 		case OSC_INSTRUCTIONS:
-			displayInstructions(currXfb);
+			displayInstructions();
 			break;
 		default:
-			printStr("How did we get here?", currXfb);
+			printStr("How did we get here?");
 			break;
 	}
 	if (buttonLock) {

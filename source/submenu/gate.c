@@ -103,15 +103,15 @@ static void setup() {
 	menuState = GATE_POST_SETUP;
 }
 
-static void displayInstructions(void *currXfb) {
+static void displayInstructions() {
 	setCursorPos(2, 0);
 	printStr("Move the stick around the gate to measure.\n"
 			 "Press X to toggle which stick gate is measured.\n"
 			 "Hold Y to reset current measure.\n"
-			 "Measure will also be reset after returning to Main Menu.", currXfb);
+			 "Measure will also be reset after returning to Main Menu.");
 	
 	setCursorPos(21, 0);
-	printStr("Press Z to close instructions.", currXfb);
+	printStr("Press Z to close instructions.");
 	
 	if (!buttonLock) {
 		if (*pressed & PAD_TRIGGER_Z) {
@@ -123,7 +123,7 @@ static void displayInstructions(void *currXfb) {
 }
 
 
-void menu_gateMeasure(void *currXfb) {
+void menu_gateMeasure() {
 	// reset measurement if controller is disconnected
 	if (!isControllerConnected(CONT_PORT_1)) {
 		state = GATE_INIT;
@@ -149,37 +149,37 @@ void menu_gateMeasure(void *currXfb) {
 					state = GATE_POST_INIT;
 				case GATE_POST_INIT:
 					setCursorPos(2, 0);
-					printStr("Press Z for Instructions", currXfb);
+					printStr("Press Z for Instructions");
 					setCursorPos(21,0);
-					printStr("Current stick: ", currXfb);
+					printStr("Current stick: ");
 					if (showC) {
-						printStr("C-Stick", currXfb);
+						printStr("C-Stick");
 					} else {
-						printStr("Analog Stick", currXfb);
+						printStr("Analog Stick");
 					}
 					if (yPressFrameCounter != 0) {
 						setCursorPos(20, 0);
-						printStr("Resetting", currXfb);
-						printEllipse(yPressFrameCounter, 30, currXfb);
+						printStr("Resetting");
+						printEllipse(yPressFrameCounter, 30);
 					}
 					// draw box around plot area
 					DrawBox(SCREEN_POS_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
 					        SCREEN_POS_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
-					        COLOR_WHITE, currXfb);
+					        COLOR_WHITE);
 					
 					// draw each
 					if (showC) {
 						for (int i = 0; i < 256; i++) {
 							if (gateMinMax[i].init) {
-								DrawDot(SCREEN_POS_CENTER_X - 128 + i, SCREEN_POS_CENTER_Y - gateMinMax[i].cMax, COLOR_YELLOW, currXfb);
-								DrawDot(SCREEN_POS_CENTER_X - 128 + i, SCREEN_POS_CENTER_Y - gateMinMax[i].cMin, COLOR_YELLOW, currXfb);
+								DrawDot(SCREEN_POS_CENTER_X - 128 + i, SCREEN_POS_CENTER_Y - gateMinMax[i].cMax, COLOR_YELLOW);;
+								DrawDot(SCREEN_POS_CENTER_X - 128 + i, SCREEN_POS_CENTER_Y - gateMinMax[i].cMin, COLOR_YELLOW);;
 							}
 						}
 					} else {
 						for (int i = 0; i < 256; i++) {
 							if (gateMinMax[i].init) {
-								DrawDot(SCREEN_POS_CENTER_X - 128 + i, SCREEN_POS_CENTER_Y - gateMinMax[i].max, COLOR_WHITE, currXfb);
-								DrawDot(SCREEN_POS_CENTER_X - 128 + i, SCREEN_POS_CENTER_Y - gateMinMax[i].min, COLOR_WHITE, currXfb);
+								DrawDot(SCREEN_POS_CENTER_X - 128 + i, SCREEN_POS_CENTER_Y - gateMinMax[i].max, COLOR_WHITE);;
+								DrawDot(SCREEN_POS_CENTER_X - 128 + i, SCREEN_POS_CENTER_Y - gateMinMax[i].min, COLOR_WHITE);;
 							}
 						}
 					}
@@ -212,7 +212,7 @@ void menu_gateMeasure(void *currXfb) {
 			}
 			break;
 		case GATE_INSTRUCTIONS:
-			displayInstructions(currXfb);
+			displayInstructions();
 			break;
 	}
 	

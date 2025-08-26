@@ -5,12 +5,19 @@
 #include "draw.h"
 
 #include <stdint.h>
+#include <stddef.h>
 
 #include <ogc/color.h>
 
 #include "images/stickmaps.h"
 
 static bool do2xHorizontalDraw = false;
+
+uint32_t *currXfb = NULL;
+
+void setFramebuffer(void *xfb) {
+	currXfb = xfb;
+}
 
 void setInterlaced(bool interlaced) {
 	do2xHorizontalDraw = interlaced;
@@ -19,7 +26,7 @@ void setInterlaced(bool interlaced) {
 // draws a "runlength encoded" image, with top-left at the provided coordinates
 // most of this is taken from
 // https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
-void drawImage(void *currXfb, const unsigned char image[], const unsigned char colorIndex[8], uint16_t offsetX, uint16_t offsetY) {
+void drawImage(const unsigned char image[], const unsigned char colorIndex[8], uint16_t offsetX, uint16_t offsetY) {
 	// get information on the image to be drawn
 	// first four bytes are dimensions
 	uint32_t width = image[0] << 8 | image[1];
@@ -61,7 +68,7 @@ void drawImage(void *currXfb, const unsigned char image[], const unsigned char c
 			
 			// is there a pixel to actually draw? (0-4 is transparency)
 			if (color > 5) {
-				DrawDotAccurate(column, row, CUSTOM_COLORS[color - 5], currXfb);
+				DrawDotAccurate(column, row, CUSTOM_COLORS[color - 5]);
 				runIndex++;
 			} else {
 				// skip idle loop and move to next position
@@ -90,9 +97,9 @@ void drawImage(void *currXfb, const unsigned char image[], const unsigned char c
 /*
 * takes in values to draw a horizontal line of a given color
 */
-void DrawHLine (int x1, int x2, int y, int color, void *xfb) {
+void DrawHLine (int x1, int x2, int y, int color) {
 	for (int i = x1; i <= x2; i++) {
-		DrawDotAccurate(i, y, color, xfb);
+		DrawDotAccurate(i, y, color);
 	}
 }
 
@@ -100,9 +107,9 @@ void DrawHLine (int x1, int x2, int y, int color, void *xfb) {
 /*
 * takes in values to draw a vertical line of a given color
 */
-void DrawVLine (int x, int y1, int y2, int color, void *xfb) {
+void DrawVLine (int x, int y1, int y2, int color) {
 	for (int i = y1; i <= y2; i++) {
-		DrawDot(x, i, color, xfb);
+		DrawDot(x, i, color);
 	}
 }
 
@@ -110,37 +117,37 @@ void DrawVLine (int x, int y1, int y2, int color, void *xfb) {
 /*
 * takes in values to draw a box of a given color
 */
-void DrawBox (int x1, int y1, int x2, int y2, int color, void *xfb) {
-	DrawHLine (x1, x2, y1, color, xfb);
-	DrawHLine (x1, x2, y2, color, xfb);
-	DrawVLine (x1, y1, y2, color, xfb);
-	DrawVLine (x2, y1, y2, color, xfb);
+void DrawBox (int x1, int y1, int x2, int y2, int color) {
+	DrawHLine (x1, x2, y1, color);
+	DrawHLine (x1, x2, y2, color);
+	DrawVLine (x1, y1, y2, color);
+	DrawVLine (x2, y1, y2, color);
 }
 
 
-void DrawFilledBox (int x1, int y1, int x2, int y2, int color, void *xfb) {
+void DrawFilledBox (int x1, int y1, int x2, int y2, int color) {
 	for (int i = x1; i < x2 + 1; i++) {
-		DrawVLine(i, y1, y2, color, xfb);
+		DrawVLine(i, y1, y2, color);
 	}
 }
 
 
 // draw a line given two coordinates, using Bresenham's line-drawing algorithm
-void DrawLine(int x1, int y1, int x2, int y2, int color, void *xfb) {
+void DrawLine(int x1, int y1, int x2, int y2, int color) {
 	// use simpler algorithm if line is horizontal or vertical
 	if (x1 == x2) {
 		if (y1 < y2) {
-			DrawVLine(x1, y1, y2, color, xfb);
+			DrawVLine(x1, y1, y2, color);
 		} else {
-			DrawVLine(x1, y2, y1, color, xfb);
+			DrawVLine(x1, y2, y1, color);
 		}
 		return;
 	}
 	if (y1 == y2) {
 		if (x1 < x2) {
-			DrawHLine(x1, x2, y1, color, xfb);
+			DrawHLine(x1, x2, y1, color);
 		} else {
-			DrawHLine(x2, x1, y1, color, xfb);
+			DrawHLine(x2, x1, y1, color);
 		}
 		return;
 	}
@@ -164,7 +171,7 @@ void DrawLine(int x1, int y1, int x2, int y2, int color, void *xfb) {
 		int currY = y1;
 		
 		for (int i = 0; i < distanceX; i++) {
-			DrawDot(x1 + (i * xDir), currY, color, xfb);
+			DrawDot(x1 + (i * xDir), currY, color);
 			if (delta > 0) {
 				currY += (1 * yDir);
 				delta -= (2 * distanceX);
@@ -177,7 +184,7 @@ void DrawLine(int x1, int y1, int x2, int y2, int color, void *xfb) {
 		int currX = x1;
 		
 		for (int i = 0; i < distanceY; i++) {
-			DrawDot(currX, (y1 + (i * yDir)), color, xfb);
+			DrawDot(currX, (y1 + (i * yDir)), color);
 			//tmpfb[(((y1 + (i * yDir)) * 640) + currX) / 2] = color;
 			//tmpfb[((x1 + i) + (currY * 640)) / 2] = color;
 			if (delta > 0) {
@@ -190,25 +197,23 @@ void DrawLine(int x1, int y1, int x2, int y2, int color, void *xfb) {
 }
 
 
-void DrawDot (int x, int y, int color, void *xfb) {
+void DrawDot (int x, int y, int color) {
 	if (do2xHorizontalDraw) {
 		x >>= 1;
-		uint32_t *tmpfb = xfb;
-		tmpfb[x + (640 * y) / 2] = color;
+		currXfb[x + (640 * y) / 2] = color;
 	} else {
-		DrawDotAccurate(x, y, color, xfb);
+		DrawDotAccurate(x, y, color);
 	}
 }
 
-void DrawDotAccurate (int x, int y, int color, void *xfb) {
-	uint32_t *tmpfb = xfb;
+void DrawDotAccurate (int x, int y, int color) {
 	int index = (x >> 1) + (640 * y) / 2;
-	uint32_t data = tmpfb[index];
+	uint32_t data = currXfb[index];
 	
 	if (x % 2 == 1) {
 		if (data >> 24 == 0) {
 			// no data in left pixel, leave it as-is
-			tmpfb[index] = color & 0x00FFFFFF;
+			currXfb[index] = color & 0x00FFFFFF;
 		} else {
 			// preserve the left pixel luminance
 			uint32_t leftLuminance = data & 0xFF000000;
@@ -217,12 +222,12 @@ void DrawDotAccurate (int x, int y, int color, void *xfb) {
 			// mix cb and cr
 			cb = ( ((data & 0x00FF0000) >> 16) + ((color & 0x00FF0000) >> 16) ) / 2;
 			cr = ( (data & 0x000000FF) + (color & 0x000000FF) ) / 2;
-			tmpfb[index] = leftLuminance | (cb << 16) | rightLuminance | cr;
+			currXfb[index] = leftLuminance | (cb << 16) | rightLuminance | cr;
 		}
 	} else {
 		if ((data & 0xFFFF00FF) >> 8 == 0) {
 			// no data in right pixel, leave it as-is
-			tmpfb[index] = color & 0xFFFF00FF;
+			currXfb[index] = color & 0xFFFF00FF;
 		} else {
 			// preserve the right pixel luminance
 			uint32_t leftLuminance = color & 0xFF000000;
@@ -231,7 +236,7 @@ void DrawDotAccurate (int x, int y, int color, void *xfb) {
 			// mix cb and cr
 			cb = ( ((data & 0x00FF0000) >> 16) + ((color & 0x00FF0000) >> 16) ) / 2;
 			cr = ( (data & 0x000000FF) + (color & 0x000000FF) ) / 2;
-			tmpfb[index] = leftLuminance | (cb << 16) | rightLuminance | cr;
+			currXfb[index] = leftLuminance | (cb << 16) | rightLuminance | cr;
 		}
 	}
 }
@@ -239,14 +244,14 @@ void DrawDotAccurate (int x, int y, int color, void *xfb) {
 
 
 // mostly taken from https://www.geeksforgeeks.org/mid-point-circle-drawing-algorithm/
-void DrawCircle (int cx, int cy, int r, int color, void *xfb) {
+void DrawCircle (int cx, int cy, int r, int color) {
 	int x = r, y = 0;
 	
 	if (r > 0) {
-		DrawDot(cx + x, cy - y, color, xfb);
-		DrawDot(cx - x, cy + y, color, xfb);
-		DrawDot(cx + y, cy - x, color, xfb);
-		DrawDot(cx - y, cy + x, color, xfb);
+		DrawDot(cx + x, cy - y, color);
+		DrawDot(cx - x, cy + y, color);
+		DrawDot(cx + y, cy - x, color);
+		DrawDot(cx - y, cy + x, color);
 	}
 	
 	int delta = 1 - r;
@@ -265,16 +270,16 @@ void DrawCircle (int cx, int cy, int r, int color, void *xfb) {
 			break;
 		}
 		
-		DrawDot(cx + x, cy + y, color, xfb);
-		DrawDot(cx - x, cy - y, color, xfb);
-		DrawDot(cx + x, cy - y, color, xfb);
-		DrawDot(cx - x, cy + y, color, xfb);
+		DrawDot(cx + x, cy + y, color);
+		DrawDot(cx - x, cy - y, color);
+		DrawDot(cx + x, cy - y, color);
+		DrawDot(cx - x, cy + y, color);
 		
 		if (x != y) {
-			DrawDot(cx + y, cy + x, color, xfb);
-			DrawDot(cx - y, cy + x, color, xfb);
-			DrawDot(cx + y, cy - x, color, xfb);
-			DrawDot(cx - y, cy - x, color, xfb);
+			DrawDot(cx + y, cy + x, color);
+			DrawDot(cx - y, cy + x, color);
+			DrawDot(cx + y, cy - x, color);
+			DrawDot(cx - y, cy - x, color);
 		}
 	}
 }
@@ -282,54 +287,54 @@ void DrawCircle (int cx, int cy, int r, int color, void *xfb) {
 // taken from
 // https://stackoverflow.com/questions/1201200/fast-algorithm-for-drawing-filled-circles
 // originally this just called DrawCircle for a smaller radius, but it broke when I fixed the DrawDot function.
-void DrawFilledCircle(int cx, int cy, int r, int color, void *xfb) {
+void DrawFilledCircle(int cx, int cy, int r, int color) {
 	for (int ty = (r * -1); ty <= r; ty++) {
 		for (int tx = (r * -1); tx <= r; tx++) {
 			if ( (tx * tx) + (ty * ty) <= (r * r)) {
-				DrawDotAccurate(cx + tx, cy + ty, color, xfb);
+				DrawDotAccurate(cx + tx, cy + ty, color);
 			}
 		}
 	}
 }
 
 // rad should be number of pixels from the center, _not_ including the center
-void DrawFilledBoxCenter(int x, int y, int rad, int color, void *xfb) {
+void DrawFilledBoxCenter(int x, int y, int rad, int color) {
 	int topLeftX = x - rad;
 	int topLeftY = y - rad;
-	DrawFilledBox(topLeftX, topLeftY, x + rad, y + rad, color, xfb);
+	DrawFilledBox(topLeftX, topLeftY, x + rad, y + rad, color);
 }
 
-void DrawOctagonalGate(int x, int y, int scale, int color, void *xfb) {
+void DrawOctagonalGate(int x, int y, int scale, int color) {
 	const int CARDINAL_MAX = 100 / scale;
 	const int DIAGONAL_MAX = 74 / scale;
 	// analog stick
 	DrawLine(x - CARDINAL_MAX, y,
 	         x - DIAGONAL_MAX, y - DIAGONAL_MAX,
-	         color, xfb);
+	         color);
 	DrawLine(x - DIAGONAL_MAX, y - DIAGONAL_MAX,
 	         x, y - CARDINAL_MAX,
-	         color, xfb);
+	         color);
 	DrawLine(x, y - CARDINAL_MAX,
 	         x + DIAGONAL_MAX, y - DIAGONAL_MAX,
-	         color, xfb);
+	         color);
 	DrawLine(x + DIAGONAL_MAX, y - DIAGONAL_MAX,
 	         x + CARDINAL_MAX, y,
-	         color, xfb);
+	         color);
 	DrawLine(x - CARDINAL_MAX, y,
 	         x - DIAGONAL_MAX, y + DIAGONAL_MAX,
-	         color, xfb);
+	         color);
 	DrawLine(x - DIAGONAL_MAX, y + DIAGONAL_MAX,
 	         x, y + CARDINAL_MAX,
-	         color, xfb);
+	         color);
 	DrawLine(x, y + CARDINAL_MAX,
 	         x + DIAGONAL_MAX, y + DIAGONAL_MAX,
-	         color, xfb);
+	         color);
 	DrawLine(x + DIAGONAL_MAX, y + DIAGONAL_MAX,
 	         x + CARDINAL_MAX, y,
-	         color, xfb);
+	         color);
 }
 
-void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which, void *currXfb) {
+void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which) {
 	switch (stickmap) {
 		case (FF_WD):
 			// bools for which parts to draw
@@ -353,56 +358,56 @@ void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which, void *currXfb) 
 				for (int i = 0; i < STICKMAP_FF_WD_COORD_SAFE_LEN; i++) {
 					DrawFilledBoxCenter(toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][0]) + COORD_CIRCLE_CENTER_X,
 					                    toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][1]) + SCREEN_POS_CENTER_Y,
-					                    2, COLOR_LIME, currXfb);
+					                    2, COLOR_LIME);
 					DrawFilledBoxCenter(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][0]),
 					                    toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][1]) + SCREEN_POS_CENTER_Y,
-					                    2, COLOR_LIME, currXfb);
+					                    2, COLOR_LIME);
 					DrawFilledBoxCenter(toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][0]) + COORD_CIRCLE_CENTER_X,
 					                    SCREEN_POS_CENTER_Y - toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][1]),
-					                    2, COLOR_LIME, currXfb);
+					                    2, COLOR_LIME);
 					DrawFilledBoxCenter(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][0]),
 					                    SCREEN_POS_CENTER_Y - toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][1]),
-					                    2, COLOR_LIME, currXfb);
+					                    2, COLOR_LIME);
 					DrawFilledBoxCenter(toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][1]) + COORD_CIRCLE_CENTER_X,
 					                    toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][0]) + SCREEN_POS_CENTER_Y,
-					                    2, COLOR_LIME, currXfb);
+					                    2, COLOR_LIME);
 					DrawFilledBoxCenter(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][1]),
 					                    toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][0]) + SCREEN_POS_CENTER_Y,
-					                    2, COLOR_LIME, currXfb);
+					                    2, COLOR_LIME);
 					DrawFilledBoxCenter(toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][1]) + COORD_CIRCLE_CENTER_X,
 					                    SCREEN_POS_CENTER_Y - toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][0]),
-					                    2, COLOR_LIME, currXfb);
+					                    2, COLOR_LIME);
 					DrawFilledBoxCenter(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][1]),
 					                    SCREEN_POS_CENTER_Y - toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][0]),
-					                    2, COLOR_LIME, currXfb);
+					                    2, COLOR_LIME);
 				}
 			}
 			if (drawUnsafe) {
 				for (int i = 0; i < STICKMAP_FF_WD_COORD_UNSAFE_LEN; i++) {
 					DrawFilledBoxCenter(toStickmap(STICKMAP_FF_WD_COORD_UNSAFE[i][0]) + COORD_CIRCLE_CENTER_X,
 					                    toStickmap(STICKMAP_FF_WD_COORD_UNSAFE[i][1]) + SCREEN_POS_CENTER_Y,
-					                    2, COLOR_YELLOW, currXfb);
+					                    2, COLOR_YELLOW);
 					DrawFilledBoxCenter(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_FF_WD_COORD_UNSAFE[i][0]),
 					                    toStickmap(STICKMAP_FF_WD_COORD_UNSAFE[i][1]) + SCREEN_POS_CENTER_Y,
-					                    2, COLOR_YELLOW, currXfb);
+					                    2, COLOR_YELLOW);
 					DrawFilledBoxCenter(toStickmap(STICKMAP_FF_WD_COORD_UNSAFE[i][0]) + COORD_CIRCLE_CENTER_X,
 					                    SCREEN_POS_CENTER_Y - toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][1]),
-					                    2, COLOR_YELLOW, currXfb);
+					                    2, COLOR_YELLOW);
 					DrawFilledBoxCenter(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_FF_WD_COORD_UNSAFE[i][0]),
 					                    SCREEN_POS_CENTER_Y - toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][1]),
-					                    2, COLOR_YELLOW, currXfb);
+					                    2, COLOR_YELLOW);
 					DrawFilledBoxCenter(toStickmap(STICKMAP_FF_WD_COORD_UNSAFE[i][1]) + COORD_CIRCLE_CENTER_X,
 					                    toStickmap(STICKMAP_FF_WD_COORD_UNSAFE[i][0]) + SCREEN_POS_CENTER_Y,
-					                    2, COLOR_YELLOW, currXfb);
+					                    2, COLOR_YELLOW);
 					DrawFilledBoxCenter(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_FF_WD_COORD_UNSAFE[i][1]),
 					                    toStickmap(STICKMAP_FF_WD_COORD_UNSAFE[i][0]) + SCREEN_POS_CENTER_Y,
-					                    2, COLOR_YELLOW, currXfb);
+					                    2, COLOR_YELLOW);
 					DrawFilledBoxCenter(toStickmap(STICKMAP_FF_WD_COORD_UNSAFE[i][1]) + COORD_CIRCLE_CENTER_X,
 					                    SCREEN_POS_CENTER_Y - toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][0]),
-					                    2, COLOR_YELLOW, currXfb);
+					                    2, COLOR_YELLOW);
 					DrawFilledBoxCenter(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_FF_WD_COORD_UNSAFE[i][1]),
 					                    SCREEN_POS_CENTER_Y - toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][0]),
-					                    2, COLOR_YELLOW, currXfb);
+					                    2, COLOR_YELLOW);
 				}
 			}
 			break;
@@ -432,30 +437,30 @@ void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which, void *currXfb) 
 				for (int i = 0; i < STICKMAP_SHIELDDROP_COORD_UCF_UPPER_LEN; i++) {
 					DrawFilledBoxCenter(toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_UPPER[i][0]) + COORD_CIRCLE_CENTER_X,
 					                    toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_UPPER[i][1]) + SCREEN_POS_CENTER_Y,
-					                    2, COLOR_YELLOW, currXfb);
+					                    2, COLOR_YELLOW);
 					DrawFilledBoxCenter(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_UPPER[i][0]),
 					                    toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_UPPER[i][1]) + SCREEN_POS_CENTER_Y,
-					                    2, COLOR_YELLOW, currXfb);
+					                    2, COLOR_YELLOW);
 				}
 			}
 			if (drawUCFLower) {
 				for (int i = 0; i < STICKMAP_SHIELDDROP_COORD_UCF_LOWER_LEN; i++) {
 					DrawFilledBoxCenter(toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_LOWER[i][0]) + COORD_CIRCLE_CENTER_X,
 					                    toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_LOWER[i][1]) + SCREEN_POS_CENTER_Y,
-					                    2, COLOR_BLUE, currXfb);
+					                    2, COLOR_BLUE);
 					DrawFilledBoxCenter(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_LOWER[i][0]),
 					                    toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_LOWER[i][1]) + SCREEN_POS_CENTER_Y,
-					                    2, COLOR_BLUE, currXfb);
+					                    2, COLOR_BLUE);
 				}
 			}
 			if (drawVanilla) {
 				for (int i = 0; i < STICKMAP_SHIELDDROP_COORD_VANILLA_LEN; i++) {
 					DrawHLine(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][0]) - 1,
 					          toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][0]) + COORD_CIRCLE_CENTER_X + 1,
-					          toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][1]) + SCREEN_POS_CENTER_Y, COLOR_LIME, currXfb);
+					          toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][1]) + SCREEN_POS_CENTER_Y, COLOR_LIME);
 					DrawHLine(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][0]) - 1,
 					          toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][0]) + COORD_CIRCLE_CENTER_X + 1,
-					          toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][1]) + SCREEN_POS_CENTER_Y + 1, COLOR_LIME, currXfb);
+					          toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][1]) + SCREEN_POS_CENTER_Y + 1, COLOR_LIME);
 				}
 			}
 			break;

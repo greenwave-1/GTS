@@ -13,7 +13,7 @@
 enum CONT_MENU_STATE { CONT_SETUP, CONT_POST_SETUP };
 enum CONT_STATE { INPUT, INPUT_LOCK };
 
-void menu_continuousWaveform(void *currXfb);
+void menu_continuousWaveform();
 void menu_continuousEnd();
 
 

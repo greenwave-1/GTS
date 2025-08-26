@@ -222,7 +222,7 @@ static void setup() {
 	buttonPressCooldown = 5;
 }
 
-static void displayInstructions(void *currXfb) {
+static void displayInstructions() {
 	setCursorPos(2, 0);
 	printStr("Press A to prepare a recording. Recording will start with\n"
 			 "any button press, or the stick moving.\n"
@@ -236,10 +236,10 @@ static void displayInstructions(void *currXfb) {
 			 "range is shown on the left.\n\n"
 	         "Hold Start to toggle Auto-Trigger. Enabling this removes\n"
 	         "the need to press A, but disables the instruction menu and\n"
-	         "only allows the stick to start a recording.\n", currXfb);
+	         "only allows the stick to start a recording.\n");
 	
 	setCursorPos(21, 0);
-	printStr("Press Z to close instructions.", currXfb);
+	printStr("Press Z to close instructions.");
 	
 	if (!buttonLock) {
 		if (*pressed & PAD_TRIGGER_Z) {
@@ -250,7 +250,7 @@ static void displayInstructions(void *currXfb) {
 	}
 }
 
-void menu_plot2d(void *currXfb) {
+void menu_plot2d() {
 	// we're getting the address of the object itself here, not the address of the pointer,
 	// which means we will always point to the same object, regardless of a flip
 	ControllerRec *dispData = *data;
@@ -260,7 +260,7 @@ void menu_plot2d(void *currXfb) {
 			setup();
 			break;
 		case PLOT_INSTRUCTIONS:
-			displayInstructions(currXfb);
+			displayInstructions();
 			break;
 		case PLOT_POST_SETUP:
 			switch(plotState) {
@@ -269,18 +269,18 @@ void menu_plot2d(void *currXfb) {
 					setCursorPos(2,0);
 					if (plotState == PLOT_INPUT || autoCapture) {
 						if (autoCapture) {
-							printStr("Auto-Trigger enabled, w", currXfb);
+							printStr("Auto-Trigger enabled, w");
 						} else {
-							printStr("W", currXfb);
+							printStr("W");
 						}
-						printStr("aiting for input.", currXfb);
-						printEllipse(ellipseCounter, 20, currXfb);
+						printStr("aiting for input.");
+						printEllipse(ellipseCounter, 20);
 						ellipseCounter++;
 						if (ellipseCounter == 60) {
 							ellipseCounter = 0;
 						}
 					} else {
-						printStr("Press A to start read, press Z for instructions", currXfb);
+						printStr("Press A to start read, press Z for instructions");
 					}
 					
 					// check if last draw point needs to be reset
@@ -292,35 +292,35 @@ void menu_plot2d(void *currXfb) {
 						
 						setCursorPos(5, 0);
 						sprintf(strBuffer, "Total samples: %04u\n", dispData->sampleEnd);
-						printStr(strBuffer, currXfb);
+						printStr(strBuffer);
 						sprintf(strBuffer, "Start sample: %04u\n", map2dStartIndex + 1);
-						printStr(strBuffer, currXfb);
+						printStr(strBuffer);
 						sprintf(strBuffer, "End sample: %04u\n", lastDrawPoint + 1);
-						printStr(strBuffer, currXfb);
+						printStr(strBuffer);
 						
 						// show button presses of last drawn point
 						setCursorPos(11,0);
-						printStr("Buttons Pressed:\n", currXfb);
+						printStr("Buttons Pressed:\n");
 						if (dispData->samples[lastDrawPoint].buttons & PAD_BUTTON_A) {
-							printStr("A ", currXfb);
+							printStr("A ");
 						}
 						if (dispData->samples[lastDrawPoint].buttons & PAD_BUTTON_B) {
-							printStr("B ", currXfb);
+							printStr("B ");
 						}
 						if (dispData->samples[lastDrawPoint].buttons & PAD_BUTTON_X) {
-							printStr("X ", currXfb);
+							printStr("X ");
 						}
 						if (dispData->samples[lastDrawPoint].buttons & PAD_BUTTON_Y) {
-							printStr("Y ", currXfb);
+							printStr("Y ");
 						}
 						if (dispData->samples[lastDrawPoint].buttons & PAD_TRIGGER_Z) {
-							printStr("Z ", currXfb);
+							printStr("Z ");
 						}
 						if (dispData->samples[lastDrawPoint].buttons & PAD_TRIGGER_L) {
-							printStr("L ", currXfb);
+							printStr("L ");
 						}
 						if (dispData->samples[lastDrawPoint].buttons & PAD_TRIGGER_R) {
-							printStr("R ", currXfb);
+							printStr("R ");
 						}
 						
 						// print coordinates of last drawn point
@@ -328,73 +328,73 @@ void menu_plot2d(void *currXfb) {
 						setCursorPos(14, 0);
 						sprintf(strBuffer, "Raw XY: (%04d,%04d)\n", dispData->samples[lastDrawPoint].stickX,
 						        dispData->samples[lastDrawPoint].stickY);
-						printStr(strBuffer, currXfb);
-						printStr("Melee XY: (", currXfb);
+						printStr(strBuffer);
+						printStr("Melee XY: (");
 						// is the value negative?
 						if (dispData->samples[lastDrawPoint].stickX < 0) {
-							printStr("-", currXfb);
+							printStr("-");
 						} else {
-							printStr("0", currXfb);
+							printStr("0");
 						}
 						// is this a 1.0 value?
 						if (convertedCoords.stickXUnit == 10000) {
-							printStr("1.0000", currXfb);
+							printStr("1.0000");
 						} else {
 							sprintf(strBuffer, "0.%04d", convertedCoords.stickXUnit);
-							printStr(strBuffer, currXfb);
+							printStr(strBuffer);
 						}
-						printStr(",", currXfb);
+						printStr(",");
 						
 						// is the value negative?
 						if (dispData->samples[lastDrawPoint].stickY < 0) {
-							printStr("-", currXfb);
+							printStr("-");
 						} else {
-							printStr("0", currXfb);
+							printStr("0");
 						}
 						// is this a 1.0 value?
 						if (convertedCoords.stickYUnit == 10000) {
-							printStr("1.0000", currXfb);
+							printStr("1.0000");
 						} else {
 							sprintf(strBuffer, "0.%04d", convertedCoords.stickYUnit);
-							printStr(strBuffer, currXfb);
+							printStr(strBuffer);
 						}
-						printStr(")\n\n", currXfb);
-						printStr("Stickmap: ", currXfb);
+						printStr(")\n\n");
+						printStr("Stickmap: ");
 						
 						// draw image below 2d plot, and print while we're at it
 						switch (selectedImage) {
 							case A_WAIT:
-								printStr("Wait Attacks", currXfb);
-								drawImage(currXfb, await_image, await_indexes, COORD_CIRCLE_CENTER_X - 127,
+								printStr("Wait Attacks");
+								drawImage(await_image, await_indexes, COORD_CIRCLE_CENTER_X - 127,
 								          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case CROUCH:
-								printStr("Crouch", currXfb);
-								drawImage(currXfb, crouch_image, crouch_indexes, COORD_CIRCLE_CENTER_X - 127,
+								printStr("Crouch");
+								drawImage(crouch_image, crouch_indexes, COORD_CIRCLE_CENTER_X - 127,
 								          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case DEADZONE:
-								printStr("Deadzones", currXfb);
-								drawImage(currXfb, deadzone_image, deadzone_indexes, COORD_CIRCLE_CENTER_X - 127,
+								printStr("Deadzones");
+								drawImage(deadzone_image, deadzone_indexes, COORD_CIRCLE_CENTER_X - 127,
 								          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case LEDGE_L:
-								printStr("Left Ledge", currXfb);
-								drawImage(currXfb, ledgeL_image, ledgeL_indexes, COORD_CIRCLE_CENTER_X - 127,
+								printStr("Left Ledge");
+								drawImage(ledgeL_image, ledgeL_indexes, COORD_CIRCLE_CENTER_X - 127,
 								          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case LEDGE_R:
-								printStr("Right Ledge", currXfb);
-								drawImage(currXfb, ledgeR_image, ledgeR_indexes, COORD_CIRCLE_CENTER_X - 127,
+								printStr("Right Ledge");
+								drawImage(ledgeR_image, ledgeR_indexes, COORD_CIRCLE_CENTER_X - 127,
 								          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case MOVE_WAIT:
-								printStr("Wait Movement", currXfb);
-								drawImage(currXfb, movewait_image, movewait_indexes, COORD_CIRCLE_CENTER_X - 127,
+								printStr("Wait Movement");
+								drawImage(movewait_image, movewait_indexes, COORD_CIRCLE_CENTER_X - 127,
 								          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case NO_IMAGE:
-								printStr("None", currXfb);
+								printStr("None");
 							default:
 								break;
 						}
@@ -402,7 +402,7 @@ void menu_plot2d(void *currXfb) {
 						// draw box around plot area
 						DrawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
 						        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
-						        COLOR_WHITE, currXfb);
+						        COLOR_WHITE);
 						
 						uint64_t timeFromFirstSampleDraw = 0;
 						int frameCounter = 0;
@@ -419,20 +419,20 @@ void menu_plot2d(void *currXfb) {
 							if ((timeFromFirstSampleDraw / 16666) > frameCounter) {
 								if (dispData->samples[i].buttons != 0) {
 									DrawFilledCircle(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
-									                 SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, 2, COLOR_ORANGE, currXfb);
+									                 SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, 2, COLOR_ORANGE);
 								} else {
 									DrawFilledCircle(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
-									                 SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, 2, COLOR_WHITE, currXfb);
+									                 SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, 2, COLOR_WHITE);
 								}
 								frameCounter++;
 							// not a frame interval
 							} else {
 								if (dispData->samples[i].buttons != 0) {
 									DrawDot(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
-									        SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, COLOR_ORANGE, currXfb);
+									        SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, COLOR_ORANGE);
 								} else {
 									DrawDot(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
-									        SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, COLOR_WHITE, currXfb);
+									        SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, COLOR_WHITE);
 								}
 							}
 						}
@@ -442,14 +442,14 @@ void menu_plot2d(void *currXfb) {
 						         (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) - 3,
 						         (COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].stickX) + 3,
 						         (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) + 3,
-								 COLOR_WHITE, currXfb);
+								 COLOR_WHITE);
 						
 						float timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
 						setCursorPos(8, 0);
 						sprintf(strBuffer, "Total MS: %6.2f\n", timeFromStartMs);
-						printStr(strBuffer, currXfb);
+						printStr(strBuffer);
 						sprintf(strBuffer, "Total frames: %2.2f", timeFromStartMs / FRAME_TIME);
-						printStr(strBuffer, currXfb);
+						printStr(strBuffer);
 						
 						// cycle the stickmap shown
 						if (*pressed & PAD_BUTTON_X && !buttonLock) {
@@ -581,12 +581,12 @@ void menu_plot2d(void *currXfb) {
 					setCursorPos(21, 0);
 					if (*held == PAD_BUTTON_START && !buttonLock && !captureStart) {
 						if (autoCapture) {
-							printStr("Disabling ", currXfb);
+							printStr("Disabling ");
 						} else {
-							printStr("Enabling ", currXfb);
+							printStr("Enabling ");
 						}
-						printStr("Auto-Trigger", currXfb);
-						printEllipse(autoCaptureCounter, 40, currXfb);
+						printStr("Auto-Trigger");
+						printEllipse(autoCaptureCounter, 40);
 						autoCaptureCounter++;
 						if (autoCaptureCounter == 120) {
 							autoCapture = !autoCapture;
@@ -597,7 +597,7 @@ void menu_plot2d(void *currXfb) {
 							autoCaptureCounter = 0;
 						}
 					} else {
-						printStr("Hold start to toggle Auto-Trigger.", currXfb);
+						printStr("Hold start to toggle Auto-Trigger.");
 						autoCaptureCounter = 0;
 					}
 					
@@ -607,12 +607,12 @@ void menu_plot2d(void *currXfb) {
 					
 					break;
 				default:
-					printStr("how did we get here?", currXfb);
+					printStr("how did we get here?");
 					break;
 			}
 			break;
 		default:
-			printStr("how did we get here? menuState", currXfb);
+			printStr("how did we get here? menuState");
 			break;
 	}
 	

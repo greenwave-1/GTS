@@ -232,7 +232,7 @@ static void setup() {
 	buttonPressCooldown = 5;
 }
 
-static void displayInstructions(void *currXfb) {
+static void displayInstructions() {
 	setCursorPos(2, 0);
 	printStr("Press A to prepare a 300ms recording.\n"
 			 "Recording will start when a digital button is pressed,\n"
@@ -247,10 +247,10 @@ static void displayInstructions(void *currXfb) {
 			 "Hold R to change thresholds faster.\n"
 			 "Hold Start to toggle Auto-Trigger. Enabling this removes\n"
 			 "the need to press A, but disables the instruction menu and\n"
-			 "the R modifier.\n", currXfb);
+			 "the R modifier.\n");
 	
 	setCursorPos(21, 0);
-	printStr("Press Z to close instructions.", currXfb);
+	printStr("Press Z to close instructions.");
 	
 	if (!buttonLock) {
 		if (*pressed & PAD_TRIGGER_Z) {
@@ -261,7 +261,7 @@ static void displayInstructions(void *currXfb) {
 	}
 }
 
-void menu_plotButton(void *currXfb) {
+void menu_plotButton() {
 	// we're getting the address of the object itself here, not the address of the pointer,
 	// which means we will always point to the same object, regardless of a flip
 	ControllerRec *dispData = *data;
@@ -271,7 +271,7 @@ void menu_plotButton(void *currXfb) {
 			setup();
 			break;
 		case BUTTON_INSTRUCTIONS:
-			displayInstructions(currXfb);
+			displayInstructions();
 			break;
 		case BUTTON_POST_SETUP:
 			switch (state) {
@@ -280,49 +280,49 @@ void menu_plotButton(void *currXfb) {
 					// the sampling callback function will change the plotState enum when an input is done
 					setCursorPos(2,0);
 					if (autoCapture) {
-						printStr("Auto-Trigger enabled, w", currXfb);
+						printStr("Auto-Trigger enabled, w");
 					} else {
-						printStr("W", currXfb);
+						printStr("W");
 					}
-					printStr("aiting for input.", currXfb);
-					printEllipse(ellipseCounter, 20, currXfb);
+					printStr("aiting for input.");
+					printEllipse(ellipseCounter, 20);
 					ellipseCounter++;
 					if (ellipseCounter == 60) {
 						ellipseCounter = 0;
 					}
 				case BUTTON_DISPLAY:
 					if (!autoCapture && state != BUTTON_INPUT) {
-						printStr("Press A to start read, press Z for instructions", currXfb);
+						printStr("Press A to start read, press Z for instructions");
 					}
 					
 					setCursorPos(4,7);
 					if (stickThresholdSelected) {
-						printStrColor("Stick Threshold:", currXfb, COLOR_WHITE, COLOR_BLACK);
+						printStrColor("Stick Threshold:", COLOR_WHITE, COLOR_BLACK);
 						sprintf(strBuffer, " %3u", stickThreshold);
-						printStr(strBuffer, currXfb);
+						printStr(strBuffer);
 						setCursorPos(4, 32);
-						printStr("Trigger Threshold:", currXfb);
+						printStr("Trigger Threshold:");
 						sprintf(strBuffer, " %3u", triggerThreshold);
-						printStr(strBuffer, currXfb);
+						printStr(strBuffer);
 					} else {
-						printStr("Stick Threshold:", currXfb);
+						printStr("Stick Threshold:");
 						sprintf(strBuffer, " %3u", stickThreshold);
-						printStr(strBuffer, currXfb);
+						printStr(strBuffer);
 						setCursorPos(4, 32);
-						printStrColor("Trigger Threshold:", currXfb, COLOR_WHITE, COLOR_BLACK);
+						printStrColor("Trigger Threshold:", COLOR_WHITE, COLOR_BLACK);
 						sprintf(strBuffer, " %3u", triggerThreshold);
-						printStr(strBuffer, currXfb);
+						printStr(strBuffer);
 					}
 					
 					if (dispData->isRecordingReady) {
-						DrawBox(SCREEN_TIMEPLOT_START - 40, SCREEN_TIMEPLOT_Y_TOP - 1, 600, SCREEN_TIMEPLOT_Y_BOTTOM + 1, COLOR_WHITE, currXfb);
+						DrawBox(SCREEN_TIMEPLOT_START - 40, SCREEN_TIMEPLOT_Y_TOP - 1, 600, SCREEN_TIMEPLOT_Y_BOTTOM + 1, COLOR_WHITE);;
 						
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
 							setCursorPos(7 + button, 4);
 							if (button == triggeringInputDisplay) {
-								printStrColor(BUTTON_STR[button], currXfb, COLOR_WHITE, COLOR_BLACK);
+								printStrColor(BUTTON_STR[button], COLOR_WHITE, COLOR_BLACK);
 							} else {
-								printStr(BUTTON_STR[button], currXfb);
+								printStr(BUTTON_STR[button]);
 							}
 						}
 						
@@ -336,7 +336,7 @@ void menu_plotButton(void *currXfb) {
 							totalTimeUs += dispData->samples[i].timeDiffUs;
 							if (frameIntervalTime >= 16666) {
 								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_Y_TOP, SCREEN_TIMEPLOT_Y_BOTTOM,
-										  COLOR_GRAY, currXfb);
+										  COLOR_GRAY);
 								frameIntervalTime = 0;
 							}
 							
@@ -374,7 +374,7 @@ void menu_plotButton(void *currXfb) {
 								if (result) {
 									DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
 									          SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
-									          COLOR_WHITE, currXfb);
+									          COLOR_WHITE);
 								}
 								
 								// calculate what timing to show if not marked done
@@ -408,9 +408,9 @@ void menu_plotButton(void *currXfb) {
 								sprintf(strBuffer, "%2.2ff", buttons[button].timeHeld / (FRAME_TIME_MS * 1000));
 								// indicate the initial input with black on white text
 								if (button == triggeringInputDisplay) {
-									printStrColor(strBuffer, currXfb, COLOR_WHITE, COLOR_BLACK);
+									printStrColor(strBuffer, COLOR_WHITE, COLOR_BLACK);
 								} else {
-									printStr(strBuffer, currXfb);
+									printStr(strBuffer);
 								}
 							}
 						}
@@ -500,12 +500,12 @@ void menu_plotButton(void *currXfb) {
 					setCursorPos(21, 0);
 					if (*held == PAD_BUTTON_START && !buttonLock && !captureStart) {
 						if (autoCapture) {
-							printStr("Disabling ", currXfb);
+							printStr("Disabling ");
 						} else {
-							printStr("Enabling ", currXfb);
+							printStr("Enabling ");
 						}
-						printStr("Auto-Trigger", currXfb);
-						printEllipse(autoCaptureCounter, 40, currXfb);
+						printStr("Auto-Trigger");
+						printEllipse(autoCaptureCounter, 40);
 						autoCaptureCounter++;
 						if (autoCaptureCounter == 120) {
 							autoCapture = !autoCapture;
@@ -520,13 +520,13 @@ void menu_plotButton(void *currXfb) {
 							autoCaptureCounter = 0;
 						}
 					} else {
-						printStr("Hold start to toggle Auto-Trigger.", currXfb);
+						printStr("Hold start to toggle Auto-Trigger.");
 						autoCaptureCounter = 0;
 					}
 					break;
 
 				default:
-					printStr("button plot default case?", currXfb);
+					printStr("button plot default case?");
 					break;
 			}
 	}

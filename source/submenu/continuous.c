@@ -106,25 +106,25 @@ static void setup() {
 	state = CONT_POST_SETUP;
 }
 
-void menu_continuousWaveform(void *currXfb) {
+void menu_continuousWaveform() {
 	switch (state) {
 		case CONT_SETUP:
 			setup();
 			break;
 		case CONT_POST_SETUP:
 			setCursorPos(2, 0);
-			printStr("A to freeze. Y to toggle.", currXfb);
+			printStr("A to freeze. Y to toggle.");
 			setCursorPos(20, 0);
-			printStr("Current Stick: ", currXfb);
+			printStr("Current Stick: ");
 			if (!showCStick) {
-				printStr("Analog Stick", currXfb);
+				printStr("Analog Stick");
 			} else {
-				printStr("C-Stick", currXfb);
+				printStr("C-Stick");
 			}
 			if (cState == INPUT_LOCK) {
 				freeze = true;
 				setCursorPos(2, 28);
-				printStrColor("LOCKED", currXfb, COLOR_WHITE, COLOR_BLACK);
+				printStrColor("LOCKED", COLOR_WHITE, COLOR_BLACK);
 			} else {
 				freeze = false;
 			}
@@ -132,8 +132,8 @@ void menu_continuousWaveform(void *currXfb) {
 			if (data->isRecordingReady) {
 				// draw guidelines based on selected test
 				DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500,
-				        SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
-				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY, currXfb);
+				        SCREEN_POS_CENTER_Y + 128, COLOR_WHITE);
+				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY);;
 				// lots of the specific values are taken from:
 				// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
 				
@@ -159,18 +159,18 @@ void menu_continuousWaveform(void *currXfb) {
 				
 				if (cState == INPUT_LOCK && waveformScaleFactor != 6) {
 					// draw scroll bar
-					DrawFilledBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 142, SCREEN_TIMEPLOT_START + 499, SCREEN_POS_CENTER_Y - 140, COLOR_GRAY, currXfb);
+					DrawFilledBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 142, SCREEN_TIMEPLOT_START + 499, SCREEN_POS_CENTER_Y - 140, COLOR_GRAY);;
 					// calculate scroll bar position
 					int scrollBarPosX = 500 - ((dataScrollOffset / (3000.0 - (500 * waveformScaleFactor))) * 500);
-					DrawFilledBox(SCREEN_TIMEPLOT_START + (scrollBarPosX - 1), SCREEN_POS_CENTER_Y - 144, SCREEN_TIMEPLOT_START + scrollBarPosX, SCREEN_POS_CENTER_Y - 138, COLOR_WHITE, currXfb);
+					DrawFilledBox(SCREEN_TIMEPLOT_START + (scrollBarPosX - 1), SCREEN_POS_CENTER_Y - 144, SCREEN_TIMEPLOT_START + scrollBarPosX, SCREEN_POS_CENTER_Y - 138, COLOR_WHITE);;
 				}
 				
 				setCursorPos(21,0);
 				sprintf(strBuffer, "Scaling Factor: %dx", waveformScaleFactor);
-				printStr(strBuffer, currXfb);
+				printStr(strBuffer);
 				if (cState == INPUT_LOCK) {
 					sprintf(strBuffer, " | Offset: %d", dataScrollOffset);
-					printStr(strBuffer, currXfb);
+					printStr(strBuffer);
 				}
 				
 				int prevIndex = -1;
@@ -188,12 +188,12 @@ void menu_continuousWaveform(void *currXfb) {
 					// y first
 					DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevY,
 					         SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currY,
-					         COLOR_BLUE_C, currXfb);
+					         COLOR_BLUE_C);
 					prevY = currY;
 					// then x
 					DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevX,
 					         SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currX,
-					         COLOR_RED_C, currXfb);
+					         COLOR_RED_C);
 					prevX = currX;
 					
 					// frame interval stuff
@@ -203,7 +203,7 @@ void menu_continuousWaveform(void *currXfb) {
 								if (waveformScaleFactor <= 2) {
 									DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
 									        SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
-									        COLOR_GRAY, currXfb);
+									        COLOR_GRAY);
 								}
 							}
 						}

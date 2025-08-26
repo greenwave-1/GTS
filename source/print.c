@@ -21,8 +21,7 @@ static int currX = 0;
 static int currY = 0;
 
 //Draws 8x15 character in the specified location according to the ascii codepoints
-void drawChar(unsigned char bitmap[],
-              const unsigned int color,
+void drawChar(const unsigned int color,
               const char character) {
 	if((character < 0x20 && character != '\n') || character > 0x7e) { //lower than space, larger than tilde, and not newline
 		return;
@@ -48,7 +47,7 @@ void drawChar(unsigned char bitmap[],
 			for (int col = 0; col < 8; col++) {
 				if ((font[(character - 0x20) * 15 + row] << col) & 0b10000000) {
 					uint16_t colOffset = col + currX + PRINT_PADDING_HORIZONTAL;
-					DrawDotAccurate(colOffset, rowOffset, color, bitmap);
+					DrawDotAccurate(colOffset, rowOffset, color);
 				}
 			}
 		}
@@ -58,8 +57,7 @@ void drawChar(unsigned char bitmap[],
 }
 
 // draw a character but ignore "rows" and "columns"
-void drawCharDirect(unsigned char bitmap[],
-                    uint16_t x,
+void drawCharDirect(uint16_t x,
                     uint16_t y,
                     const unsigned int color,
                     const char character) {
@@ -71,14 +69,13 @@ void drawCharDirect(unsigned char bitmap[],
 		for(int col = 0; col < 8; col++) {
 			if((font[(character-0x20)*15+row] << col) & 0b10000000) {
 				uint16_t colOffset = col+x;
-				DrawDotAccurate(colOffset, rowOffset, color, bitmap);
+				DrawDotAccurate(colOffset, rowOffset, color);
 			}
 		}
 	}
 }
 
-void drawString(unsigned char bitmap[],
-                const uint32_t bg_color,
+void drawString(const uint32_t bg_color,
 				const uint32_t fg_color,
                 const char string[]) {
 	uint16_t i = 0;
@@ -87,25 +84,25 @@ void drawString(unsigned char bitmap[],
 		if (bg_color != COLOR_BLACK) {
 			DrawFilledBox(currX + PRINT_PADDING_HORIZONTAL - 2, currY + PRINT_PADDING_VERTICAL - 2,
 			              currX + PRINT_PADDING_HORIZONTAL + 10, currY + PRINT_PADDING_VERTICAL + 15,
-			              bg_color, bitmap);
+			              bg_color);
 		}
-		drawChar(bitmap, fg_color, string[i]);
+		drawChar(fg_color, string[i]);
 		i++;
 	}
 }
 
-void printStr(const char* str, void *xfb) {
-	printStrColor(str, xfb, COLOR_BLACK, COLOR_WHITE);
+void printStr(const char* str) {
+	printStrColor(str, COLOR_BLACK, COLOR_WHITE);
 }
 
-void printStrColor(const char* str, void *xfb, const uint32_t bg_color, const uint32_t fg_color) {
-	drawString(xfb, bg_color, fg_color, str);
+void printStrColor(const char* str, const uint32_t bg_color, const uint32_t fg_color) {
+	drawString(bg_color, fg_color, str);
 }
 
-void printEllipse(const int counter, const int interval, void *currXfb) {
+void printEllipse(const int counter, const int interval) {
 	int remainder = counter / interval;
 	while (remainder != 0) {
-		printStr(".", currXfb);
+		printStr(".");
 		remainder--;
 	}
 }

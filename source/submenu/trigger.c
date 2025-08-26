@@ -194,7 +194,7 @@ static void setup() {
 	buttonPressCooldown = 5;
 }
 
-static void displayInstructions(void *currXfb) {
+static void displayInstructions() {
 	setCursorPos(2, 0);
 	printStr("Press and release either trigger to capture. A capture will\n"
 			 "start if a digital press is detected, or if the analog value\n"
@@ -203,10 +203,10 @@ static void displayInstructions(void *currXfb) {
 			 "A Green line indicates when a digital press is detected.\n"
 			 "A Gray line shows the minimum value Melee uses for Analog\n"
 			 "shield (43 or above).\n\n"
-			 "Percents for projectile powershields are shown at the bottom.\n", currXfb);
+			 "Percents for projectile powershields are shown at the bottom.\n");
 	
 	setCursorPos(21, 0);
-	printStr("Press Z to close instructions.", currXfb);
+	printStr("Press Z to close instructions.");
 	
 	if (!buttonLock) {
 		if (*pressed & PAD_TRIGGER_Z) {
@@ -217,7 +217,7 @@ static void displayInstructions(void *currXfb) {
 	}
 }
 
-void menu_triggerOscilloscope(void *currXfb) {
+void menu_triggerOscilloscope() {
 	// we're getting the address of the object itself here, not the address of the pointer,
 	// which means we will always point to the same object, regardless of a flip
 	ControllerRec *dispData = *data;
@@ -232,8 +232,8 @@ void menu_triggerOscilloscope(void *currXfb) {
 					// nothing happens here other than showing the message about waiting for an input
 					// the sampling callback function will change the trigState enum when an input is done
 					setCursorPos(2,0);
-					printStr("Waiting for input.", currXfb);
-					printEllipse(ellipseCounter, 20, currXfb);
+					printStr("Waiting for input.");
+					printEllipse(ellipseCounter, 20);
 					ellipseCounter++;
 					if (ellipseCounter == 60) {
 						ellipseCounter = 0;
@@ -242,14 +242,14 @@ void menu_triggerOscilloscope(void *currXfb) {
 					// TODO: this is dumb, do this a better way to fit better
 					if (trigState == TRIG_DISPLAY_LOCK) {
 						setCursorPos(2, 28);
-						printStrColor("LOCKED", currXfb, COLOR_WHITE, COLOR_BLACK);
+						printStrColor("LOCKED", COLOR_WHITE, COLOR_BLACK);
 					}
 				case TRIG_DISPLAY:
 					if (dispData->isRecordingReady) {
 						// bounding box
-						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
+						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE);;
 						// line at 43, start of melee analog shield range
-						DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 499, (SCREEN_POS_CENTER_Y + 85), COLOR_GRAY, currXfb);
+						DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 499, (SCREEN_POS_CENTER_Y + 85), COLOR_GRAY);;
 						
 						uint8_t curr = 0, prev = 0;
 						bool currDigital = false;
@@ -275,7 +275,7 @@ void menu_triggerOscilloscope(void *currXfb) {
 									break;
 								default:
 									//dispData->isRecordingReady = false;
-									printStr("Data ready but selection is not valid.", currXfb);
+									printStr("Data ready but selection is not valid.");
 									break;
 							}
 							
@@ -284,20 +284,20 @@ void menu_triggerOscilloscope(void *currXfb) {
 							if (totalTime >= 16666) {
 								DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
 								         SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
-								         COLOR_GRAY, currXfb);
+								         COLOR_GRAY);
 								totalTime = 0;
 							}
 							
 							// analog
 							DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, (SCREEN_POS_CENTER_Y + 128) - prev,
 							         SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y + 128) - curr,
-							         COLOR_WHITE, currXfb);
+							         COLOR_WHITE);
 							prev = curr;
 							
 							// digital
 							if (currDigital) {
 								DrawDot(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y + 28),
-										COLOR_LIME, currXfb);
+										COLOR_LIME);
 							}
 							
 							// update scaling factor
@@ -308,13 +308,13 @@ void menu_triggerOscilloscope(void *currXfb) {
 						setCursorPos(3, 27);
 						switch (displaySelection) {
 							case TRIGGER_L:
-								printStr("L Trigger", currXfb);
+								printStr("L Trigger");
 								break;
 							case TRIGGER_R:
-								printStr("R Trigger", currXfb);
+								printStr("R Trigger");
 								break;
 							default:
-								printStr("Capture selection invalid", currXfb);
+								printStr("Capture selection invalid");
 								break;
 						}
 						
@@ -348,7 +348,7 @@ void menu_triggerOscilloscope(void *currXfb) {
 								}
 								break;
 							default:
-								printStr("Capture selection invalid", currXfb);
+								printStr("Capture selection invalid");
 								break;
 						}
 						
@@ -373,9 +373,9 @@ void menu_triggerOscilloscope(void *currXfb) {
 						
 						setCursorPos(20, 0);
 						//sprintf(strBuffer, "%llu %2.2f %d %d\n", timeInAnalogRangeUs, analogRangeFrame, sampleDigitalBegin, data.endPoint);
-						//printStr(strBuffer, currXfb);
+						//printStr(strBuffer);
 						sprintf(strBuffer, "Digital PS: %3.1f%% | ADT PS: %3.1f%% | No PS: %3.1f%%", psDigital, psADT, psNone);
-						printStr(strBuffer, currXfb);
+						printStr(strBuffer);
 						
 						if (!buttonLock) {
 							if (*pressed & PAD_BUTTON_A) {
@@ -401,15 +401,15 @@ void menu_triggerOscilloscope(void *currXfb) {
 					}
 					break;
 				default:
-					printStr("trigState default case! how did we get here?", currXfb);
+					printStr("trigState default case! how did we get here?");
 					break;
 			}
 			break;
 		case TRIG_INSTRUCTIONS:
-			displayInstructions(currXfb);
+			displayInstructions();
 			break;
 		default:
-			printStr("menuState default case! how did we get here?", currXfb);
+			printStr("menuState default case! how did we get here?");
 			break;
 	}
 	

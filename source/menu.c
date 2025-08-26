@@ -103,7 +103,7 @@ static uint8_t thanksPageCounter = 0;
 // the "main" for the menus
 // other menu functions are called from here
 // this also handles moving between menus and exiting
-bool menu_runMenu(void *currXfb) {
+bool menu_runMenu() {
 	if (data == NULL) {
 		data = getRecordingData();
 	}
@@ -125,12 +125,12 @@ bool menu_runMenu(void *currXfb) {
 	// calls PAD_ScanPads() and PAD_GetOrigin()
 	attemptReadOrigin();
 	
-	printStr("GCC Test Suite", currXfb);
+	printStr("GCC Test Suite");
 	
 	// check if port 1 is disconnected
 	if (!isControllerConnected(CONT_PORT_1)) {
 		setCursorPos(0, 38);
-		printStr("Controller Disconnected!", currXfb);
+		printStr("Controller Disconnected!");
 		(*data)->isRecordingReady = false;
 	}
 	
@@ -138,27 +138,27 @@ bool menu_runMenu(void *currXfb) {
 		switch ((*data)->recordingType) {
 			case REC_OSCILLOSCOPE:
 				setCursorPos(0, 31);
-				printStr("Oscilloscope", currXfb);
+				printStr("Oscilloscope");
 				break;
 			case REC_2DPLOT:
 				setCursorPos(0, 36);
-				printStr("2D Plot", currXfb);
+				printStr("2D Plot");
 				break;
 			case REC_BUTTONTIME:
 				setCursorPos(0, 30);
-				printStr("Button Viewer", currXfb);
+				printStr("Button Viewer");
 				break;
 			case REC_TRIGGER_L:
 			case REC_TRIGGER_R:
 				setCursorPos(0, 36);
-				printStr("Trigger", currXfb);
+				printStr("Trigger");
 				break;
 			default:
 				setCursorPos(0, 36);
-				printStr("Unknown", currXfb);
+				printStr("Unknown");
 				break;
 		}
-		printStr(" Capture in memory!", currXfb);
+		printStr(" Capture in memory!");
 	} else {
 		exportReturnCode = -1;
 	}
@@ -178,19 +178,19 @@ bool menu_runMenu(void *currXfb) {
 	// determine what menu we are in
 	switch (currentMenu) {
 		case MAIN_MENU:
-			menu_mainMenu(currXfb);
+			menu_mainMenu();
 			break;
 		case CONTROLLER_TEST:
-			menu_controllerTest(currXfb);
+			menu_controllerTest();
 			break;
 		case WAVEFORM:
-			menu_oscilloscope(currXfb);
+			menu_oscilloscope();
 			break;
 		case PLOT_2D:
-			menu_plot2d(currXfb);
+			menu_plot2d();
 			break;
 		case FILE_EXPORT:
-			menu_fileExport(currXfb);
+			menu_fileExport();
 			break;
 		case COORD_MAP:
 			if (displayInstructions) {
@@ -198,47 +198,47 @@ bool menu_runMenu(void *currXfb) {
 					   "category of points.\nMelee Coordinates are shown in thetop-left.\n\n"
 					   "The white line represents the analog stick.\n"
 					   "The yellow line represents the c-stick.\n\n"
-					   "Current Stickmap: ", currXfb);
+					   "Current Stickmap: ");
 				switch (selectedStickmap) {
 					case FF_WD:
-						printStr("Firefox / Wavedash\n", currXfb);
-						printStr(STICKMAP_FF_WD_DESC, currXfb);
+						printStr("Firefox / Wavedash\n");
+						printStr(STICKMAP_FF_WD_DESC);
 						break;
 					case SHIELDDROP:
-						printStr("Shield Drop\n", currXfb);
-						printStr(STICKMAP_SHIELDDROP_DESC, currXfb);
+						printStr("Shield Drop\n");
+						printStr(STICKMAP_SHIELDDROP_DESC);
 						break;
 					case NONE:
 					default:
-						printStr("None\n", currXfb);
+						printStr("None\n");
 						break;
 				}
 			} else {
-				menu_coordinateViewer(currXfb);
+				menu_coordinateViewer();
 			}
 			break;
 		case CONTINUOUS_WAVEFORM:
-			menu_continuousWaveform(currXfb);
+			menu_continuousWaveform();
 			break;
 		case TRIGGER_WAVEFORM:
-			menu_triggerOscilloscope(currXfb);
+			menu_triggerOscilloscope();
 			break;
 		case THANKS_PAGE:
-			menu_thanksPage(currXfb);
+			menu_thanksPage();
 			break;
 		case GATE_MEASURE:
-			menu_gateMeasure(currXfb);
+			menu_gateMeasure();
 			break;
 		case PLOT_BUTTON:
-			menu_plotButton(currXfb);
+			menu_plotButton();
 			break;
 		default:
-			printStr("HOW DID WE END UP HERE?\n", currXfb);
+			printStr("HOW DID WE END UP HERE?\n");
 			break;
 	}
 	if (displayInstructions) {
 		setCursorPos(21, 0);
-		printStr("Press Z to close instructions.", currXfb);
+		printStr("Press Z to close instructions.");
 	}
 
 	// move cursor to bottom left
@@ -246,18 +246,18 @@ bool menu_runMenu(void *currXfb) {
 
 	// exit the program if start is pressed
 	if (*pressed & PAD_BUTTON_START && currentMenu == MAIN_MENU) {
-		printStr("Exiting...", currXfb);
+		printStr("Exiting...");
 		return true;
 	}
 	
 	// controller test lock stuff
 	else if (*held == PAD_BUTTON_START && currentMenu == CONTROLLER_TEST && !startHeldAfter) {
 		if (lockExitControllerTest) {
-			printStr("Enabling exit, hold for 2 seconds", currXfb);
+			printStr("Enabling exit, hold for 2 seconds");
 		} else {
-			printStr("Disabling exit, hold for 2 seconds", currXfb);
+			printStr("Disabling exit, hold for 2 seconds");
 		}
-		printEllipse(startHeldCounter, 40, currXfb);
+		printEllipse(startHeldCounter, 40);
 		
 		startHeldCounter++;
 		if (startHeldCounter > 121) {
@@ -274,8 +274,8 @@ bool menu_runMenu(void *currXfb) {
 			!menu_plotButtonHasCaptureStarted()) {
 
 		// give user feedback that they are holding the button
-		printStr("Moving back to main menu", currXfb);
-		printEllipse(bHeldCounter, 15, currXfb);
+		printStr("Moving back to main menu");
+		printEllipse(bHeldCounter, 15);
 		bHeldCounter++;
 		
 		// has the button been held long enough?
@@ -324,19 +324,19 @@ bool menu_runMenu(void *currXfb) {
 		// change bottom message depending on what menu we are in
 		switch (currentMenu) {
 			case MAIN_MENU:
-				printStr("Press Start to exit.", currXfb);
+				printStr("Press Start to exit.");
 				int col = 55 - (sizeof(VERSION_NUMBER));
 				if (col > 25) {
 					setCursorPos(22, col);
-					printStr("Ver: ", currXfb);
-					printStr(VERSION_NUMBER, currXfb);
+					printStr("Ver: ");
+					printStr(VERSION_NUMBER);
 				}
 				break;
 			case CONTROLLER_TEST:
 				if (lockExitControllerTest) {
-					printStr("Exiting disabled, hold Start to re-enable.", currXfb);
+					printStr("Exiting disabled, hold Start to re-enable.");
 				} else {
-					printStr("Hold B to return to main menu, hold start to disable.", currXfb);
+					printStr("Hold B to return to main menu, hold start to disable.");
 				}
 				startHeldCounter = 0;
 				
@@ -350,7 +350,7 @@ bool menu_runMenu(void *currXfb) {
 					break;
 				}
 			default:
-				printStr("Hold B to return to main menu.", currXfb);
+				printStr("Hold B to return to main menu.");
 				break;
 		}
 		bHeldCounter = 0;
@@ -360,7 +360,7 @@ bool menu_runMenu(void *currXfb) {
 	return false;
 }
 
-void menu_mainMenu(void *currXfb) {
+void menu_mainMenu() {
 	stickYPrevPos = stickYPos;
 	stickYPos = PAD_StickY(0);
 	int stickDiff = abs(stickYPos - stickYPrevPos);
@@ -390,7 +390,7 @@ void menu_mainMenu(void *currXfb) {
 		setCursorPos(2 + i, 0);
 		// is the item we're about to print the currently selected menu?
 		if (mainMenuCursorPos == i) {
-			printStr("> ", currXfb);
+			printStr("> ");
 		} else {
 			setCursorPos(2 + i, 2);
 		}
@@ -425,12 +425,12 @@ void menu_mainMenu(void *currXfb) {
 			}
 		}
 		if (valid) {
-			printStr("* ", currXfb);
+			printStr("* ");
 		} else {
 			setCursorPos(2 + i, 4);
 		}
 		
-		printStr(menuItems[i], currXfb);
+		printStr(menuItems[i]);
 		
 
 
@@ -505,48 +505,48 @@ void menu_mainMenu(void *currXfb) {
 	}
 }
 
-void menu_fileExport(void *currXfb) {
+void menu_fileExport() {
 	// make sure data is actually present
 	if ((*data)->isRecordingReady) {
 		if ((*data)->dataExported) {
 			// print status after print
 			switch (exportReturnCode) {
 				case 0:
-					printStr("File exported successfully.", currXfb);
+					printStr("File exported successfully.");
 					break;
 				case 1:
-					printStr("Data was marked as not ready, this shouldn't happen!", currXfb);
+					printStr("Data was marked as not ready, this shouldn't happen!");
 					break;
 				case 2:
-					printStr("Failed to init filesystem.", currXfb);
+					printStr("Failed to init filesystem.");
 					break;
 				case 3:
-					printStr("Failed to create parent directory.", currXfb);
+					printStr("Failed to create parent directory.");
 					break;
 				case 4:
-					printStr("Failed to create file, file already exists!", currXfb);
+					printStr("Failed to create file, file already exists!");
 					break;
 				default:
-					printStr("How did we get here?", currXfb);
+					printStr("How did we get here?");
 					break;
 			}
 		} else {
-			printStr("Attempting to export data...", currXfb);
+			printStr("Attempting to export data...");
 			exportReturnCode = exportData();
 		}
 	} else {
-		printStr("No data to export, record an input first.", currXfb);
+		printStr("No data to export, record an input first.");
 	}
 }
 
 // coordinate viewer submenu
 // draws melee coordinates for both sticks on a circle
 // "overlays" can be toggled to show specific coordinate groups (shield drop, for example)
-void menu_coordinateViewer(void *currXfb) {
+void menu_coordinateViewer() {
 	// melee stick coordinates stuff
 	// a lot of this comes from github.com/phobgcc/phobconfigtool
 	
-	printStr("Press Z for instructions", currXfb);
+	printStr("Press Z for instructions");
 	
 	static ControllerSample stickRaw;
 	static MeleeCoordinates stickMelee;
@@ -560,98 +560,98 @@ void menu_coordinateViewer(void *currXfb) {
 	
 	// print melee coordinates
 	setCursorPos(4, 0);
-	printStr("Stick X: ", currXfb);
+	printStr("Stick X: ");
 	// is the value negative?
 	if (stickRaw.stickX < 0) {
-		printStr("-", currXfb);
+		printStr("-");
 	}
 	// is this a 1.0 value?
 	if (stickMelee.stickXUnit == 10000) {
-		printStr("1.0\n", currXfb);
+		printStr("1.0\n");
 	} else {
 		sprintf(strBuffer, "0.%04d\n", stickMelee.stickXUnit);
-		printStr(strBuffer, currXfb);
+		printStr(strBuffer);
 	}
 	
 	// print melee coordinates
-	printStr("Stick Y: ", currXfb);
+	printStr("Stick Y: ");
 	// is the value negative?
 	if (stickRaw.stickY < 0) {
-		printStr("-", currXfb);
+		printStr("-");
 	}
 	// is this a 1.0 value?
 	if (stickMelee.stickYUnit == 10000) {
-		printStr("1.0\n", currXfb);
+		printStr("1.0\n");
 	} else {
 		sprintf(strBuffer, "0.%04d\n", stickMelee.stickYUnit);
-		printStr(strBuffer, currXfb);
+		printStr(strBuffer);
 	}
 	
 	// print melee coordinates
-	printStr("\nC-Stick X: ", currXfb);
+	printStr("\nC-Stick X: ");
 	// is the value negative?
 	if (stickRaw.cStickX < 0) {
-		printStr("-", currXfb);
+		printStr("-");
 	}
 	// is this a 1.0 value?
 	if (stickMelee.cStickXUnit == 10000) {
-		printStr("1.0\n", currXfb);
+		printStr("1.0\n");
 	} else {
 		sprintf(strBuffer, "0.%04d\n", stickMelee.cStickXUnit);
-		printStr(strBuffer, currXfb);
+		printStr(strBuffer);
 	}
 	
 	// print melee coordinates
-	printStr("C-Stick Y: ", currXfb);
+	printStr("C-Stick Y: ");
 	// is the value negative?
 	if (stickRaw.cStickY < 0) {
-		printStr("-", currXfb);
+		printStr("-");
 	}
 	// is this a 1.0 value?
 	if (stickMelee.cStickYUnit == 10000) {
-		printStr("1.0\n", currXfb);
+		printStr("1.0\n");
 	} else {
 		sprintf(strBuffer, "0.%04d\n", stickMelee.cStickYUnit);
-		printStr(strBuffer, currXfb);
+		printStr(strBuffer);
 	}
 	
 	setCursorPos(19, 0);
-	printStr("Stickmap: ", currXfb);
+	printStr("Stickmap: ");
 	int stickmapRetVal = isCoordValid(selectedStickmap, stickMelee);
 	switch (selectedStickmap) {
 		case FF_WD:
-			printStr("Firefox/Wavedash\n", currXfb);
-			printStr("Visible: ", currXfb);
+			printStr("Firefox/Wavedash\n");
+			printStr("Visible: ");
 			if (selectedStickmapSub == 0) {
-				printStr("ALL", currXfb);
+				printStr("ALL");
 			} else {
-				printStrColor(STICKMAP_FF_WD_RETVALS[selectedStickmapSub], currXfb,
+				printStrColor(STICKMAP_FF_WD_RETVALS[selectedStickmapSub],
 							  STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][0], STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][1]);
-				//sprintf(strBuffer, "%s\n", );
-				//printStr(strBuffer, currXfb);
+				//sprintf(strBuffer, "%s\n");
+				//printStr(strBuffer);
 			}
-			printStr("\nResult: ", currXfb);
-			printStrColor(STICKMAP_FF_WD_RETVALS[stickmapRetVal], currXfb,
+			printStr("\nResult: ");
+			printStrColor(STICKMAP_FF_WD_RETVALS[stickmapRetVal],
 						  STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][0], STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][1]);
 			break;
 		case SHIELDDROP:
-			printStr("Shield Drop\n", currXfb);
-			printStr("Visible: ", currXfb);
+			printStr("Shield Drop\n");
+			printStr("Visible: ");
 			if (selectedStickmapSub == 0) {
-				printStr("ALL", currXfb);
+				printStr("ALL");
 			} else {
 				//sprintf(strBuffer, "%s\n", STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub]);
-				//printStr(strBuffer, currXfb);
-				printStrColor(STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub], currXfb,
+				//printStr(strBuffer);
+				printStrColor(STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub],
 				              STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][0], STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][1]);
 			}
-			printStr("\nResult: ", currXfb);
-			printStrColor(STICKMAP_SHIELDDROP_RETVALS[stickmapRetVal], currXfb,
+			printStr("\nResult: ");
+			printStrColor(STICKMAP_SHIELDDROP_RETVALS[stickmapRetVal],
 						  STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][0], STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][1]);
 			break;
 		case NONE:
 		default:
-			printStr("NONE", currXfb);
+			printStr("NONE");
 			break;
 	}
 	
@@ -682,17 +682,17 @@ void menu_coordinateViewer(void *currXfb) {
 	xfbCoordCY += SCREEN_POS_CENTER_Y;
 	
 	// draw stickbox bounds
-	DrawCircle(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, 160, COLOR_MEDGRAY, currXfb);
+	DrawCircle(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, 160, COLOR_MEDGRAY);;
 	
-	DrawStickmapOverlay(selectedStickmap, selectedStickmapSub, currXfb);
+	DrawStickmapOverlay(selectedStickmap, selectedStickmapSub);;
 
 	// draw analog stick line
-	DrawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordX, xfbCoordY, COLOR_WHITE, currXfb);
-	DrawBox(xfbCoordX - 4, xfbCoordY - 4, xfbCoordX + 4, xfbCoordY + 4, COLOR_WHITE, currXfb);
+	DrawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordX, xfbCoordY, COLOR_WHITE);;
+	DrawBox(xfbCoordX - 4, xfbCoordY - 4, xfbCoordX + 4, xfbCoordY + 4, COLOR_WHITE);;
 	
 	// draw c-stick line
-	DrawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, COLOR_YELLOW, currXfb);
-	DrawFilledBox(xfbCoordCX - 2, xfbCoordCY - 2, xfbCoordCX + 2, xfbCoordCY + 2, COLOR_YELLOW, currXfb);
+	DrawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, COLOR_YELLOW);;
+	DrawFilledBox(xfbCoordCX - 2, xfbCoordCY - 2, xfbCoordCX + 2, xfbCoordCY + 2, COLOR_YELLOW);;
 	
 	if (*pressed & PAD_BUTTON_X) {
 		selectedStickmap++;
@@ -723,20 +723,20 @@ void menu_coordinateViewer(void *currXfb) {
 }
 
 // self-explanatory
-void menu_thanksPage(void *currXfb) {
+void menu_thanksPage() {
 	printStr("Thanks to:\n"
 			 "PhobGCC team and Discord\n"
 			 "DevkitPro team\n"
 			 "Extrems\n"
 			 "SmashScope\n"
-			 "Z. B. Wells", currXfb);
+			 "Z. B. Wells");
 	
 	setCursorPos(18,0);
-	printStr("Compiled with: ", currXfb);
-	printStr(_V_STRING, currXfb);
-	printStr("\nBuild Date: ", currXfb);
-	printStr(BUILD_DATE, currXfb);
-	printStr("\nGTS Commit ID: ", currXfb);
-	printStr(COMMIT_ID, currXfb);
+	printStr("Compiled with: ");
+	printStr(_V_STRING);
+	printStr("\nBuild Date: ");
+	printStr(BUILD_DATE);
+	printStr("\nGTS Commit ID: ");
+	printStr(COMMIT_ID);
 
 }

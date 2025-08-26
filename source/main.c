@@ -5,6 +5,7 @@
 #include "menu.h"
 #include "polling.h"
 #include "print.h"
+#include "draw.h"
 #include "waveform.h"
 
 #ifdef DEBUGLOG
@@ -89,7 +90,7 @@ int main(int argc, char **argv) {
 	#ifdef DEBUGGDB
 	_break();
 	#endif
-
+	
 	void *currXfb = NULL;
 	
 	// there is a makefile target that will enable this
@@ -99,12 +100,13 @@ int main(int argc, char **argv) {
 	setupLogging(USBGECKO_B);
 	
 	if (getLoggingType() == NETWORKSOCK) {
-		printStr("Setting up network...\n", xfb1);
+		setFramebuffer(xfb1);
+		printStr("Setting up network...\n");
 		while (!isNetworkConfigured()) {
 			VIDEO_WaitVSync();
 		}
 		
-		printStr("Waiting for connection...\n", xfb1);
+		printStr("Waiting for connection...\n");
 		char *ip = getConfiguredIP();
 		// TODO: this definitely isn't safe...
 		printStr(ip, xfb1);
@@ -208,8 +210,9 @@ int main(int argc, char **argv) {
 			#endif
 		default:
 			resetCursor();
+			setFramebuffer(xfb1);
 			printStr("\n\nUnsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n"
-					 "Program will exit in 5 seconds...", xfb1);
+					 "Program will exit in 5 seconds...");
 			for (int i = 0; i < 300; i++) {
 				VIDEO_WaitVSync();
 			}
@@ -220,8 +223,9 @@ int main(int argc, char **argv) {
 	setSamplingRateNormal();
 	if (isUnsupportedMode()) { // unsupported mode is probably 240p? no idea
 		resetCursor();
+		setFramebuffer(xfb1);
 		printStr("\n\nUnsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n"
-				 "Program will exit in 5 seconds...", xfb1);
+				 "Program will exit in 5 seconds...");
 		for (int i = 0; i < 300; i++) {
 			VIDEO_WaitVSync();
 		}
@@ -259,9 +263,11 @@ int main(int argc, char **argv) {
 			//CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 			currXfb = xfb2;
 		}
-
+		
+		setFramebuffer(currXfb);
+		
 		// run menu
-		shouldExit = menu_runMenu(currXfb);
+		shouldExit = menu_runMenu();
 
 		// change framebuffer for next frame
 		if (xfbSwitch) {
@@ -277,14 +283,14 @@ int main(int argc, char **argv) {
 		char msg[100];
 		sprintf(msg, "%d", us);
 		setCursorPos(22, 62 - strlen(msg));
-		printStrColor(msg, currXfb, COLOR_WHITE, COLOR_BLACK);
+		printStrColor(msg, COLOR_WHITE, COLOR_BLACK);
 		#endif
 		
 		//#ifndef DEBUGGDB
 		if (SYS_ResetButtonDown()) {
 			VIDEO_ClearFrameBuffer(rmode, currXfb, COLOR_BLACK);
 			setCursorPos(10, 15);
-			printStr("Reset button pressed, exiting...", currXfb);
+			printStr("Reset button pressed, exiting...");
 			VIDEO_Flush();
 			VIDEO_WaitVSync();
 			break;
