@@ -6,21 +6,29 @@ Currently not feature-complete, but in a workable state.
 
 (This project was originally developed under the name FossScope)
 ## Current features:
-- Polls at ~1400 hz in the oscilloscope menus, ~120 hz otherwise
-- Two oscilloscope menus, one for testing specific inputs, and one for continuously measuring
-- Input viewer and button tester
-- Melee coordinate viewer with coordinate overlays
-- 2D stick plot with stickplot maps
-- Works on GameCube/Wii, and with 480p
+- Polls at ~1400 hz in the oscilloscope menus, ~120 hz otherwise.
+- Current menu options:
+  - Controller Test - Shows the overall state of a controller visually. Also shows origin information.
+  - Stick Oscilloscope - Shows short recordings of a stick over time. Includes Melee-specific tests.
+  - Continuous Stick Oscilloscope - Continuously records stick inputs over time. Can be "Frozen", and zoomed.
+  - Trigger Oscilloscope - Shows analog and digital state of either trigger over time.
+  - Coordinate Viewer - Shows stick coordinates on a circle, with Melee-specific coordinate overlays. 
+  - 2D Plot - Shows a recording of a stick on a 2d plot of its axis. Shows buttons pressed and frame intervals.
+  Includes Melee-specific stickmaps. 
+  - Button Timing Viewer - View state of sticks and buttons over time. Analog values have adjustable thresholds.
+  Shows timing information in frames.
+  - Gate Visualizer - Shows the rough state of a given stick gate. Measured by moving the stick slowly around the gate.
+  - Export Data - Exports a recording from certain above menus to csv format. 
+- Recordings from some menus can be viewed in other menus. An asterisk will appear next to a menu entry to indicate
+this. 
+- Works on GameCube and Wii, at 480i and 480p.
 
 ## Current issues:
-- Polling rate is not perfectly uniform. The min time for polls at ~1400hz is around 600 microseconds,
-where as the normal and max are around 700 microseconds
-- No way to scale the waveform (yet)
-- Tests in the oscilloscope menu are not confirmed to be correct
-- Everything on screen is drawn directly on the framebuffer with the CPU, need to move to using GX_ 
-functions at some point
-- A lot of logic that shouldn't be in menu.c is, needs to be moved to other files (mostly drawing functions)
+- Polling rate is not perfectly uniform, and can be pushed higher.
+- Specific tests need confirmation for correctness.
+- Everything is drawn directly on the framebuffer with the CPU, need to move to using GX_ 
+functions at some point.
+- A lot of logic that shouldn't be in menu.c is, needs to be moved to other files.
 - Other things I can't think of right now...
 
 ## Building:
@@ -41,7 +49,7 @@ Originally, I wanted a test program that worked on Gamecube, since SmashScope wa
 pick up the project again after the website for SmashScope went down, and made significant progress since then. 
 
 ## Thanks to:
-- The PhobGCC team (especially for phobconfigtool and PhobVision, this wouldn't have been done without referencing
+- The PhobGCC team (especially for PhobVision, this wouldn't have been done without referencing
 it repeatedly). Also thanks for putting up with me in the Discord :)
 - SmashScope and its creators for giving me a baseline to strive for
 - The DevkitPro team and Extrems for making stuff like this a lot more accessible
