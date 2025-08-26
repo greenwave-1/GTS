@@ -5,7 +5,6 @@
 #include "submenu/continuous.h"
 #include "print.h"
 
-#include <stdio.h>
 #include <stdint.h>
 #include <malloc.h>
 

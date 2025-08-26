@@ -11,7 +11,6 @@
 
 #include "submenu/trigger.h"
 
-#include <stdio.h>
 #include <stdint.h>
 
 #include <ogc/pad.h>

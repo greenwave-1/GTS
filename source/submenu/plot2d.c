@@ -4,7 +4,6 @@
 
 #include "submenu/plot2d.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 

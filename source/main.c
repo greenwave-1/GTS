@@ -282,7 +282,6 @@ int main(int argc, char **argv) {
 		printStrColor(COLOR_WHITE, COLOR_BLACK, "%d", us);
 		#endif
 		
-		//#ifndef DEBUGGDB
 		if (SYS_ResetButtonDown()) {
 			VIDEO_ClearFrameBuffer(rmode, currXfb, COLOR_BLACK);
 			setCursorPos(10, 15);
@@ -291,7 +290,6 @@ int main(int argc, char **argv) {
 			VIDEO_WaitVSync();
 			break;
 		}
-		//#endif
 
 		// Wait for the next frame
 		VIDEO_Flush();
