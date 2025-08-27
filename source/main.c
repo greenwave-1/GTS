@@ -306,6 +306,13 @@ int main(int argc, char **argv) {
 	stopLogging();
 	#endif
 	
+	// avoid distorted graphics on GC (I have no idea if this actually does what I think it does...)
+	// https://github.com/emukidid/swiss-gc: cube/swiss/source/video.c -> unsetVideo()
+	VIDEO_SetPostRetraceCallback(NULL);
+	VIDEO_SetBlack(true);
+	VIDEO_Flush();
+	VIDEO_WaitVSync();
+	
 	// issue poweroff if the power button was pressed
 	// done here so that any logging stuff can finish cleanly
 	#if defined(HW_RVL)
@@ -313,13 +320,6 @@ int main(int argc, char **argv) {
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
 	}
 	#endif
-	
-	// avoid distorted graphics on GC (I have no idea if this actually does what I think it does...)
-	// https://github.com/emukidid/swiss-gc: cube/swiss/source/video.c -> unsetVideo()
-	VIDEO_SetPostRetraceCallback(NULL);
-	VIDEO_SetBlack(true);
-	VIDEO_Flush();
-	VIDEO_WaitVSync();
 
 	return 0;
 }
