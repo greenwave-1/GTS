@@ -287,7 +287,10 @@ int main(int argc, char **argv) {
 			setCursorPos(10, 15);
 			printStr("Reset button pressed, exiting...");
 			VIDEO_Flush();
-			VIDEO_WaitVSync();
+			// show message for at least one second
+			for (int i = 0; i < 60; i++) {
+				VIDEO_WaitVSync();
+			}
 			break;
 		}
 
@@ -310,6 +313,13 @@ int main(int argc, char **argv) {
 		SYS_ResetSystem(SYS_POWEROFF, 0, 0);
 	}
 	#endif
+	
+	// avoid distorted graphics on GC (I have no idea if this actually does what I think it does...)
+	// https://github.com/emukidid/swiss-gc: cube/swiss/source/video.c -> unsetVideo()
+	VIDEO_SetPostRetraceCallback(NULL);
+	VIDEO_SetBlack(true);
+	VIDEO_Flush();
+	VIDEO_WaitVSync();
 
 	return 0;
 }
