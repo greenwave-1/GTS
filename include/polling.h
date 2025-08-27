@@ -11,7 +11,7 @@
 
 #include <ogc/pad.h>
 
-enum CONT_PORTS_BITFLAGS { CONT_PORT_1 = 1, CONT_PORT_2 = 2, CONT_PORT_3 = 4, CONT_PORT_4 = 8};
+enum CONT_PORTS_BITFLAGS { CONT_PORT_1, CONT_PORT_2, CONT_PORT_3, CONT_PORT_4 };
 
 void setSamplingRateHigh();
 void setSamplingRateNormal();

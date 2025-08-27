@@ -93,20 +93,8 @@ static PADStatus origin[PAD_CHANMAX];
 
 PADStatus getOriginStatus(enum CONT_PORTS_BITFLAGS port) {
 	PADStatus ret;
-	
-	switch (port) {
-		case CONT_PORT_1:
-			ret = origin[0];
-			break;
-		case CONT_PORT_2:
-			ret = origin[1];
-			break;
-		case CONT_PORT_3:
-			ret = origin[2];
-			break;
-		case CONT_PORT_4:
-			ret = origin[3];
-			break;
+	if (port >= CONT_PORT_1 && port <= CONT_PORT_4) {
+		ret = origin[port];
 	}
 	
 	return ret;
@@ -120,5 +108,5 @@ void attemptReadOrigin() {
 }
 
 bool isControllerConnected(enum CONT_PORTS_BITFLAGS port) {
-	return ((padsConnected & port) == 1);
+	return ( padsConnected & (1 << port) );
 }
