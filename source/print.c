@@ -99,7 +99,7 @@ void drawString(const uint32_t bg_color,
 void printStr(const char* str, ...) {
 	va_list list;
 	va_start(list, str);
-	vsnprintf(strBuffer, 1000, str, list);
+	vsnprintf(strBuffer, 999, str, list);
 	drawString(COLOR_BLACK, COLOR_WHITE, strBuffer);
 	va_end(list);
 }
@@ -107,7 +107,7 @@ void printStr(const char* str, ...) {
 void printStrColor(const uint32_t bg_color, const uint32_t fg_color, const char* str, ...) {
 	va_list list;
 	va_start(list, str);
-	vsnprintf(strBuffer, 1000, str, list);
+	vsnprintf(strBuffer, 999, str, list);
 	drawString(bg_color, fg_color, strBuffer);
 	va_end(list);
 }
