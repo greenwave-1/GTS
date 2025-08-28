@@ -29,6 +29,8 @@ static GXRModeObj *rmode = NULL;
 
 static VIRetraceCallback cb;
 
+static char* resetMessage = "Reset button pressed, exiting...";
+
 void retraceCallback(uint32_t retraceCnt) {
 	setSamplingRate();
 	//#ifdef DEBUGGDB
@@ -39,6 +41,9 @@ void retraceCallback(uint32_t retraceCnt) {
 }
 
 #if defined(HW_RVL)
+// this is stupid, but makes the #ifdef in logic look a bit nicer
+static char* powerButtonMessage = "Power button pressed, shutting down...";
+
 static bool powerButtonPressed = false;
 void powerButtonCallback() {
 	powerButtonPressed = true;
@@ -85,7 +90,7 @@ int main(int argc, char **argv) {
 	cb = VIDEO_SetPostRetraceCallback(retraceCallback);
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
 
-	bool shouldExit = false;
+	bool normalExit = false;
 	
 	#ifdef DEBUGGDB
 	_break();
@@ -247,7 +252,7 @@ int main(int argc, char **argv) {
 		#endif
 		
 		
-		if (shouldExit) {
+		if (normalExit) {
 			break;
 		}
 
@@ -265,7 +270,7 @@ int main(int argc, char **argv) {
 		setFramebuffer(currXfb);
 		
 		// run menu
-		shouldExit = menu_runMenu();
+		normalExit = menu_runMenu();
 
 		// change framebuffer for next frame
 		if (xfbSwitch) {
@@ -283,19 +288,37 @@ int main(int argc, char **argv) {
 		#endif
 		
 		if (SYS_ResetButtonDown()) {
-			VIDEO_ClearFrameBuffer(rmode, currXfb, COLOR_BLACK);
-			setCursorPos(10, 15);
-			printStr("Reset button pressed, exiting...");
-			VIDEO_Flush();
-			// show message for at least one second
-			for (int i = 0; i < 60; i++) {
-				VIDEO_WaitVSync();
-			}
 			break;
 		}
 
 		// Wait for the next frame
 		VIDEO_Flush();
+		VIDEO_WaitVSync();
+	}
+	
+	// clear screen and show message if not exiting "normally" (pressing start on main menu)
+	if (!normalExit) {
+		VIDEO_ClearFrameBuffer(rmode, currXfb, COLOR_BLACK);
+		setCursorPos(10, 15);
+		
+		// dumb way to have a different message show, while also avoiding two #if defined().
+		// if using hard-coded strings, then either there would be repeat code, or you'd need two #if defined()
+		// to create a wii-only if-else
+		char* strPointer = resetMessage;
+		
+		#if defined(HW_RVL)
+		if (powerButtonPressed) {
+			setCursorPos(10, 12);
+			strPointer = powerButtonMessage;
+		}
+		#endif
+		
+		printStr(strPointer);
+	}
+	
+	VIDEO_Flush();
+	// show final frame for at least one second
+	for (int i = 0; i < 60; i++) {
 		VIDEO_WaitVSync();
 	}
 	
