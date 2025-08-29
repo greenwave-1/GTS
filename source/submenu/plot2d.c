@@ -16,9 +16,6 @@
 #include "draw.h"
 #include "images/stickmaps.h"
 
-// close enough...
-static const float FRAME_TIME = (1000.0 / 60.0);
-
 // orange for button press samples
 #define COLOR_ORANGE 0xAD1EADBA
 
@@ -407,7 +404,7 @@ void menu_plot2d() {
 							}
 
 							// is this a frame interval?
-							if ((timeFromFirstSampleDraw / 16666) > frameCounter) {
+							if ((timeFromFirstSampleDraw / FRAME_TIME_US) > frameCounter) {
 								if (dispData->samples[i].buttons != 0) {
 									DrawFilledCircle(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
 									                 SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, 2, COLOR_ORANGE);
@@ -438,7 +435,7 @@ void menu_plot2d() {
 						float timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
 						setCursorPos(8, 0);
 						printStr("Total MS: %6.2f\n", timeFromStartMs);
-						printStr("Total frames: %2.2f", timeFromStartMs / FRAME_TIME);
+						printStr("Total frames: %2.2f", timeFromStartMs / FRAME_TIME_MS_F);
 						
 						// cycle the stickmap shown
 						if (*pressed & PAD_BUTTON_X && !buttonLock) {

@@ -21,8 +21,6 @@ const static uint8_t STICK_ORIGIN_TIME_THRESHOLD_MS = 50;
 const static uint8_t STICK_MOVEMENT_TIME_THRESHOLD_MS = 100;
 const static uint8_t MEASURE_COOLDOWN_FRAMES = 5;
 
-static const float FRAME_TIME_MS = (1000/60.0);
-
 const static uint8_t SCREEN_TIMEPLOT_START = 70;
 
 static enum OSC_MENU_STATE state = OSC_SETUP;
@@ -604,18 +602,18 @@ void menu_oscilloscope() {
 
 									// TODO: i think the calculation can be simplified here...
 									// how many milliseconds could a poll occur that would cause a miss
-									float diffFrameTimePoll = FRAME_TIME_MS - timeInPivotRangeMs;
+									float diffFrameTimePoll = FRAME_TIME_MS_F - timeInPivotRangeMs;
 
 									// negative time difference, dashback
 									if (diffFrameTimePoll < 0) {
-										dashbackPercent = ((diffFrameTimePoll * -1) / FRAME_TIME_MS) * 100;
+										dashbackPercent = ((diffFrameTimePoll * -1) / FRAME_TIME_MS_F) * 100;
 										if (dashbackPercent > 100) {
 											dashbackPercent = 100;
 										}
 										pivotPercent = 100 - dashbackPercent;
 										// positive or 0 time diff, no turn
 									} else {
-										noTurnPercent = (diffFrameTimePoll / FRAME_TIME_MS) * 100;
+										noTurnPercent = (diffFrameTimePoll / FRAME_TIME_MS_F) * 100;
 										if (noTurnPercent > 100) {
 											noTurnPercent = 100;
 										}
@@ -654,7 +652,7 @@ void menu_oscilloscope() {
 									// convert time in microseconds to float time in milliseconds
 									float timeInRangeMs = (timeInRange / 1000.0);
 
-									dashbackPercent = (1.0 - (timeInRangeMs / FRAME_TIME_MS)) * 100;
+									dashbackPercent = (1.0 - (timeInRangeMs / FRAME_TIME_MS_F)) * 100;
 
 									// ucf dashback is a little more involved
 									uint64_t ucfTimeInRange = timeInRange;
@@ -664,7 +662,7 @@ void menu_oscilloscope() {
 										uint64_t usFromPoll = 0;
 										int nextPollIndex = i;
 										// we need the sample that would occur around 1f after
-										while (usFromPoll < 16666) {
+										while (usFromPoll < FRAME_TIME_US) {
 											nextPollIndex++;
 											usFromPoll += dispData->samples[nextPollIndex].timeDiffUs;
 										}
@@ -678,7 +676,7 @@ void menu_oscilloscope() {
 									if (ucfTimeInRangeMs <= 0) {
 										ucfPercent = 100;
 									} else {
-										ucfPercent = (1.0 - (ucfTimeInRangeMs / FRAME_TIME_MS)) * 100;
+										ucfPercent = (1.0 - (ucfTimeInRangeMs / FRAME_TIME_MS_F)) * 100;
 									}
 
 									// this shouldn't happen in theory, maybe on box?

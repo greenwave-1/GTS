@@ -47,8 +47,6 @@
 // macro for how far the stick has to go before it counts as a movement
 #define MENU_STICK_THRESHOLD 10
 
-const float frameTime = (1000.0 / 60.0);
-
 // enum to keep track of what menu to display, and what logic to run
 static enum CURRENT_MENU currentMenu = MAIN_MENU;
 

@@ -21,7 +21,6 @@
 #include "polling.h"
 #include "print.h"
 
-static const float FRAME_TIME_MS = (1000/60.0);
 const static uint8_t SCREEN_TIMEPLOT_START = 70;
 const static int TRIGGER_SAMPLES = 500;
 
@@ -278,7 +277,7 @@ void menu_triggerOscilloscope() {
 							
 							// frame intervals
 							totalTime += dispData->samples[i].timeDiffUs;
-							if (totalTime >= 16666) {
+							if (totalTime >= FRAME_TIME_US) {
 								DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
 								         SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
 								         COLOR_GRAY);
@@ -350,7 +349,7 @@ void menu_triggerOscilloscope() {
 						}
 						
 						// float representing percent of a frame
-						float analogRangeFrame = (timeInAnalogRangeUs / 1000.0) / FRAME_TIME_MS;
+						float analogRangeFrame = (timeInAnalogRangeUs / 1000.0) / FRAME_TIME_MS_F;
 						
 						// digital press never occurred
 						if (sampleDigitalBegin == -1) {

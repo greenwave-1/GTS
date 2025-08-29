@@ -74,7 +74,7 @@ static void contSamplingCallback() {
 		data->samples[dataIndex].cStickY = PAD_SubStickY(0);
 		frameCounter += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 		// abusing timeDiffUs here, 1 means this poll is considered a frame interval, 0 otherwise
-		if (frameCounter >= 16666) {
+		if (frameCounter >= FRAME_TIME_US) {
 			data->samples[dataIndex].timeDiffUs = 1;
 			frameCounter = 0;
 		} else {

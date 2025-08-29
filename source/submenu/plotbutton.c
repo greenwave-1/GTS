@@ -15,9 +15,7 @@
 #include "print.h"
 #include "draw.h"
 
-static const float FRAME_TIME_MS = (1000/60.0);
-
-const static int SCREEN_TIMEPLOT_START = 80;
+const static int SCREEN_TIMEPLOT_START = 95;
 const static int SCREEN_TIMEPLOT_Y_TOP = 150;
 const static int SCREEN_TIMEPLOT_Y_BOTTOM = 380;
 const static int SCREEN_TIMEPLOT_CHAR_TOP = 159;
@@ -119,8 +117,8 @@ static void plotButtonSamplingCallback() {
 			
 			(*temp)->totalTimeUs += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 			
-			// not moving for 300 ms
-			if ((*temp)->totalTimeUs >= 300000 || (*temp)->sampleEnd == 500) {
+			// capture ~400 ms of data
+			if ((*temp)->totalTimeUs >= 400000 || (*temp)->sampleEnd == REC_SAMPLE_MAX) {
 				(*temp)->totalTimeUs = 0;
 				(*temp)->isRecordingReady = true;
 				(*temp)->recordingType = REC_BUTTONTIME;
@@ -231,7 +229,7 @@ static void setup() {
 
 static void displayInstructions() {
 	setCursorPos(2, 0);
-	printStr("Press A to prepare a 300ms recording.\n"
+	printStr("Press A to prepare a ~400ms recording.\n"
 			 "Recording will start when a digital button is pressed,\n"
 			 "or when an analog value moves beyond its threshold.\n\n"
 			 "Vertical gray lines show ~1 frame (~16.6ms) boundaries.\n"
@@ -287,6 +285,7 @@ void menu_plotButton() {
 					if (ellipseCounter == 60) {
 						ellipseCounter = 0;
 					}
+					
 				case BUTTON_DISPLAY:
 					if (!autoCapture && state != BUTTON_INPUT) {
 						printStr("Press A to start read, press Z for instructions");
@@ -306,7 +305,7 @@ void menu_plotButton() {
 					}
 					
 					if (dispData->isRecordingReady) {
-						DrawBox(SCREEN_TIMEPLOT_START - 40, SCREEN_TIMEPLOT_Y_TOP - 1, 600, SCREEN_TIMEPLOT_Y_BOTTOM + 1, COLOR_WHITE);;
+						DrawBox(SCREEN_TIMEPLOT_START - 55, SCREEN_TIMEPLOT_Y_TOP - 1, 600, SCREEN_TIMEPLOT_Y_BOTTOM + 1, COLOR_WHITE);;
 						
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
 							setCursorPos(7 + button, 4);
@@ -317,18 +316,33 @@ void menu_plotButton() {
 							}
 						}
 						
-						uint64_t frameIntervalTime = 16666;
 						uint64_t totalTimeUs = 0;
-						ButtonPressedTime buttons[13] = {{ 0, false }};
+						ButtonPressedTime buttons[13] = { {0, false} };
+						
+						// initial "frame" line
+						DrawVLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_Y_TOP,
+						          SCREEN_TIMEPLOT_Y_BOTTOM,
+						          COLOR_SILVER);
+						
+						int currMs = 0;
+						int frameIntervalIndex = 0;
+						
 						// draw data
 						for (int i = 0; i < dispData->sampleEnd; i++) {
 							// frame intervals first
-							frameIntervalTime += dispData->samples[i].timeDiffUs;
 							totalTimeUs += dispData->samples[i].timeDiffUs;
-							if (frameIntervalTime >= 16666) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_Y_TOP, SCREEN_TIMEPLOT_Y_BOTTOM,
-										  COLOR_GRAY);
-								frameIntervalTime = 0;
+							
+							if (totalTimeUs >= (1000 * currMs)) {
+								currMs++;
+								if (totalTimeUs / 1000 >= FRAME_INTERVAL_MS[frameIntervalIndex]) {
+									DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_Y_TOP,
+									          SCREEN_TIMEPLOT_Y_BOTTOM,
+									          COLOR_GRAY);
+									frameIntervalIndex++;
+									if (FRAME_INTERVAL_MS[frameIntervalIndex - 1] >= 399) {
+										break;
+									}
+								}
 							}
 							
 							// button press lines
@@ -363,7 +377,7 @@ void menu_plotButton() {
 								
 								// draw bar if button state was triggered
 								if (result) {
-									DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
+									DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
 									          SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
 									          COLOR_WHITE);
 								}
@@ -392,15 +406,24 @@ void menu_plotButton() {
 							}
 						}
 						
+						// draw end line
+						DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_Y_TOP,
+						          SCREEN_TIMEPLOT_Y_BOTTOM,
+						          COLOR_SILVER);
+						
 						// draw frame durations
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
 							if (buttons[button].timeHeld != 0) {
 								setCursorPos(7 + button, 52);
+								float frames = buttons[button].timeHeld / FRAME_TIME_US_F;
+								if (frames >= 10) {
+									setCursorPos(7 + button, 51);
+								}
 								// indicate the initial input with black on white text
 								if (button == triggeringInputDisplay) {
-									printStrColor(COLOR_WHITE, COLOR_BLACK, "%2.2ff", buttons[button].timeHeld / (FRAME_TIME_MS * 1000));
+									printStrColor(COLOR_WHITE, COLOR_BLACK, "%2.2ff", frames);
 								} else {
-									printStr("%2.2ff", buttons[button].timeHeld / (FRAME_TIME_MS * 1000));
+									printStr("%2.2ff", frames);
 								}
 							}
 						}
