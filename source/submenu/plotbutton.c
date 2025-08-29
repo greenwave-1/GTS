@@ -259,10 +259,6 @@ static void displayInstructions() {
 }
 
 void menu_plotButton() {
-	// we're getting the address of the object itself here, not the address of the pointer,
-	// which means we will always point to the same object, regardless of a flip
-	ControllerRec *dispData = *data;
-	
 	switch (menuState) {
 		case BUTTON_SETUP:
 			setup();
@@ -271,6 +267,10 @@ void menu_plotButton() {
 			displayInstructions();
 			break;
 		case BUTTON_POST_SETUP:
+			// we're getting the address of the object itself here, not the address of the pointer,
+			// which means we will always point to the same object, regardless of a flip
+			ControllerRec *dispData = *data;
+			
 			switch (state) {
 				case BUTTON_INPUT:
 					// nothing happens here other than showing the message about waiting for an input

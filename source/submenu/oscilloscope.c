@@ -341,15 +341,15 @@ static void setup() {
 
 // function called from outside
 void menu_oscilloscope() {
-	// we're getting the address of the object itself here, not the address of the pointer,
-	// which means we will always point to the same object, regardless of a flip
-	ControllerRec *dispData = *data;
-	
 	switch (state) {
 		case OSC_SETUP:
 			setup();
 			break;
 		case OSC_POST_SETUP:
+			// we're getting the address of the object itself here, not the address of the pointer,
+			// which means we will always point to the same object, regardless of a flip
+			ControllerRec *dispData = *data;
+			
 			switch (oState) {
 				case PRE_INPUT:
 					printStr("Waiting for input.");

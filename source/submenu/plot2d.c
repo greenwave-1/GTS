@@ -248,10 +248,6 @@ static void displayInstructions() {
 }
 
 void menu_plot2d() {
-	// we're getting the address of the object itself here, not the address of the pointer,
-	// which means we will always point to the same object, regardless of a flip
-	ControllerRec *dispData = *data;
-	
 	switch (menuState) {
 		case PLOT_SETUP:
 			setup();
@@ -260,6 +256,10 @@ void menu_plot2d() {
 			displayInstructions();
 			break;
 		case PLOT_POST_SETUP:
+			// we're getting the address of the object itself here, not the address of the pointer,
+			// which means we will always point to the same object, regardless of a flip
+			ControllerRec *dispData = *data;
+			
 			switch(plotState) {
 				case PLOT_INPUT:
 				case PLOT_DISPLAY:

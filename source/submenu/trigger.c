@@ -215,15 +215,15 @@ static void displayInstructions() {
 }
 
 void menu_triggerOscilloscope() {
-	// we're getting the address of the object itself here, not the address of the pointer,
-	// which means we will always point to the same object, regardless of a flip
-	ControllerRec *dispData = *data;
-	
 	switch (menuState) {
 		case TRIG_SETUP:
 			setup();
 			break;
 		case TRIG_POST_SETUP:
+			// we're getting the address of the object itself here, not the address of the pointer,
+			// which means we will always point to the same object, regardless of a flip
+			ControllerRec *dispData = *data;
+			
 			switch (trigState) {
 				case TRIG_INPUT:
 					// nothing happens here other than showing the message about waiting for an input
