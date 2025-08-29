@@ -551,7 +551,7 @@ void menu_oscilloscope() {
 								// start from the back of the list
 								for (int i = dispData->sampleEnd - 1; i >= 0; i--) {
 									// check x coordinate for +-64 (dash threshold)
-									if (abs((dispData->samples[i].stickX) >= 64) && !leftPivotRange) {
+									if ((abs(dispData->samples[i].stickX) >= 64) && !leftPivotRange) {
 										if (pivotEndIndex == -1) {
 											pivotEndIndex = i;
 										}
@@ -586,7 +586,7 @@ void menu_oscilloscope() {
 										}
 									}
 								}
-
+								
 								// phobvision doc says both sides need to hit 80 to succeed
 								// multiplication is to ensure signs are correct
 								if (prevPivotHit80 && pivotHit80 && (dispData->samples[pivotEndIndex].stickX * pivotStartSign < 0)) {
