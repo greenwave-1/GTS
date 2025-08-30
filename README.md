@@ -6,7 +6,7 @@ Currently not feature-complete, but in a workable state.
 
 (This project was originally developed under the name FossScope)
 ## Current features:
-- Polls at ~1400 hz in the oscilloscope menus, ~120 hz otherwise.
+- Polls at ~2000 hz in the oscilloscope menus, ~120 hz otherwise.
 - Current menu options:
   - Controller Test - Shows the overall state of a controller visually. Also shows origin information.
   - Stick Oscilloscope - Shows short recordings of a stick over time. Includes Melee-specific tests.
@@ -24,7 +24,8 @@ this.
 - Works on GameCube and Wii, at 480i and 480p.
 
 ## Current issues:
-- Polling rate is not perfectly uniform, and can be pushed higher.
+- Polling rate is not perfectly uniform. This is something that can't be dealt with easily while also reading
+at a high rate. Polling in progressive scan seems to be much better, however.
 - Specific tests need confirmation for correctness.
 - Everything is drawn directly on the framebuffer with the CPU, need to move to using GX_ 
 functions at some point.
