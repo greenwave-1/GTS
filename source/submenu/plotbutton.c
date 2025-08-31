@@ -41,9 +41,9 @@ static uint8_t triggerThreshold = 255;
 // since there are two options, this can be a bool. false = trigger selected
 static bool stickThresholdSelected = true;
 static uint8_t thresholdFrameCounter = 0;
-static bool capture400Toggle = false;
-static bool callbackCapture400 = false;
-static bool displayCapture400 = false;
+//static bool capture400Toggle = false;
+//static bool callbackCapture400 = false;
+//static bool displayCapture400 = false;
 
 static enum PLOT_BUTTON_MENU_STATE menuState = BUTTON_SETUP;
 static enum PLOT_BUTTON_STATE state = BUTTON_INPUT;
@@ -122,6 +122,7 @@ static void plotButtonSamplingCallback() {
 			(*temp)->totalTimeUs += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 			
 			// capture either ~200 or ~400 ms of data, depending on what the capture400Toggle was set to when recording started
+			// TODO: toggling record time is disabled for now...
 			if ((*temp)->totalTimeUs >= totalCaptureTime || (*temp)->sampleEnd == REC_SAMPLE_MAX) {
 				(*temp)->totalTimeUs = 0;
 				(*temp)->isRecordingReady = true;
@@ -133,11 +134,12 @@ static void plotButtonSamplingCallback() {
 					state = BUTTON_DISPLAY;
 				}
 				triggeringInputDisplay = triggeringInput;
+				/*
 				if (callbackCapture400) {
 					displayCapture400 = true;
 				} else {
 					displayCapture400 = false;
-				}
+				}*/
 			}
 
 		// we haven't started recording yet, wait for stick/trigger to move outside user-defined range, or a button press
@@ -208,12 +210,13 @@ static void plotButtonSamplingCallback() {
 				(*temp)->isRecordingReady = false;
 				(*temp)->dataExported = false;
 				
+				/*
 				callbackCapture400 = capture400Toggle;
 				if (capture400Toggle) {
 					totalCaptureTime = 400000;
 				} else {
 					totalCaptureTime = 200000;
-				}
+				}*/
 			}
 		}
 	}
@@ -247,8 +250,7 @@ static void displayInstructions() {
 	setCursorPos(2, 0);
 	printStr("Press A to prepare a recording. Recording will start when\n"
 			 "a digital button is pressed, or when an analog value moves\n"
-			 "beyond its threshold. Length of recording is toggled between\n"
-			 "~200 and ~400 ms with Y.\n\n"
+			 "beyond its threshold. Recording will last ~200 ms.\n\n"
 			 "Vertical gray lines show ~1 frame (~16.6ms) boundaries.\n"
 			 "Frame times are shown on the right. The highlighted number\n"
 			 "shows what button started the recording, and how long its\n"
@@ -259,7 +261,7 @@ static void displayInstructions() {
 			 "Hold R to change thresholds faster.\n"
 			 "Hold Start to toggle Auto-Trigger. Enabling this removes\n"
 			 "the need to press A, but disables the instruction menu (Z),\n"
-			 "capture length toggle (Y), and the R modifier.\n");
+			 "and the R modifier.\n");
 	
 	setCursorPos(21, 0);
 	printStr("Press Z to close instructions.");
@@ -288,7 +290,7 @@ void menu_plotButton() {
 			
 			// set here for the same reason as the above var
 			// since this is separate from recording logic, this could change during draw
-			bool menuDisplay400 = displayCapture400;
+			//bool menuDisplay400 = displayCapture400;
 			
 			switch (state) {
 				case BUTTON_INPUT:
@@ -325,8 +327,8 @@ void menu_plotButton() {
 						printStr(" %3u", triggerThreshold);
 					}
 					
-					setCursorPos(21,38);
-					printStr("Capture length: %3dms", (capture400Toggle ? 400 : 200));
+					//setCursorPos(21,38);
+					//printStr("Capture length: %3dms", (capture400Toggle ? 400 : 200));
 					
 					if (dispData->isRecordingReady) {
 						DrawBox(SCREEN_TIMEPLOT_START - 55, SCREEN_TIMEPLOT_Y_TOP - 1, 600, SCREEN_TIMEPLOT_Y_BOTTOM + 1, COLOR_WHITE);;
@@ -347,11 +349,9 @@ void menu_plotButton() {
 						DrawVLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_Y_TOP,
 						          SCREEN_TIMEPLOT_Y_BOTTOM,
 						          COLOR_SILVER);
-						if (menuDisplay400) {
-							DrawVLine(SCREEN_TIMEPLOT_START + 1, SCREEN_TIMEPLOT_Y_TOP,
-							          SCREEN_TIMEPLOT_Y_BOTTOM,
-							          COLOR_SILVER);
-						}
+						DrawVLine(SCREEN_TIMEPLOT_START + 1, SCREEN_TIMEPLOT_Y_TOP,
+						          SCREEN_TIMEPLOT_Y_BOTTOM,
+						          COLOR_SILVER);
 						
 						int currMs = 0;
 						int frameIntervalIndex = 0;
@@ -364,29 +364,31 @@ void menu_plotButton() {
 							if (totalTimeUs >= (1000 * currMs)) {
 								currMs++;
 								if (totalTimeUs / 1000 >= FRAME_INTERVAL_MS[frameIntervalIndex]) {
+									/*
 									if (menuDisplay400) {
 										DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_Y_TOP,
 										          SCREEN_TIMEPLOT_Y_BOTTOM,
 										          COLOR_GRAY);
-									} else {
+									} else {*/
 										DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
 										          SCREEN_TIMEPLOT_Y_BOTTOM,
 										          COLOR_GRAY);
 										DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_TOP,
 										          SCREEN_TIMEPLOT_Y_BOTTOM,
 										          COLOR_GRAY);
-									}
+									//}
 									
 									frameIntervalIndex++;
+									/*
 									if (menuDisplay400) {
 										if (currMs >= 400000) {
 											break;
 										}
-									} else {
+									} else {*/
 										if (currMs >= 200000) {
 											break;
 										}
-									}
+									//}
 								}
 							}
 							
@@ -422,18 +424,19 @@ void menu_plotButton() {
 								
 								// draw bar if button state was triggered
 								if (result) {
+									/*
 									if (menuDisplay400) {
 										DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
 										          SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
 										          COLOR_WHITE);
-									} else {
+									} else {*/
 										DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
 										          SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
 										          COLOR_WHITE);
 										DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
 										          SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
 										          COLOR_WHITE);
-									}
+									//}
 								}
 								
 								// calculate what timing to show if not marked done
@@ -461,18 +464,18 @@ void menu_plotButton() {
 						}
 						
 						// draw end line
-						if (menuDisplay400) {
+						/*if (menuDisplay400) {
 							DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_Y_TOP,
 							          SCREEN_TIMEPLOT_Y_BOTTOM,
 							          COLOR_SILVER);
-						} else {
+						} else {*/
 							DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
 							          SCREEN_TIMEPLOT_Y_BOTTOM,
 							          COLOR_SILVER);
 							DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_TOP,
 							          SCREEN_TIMEPLOT_Y_BOTTOM,
 							          COLOR_SILVER);
-						}
+						//}
 						
 						// draw frame durations
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
@@ -504,11 +507,11 @@ void menu_plotButton() {
 								menuState = BUTTON_INSTRUCTIONS;
 								buttonLock = true;
 								buttonPressCooldown = 5;
-							} else if (*pressed & PAD_BUTTON_Y) {
+							} /* else if (*pressed & PAD_BUTTON_Y) {
 								capture400Toggle = !capture400Toggle;
 								buttonLock = true;
 								buttonPressCooldown = 5;
-							}
+							}*/
 						}
 						if (*pressed & PAD_BUTTON_RIGHT) {
 							stickThresholdSelected = false;

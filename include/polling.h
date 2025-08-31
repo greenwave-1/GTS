@@ -12,7 +12,7 @@
 #include <ogc/pad.h>
 
 // 1 frame is ~16.666 ms
-// _technically_ it's supposed to be ~16.833 but timings don't seem to align...
+// _technically_ it's supposed to be ~16.683 but timings don't seem to align...
 // i really have no idea here
 #define FRAME_TIME_MS_F 16.666
 #define FRAME_TIME_US 16666
