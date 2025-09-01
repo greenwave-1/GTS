@@ -346,12 +346,9 @@ void menu_plotButton() {
 						ButtonPressedTime buttons[13] = { {0, false} };
 						
 						// initial "frame" line
-						DrawVLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_Y_TOP,
-						          SCREEN_TIMEPLOT_Y_BOTTOM,
-						          COLOR_SILVER);
-						DrawVLine(SCREEN_TIMEPLOT_START + 1, SCREEN_TIMEPLOT_Y_TOP,
-						          SCREEN_TIMEPLOT_Y_BOTTOM,
-						          COLOR_SILVER);
+						DrawFilledBox(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_Y_TOP,
+						              SCREEN_TIMEPLOT_START + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
+									  COLOR_SILVER);
 						
 						int currMs = 0;
 						int frameIntervalIndex = 0;
@@ -364,19 +361,23 @@ void menu_plotButton() {
 							if (totalTimeUs >= (1000 * currMs)) {
 								currMs++;
 								if (totalTimeUs / 1000 >= FRAME_INTERVAL_MS[frameIntervalIndex]) {
+									DrawFilledBox(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
+												  SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
+												  COLOR_GRAY);
+									
 									/*
 									if (menuDisplay400) {
 										DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_Y_TOP,
 										          SCREEN_TIMEPLOT_Y_BOTTOM,
 										          COLOR_GRAY);
-									} else {*/
+									} else {
 										DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
 										          SCREEN_TIMEPLOT_Y_BOTTOM,
 										          COLOR_GRAY);
 										DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_TOP,
 										          SCREEN_TIMEPLOT_Y_BOTTOM,
 										          COLOR_GRAY);
-									//}
+									}*/
 									
 									frameIntervalIndex++;
 									/*
@@ -424,19 +425,22 @@ void menu_plotButton() {
 								
 								// draw bar if button state was triggered
 								if (result) {
+									DrawFilledBox(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
+									              SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
+												  COLOR_WHITE);
 									/*
 									if (menuDisplay400) {
 										DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
 										          SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
 										          COLOR_WHITE);
-									} else {*/
+									} else {
 										DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
 										          SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
 										          COLOR_WHITE);
 										DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
 										          SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
 										          COLOR_WHITE);
-									//}
+									}*/
 								}
 								
 								// calculate what timing to show if not marked done
@@ -464,18 +468,21 @@ void menu_plotButton() {
 						}
 						
 						// draw end line
+						DrawFilledBox(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
+						              SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
+						              COLOR_GRAY);
 						/*if (menuDisplay400) {
 							DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_Y_TOP,
 							          SCREEN_TIMEPLOT_Y_BOTTOM,
 							          COLOR_SILVER);
-						} else {*/
+						} else {
 							DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
 							          SCREEN_TIMEPLOT_Y_BOTTOM,
 							          COLOR_SILVER);
 							DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_TOP,
 							          SCREEN_TIMEPLOT_Y_BOTTOM,
 							          COLOR_SILVER);
-						//}
+						}*/
 						
 						// draw frame durations
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {

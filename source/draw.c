@@ -281,9 +281,12 @@ void DrawBox (int x1, int y1, int x2, int y2, int color) {
 }
 
 
+// since every pixel between should be filled, we don't worry about "accurate" drawing
 void DrawFilledBox (int x1, int y1, int x2, int y2, int color) {
 	for (int i = x1; i < x2 + 1; i++) {
-		DrawVLine(i, y1, y2, color);
+		for (int j = y1; j < y2; j++) {
+			currXfb[(i >> 1) + (640 * j) / 2] = color;
+		}
 	}
 }
 
@@ -362,12 +365,13 @@ void DrawDot (int x, int y, int color) {
 	}
 }
 
+
 void DrawDotAccurate (int x, int y, int color) {
 	int index = (x >> 1) + (640 * y) / 2;
 	uint32_t data = currXfb[index];
 	
 	if (x % 2 == 1) {
-		if (data >> 24 == 0x10) {
+		if (data >> 24 == 0) {
 			// no data in left pixel, leave it as-is
 			currXfb[index] = color & 0x00FFFFFF;
 		} else {
@@ -381,7 +385,7 @@ void DrawDotAccurate (int x, int y, int color) {
 			currXfb[index] = leftLuminance | (cb << 16) | rightLuminance | cr;
 		}
 	} else {
-		if ((data & 0xFFFF00FF) >> 8 == 0x10) {
+		if ((data & 0xFFFF00FF) >> 8 == 0) {
 			// no data in right pixel, leave it as-is
 			currXfb[index] = color & 0xFFFF00FF;
 		} else {
@@ -398,16 +402,15 @@ void DrawDotAccurate (int x, int y, int color) {
 }
 
 
-
 // mostly taken from https://www.geeksforgeeks.org/mid-point-circle-drawing-algorithm/
 void DrawCircle (int cx, int cy, int r, int color) {
 	int x = r, y = 0;
 	
 	if (r > 0) {
-		DrawDot(cx + x, cy - y, color);
-		DrawDot(cx - x, cy + y, color);
-		DrawDot(cx + y, cy - x, color);
-		DrawDot(cx - y, cy + x, color);
+		DrawDotAccurate(cx + x, cy - y, color);
+		DrawDotAccurate(cx - x, cy + y, color);
+		DrawDotAccurate(cx + y, cy - x, color);
+		DrawDotAccurate(cx - y, cy + x, color);
 	}
 	
 	int delta = 1 - r;
@@ -426,19 +429,20 @@ void DrawCircle (int cx, int cy, int r, int color) {
 			break;
 		}
 		
-		DrawDot(cx + x, cy + y, color);
-		DrawDot(cx - x, cy - y, color);
-		DrawDot(cx + x, cy - y, color);
-		DrawDot(cx - x, cy + y, color);
+		DrawDotAccurate(cx + x, cy + y, color);
+		DrawDotAccurate(cx - x, cy - y, color);
+		DrawDotAccurate(cx + x, cy - y, color);
+		DrawDotAccurate(cx - x, cy + y, color);
 		
 		if (x != y) {
-			DrawDot(cx + y, cy + x, color);
-			DrawDot(cx - y, cy + x, color);
-			DrawDot(cx + y, cy - x, color);
-			DrawDot(cx - y, cy - x, color);
+			DrawDotAccurate(cx + y, cy + x, color);
+			DrawDotAccurate(cx - y, cy + x, color);
+			DrawDotAccurate(cx + y, cy - x, color);
+			DrawDotAccurate(cx - y, cy - x, color);
 		}
 	}
 }
+
 
 // taken from
 // https://stackoverflow.com/questions/1201200/fast-algorithm-for-drawing-filled-circles
@@ -452,6 +456,7 @@ void DrawFilledCircle(int cx, int cy, int r, int color) {
 		}
 	}
 }
+
 
 // rad should be number of pixels from the center, _not_ including the center
 void DrawFilledBoxCenter(int x, int y, int rad, int color) {
@@ -489,6 +494,7 @@ void DrawOctagonalGate(int x, int y, int scale, int color) {
 	         x + CARDINAL_MAX, y,
 	         color);
 }
+
 
 void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which) {
 	switch (stickmap) {

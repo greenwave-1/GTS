@@ -16,7 +16,6 @@ enum OSC_MENU_STATE { OSC_SETUP, OSC_POST_SETUP, OSC_INSTRUCTIONS };
 enum OSC_STATE { PRE_INPUT, POST_INPUT, POST_INPUT_LOCK };
 
 static const uint8_t OSCILLOSCOPE_TEST_LEN = 3;
-// TODO: remove NO_TEST, since the Continuous Oscilloscope menu exists
 enum OSCILLOSCOPE_TEST { SNAPBACK, PIVOT, DASHBACK };
 
 void menu_oscilloscope();

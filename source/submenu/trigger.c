@@ -44,7 +44,7 @@ static ControllerRec **data = NULL, **temp = NULL;
 static ControllerSample curr;
 // acts as a prepend loop
 // once conditions are met, ~50ms of previous data is added to the start of the capture from here
-static ControllerSample startingLoop[100];
+static ControllerSample startingLoop[200];
 static int startingLoopIndex = 0;
 static bool startedCapture = false;
 
@@ -111,7 +111,7 @@ void triggerSamplingCallback() {
 			// continuously capture data
 			startingLoop[startingLoopIndex] = curr;
 			startingLoopIndex++;
-			if (startingLoopIndex == 100) {
+			if (startingLoopIndex == 200) {
 				startingLoopIndex = 0;
 			}
 			// check for analog value above 42, or for any digital trigger
@@ -126,7 +126,7 @@ void triggerSamplingCallback() {
 				// prepend ~50 ms of data to the recording
 				int loopStartIndex = startingLoopIndex - 1;
 				if (loopStartIndex == -1) {
-					loopStartIndex = 100;
+					loopStartIndex = 200;
 				}
 				int loopPrependCount = 0;
 				uint64_t prependedTimeUs = 0;
@@ -139,19 +139,19 @@ void triggerSamplingCallback() {
 					prependedTimeUs += startingLoop[loopStartIndex].timeDiffUs;
 					loopStartIndex--;
 					if (loopStartIndex == -1) {
-						loopStartIndex = 100;
+						loopStartIndex = 200;
 					}
 					loopPrependCount++;
 				}
 				for (int i = 0; i < loopPrependCount; i++ ) {
-					(*temp)->samples[(*temp)->sampleEnd] = startingLoop[(loopStartIndex + i) % 100];
+					(*temp)->samples[(*temp)->sampleEnd] = startingLoop[(loopStartIndex + i) % 200];
 					if ((*temp)->sampleEnd == 0) {
 						(*temp)->samples[0].timeDiffUs = 0;
 					}
 					(*temp)->sampleEnd++;
 				}
 				// clear startingLoop
-				for (int i = 0; i < 100; i++) {
+				for (int i = 0; i < 200; i++) {
 					startingLoop[i].triggerL = 0;
 					startingLoop[i].triggerR = 0;
 					startingLoop[i].buttons = 0;
