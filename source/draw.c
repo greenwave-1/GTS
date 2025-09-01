@@ -11,6 +11,9 @@
 
 #include "images/stickmaps.h"
 
+#define BUFFER_SIZE_X 128
+#define BUFFER_SIZE_Y 255
+
 static bool do2xHorizontalDraw = false;
 
 uint32_t *currXfb = NULL;
@@ -23,9 +26,161 @@ void setInterlaced(bool interlaced) {
 	do2xHorizontalDraw = interlaced;
 }
 
+enum IMAGE currImage = NO_IMAGE;
+
+uint32_t imageBuffer[(BUFFER_SIZE_X)][BUFFER_SIZE_Y];
+
+// Decodes a given image into imageBuffer
+// decoding the image is costly, so we decode it once, then just copy from the decoded buffer on subsequent frames
+static void copyImageToBuffer(const unsigned char image[], const unsigned char colorIndex[8]) {
+	// get information on the image to be drawn
+	// first four bytes are dimensions
+	int newX = image[0] << 8 | image[1];
+	int newY = image[2] << 8 | image[3];
+	
+	// don't do anything with an image that doesn't fit our buffer
+	if (newY != BUFFER_SIZE_Y || newX != (BUFFER_SIZE_X * 2) - 1) {
+		return;
+	}
+	
+	//memset(imageBuffer, COLOR_BLACK, sizeof(uint32_t) * BUFFER_SIZE_X * BUFFER_SIZE_Y);
+	for (int i = 0; i < BUFFER_SIZE_X; i++) {
+		for (int j = 0; j < BUFFER_SIZE_Y; j++) {
+			imageBuffer[i][j] = COLOR_BLACK;
+		}
+	}
+	
+	// start index for actual draw data
+	uint32_t byte = 4;
+	
+	// counts how many pixels we've been through for a given byte
+	uint8_t runIndex = 0;
+	
+	// how many pixels does a given byte draw?
+	// first five bits are runlength
+	uint8_t runLength = (image[byte] >> 3) + 1;
+	
+	// last three bits are color, lookup color in index
+	uint8_t color = colorIndex[ image[byte] & 0b111];
+	
+	// used for skipping sections of no drawing that extend beyond a single row
+	int carryover = 0;
+	
+	// begin processing data
+	for (int row = 0; row < newY; row++) {
+		// carryover will be added to column and then be reset immediately
+		for (int column = 0 + carryover; column < newX; column++) {
+			// reset carryover if its been set
+			carryover = 0;
+			
+			// is there a pixel to actually draw? (0-4 is transparency)
+			if (color > 5) {
+				
+				// copied from DrawDotAccurate
+				uint32_t newColor = CUSTOM_COLORS[color - 5];
+				uint32_t data = imageBuffer[column/2][row];
+				if (column % 2 == 1) {
+					if (data >> 24 == 0x10) {
+						// no data in left pixel, leave it as-is
+						imageBuffer[column/2][row] = newColor & 0x00FFFFFF;
+					} else {
+						// preserve the left pixel luminance
+						uint32_t leftLuminance = data & 0xFF000000;
+						uint32_t rightLuminance = newColor & 0x0000FF00;
+						uint32_t cb, cr;
+						// mix cb and cr
+						cb = ( ((data & 0x00FF0000) >> 16) + ((newColor & 0x00FF0000) >> 16) ) / 2;
+						cr = ( (data & 0x000000FF) + (newColor & 0x000000FF) ) / 2;
+						imageBuffer[column/2][row] = leftLuminance | (cb << 16) | rightLuminance | cr;
+					}
+				} else {
+					if ((data & 0xFFFF00FF) >> 8 == 0x10) {
+						// no data in right pixel, leave it as-is
+						imageBuffer[column/2][row] = newColor & 0xFFFF00FF;
+					} else {
+						// preserve the right pixel luminance
+						uint32_t leftLuminance = newColor & 0xFF000000;
+						uint32_t rightLuminance = data & 0x0000FF00;
+						uint32_t cb, cr;
+						// mix cb and cr
+						cb = ( ((data & 0x00FF0000) >> 16) + ((newColor & 0x00FF0000) >> 16) ) / 2;
+						cr = ( (data & 0x000000FF) + (newColor & 0x000000FF) ) / 2;
+						imageBuffer[column/2][row] = leftLuminance | (cb << 16) | rightLuminance | cr;
+					}
+				}
+				
+				runIndex++;
+			} else {
+				// skip idle loop and move to next position
+				column += runLength - 1;
+				runIndex = runLength;
+				// did we go outside the bounds of this row?
+				if (column >= newX) {
+					// set carryover
+					carryover = column - newX + 1;
+				}
+			}
+			
+			// set up for the next byte of information/drawing
+			if (runIndex >= runLength) {
+				runIndex = 0;
+				byte++;
+				runLength = (image[byte] >> 3) + 1;
+				color = colorIndex[ image[byte] & 0b111];
+			}
+		}
+	}
+}
+
+void displayImage(enum IMAGE newImage, int offsetX, int offsetY) {
+	// do we need to draw a different image?
+	if (currImage != newImage) {
+		switch (newImage) {
+			case DEADZONE:
+				copyImageToBuffer(deadzone_image, deadzone_indexes);
+				break;
+			case A_WAIT:
+				copyImageToBuffer(await_image, await_indexes);
+				break;
+			case MOVE_WAIT:
+				copyImageToBuffer(deadzone_image, deadzone_indexes);
+				break;
+			case CROUCH:
+				copyImageToBuffer(crouch_image, crouch_indexes);
+				break;
+			case LEDGE_L:
+				copyImageToBuffer(ledgeL_image, ledgeL_indexes);
+				break;
+			case LEDGE_R:
+				copyImageToBuffer(ledgeR_image, ledgeR_indexes);
+				break;
+			case NO_IMAGE:
+			default:
+				break;
+		}
+		currImage = newImage;
+	}
+	
+	// draw our image if its not "NO_IMAGE"
+	if (currImage != NO_IMAGE) {
+		for (int x = 0; x < BUFFER_SIZE_X; x++) {
+			for (int y = 0; y < BUFFER_SIZE_Y; y++) {
+				// every uint32_t in an xfb is two bytes
+				// x * 2 in currxfb gives us the actual image's x value
+				// which is then divided by 2 to give the corresponding position in currxfb
+				// x is then added to y, to get the correct (vertical) line
+				currXfb[((offsetX + (x * 2)) >> 1) + (640 * (y + offsetY)) / 2] = imageBuffer[x][y];
+			}
+		}
+	}
+}
+
 // draws a "runlength encoded" image, with top-left at the provided coordinates
 // most of this is taken from
 // https://github.com/PhobGCC/PhobGCC-SW/blob/main/PhobGCC/rp2040/src/drawImage.cpp
+
+// Old implementation that calls DrawDotAccurate()
+/*
 void drawImage(const unsigned char image[], const unsigned char colorIndex[8], uint16_t offsetX, uint16_t offsetY) {
 	// get information on the image to be drawn
 	// first four bytes are dimensions
@@ -91,6 +246,7 @@ void drawImage(const unsigned char image[], const unsigned char colorIndex[8], u
 		}
 	}
 }
+ */
 
 // taken from github.com/phobgcc/phobconfigtool
 // should probably replace this with something gl based at some point
@@ -211,7 +367,7 @@ void DrawDotAccurate (int x, int y, int color) {
 	uint32_t data = currXfb[index];
 	
 	if (x % 2 == 1) {
-		if (data >> 24 == 0) {
+		if (data >> 24 == 0x10) {
 			// no data in left pixel, leave it as-is
 			currXfb[index] = color & 0x00FFFFFF;
 		} else {
@@ -225,7 +381,7 @@ void DrawDotAccurate (int x, int y, int color) {
 			currXfb[index] = leftLuminance | (cb << 16) | rightLuminance | cr;
 		}
 	} else {
-		if ((data & 0xFFFF00FF) >> 8 == 0) {
+		if ((data & 0xFFFF00FF) >> 8 == 0x10) {
 			// no data in right pixel, leave it as-is
 			currXfb[index] = color & 0xFFFF00FF;
 		} else {
