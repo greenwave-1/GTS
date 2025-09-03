@@ -103,6 +103,7 @@ static void plot2dSamplingCallback() {
 			(*temp)->samples[(*temp)->sampleEnd].cStickY = 0;
 			(*temp)->samples[(*temp)->sampleEnd].buttons = *held;
 			(*temp)->samples[(*temp)->sampleEnd].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+			(*temp)->totalTimeUs += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 			(*temp)->sampleEnd++;
 			
 			// are we currently checking if the stick has stopped moving?
@@ -172,11 +173,6 @@ static void plot2dSamplingCallback() {
 		}
 		
 		if ((*temp)->isRecordingReady && captureStart) {
-			// calculate total read time
-			for (int i = 0; i < (*temp)->sampleEnd; i++) {
-				(*temp)->totalTimeUs += (*temp)->samples[i].timeDiffUs;
-			}
-			
 			// reset stuff
 			haveStartPoint = false;
 			noMovementStartIndex = -1;

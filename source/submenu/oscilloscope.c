@@ -107,6 +107,7 @@ static void oscilloscopeCallback() {
 			(*temp)->samples[(*temp)->sampleEnd].cStickX = cStickX;
 			(*temp)->samples[(*temp)->sampleEnd].cStickY = cStickY;
 			(*temp)->samples[(*temp)->sampleEnd].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+			(*temp)->totalTimeUs += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 			(*temp)->sampleEnd++;
 			
 			// handle specific logic for each test
@@ -175,6 +176,10 @@ static void oscilloscopeCallback() {
 							}
 						}
 						
+						(*temp)->totalTimeUs = 0;
+						
+						// TODO: this is wasteful for a polling function, find a way to either specify a different
+						// TODO: starting point, or do this outside of the function
 						// rewrite data with new starting index
 						for (int i = 0; i < (*temp)->sampleEnd - 1 - pivotStartIndex; i++) {
 							(*temp)->samples[i].stickX = (*temp)->samples[i + pivotStartIndex].stickX;
@@ -182,7 +187,9 @@ static void oscilloscopeCallback() {
 							(*temp)->samples[i].cStickX = (*temp)->samples[i + pivotStartIndex].cStickX;
 							(*temp)->samples[i].cStickY = (*temp)->samples[i + pivotStartIndex].cStickY;
 							(*temp)->samples[i].timeDiffUs = (*temp)->samples[i + pivotStartIndex].timeDiffUs;
+							(*temp)->totalTimeUs += (*temp)->samples[i + pivotStartIndex].timeDiffUs;
 						}
+						(*temp)->totalTimeUs -= (*temp)->samples[0].timeDiffUs;
 						(*temp)->samples[0].timeDiffUs = 0;
 						(*temp)->sampleEnd = (*temp)->sampleEnd - pivotStartIndex - 1;
 						
@@ -213,11 +220,6 @@ static void oscilloscopeCallback() {
 				snapbackStartPosX = 0;
 				snapbackStartPosY = 0;
 				(*temp)->recordingType = REC_OSCILLOSCOPE;
-				
-				// calculate total recording time
-				for (int i = 0; i < (*temp)->sampleEnd; i++) {
-					(*temp)->totalTimeUs += (*temp)->samples[i].timeDiffUs;
-				}
 				
 				flipData();
 			}
