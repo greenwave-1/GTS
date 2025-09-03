@@ -296,6 +296,11 @@ int main(int argc, char **argv) {
 		VIDEO_WaitVSync();
 	}
 	
+	// close log
+	#ifdef DEBUGLOG
+	stopLogging();
+	#endif
+	
 	// clear screen and show message if not exiting "normally" (pressing start on main menu)
 	if (!normalExit) {
 		VIDEO_ClearFrameBuffer(rmode, currXfb, COLOR_BLACK);
@@ -325,9 +330,10 @@ int main(int argc, char **argv) {
 	// free memory (probably don't need to do this but eh)
 	freeControllerRecStructs();
 	
-	#ifdef DEBUGLOG
-	stopLogging();
-	#endif
+	// return some of our stuff to normal before exit
+	// not sure if its needed but eh
+	setSamplingRateNormal();
+	PAD_SetSamplingCallback(NULL);
 	
 	// avoid distorted graphics on GC (I have no idea if this actually does what I think it does...)
 	// https://github.com/emukidid/swiss-gc: cube/swiss/source/video.c -> unsetVideo()

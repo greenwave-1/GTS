@@ -90,6 +90,16 @@ typedef struct ControllerRec {
 	
 } ControllerRec;
 
+// returns if the pointer that we have in waveform.c is null
+// this probably isn't needed, but ensures that if the struct is free()'d,
+// continuous.c doesn't attempt to dereference anything
+bool isContinuousRecDataNull();
+
+// gives waveform.c a pointer to continuous's ControllerRec
+// used for free() in freeControllerRecStructs()
+// same as above
+void setContinuousRecStructPtr(ControllerRec* ptr);
+
 // calls malloc and inits structs
 void initControllerRecStructs();
 

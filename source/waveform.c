@@ -18,6 +18,15 @@ const uint8_t RECORDING_TYPE_VALID_MENUS[] = { 0,
 static bool init = false;
 static ControllerRec *recordingData = NULL;
 static ControllerRec *tempData = NULL;
+static ControllerRec *continuousMenuData = NULL;
+
+void setContinuousRecStructPtr(ControllerRec* ptr) {
+	continuousMenuData = ptr;
+}
+
+bool isContinuousRecDataNull() {
+	return continuousMenuData == NULL;
+}
 
 // allocate memory for and initialize recording structs
 void initControllerRecStructs() {
@@ -39,6 +48,10 @@ void freeControllerRecStructs() {
 	if (tempData != NULL) {
 		free(tempData);
 		tempData = NULL;
+	}
+	if (continuousMenuData != NULL) {
+		free(continuousMenuData);
+		continuousMenuData = NULL;
 	}
 }
 

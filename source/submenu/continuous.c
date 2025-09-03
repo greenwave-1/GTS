@@ -92,9 +92,10 @@ static void setup() {
 		pressed = getButtonsDownPtr();
 		held = getButtonsHeldPtr();
 	}
-	if (data == NULL) {
+	if (data == NULL || isContinuousRecDataNull()) {
 		data = malloc(sizeof(ControllerRec));
 		clearRecordingArray(data);
+		setContinuousRecStructPtr(data);
 		data->isRecordingReady = true;
 	}
 	data->sampleEnd = REC_SAMPLE_MAX - 1;
