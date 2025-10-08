@@ -18,7 +18,7 @@
 
 const static uint8_t STICK_MOVEMENT_THRESHOLD = 5;
 const static uint8_t STICK_ORIGIN_TIME_THRESHOLD_MS = 50;
-const static uint8_t STICK_MOVEMENT_TIME_THRESHOLD_MS = 100;
+const static uint8_t STICK_MOVEMENT_TIME_THRESHOLD_MS = 25;
 const static uint8_t MEASURE_COOLDOWN_FRAMES = 5;
 
 const static uint8_t SCREEN_TIMEPLOT_START = 70;
@@ -46,6 +46,7 @@ static int startingLoopIndex = 0;
 static uint8_t stickCooldown = 0;
 static int8_t snapbackStartPosX = 0, snapbackStartPosY = 0;
 static int8_t snapbackPrevPosX = 0, snapbackPrevPosY = 0;
+static bool snapbackCrossed64 = false;
 static bool pressLocked = false;
 static bool stickMove = false;
 static bool showCStick = false;
@@ -113,11 +114,6 @@ static void oscilloscopeCallback() {
 		selectedStickY = curr.stickY;
 	}
 	
-	// reset our input cooldown if the stick is not in the origin
-	if (stickCooldown != 0 && ((abs(selectedStickX) > STICK_MOVEMENT_THRESHOLD) || (abs(selectedStickY) > STICK_MOVEMENT_THRESHOLD))) {
-		stickCooldown = MEASURE_COOLDOWN_FRAMES;
-	}
-	
 	// are we ready to check for stick inputs?
 	if (oState != POST_INPUT_LOCK) {
 		// data capture is currently happening
@@ -131,18 +127,13 @@ static void oscilloscopeCallback() {
 			switch (currentTest) {
 				// TODO: change this to have a buffer of a minimum amount of time, to make final graph look better
 				case SNAPBACK:
-					// has the stick stopped moving?
-					if (abs(selectedStickX - snapbackPrevPosX) < STICK_MOVEMENT_THRESHOLD &&
-					    abs(selectedStickY - snapbackPrevPosY) < STICK_MOVEMENT_THRESHOLD) {
-						// are we close to the origin?
-						int multiplier = 1;
-						if ((abs(selectedStickX) < STICK_MOVEMENT_THRESHOLD) && (abs(selectedStickY) < STICK_MOVEMENT_THRESHOLD)) {
-							multiplier = 4;
-						}
-						timeStoppedMoving += multiplier * (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
+					// are we close to the origin?
+					if ((abs(selectedStickX) < STICK_MOVEMENT_THRESHOLD) && (abs(selectedStickY) < STICK_MOVEMENT_THRESHOLD)) {
+						timeStoppedMoving += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 					} else {
 						timeStoppedMoving = 0;
 					}
+					
 					snapbackPrevPosX = selectedStickX;
 					snapbackPrevPosY = selectedStickY;
 					
@@ -158,6 +149,8 @@ static void oscilloscopeCallback() {
 							stickMove = false;
 							snapbackStartPosX = selectedStickX;
 							snapbackStartPosY = selectedStickY;
+							snapbackCrossed64 = false;
+							oState = POST_INPUT;
 						}
 					}
 					break;
@@ -241,6 +234,7 @@ static void oscilloscopeCallback() {
 				stickCooldown = MEASURE_COOLDOWN_FRAMES;
 				snapbackStartPosX = 0;
 				snapbackStartPosY = 0;
+				snapbackCrossed64 = false;
 				(*temp)->recordingType = REC_OSCILLOSCOPE;
 				
 				flipData();
@@ -252,10 +246,27 @@ static void oscilloscopeCallback() {
 			// check criteria for each test to trigger a recording
 			switch (currentTest) {
 				case SNAPBACK:
-					if ((selectedStickX > snapbackStartPosX + STICK_MOVEMENT_THRESHOLD || selectedStickX < snapbackStartPosX - STICK_MOVEMENT_THRESHOLD) ||
-					    (selectedStickY > snapbackStartPosY + STICK_MOVEMENT_THRESHOLD) || (selectedStickY < snapbackStartPosY - STICK_MOVEMENT_THRESHOLD)) {
-						stickMove = true;
+					// we're waiting for the stick's 'falling' action
+					if (snapbackCrossed64) {
+						// current value is greater, adjust our top threshold
+						if (abs(selectedStickX) > abs(snapbackStartPosX) || abs(selectedStickY) > abs(snapbackStartPosY)) {
+							snapbackStartPosX = selectedStickX;
+							snapbackStartPosY = selectedStickY;
+						}
+						// has the current value moved beyond STICK_MOVEMENT_THRESHOLD from snapbackStartPos
+						else if (abs(selectedStickX) + (STICK_MOVEMENT_THRESHOLD * 2) <= abs(snapbackStartPosX) ||
+								abs(selectedStickY) + (STICK_MOVEMENT_THRESHOLD * 2) <= abs(snapbackStartPosY)) {
+							stickMove = true;
+						}
+						
 					}
+					// we're looking for the stick to cross +-64
+					else {
+						if (abs(selectedStickX) > 64 || abs(selectedStickY) > 64) {
+							snapbackCrossed64 = true;
+						}
+					}
+					
 					break;
 				
 				case PIVOT:
@@ -420,23 +431,6 @@ void menu_oscilloscope() {
 					ellipseCounter++;
 					if (ellipseCounter == 60) {
 						ellipseCounter = 0;
-					}
-					
-					setCursorPos(21,0);
-					printStr("Current test: ");
-					switch (currentTest) {
-						case SNAPBACK:
-							printStr("Snapback");
-							break;
-						case PIVOT:
-							printStr("Pivot");
-							break;
-						case DASHBACK:
-							printStr("Dashback");
-							break;
-						default:
-							printStr("Error");
-							break;
 					}
 				case POST_INPUT_LOCK:
 					// TODO: this is dumb, do this a better way to fit better
@@ -766,22 +760,6 @@ void menu_oscilloscope() {
 								break;
 
 						}
-						setCursorPos(21,0);
-						printStr("Current test: ");
-						switch (currentTest) {
-							case SNAPBACK:
-								printStr("Snapback");
-								break;
-							case PIVOT:
-								printStr("Pivot");
-								break;
-							case DASHBACK:
-								printStr("Dashback");
-								break;
-							default:
-								printStr("Error");
-								break;
-						}
 					} else {
 						oState = PRE_INPUT;
 					}
@@ -790,6 +768,24 @@ void menu_oscilloscope() {
 					printStr("How did we get here?");
 					break;
 			}
+			
+			setCursorPos(21,0);
+			printStr("Current test: ");
+			switch (currentTest) {
+				case SNAPBACK:
+					printStr("Snapback");
+					break;
+				case PIVOT:
+					printStr("Pivot");
+					break;
+				case DASHBACK:
+					printStr("Dashback");
+					break;
+				default:
+					printStr("Error");
+					break;
+			}
+			
 			if (!buttonLock) {
 				if (*pressed & PAD_BUTTON_A && !buttonLock && oState != PRE_INPUT) {
 					if (oState == POST_INPUT_LOCK && stickCooldown == 0) {

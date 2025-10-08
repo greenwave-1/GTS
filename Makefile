@@ -7,10 +7,10 @@ default: all
 emupath := flatpak run org.DolphinEmu.dolphin-emu
 
 # wiiload via physical USB Gecko
-#export WIILOAD := /dev/ttyUSB0
+export WIILOAD := /dev/ttyUSB0
 
 # wiiload via network
-export WIILOAD := tcp:10.200.200.150
+#export WIILOAD := tcp:10.200.200.150
 
 # this can be any of the run targets
 run: runwii
