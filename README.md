@@ -39,7 +39,7 @@ The two files that are important are `GTS_GC.dol` and `wii.zip`.
 
 `GTS_GC.dol` is for GameCube. Place the file in a location that you can launch it from. 
 Having a way to load [Swiss](https://github.com/emukidid/swiss-gc) is preferred.
-This file should also be used for Dolphin. 
+This file should also be used for Dolphin. Dolphin requires a recent version to function (2506b or newer).
 
 `wii.zip` is for Wii. Extract the zip to the Wii's SD card, and launch from the Homebrew Channel. 
 
