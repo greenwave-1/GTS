@@ -5,6 +5,8 @@
 #include "menu.h"
 #include "polling.h"
 #include "print.h"
+#include "draw.h"
+#include "waveform.h"
 
 #ifdef DEBUGLOG
 #include "logging.h"
@@ -27,6 +29,8 @@ static GXRModeObj *rmode = NULL;
 
 static VIRetraceCallback cb;
 
+static char* resetMessage = "Reset button pressed, exiting...";
+
 void retraceCallback(uint32_t retraceCnt) {
 	setSamplingRate();
 	//#ifdef DEBUGGDB
@@ -37,6 +41,9 @@ void retraceCallback(uint32_t retraceCnt) {
 }
 
 #if defined(HW_RVL)
+// this is stupid, but makes the #ifdef in logic look a bit nicer
+static char* powerButtonMessage = "Power button pressed, shutting down...";
+
 static bool powerButtonPressed = false;
 void powerButtonCallback() {
 	powerButtonPressed = true;
@@ -83,12 +90,12 @@ int main(int argc, char **argv) {
 	cb = VIDEO_SetPostRetraceCallback(retraceCallback);
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
 
-	bool shouldExit = false;
+	bool normalExit = false;
 	
 	#ifdef DEBUGGDB
 	_break();
 	#endif
-
+	
 	void *currXfb = NULL;
 	
 	// there is a makefile target that will enable this
@@ -98,16 +105,15 @@ int main(int argc, char **argv) {
 	setupLogging(USBGECKO_B);
 	
 	if (getLoggingType() == NETWORKSOCK) {
-		printStr("Setting up network...\n", xfb1);
+		setFramebuffer(xfb1);
+		printStr("Setting up network...\n");
 		while (!isNetworkConfigured()) {
 			VIDEO_WaitVSync();
 		}
 		
-		printStr("Waiting for connection...\n", xfb1);
-		char *ip = getConfiguredIP();
-		// TODO: this definitely isn't safe...
-		printStr(ip, xfb1);
-		printStr(":43256", xfb1);
+		printStr("Waiting for connection...\n");
+		printStr(getConfiguredIP());
+		printStr(":43256");
 		
 		while (!isConnectionMade()) {
 			VIDEO_WaitVSync();
@@ -207,8 +213,9 @@ int main(int argc, char **argv) {
 			#endif
 		default:
 			resetCursor();
+			setFramebuffer(xfb1);
 			printStr("\n\nUnsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n"
-					 "Program will exit in 5 seconds...", xfb1);
+					 "Program will exit in 5 seconds...");
 			for (int i = 0; i < 300; i++) {
 				VIDEO_WaitVSync();
 			}
@@ -219,13 +226,17 @@ int main(int argc, char **argv) {
 	setSamplingRateNormal();
 	if (isUnsupportedMode()) { // unsupported mode is probably 240p? no idea
 		resetCursor();
+		setFramebuffer(xfb1);
 		printStr("\n\nUnsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n"
-				 "Program will exit in 5 seconds...", xfb1);
+				 "Program will exit in 5 seconds...");
 		for (int i = 0; i < 300; i++) {
 			VIDEO_WaitVSync();
 		}
 		return 0;
 	}
+	
+	// allocate memory for recording structs
+	initControllerRecStructs();
 	
 	// main loop of the program
 	// exits when menu_runMenu() returns true, or when either power or reset are pressed
@@ -241,7 +252,7 @@ int main(int argc, char **argv) {
 		#endif
 		
 		
-		if (shouldExit) {
+		if (normalExit) {
 			break;
 		}
 
@@ -255,9 +266,11 @@ int main(int argc, char **argv) {
 			//CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 			currXfb = xfb2;
 		}
-
+		
+		setFramebuffer(currXfb);
+		
 		// run menu
-		shouldExit = menu_runMenu(currXfb);
+		normalExit = menu_runMenu();
 
 		// change framebuffer for next frame
 		if (xfbSwitch) {
@@ -270,31 +283,64 @@ int main(int argc, char **argv) {
 		
 		#ifdef BENCH
 		us = ticks_to_microsecs(gettime() - time);
-		char msg[100];
-		sprintf(msg, "%d", us);
-		setCursorPos(22, 62 - strlen(msg));
-		printStrColor(msg, currXfb, COLOR_WHITE, COLOR_BLACK);
+		setCursorPos(22, 56);
+		printStrColor(COLOR_WHITE, COLOR_BLACK, "%d", us);
 		#endif
 		
-		//#ifndef DEBUGGDB
 		if (SYS_ResetButtonDown()) {
-			VIDEO_ClearFrameBuffer(rmode, currXfb, COLOR_BLACK);
-			setCursorPos(10, 15);
-			printStr("Reset button pressed, exiting...", currXfb);
-			VIDEO_Flush();
-			VIDEO_WaitVSync();
 			break;
 		}
-		//#endif
 
 		// Wait for the next frame
 		VIDEO_Flush();
 		VIDEO_WaitVSync();
 	}
 	
+	// close log
 	#ifdef DEBUGLOG
 	stopLogging();
 	#endif
+	
+	// clear screen and show message if not exiting "normally" (pressing start on main menu)
+	if (!normalExit) {
+		VIDEO_ClearFrameBuffer(rmode, currXfb, COLOR_BLACK);
+		setCursorPos(10, 15);
+		
+		// dumb way to have a different message show, while also avoiding two #if defined().
+		// if using hard-coded strings, then either there would be repeat code, or you'd need two #if defined()
+		// to create a wii-only if-else
+		char* strPointer = resetMessage;
+		
+		#if defined(HW_RVL)
+		if (powerButtonPressed) {
+			setCursorPos(10, 12);
+			strPointer = powerButtonMessage;
+		}
+		#endif
+		
+		printStr(strPointer);
+	}
+	
+	VIDEO_Flush();
+	// show final frame for at least one second
+	for (int i = 0; i < 60; i++) {
+		VIDEO_WaitVSync();
+	}
+	
+	// free memory (probably don't need to do this but eh)
+	freeControllerRecStructs();
+	
+	// return some of our stuff to normal before exit
+	// not sure if its needed but eh
+	setSamplingRateNormal();
+	PAD_SetSamplingCallback(NULL);
+	
+	// avoid distorted graphics on GC (I have no idea if this actually does what I think it does...)
+	// https://github.com/emukidid/swiss-gc: cube/swiss/source/video.c -> unsetVideo()
+	VIDEO_SetPostRetraceCallback(NULL);
+	VIDEO_SetBlack(true);
+	VIDEO_Flush();
+	VIDEO_WaitVSync();
 	
 	// issue poweroff if the power button was pressed
 	// done here so that any logging stuff can finish cleanly

@@ -13,13 +13,19 @@ enum CURRENT_MENU { MAIN_MENU, CONTROLLER_TEST, WAVEFORM, PLOT_2D,
 		CONTINUOUS_WAVEFORM, TRIGGER_WAVEFORM, GATE_MEASURE, 
 		THANKS_PAGE, ERR };
 
+// enum for the individual menu entries on the main menu
+// used for iterating over stuff/readability
+enum MENU_MAIN_ENTRY_LIST { ENTRY_CONT_TEST, ENTRY_OSCILLOSCOPE, ENTRY_CONT_OSCILLOSCOPE,
+		ENTRY_TRIGGER_OSCILLOSCOPE, ENTRY_COORD_VIEWER, ENTRY_2D_PLOT,
+		ENTRY_BUTTON_PLOT, ENTRY_GATE_VIS, ENTRY_DATA_EXPORT };
+
 // functions for drawing the individual menus
-bool menu_runMenu(void *currXfb);
-void menu_mainMenu(void *currXfb);
-void menu_controllerTest(void *currXfb);
-void menu_fileExport(void *currXfb);
-void menu_coordinateViewer(void *currXfb);
-void menu_thanksPage(void *currXfb);
+bool menu_runMenu();
+void menu_mainMenu();
+void menu_controllerTest();
+void menu_fileExport();
+void menu_coordinateViewer();
+void menu_thanksPage();
 
 
 #endif //GTS_MENU_H

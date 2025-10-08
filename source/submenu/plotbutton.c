@@ -4,7 +4,6 @@
 
 #include "submenu/plotbutton.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -16,25 +15,24 @@
 #include "print.h"
 #include "draw.h"
 
-static const float FRAME_TIME_MS = (1000/60.0);
-
-const static int SCREEN_TIMEPLOT_START = 80;
+const static int SCREEN_TIMEPLOT_START = 95;
 const static int SCREEN_TIMEPLOT_Y_TOP = 150;
 const static int SCREEN_TIMEPLOT_Y_BOTTOM = 380;
 const static int SCREEN_TIMEPLOT_CHAR_TOP = 159;
 const static int SCREEN_CHAR_SIZE = 14;
 
+enum PLOT_BUTTON_LIST { A, B, X, Y, L, La, R, Ra, Z, AX, AY, CX, CY, NO_BUTTON };
+
 const static char* BUTTON_STR[13] = { "A", "B", "X", "Y",
 									  "L", "La", "R", "Ra", "Z",
 									  "AX", "AY", "CX", "CY"};
-const static uint32_t BUTTON_MASKS[13] = { PAD_BUTTON_A, PAD_BUTTON_B, PAD_BUTTON_X, PAD_BUTTON_Y,
+
+const static uint16_t BUTTON_MASKS[13] = { PAD_BUTTON_A, PAD_BUTTON_B, PAD_BUTTON_X, PAD_BUTTON_Y,
 									  PAD_TRIGGER_L, 0, PAD_TRIGGER_R, 0, PAD_TRIGGER_Z,
 									  0, 0, 0, 0 };
 
-static char strBuffer[100];
-
-static uint32_t *pressed = NULL;
-static uint32_t *held = NULL;
+static uint16_t *pressed = NULL;
+static uint16_t *held = NULL;
 static bool buttonLock = false;
 static uint8_t buttonPressCooldown = 0;
 
@@ -43,6 +41,9 @@ static uint8_t triggerThreshold = 255;
 // since there are two options, this can be a bool. false = trigger selected
 static bool stickThresholdSelected = true;
 static uint8_t thresholdFrameCounter = 0;
+//static bool capture400Toggle = false;
+//static bool callbackCapture400 = false;
+//static bool displayCapture400 = false;
 
 static enum PLOT_BUTTON_MENU_STATE menuState = BUTTON_SETUP;
 static enum PLOT_BUTTON_STATE state = BUTTON_INPUT;
@@ -51,15 +52,17 @@ static enum PLOT_BUTTON_STATE state = BUTTON_INPUT;
 static enum PLOT_BUTTON_LIST triggeringInput = NO_BUTTON;
 static enum PLOT_BUTTON_LIST triggeringInputDisplay = NO_BUTTON;
 
-static WaveformDatapoint data[500];
-static int dataIndex = 0;
-static bool dataIsReady = false;
+// structs for storing controller data
+// data: used for display once marked ready
+// temp: used by the callback function while data is being collected
+// structs are flipped silently by calling flipData() from waveform.h, so we don't have to change anything here
+static ControllerRec **data = NULL, **temp = NULL;
 static uint8_t triggerLAnalog = 0, triggerRAnalog = 0;
-static uint64_t totalCaptureTimeUs = 0;
 static bool captureStart = false;
 static bool captureButtonsReleased = false;
 static bool autoCapture = false;
 static uint8_t autoCaptureCounter = 0;
+static int totalCaptureTime = 200000;
 
 static sampling_callback cb;
 static uint64_t prevSampleCallbackTick = 0;
@@ -106,98 +109,148 @@ static void plotButtonSamplingCallback() {
 			}
 		// are we already capturing data?
 		} else if (captureStart) {
-			data[dataIndex].ax = PAD_StickX(0);
-			data[dataIndex].ay = PAD_StickY(0);
-			data[dataIndex].cx = PAD_SubStickX(0);
-			data[dataIndex].cy = PAD_SubStickY(0);
-			data[dataIndex].triggers.triggerLAnalog = PAD_TriggerL(0);
-			data[dataIndex].triggers.triggerRAnalog = PAD_TriggerR(0);
-			data[dataIndex].triggers.triggerLDigital = (*held & PAD_TRIGGER_L);
-			data[dataIndex].triggers.triggerRDigital = (*held & PAD_TRIGGER_R);
-			data[dataIndex].buttonsHeld = *held;
-			data[dataIndex].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-			dataIndex++;
+			(*temp)->samples[(*temp)->sampleEnd].stickX = PAD_StickX(0);
+			(*temp)->samples[(*temp)->sampleEnd].stickY = PAD_StickY(0);
+			(*temp)->samples[(*temp)->sampleEnd].cStickX = PAD_SubStickX(0);
+			(*temp)->samples[(*temp)->sampleEnd].cStickY = PAD_SubStickY(0);
+			(*temp)->samples[(*temp)->sampleEnd].triggerL = PAD_TriggerL(0);
+			(*temp)->samples[(*temp)->sampleEnd].triggerR = PAD_TriggerR(0);
+			(*temp)->samples[(*temp)->sampleEnd].buttons = *held;
+			(*temp)->samples[(*temp)->sampleEnd].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+			(*temp)->sampleEnd++;
 			
-			totalCaptureTimeUs += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+			(*temp)->totalTimeUs += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 			
-			// not moving for 300 ms
-			if (totalCaptureTimeUs >= 300000 || dataIndex == 500) {
-				totalCaptureTimeUs = 0;
-				dataIsReady = true;
+			// capture either ~200 or ~400 ms of data, depending on what the capture400Toggle was set to when recording started
+			// TODO: toggling record time is disabled for now...
+			if ((*temp)->totalTimeUs >= totalCaptureTime || (*temp)->sampleEnd == REC_SAMPLE_MAX) {
+				(*temp)->totalTimeUs = 0;
+				(*temp)->isRecordingReady = true;
+				(*temp)->recordingType = REC_BUTTONTIME;
+				flipData();
 				captureStart = false;
 				captureButtonsReleased = false;
-				state = BUTTON_DISPLAY;
+				if (!autoCapture) {
+					state = BUTTON_DISPLAY;
+				}
+				triggeringInputDisplay = triggeringInput;
+				/*
+				if (callbackCapture400) {
+					displayCapture400 = true;
+				} else {
+					displayCapture400 = false;
+				}*/
 			}
 
 		// we haven't started recording yet, wait for stick/trigger to move outside user-defined range, or a button press
 		} else {
 			// determine what triggered the input
-			// TODO: there has to be a better way to do this...
-			if (*held & PAD_BUTTON_A) {
-				triggeringInput = A;
-			} else if (*held & PAD_BUTTON_B) {
-				triggeringInput = B;
-			} else if (*held & PAD_BUTTON_X) {
-				triggeringInput = X;
-			} else if (*held & PAD_BUTTON_Y) {
-				triggeringInput = Y;
-			} else if (*held & PAD_TRIGGER_L) {
-				triggeringInput = L;
-			} else if (PAD_TriggerL(0) >= triggerThreshold) {
-				triggeringInput = La;
-			} else if (*held & PAD_TRIGGER_R) {
-				triggeringInput = R;
-			} else if (PAD_TriggerR(0) >= triggerThreshold) {
-				triggeringInput = Ra;
-			} else if (*held & PAD_TRIGGER_Z) {
-				triggeringInput = Z;
-			} else if (abs(PAD_StickX(0)) >= stickThreshold) {
-				triggeringInput = AX;
-			} else if (abs(PAD_StickY(0)) >= stickThreshold) {
-				triggeringInput = AY;
-			} else if (abs(PAD_SubStickX(0)) >= stickThreshold) {
-				triggeringInput = CX;
-			} else if (abs(PAD_SubStickY(0)) >= stickThreshold) {
-				triggeringInput = CY;
-			} else {
-				triggeringInput = NO_BUTTON;
+			triggeringInput = NO_BUTTON;
+
+			for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
+				switch (button) {
+					// analog values
+					case AX:
+						if (abs(PAD_StickX(0)) >= stickThreshold) {
+							triggeringInput = button;
+						}
+						break;
+					case AY:
+						if (abs(PAD_StickY(0)) >= stickThreshold) {
+							triggeringInput = button;
+						}
+						break;
+					case CX:
+						if (abs(PAD_SubStickX(0)) >= stickThreshold) {
+							triggeringInput = button;
+						}
+						break;
+					case CY:
+						if (abs(PAD_SubStickY(0)) >= stickThreshold) {
+							triggeringInput = button;
+						}
+						break;
+					case La:
+						if (PAD_TriggerL(0) >= triggerThreshold) {
+							triggeringInput = button;
+						}
+						break;
+					case Ra:
+						if (PAD_TriggerR(0) >= triggerThreshold) {
+							triggeringInput = button;
+						}
+						break;
+					// digital values/buttons
+					default:
+						if (*held & BUTTON_MASKS[button]) {
+							triggeringInput = button;
+							break;
+						}
+				}
+				
+				// leave loop if we've found our triggering input
+				if (triggeringInput != NO_BUTTON) {
+					break;
+				}
 			}
 			
 			// write our data if an input was detected
 			if (triggeringInput != NO_BUTTON) {
-				triggeringInputDisplay = triggeringInput;
 				captureStart = true;
-				data[0].ax = PAD_StickX(0);
-				data[0].ay = PAD_StickY(0);
-				data[0].cx = PAD_SubStickX(0);
-				data[0].cy = PAD_SubStickY(0);
-				data[0].triggers.triggerLAnalog = triggerLAnalog;
-				data[0].triggers.triggerRAnalog = triggerRAnalog;
-				data[0].triggers.triggerLDigital = (*held & PAD_TRIGGER_L);
-				data[0].triggers.triggerRDigital = (*held & PAD_TRIGGER_R);
-				data[0].buttonsHeld = *held;
-				data[0].timeDiffUs = 0;
-				dataIndex = 1;
-				dataIsReady = false;
+				clearRecordingArray(*temp);
+				(*temp)->samples[0].stickX = PAD_StickX(0);
+				(*temp)->samples[0].stickY = PAD_StickY(0);
+				(*temp)->samples[0].cStickX = PAD_SubStickX(0);
+				(*temp)->samples[0].cStickY = PAD_SubStickY(0);
+				(*temp)->samples[0].triggerL = triggerLAnalog;
+				(*temp)->samples[0].triggerR = triggerRAnalog;
+				(*temp)->samples[0].buttons = *held;
+				(*temp)->samples[0].timeDiffUs = 0;
+				(*temp)->sampleEnd = 1;
+				(*temp)->isRecordingReady = false;
+				(*temp)->dataExported = false;
+				
+				/*
+				callbackCapture400 = capture400Toggle;
+				if (capture400Toggle) {
+					totalCaptureTime = 400000;
+				} else {
+					totalCaptureTime = 200000;
+				}*/
 			}
 		}
 	}
 }
 
-static void setup(uint32_t *p, uint32_t *h) {
+static void setup() {
 	setSamplingRateHigh();
-	pressed = p;
-	held = h;
+	if (pressed == NULL) {
+		pressed = getButtonsDownPtr();
+		held = getButtonsHeldPtr();
+	}
 	cb = PAD_SetSamplingCallback(plotButtonSamplingCallback);
+	if (data == NULL) {
+		data = getRecordingData();
+		temp = getTempData();
+	}
 	menuState = BUTTON_POST_SETUP;
 	state = BUTTON_DISPLAY;
+
+	// check if existing recording is valid for this menu
+	if (!(RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_BUTTONTIME_FLAG)) {
+		clearRecordingArray(*data);
+	}
+	
+	// prevent pressing for a short time upon entering menu
+	buttonLock = true;
+	buttonPressCooldown = 5;
 }
 
-static void displayInstructions(void *currXfb) {
+static void displayInstructions() {
 	setCursorPos(2, 0);
-	printStr("Press A to prepare a 300ms recording.\n"
-			 "Recording will start when a digital button is pressed,\n"
-			 "or when an analog value moves beyond its threshold.\n\n"
+	printStr("Press A to prepare a recording. Recording will start when\n"
+			 "a digital button is pressed, or when an analog value moves\n"
+			 "beyond its threshold. Recording will last ~200 ms.\n\n"
 			 "Vertical gray lines show ~1 frame (~16.6ms) boundaries.\n"
 			 "Frame times are shown on the right. The highlighted number\n"
 			 "shows what button started the recording, and how long its\n"
@@ -207,11 +260,11 @@ static void displayInstructions(void *currXfb) {
 			 "Use the D-Pad to adjust the thresholds.\n"
 			 "Hold R to change thresholds faster.\n"
 			 "Hold Start to toggle Auto-Trigger. Enabling this removes\n"
-			 "the need to press A, but disables the instruction menu and\n"
-			 "the R modifier.\n", currXfb);
+			 "the need to press A, but disables the instruction menu (Z),\n"
+			 "and the R modifier.\n");
 	
 	setCursorPos(21, 0);
-	printStr("Press Z to close instructions.", currXfb);
+	printStr("Press Z to close instructions.");
 	
 	if (!buttonLock) {
 		if (*pressed & PAD_TRIGGER_Z) {
@@ -222,65 +275,122 @@ static void displayInstructions(void *currXfb) {
 	}
 }
 
-void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
+void menu_plotButton() {
 	switch (menuState) {
 		case BUTTON_SETUP:
-			setup(p, h);
+			setup();
 			break;
 		case BUTTON_INSTRUCTIONS:
-			displayInstructions(currXfb);
+			displayInstructions();
 			break;
 		case BUTTON_POST_SETUP:
+			// we're getting the address of the object itself here, not the address of the pointer,
+			// which means we will always point to the same object, regardless of a flip
+			ControllerRec *dispData = *data;
+			
+			// set here for the same reason as the above var
+			// since this is separate from recording logic, this could change during draw
+			//bool menuDisplay400 = displayCapture400;
+			
 			switch (state) {
+				case BUTTON_INPUT:
+					// nothing happens here other than showing the message about waiting for an input
+					// the sampling callback function will change the plotState enum when an input is done
+					setCursorPos(2,0);
+					if (autoCapture) {
+						printStr("Auto-Trigger enabled, w");
+					} else {
+						printStr("W");
+					}
+					printStr("aiting for input.");
+					printEllipse(ellipseCounter, 20);
+					ellipseCounter++;
+					if (ellipseCounter == 60) {
+						ellipseCounter = 0;
+					}
+					
 				case BUTTON_DISPLAY:
-					if (!autoCapture) {
-						printStr("Press A to start read, press Z for instructions", currXfb);
+					if (!autoCapture && state != BUTTON_INPUT) {
+						printStr("Press A to start read, press Z for instructions");
 					}
 					
 					setCursorPos(4,7);
 					if (stickThresholdSelected) {
-						printStrColor("Stick Threshold:", currXfb, COLOR_WHITE, COLOR_BLACK);
-						sprintf(strBuffer, " %3u", stickThreshold);
-						printStr(strBuffer, currXfb);
+						printStrColor(COLOR_WHITE, COLOR_BLACK, "Stick Threshold:");
+						printStr(" %3u", stickThreshold);
 						setCursorPos(4, 32);
-						printStr("Trigger Threshold:", currXfb);
-						sprintf(strBuffer, " %3u", triggerThreshold);
-						printStr(strBuffer, currXfb);
+						printStr("Trigger Threshold: %3u", triggerThreshold);
 					} else {
-						printStr("Stick Threshold:", currXfb);
-						sprintf(strBuffer, " %3u", stickThreshold);
-						printStr(strBuffer, currXfb);
+						printStr("Stick Threshold: %3u", stickThreshold);
 						setCursorPos(4, 32);
-						printStrColor("Trigger Threshold:", currXfb, COLOR_WHITE, COLOR_BLACK);
-						sprintf(strBuffer, " %3u", triggerThreshold);
-						printStr(strBuffer, currXfb);
+						printStrColor(COLOR_WHITE, COLOR_BLACK, "Trigger Threshold:");
+						printStr(" %3u", triggerThreshold);
 					}
 					
-					if (dataIsReady) {
-						DrawBox(SCREEN_TIMEPLOT_START - 40, SCREEN_TIMEPLOT_Y_TOP - 1, 600, SCREEN_TIMEPLOT_Y_BOTTOM + 1, COLOR_WHITE, currXfb);
+					//setCursorPos(21,38);
+					//printStr("Capture length: %3dms", (capture400Toggle ? 400 : 200));
+					
+					if (dispData->isRecordingReady) {
+						DrawBox(SCREEN_TIMEPLOT_START - 55, SCREEN_TIMEPLOT_Y_TOP - 1, 600, SCREEN_TIMEPLOT_Y_BOTTOM + 1, COLOR_WHITE);;
 						
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
 							setCursorPos(7 + button, 4);
 							if (button == triggeringInputDisplay) {
-								printStrColor(BUTTON_STR[button], currXfb, COLOR_WHITE, COLOR_BLACK);
+								printStrColor(COLOR_WHITE, COLOR_BLACK, BUTTON_STR[button]);
 							} else {
-								printStr(BUTTON_STR[button], currXfb);
+								printStr(BUTTON_STR[button]);
 							}
 						}
-						//printStr("   A\n   B\n   X\n   Y\n   L\n   La\n   R\n   Ra\n   Z\n   AX\n   AY\n   CX\n   CY", currXfb);
 						
-						uint64_t frameIntervalTime = 16666;
 						uint64_t totalTimeUs = 0;
-						ButtonPressedTime buttons[13] = {{ 0, false }};
+						ButtonPressedTime buttons[13] = { {0, false} };
+						
+						// initial "frame" line
+						DrawFilledBox(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_Y_TOP,
+						              SCREEN_TIMEPLOT_START + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
+									  COLOR_SILVER);
+						
+						int currMs = 0;
+						int frameIntervalIndex = 0;
+						
 						// draw data
-						for (int i = 0; i < dataIndex; i++) {
+						for (int i = 0; i < dispData->sampleEnd; i++) {
 							// frame intervals first
-							frameIntervalTime += data[i].timeDiffUs;
-							totalTimeUs += data[i].timeDiffUs;
-							if (frameIntervalTime >= 16666) {
-								DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_Y_TOP, SCREEN_TIMEPLOT_Y_BOTTOM,
-										  COLOR_GRAY, currXfb);
-								frameIntervalTime = 0;
+							totalTimeUs += dispData->samples[i].timeDiffUs;
+							
+							if (totalTimeUs >= (1000 * currMs)) {
+								currMs++;
+								if (totalTimeUs / 1000 >= FRAME_INTERVAL_MS[frameIntervalIndex]) {
+									DrawFilledBox(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
+												  SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
+												  COLOR_GRAY);
+									
+									/*
+									if (menuDisplay400) {
+										DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_Y_TOP,
+										          SCREEN_TIMEPLOT_Y_BOTTOM,
+										          COLOR_GRAY);
+									} else {
+										DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
+										          SCREEN_TIMEPLOT_Y_BOTTOM,
+										          COLOR_GRAY);
+										DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_TOP,
+										          SCREEN_TIMEPLOT_Y_BOTTOM,
+										          COLOR_GRAY);
+									}*/
+									
+									frameIntervalIndex++;
+									/*
+									if (menuDisplay400) {
+										if (currMs >= 400000) {
+											break;
+										}
+									} else {*/
+										if (currMs >= 200000) {
+											break;
+										}
+									//}
+								}
 							}
 							
 							// button press lines
@@ -290,34 +400,47 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 								switch (currButton) {
 									// handle all specific cases
 									case AX:
-										result = abs(data[i].ax) >= stickThreshold;
+										result = abs(dispData->samples[i].stickX) >= stickThreshold;
 										break;
 									case AY:
-										result = abs(data[i].ay) >= stickThreshold;
+										result = abs(dispData->samples[i].stickY) >= stickThreshold;
 										break;
 									case CX:
-										result = abs(data[i].cx) >= stickThreshold;
+										result = abs(dispData->samples[i].cStickX) >= stickThreshold;
 										break;
 									case CY:
-										result = abs(data[i].cy) >= stickThreshold;
+										result = abs(dispData->samples[i].cStickY) >= stickThreshold;
 										break;
 									case La:
-										result = data[i].triggers.triggerLAnalog >= triggerThreshold;
+										result = dispData->samples[i].triggerL >= triggerThreshold;
 										break;
 									case Ra:
-										result = data[i].triggers.triggerRAnalog >= triggerThreshold;
+										result = dispData->samples[i].triggerR >= triggerThreshold;
 										break;
 									// "normal" cases
 									default:
-										result = data[i].buttonsHeld & BUTTON_MASKS[currButton];
+										result = dispData->samples[i].buttons & BUTTON_MASKS[currButton];
 										break;
 								}
 								
 								// draw bar if button state was triggered
 								if (result) {
-									DrawVLine(SCREEN_TIMEPLOT_START + i, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
-									          SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
-									          COLOR_WHITE, currXfb);
+									DrawFilledBox(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
+									              SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
+												  COLOR_WHITE);
+									/*
+									if (menuDisplay400) {
+										DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
+										          SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
+										          COLOR_WHITE);
+									} else {
+										DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
+										          SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
+										          COLOR_WHITE);
+										DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
+										          SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
+										          COLOR_WHITE);
+									}*/
 								}
 								
 								// calculate what timing to show if not marked done
@@ -327,7 +450,7 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 										if (result) {
 											// triggering input should have length of time that the first input was held
 											if (currButton == triggeringInputDisplay) {
-												buttons[currButton].timeHeld += data[i].timeDiffUs;
+												buttons[currButton].timeHeld += dispData->samples[i].timeDiffUs;
 											}
 										} else if (buttons[currButton].timeHeld != 0) {
 											buttons[currButton].pressFinished = true;
@@ -344,16 +467,36 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 							}
 						}
 						
+						// draw end line
+						DrawFilledBox(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
+						              SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
+						              COLOR_GRAY);
+						/*if (menuDisplay400) {
+							DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_Y_TOP,
+							          SCREEN_TIMEPLOT_Y_BOTTOM,
+							          COLOR_SILVER);
+						} else {
+							DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
+							          SCREEN_TIMEPLOT_Y_BOTTOM,
+							          COLOR_SILVER);
+							DrawVLine(SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_TOP,
+							          SCREEN_TIMEPLOT_Y_BOTTOM,
+							          COLOR_SILVER);
+						}*/
+						
 						// draw frame durations
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
 							if (buttons[button].timeHeld != 0) {
 								setCursorPos(7 + button, 52);
-								sprintf(strBuffer, "%2.2ff", buttons[button].timeHeld / (FRAME_TIME_MS * 1000));
+								float frames = buttons[button].timeHeld / FRAME_TIME_US_F;
+								if (frames >= 10) {
+									setCursorPos(7 + button, 51);
+								}
 								// indicate the initial input with black on white text
 								if (button == triggeringInputDisplay) {
-									printStrColor(strBuffer, currXfb, COLOR_WHITE, COLOR_BLACK);
+									printStrColor(COLOR_WHITE, COLOR_BLACK, "%2.2ff", frames);
 								} else {
-									printStr(strBuffer, currXfb);
+									printStr("%2.2ff", frames);
 								}
 							}
 						}
@@ -361,8 +504,8 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 					
 					// single presses
 					if (!buttonLock) {
-						// disable certain buttons if auto-capture is enabled
-						if (!autoCapture) {
+						// disable certain buttons a capture is occurring
+						if (!autoCapture && state != BUTTON_INPUT) {
 							if (*pressed & PAD_BUTTON_A) {
 								state = BUTTON_INPUT;
 								buttonLock = true;
@@ -371,7 +514,11 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 								menuState = BUTTON_INSTRUCTIONS;
 								buttonLock = true;
 								buttonPressCooldown = 5;
-							}
+							} /* else if (*pressed & PAD_BUTTON_Y) {
+								capture400Toggle = !capture400Toggle;
+								buttonLock = true;
+								buttonPressCooldown = 5;
+							}*/
 						}
 						if (*pressed & PAD_BUTTON_RIGHT) {
 							stickThresholdSelected = false;
@@ -443,46 +590,33 @@ void menu_plotButton(void *currXfb, uint32_t *p, uint32_t *h) {
 					setCursorPos(21, 0);
 					if (*held == PAD_BUTTON_START && !buttonLock && !captureStart) {
 						if (autoCapture) {
-							printStr("Disabling ", currXfb);
+							printStr("Disabling ");
 						} else {
-							printStr("Enabling ", currXfb);
+							printStr("Enabling ");
 						}
-						printStr("Auto-Trigger", currXfb);
-						printEllipse(autoCaptureCounter, 40, currXfb);
+						printStr("Auto-Trigger");
+						printEllipse(autoCaptureCounter, 40);
 						autoCaptureCounter++;
 						if (autoCaptureCounter == 120) {
 							autoCapture = !autoCapture;
+							if (autoCapture) {
+								state = BUTTON_INPUT;
+							} else {
+								state = BUTTON_DISPLAY;
+							}
 							captureButtonsReleased = false;
 							buttonLock = true;
 							buttonPressCooldown = 5;
 							autoCaptureCounter = 0;
 						}
 					} else {
-						printStr("Hold start to toggle Auto-Trigger.", currXfb);
+						printStr("Hold start to toggle Auto-Trigger.");
 						autoCaptureCounter = 0;
 					}
-					
-					if (!autoCapture) {
-						break;
-					}
-				case BUTTON_INPUT:
-					// nothing happens here other than showing the message about waiting for an input
-					// the sampling callback function will change the plotState enum when an input is done
-					setCursorPos(2,0);
-					if (autoCapture) {
-						printStr("Auto-Trigger enabled, w", currXfb);
-					} else {
-						printStr("W", currXfb);
-					}
-					printStr("aiting for input.", currXfb);
-					printEllipse(ellipseCounter, 20, currXfb);
-					ellipseCounter++;
-					if (ellipseCounter == 60) {
-						ellipseCounter = 0;
-					}
 					break;
+
 				default:
-					printStr("button plot default case?", currXfb);
+					printStr("button plot default case?");
 					break;
 			}
 	}
@@ -506,8 +640,9 @@ void menu_plotButtonEnd() {
 	PAD_SetSamplingCallback(cb);
 	captureStart = false;
 	captureButtonsReleased = false;
-	dataIndex = 0;
-	dataIsReady = false;
+	if (!(*temp)->isRecordingReady) {
+		(*temp)->sampleEnd = 0;
+	}
 	autoCaptureCounter = 0;
 	autoCapture = false;
 	pressed = NULL;

@@ -4,7 +4,6 @@
 
 #include "submenu/oscilloscope.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -19,28 +18,35 @@
 
 const static uint8_t STICK_MOVEMENT_THRESHOLD = 5;
 const static uint8_t STICK_ORIGIN_TIME_THRESHOLD_MS = 50;
-const static uint8_t STICK_MOVEMENT_TIME_THRESHOLD_MS = 100;
+const static uint8_t STICK_MOVEMENT_TIME_THRESHOLD_MS = 25;
 const static uint8_t MEASURE_COOLDOWN_FRAMES = 5;
 
-static const float FRAME_TIME_MS = (1000/60.0);
-
 const static uint8_t SCREEN_TIMEPLOT_START = 70;
-
-static const uint32_t COLOR_RED_C = 0x846084d7;
-static const uint32_t COLOR_BLUE_C = 0x6dd26d72;
 
 static enum OSC_MENU_STATE state = OSC_SETUP;
 static enum OSC_STATE oState = PRE_INPUT;
 
-static WaveformData *data = NULL; // = { {{ 0 }}, 0, 500, false, false };
+// structs for storing controller data
+// data: used for display once marked ready
+// temp: used by the callback function while data is being collected
+// structs are flipped silently by calling flipData() from waveform.h, so we don't have to change anything here
+static ControllerRec **data = NULL, **temp = NULL;
 static enum OSCILLOSCOPE_TEST currentTest = SNAPBACK;
 static int waveformScaleFactor = 1;
 static int dataScrollOffset = 0;
-static char strBuffer[100];
+
+// stores current captured data
+static ControllerSample curr;
+
+// acts as a prepend loop
+// once conditions are met, ~25ms of previous data is added to the start of the capture from here
+static ControllerSample startingLoop[200];
+static int startingLoopIndex = 0;
 
 static uint8_t stickCooldown = 0;
 static int8_t snapbackStartPosX = 0, snapbackStartPosY = 0;
 static int8_t snapbackPrevPosX = 0, snapbackPrevPosY = 0;
+static bool snapbackCrossed64 = false;
 static bool pressLocked = false;
 static bool stickMove = false;
 static bool showCStick = false;
@@ -53,8 +59,8 @@ static uint64_t sampleCallbackTick = 0;
 static uint64_t timeStickInOrigin = 0;
 static uint64_t timeStoppedMoving = 0;
 
-static uint32_t *pressed = NULL;
-static uint32_t *held = NULL;
+static uint16_t *pressed = NULL;
+static uint16_t *held = NULL;
 static bool buttonLock = false;
 static uint8_t buttonPressCooldown = 0;
 
@@ -66,10 +72,9 @@ static void oscilloscopeCallback() {
 	if (prevSampleCallbackTick == 0) {
 		prevSampleCallbackTick = sampleCallbackTick;
 	}
-
-	static int8_t x, y, cx, cy;
+	
 	PAD_ScanPads();
-
+	
 	// keep buttons in a "pressed" state long enough for code to see it
 	// TODO: I don't like this implementation
 	if (!pressLocked) {
@@ -83,180 +88,102 @@ static void oscilloscopeCallback() {
 			pressLocked = false;
 		}
 	}
-
+	
 	*held = PAD_ButtonsHeld(0);
-
-	// read stick position if not locked
+	
+	// record current data
+	curr.stickX = PAD_StickX(0);
+	curr.stickY = PAD_StickY(0);
+	curr.cStickX = PAD_SubStickX(0);
+	curr.cStickY = PAD_SubStickY(0);
+	curr.timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+	
+	// add data to prepend loop
+	startingLoop[startingLoopIndex] = curr;
+	startingLoopIndex++;
+	if (startingLoopIndex == 200) {
+		startingLoopIndex = 0;
+	}
+	
+	int8_t selectedStickX, selectedStickY;
+	if (showCStick) {
+		selectedStickX = curr.cStickX;
+		selectedStickY = curr.cStickY;
+	} else {
+		selectedStickX = curr.stickX;
+		selectedStickY = curr.stickY;
+	}
+	
+	// are we ready to check for stick inputs?
 	if (oState != POST_INPUT_LOCK) {
-		x = PAD_StickX(0);
-		y = PAD_StickY(0);
-		cx = PAD_SubStickX(0);
-		cy = PAD_SubStickY(0);
-		
-		// handle stick recording differently based on the selected test
-		switch (currentTest) {
-			case SNAPBACK:
-				// we're already recording an input
-				if (stickMove) {
-					data->data[data->endPoint].ax = x;
-					data->data[data->endPoint].ay = y;
-					data->data[data->endPoint].cx = cx;
-					data->data[data->endPoint].cy = cy;
-					data->data[data->endPoint].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-					data->endPoint++;
-					
-					// has the stick stopped moving?
-					if (!showCStick) {
-						if (abs(x - snapbackPrevPosX) < STICK_MOVEMENT_THRESHOLD &&
-						    abs(y - snapbackPrevPosY) < STICK_MOVEMENT_THRESHOLD ) {
-							timeStoppedMoving += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
-						} else {
-							timeStoppedMoving = 0;
-						}
-						snapbackPrevPosX = x;
-						snapbackPrevPosY = y;
+		// data capture is currently happening
+		if (stickMove) {
+			// capture recorded sample
+			(*temp)->samples[(*temp)->sampleEnd] = curr;
+			(*temp)->totalTimeUs += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+			(*temp)->sampleEnd++;
+			
+			// handle specific logic for each test
+			switch (currentTest) {
+				// TODO: change this to have a buffer of a minimum amount of time, to make final graph look better
+				case SNAPBACK:
+					// are we close to the origin?
+					if ((abs(selectedStickX) < STICK_MOVEMENT_THRESHOLD) && (abs(selectedStickY) < STICK_MOVEMENT_THRESHOLD)) {
+						timeStoppedMoving += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 					} else {
-						if (abs(cx - snapbackPrevPosX) < STICK_MOVEMENT_THRESHOLD &&
-						    abs(cy - snapbackPrevPosY) < STICK_MOVEMENT_THRESHOLD) {
-							timeStoppedMoving += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
-						} else {
-							timeStoppedMoving = 0;
-						}
-						snapbackPrevPosX = cx;
-						snapbackPrevPosY = cy;
+						timeStoppedMoving = 0;
 					}
+					
+					snapbackPrevPosX = selectedStickX;
+					snapbackPrevPosY = selectedStickY;
 					
 					// have we either run out of data, or has the stick stopped moving for long enough?
-					if (data->endPoint == WAVEFORM_SAMPLES || ((timeStoppedMoving / 1000)) >= STICK_MOVEMENT_TIME_THRESHOLD_MS) {
-						if (!showCStick) {
-							// are we stopped near the origin?
-							if ((x < STICK_MOVEMENT_THRESHOLD && x > -STICK_MOVEMENT_THRESHOLD) &&
-							    (y < STICK_MOVEMENT_THRESHOLD && y > -STICK_MOVEMENT_THRESHOLD)) {
-								// normal procedure, make data ready
-								data->isDataReady = true;
-								stickMove = false;
-								display = true;
-								oState = POST_INPUT_LOCK;
-								stickCooldown = MEASURE_COOLDOWN_FRAMES;
-								snapbackStartPosX = 0;
-								snapbackStartPosY = 0;
-							} else {
-								// go back in the loop, we're holding a position somewhere outside origin
-								// this will also reset if we're out of datapoints? not sure how this'll work
-								data->endPoint = 0;
-								stickMove = false;
-								snapbackStartPosX = x;
-								snapbackStartPosY = y;
-							}
+					if ((*temp)->sampleEnd == REC_SAMPLE_MAX || ((timeStoppedMoving / 1000)) >= STICK_MOVEMENT_TIME_THRESHOLD_MS) {
+						// are we stopped near the origin?
+						if ((abs(selectedStickX) < STICK_MOVEMENT_THRESHOLD) && (abs(selectedStickY) < STICK_MOVEMENT_THRESHOLD)) {
+							(*temp)->isRecordingReady = true;
 						} else {
-							if ((cx < STICK_MOVEMENT_THRESHOLD && cx > -STICK_MOVEMENT_THRESHOLD) &&
-							    (cy < STICK_MOVEMENT_THRESHOLD && cy > -STICK_MOVEMENT_THRESHOLD)) {
-								data->isDataReady = true;
-								stickMove = false;
-								display = true;
-								oState = POST_INPUT_LOCK;
-								stickCooldown = MEASURE_COOLDOWN_FRAMES;
-								snapbackStartPosX = 0;
-								snapbackStartPosY = 0;
-							} else {
-								data->endPoint = 0;
-								stickMove = false;
-								snapbackStartPosX = cx;
-								snapbackStartPosY = cy;
-							}
+							// go back in the loop, we're holding a position somewhere outside origin
+							// this will also reset if we're out of datapoints? not sure how this'll work
+							(*temp)->sampleEnd = 0;
+							stickMove = false;
+							snapbackStartPosX = selectedStickX;
+							snapbackStartPosY = selectedStickY;
+							snapbackCrossed64 = false;
+							oState = POST_INPUT;
 						}
 					}
-					
-				// we've not recorded an input yet
-				} else {
-					// does the stick move outside the threshold?
-					if (!showCStick) {
-						if ((x > snapbackStartPosX + STICK_MOVEMENT_THRESHOLD || x < snapbackStartPosX - STICK_MOVEMENT_THRESHOLD) ||
-						    (y > snapbackStartPosY + STICK_MOVEMENT_THRESHOLD) || (y < snapbackStartPosY - STICK_MOVEMENT_THRESHOLD)) {
-							// reset data
-							for (int i = 1; i < WAVEFORM_SAMPLES; i++) {
-								data->data[i].ax = 0;
-								data->data[i].ay = 0;
-								data->data[i].cx = 0;
-								data->data[i].cy = 0;
-								data->data[i].timeDiffUs = 0;
-							}
-							stickMove = true;
-							data->data[0].ax = x;
-							data->data[0].ay = y;
-							data->data[0].cx = cx;
-							data->data[0].cy = cy;
-							data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
-							data->totalTimeUs = 0;
-							//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-							data->endPoint = 1;
-							data->isDataReady = false;
-							data->exported = false;
-							oState = PRE_INPUT;
-						}
-					} else {
-						if ((cx > snapbackStartPosX + STICK_MOVEMENT_THRESHOLD || cx < snapbackStartPosX - STICK_MOVEMENT_THRESHOLD) ||
-						    (cy > snapbackStartPosY + STICK_MOVEMENT_THRESHOLD) || (cy < snapbackStartPosY - STICK_MOVEMENT_THRESHOLD)) {
-							// reset data
-							for (int i = 1; i < WAVEFORM_SAMPLES; i++) {
-								data->data[i].ax = 0;
-								data->data[i].ay = 0;
-								data->data[i].cx = 0;
-								data->data[i].cy = 0;
-								data->data[i].timeDiffUs = 0;
-							}
-							stickMove = true;
-							data->data[0].ax = x;
-							data->data[0].ay = y;
-							data->data[0].cx = cx;
-							data->data[0].cy = cy;
-							data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
-							data->totalTimeUs = 0;
-							//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-							data->endPoint = 1;
-							data->isDataReady = false;
-							data->exported = false;
-							oState = PRE_INPUT;
-						}
-					}
-				}
-				break;
-			case PIVOT:
-				// we're already recording an input
-				if (stickMove) {
-					data->data[data->endPoint].ax = x;
-					data->data[data->endPoint].ay = y;
-					data->data[data->endPoint].cx = cx;
-					data->data[data->endPoint].cy = cy;
-					data->data[data->endPoint].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-					data->endPoint++;
+					break;
+				
+				case PIVOT:
 					// are we close to the origin?
-					if ((x < STICK_MOVEMENT_THRESHOLD && x > -STICK_MOVEMENT_THRESHOLD) &&
-					    (y < STICK_MOVEMENT_THRESHOLD && y > -STICK_MOVEMENT_THRESHOLD)) {
+					// this doesn't use the selectedStick values, idk if c-stick pivots are a thing...
+					if ((abs(curr.stickX) < STICK_MOVEMENT_THRESHOLD) && (abs(curr.stickY) < STICK_MOVEMENT_THRESHOLD)) {
 						timeStickInOrigin += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
 					} else {
 						timeStickInOrigin = 0;
 					}
-					if (data->endPoint == WAVEFORM_SAMPLES || (timeStickInOrigin / 1000) >= STICK_ORIGIN_TIME_THRESHOLD_MS) {
-						// TODO: replace this with something proper, wip is already there with the switch case
+					
+					// have we met conditions to end recording?
+					if ((*temp)->sampleEnd == REC_SAMPLE_MAX || (timeStickInOrigin / 1000) >= STICK_ORIGIN_TIME_THRESHOLD_MS) {
 						// this will truncate the recording to just the pivot input
 						uint64_t timeFromOriginCross = 0;
 						bool crossed64Range = false;
 						int8_t inputSign = 0;
 						int pivotStartIndex = 0;
 						bool hasCrossedOrigin = false;
-						for (int i = data->endPoint - 1; i >= 0; i--) {
+						for (int i = (*temp)->sampleEnd - 1; i >= 0; i--) {
 							if (!crossed64Range) {
-								if (data->data[i].ax >= 64 || data->data[i].ax <= -64) {
+								if ((*temp)->samples[i].stickX >= 64 || (*temp)->samples[i].stickX <= -64) {
 									crossed64Range = true;
-									inputSign = data->data[i].ax;
+									inputSign = (*temp)->samples[i].stickX;
 								}
 							} else if (!hasCrossedOrigin) {
-								if (inputSign * data->data[i].ax < 0) {
+								if (inputSign * (*temp)->samples[i].stickX < 0) {
 									hasCrossedOrigin = true;
 								}
 							} else {
-								timeFromOriginCross += data->data[i].timeDiffUs;
+								timeFromOriginCross += (*temp)->samples[i].timeDiffUs;
 								if (timeFromOriginCross / 1000 >= 50) {
 									pivotStartIndex = i;
 									break;
@@ -264,182 +191,190 @@ static void oscilloscopeCallback() {
 							}
 						}
 						
-						// rewrite data with new starting index
-						for (int i = 0; i < data->endPoint - 1 - pivotStartIndex; i++) {
-							data->data[i].ax = data->data[i + pivotStartIndex].ax;
-							data->data[i].ay = data->data[i + pivotStartIndex].ay;
-							data->data[i].cx = data->data[i + pivotStartIndex].cx;
-							data->data[i].cy = data->data[i + pivotStartIndex].cy;
-							data->data[i].timeDiffUs = data->data[i + pivotStartIndex].timeDiffUs;
-						}
-						data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
-						data->endPoint = data->endPoint - pivotStartIndex - 1;
+						(*temp)->totalTimeUs = 0;
 						
-						// normal stuff
-						data->isDataReady = true;
-						stickMove = false;
-						display = true;
-						oState = POST_INPUT_LOCK;
-						stickCooldown = MEASURE_COOLDOWN_FRAMES;
-					}
-				// we've not recorded an input yet
-				} else {
-					// does the stick move outside the threshold?
-					if ((x > STICK_MOVEMENT_THRESHOLD || x < -STICK_MOVEMENT_THRESHOLD) ||
-					    (y > STICK_MOVEMENT_THRESHOLD) || (y < -STICK_MOVEMENT_THRESHOLD)) {
-						// reset data
-						for (int i = 1; i < WAVEFORM_SAMPLES; i++) {
-							data->data[i].ax = 0;
-							data->data[i].ay = 0;
-							data->data[i].cx = 0;
-							data->data[i].cy = 0;
-							data->data[i].timeDiffUs = 0;
+						// TODO: this is wasteful for a polling function, find a way to either specify a different
+						// TODO: starting point, or do this outside of the function
+						// rewrite data with new starting index
+						for (int i = 0; i < (*temp)->sampleEnd - 1 - pivotStartIndex; i++) {
+							(*temp)->samples[i].stickX = (*temp)->samples[i + pivotStartIndex].stickX;
+							(*temp)->samples[i].stickY = (*temp)->samples[i + pivotStartIndex].stickY;
+							(*temp)->samples[i].cStickX = (*temp)->samples[i + pivotStartIndex].cStickX;
+							(*temp)->samples[i].cStickY = (*temp)->samples[i + pivotStartIndex].cStickY;
+							(*temp)->samples[i].timeDiffUs = (*temp)->samples[i + pivotStartIndex].timeDiffUs;
+							(*temp)->totalTimeUs += (*temp)->samples[i + pivotStartIndex].timeDiffUs;
 						}
-						stickMove = true;
-						data->data[0].ax = x;
-						data->data[0].ay = y;
-						data->data[0].cx = cx;
-						data->data[0].cy = cy;
-						data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
-						data->totalTimeUs = 0;
-						//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-						data->endPoint = 1;
-						data->isDataReady = false;
-						data->exported = false;
-						oState = PRE_INPUT;
+						(*temp)->totalTimeUs -= (*temp)->samples[0].timeDiffUs;
+						(*temp)->samples[0].timeDiffUs = 0;
+						(*temp)->sampleEnd = (*temp)->sampleEnd - pivotStartIndex - 1;
+						
+						(*temp)->isRecordingReady = true;
 					}
-				}
-				break;
-			default:
-				// we're already recording an input
-				if (stickMove) {
-					data->data[data->endPoint].ax = x;
-					data->data[data->endPoint].ay = y;
-					data->data[data->endPoint].cx = cx;
-					data->data[data->endPoint].cy = cy;
-					data->data[data->endPoint].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-					data->endPoint++;
+					break;
+				
+				default:
 					// are we close to the origin?
-					if (!showCStick) {
-						if ((x < STICK_MOVEMENT_THRESHOLD && x > -STICK_MOVEMENT_THRESHOLD) &&
-						    (y < STICK_MOVEMENT_THRESHOLD && y > -STICK_MOVEMENT_THRESHOLD)) {
-							timeStickInOrigin += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
-						} else {
-							timeStickInOrigin = 0;
-						}
+					if ((abs(selectedStickX) < STICK_MOVEMENT_THRESHOLD) && (abs(selectedStickY) < STICK_MOVEMENT_THRESHOLD)) {
+						timeStickInOrigin += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
 					} else {
-						if ((cx < STICK_MOVEMENT_THRESHOLD && cx > -STICK_MOVEMENT_THRESHOLD) &&
-						    (cy < STICK_MOVEMENT_THRESHOLD && cy > -STICK_MOVEMENT_THRESHOLD)) {
-							timeStickInOrigin += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
-						} else {
-							timeStickInOrigin = 0;
-						}
+						timeStickInOrigin = 0;
 					}
-					if (data->endPoint == WAVEFORM_SAMPLES || (timeStickInOrigin / 1000) >= STICK_ORIGIN_TIME_THRESHOLD_MS) {
-						data->isDataReady = true;
-						stickMove = false;
-						display = true;
-						oState = POST_INPUT_LOCK;
-						stickCooldown = MEASURE_COOLDOWN_FRAMES;
+					
+					if ((*temp)->sampleEnd == REC_SAMPLE_MAX || (timeStickInOrigin / 1000) >= STICK_ORIGIN_TIME_THRESHOLD_MS) {
+						(*temp)->isRecordingReady = true;
 					}
-				// we've not recorded an input yet
-				} else {
-					// does the stick move outside the threshold?
-					if (!showCStick) {
-						if ((x > STICK_MOVEMENT_THRESHOLD || x < -STICK_MOVEMENT_THRESHOLD) ||
-						    (y > STICK_MOVEMENT_THRESHOLD) || (y < -STICK_MOVEMENT_THRESHOLD)) {
-							// reset data
-							for (int i = 1; i < WAVEFORM_SAMPLES; i++) {
-								data->data[i].ax = 0;
-								data->data[i].ay = 0;
-								data->data[i].cx = 0;
-								data->data[i].cy = 0;
-								data->data[i].timeDiffUs = 0;
-							}
-							stickMove = true;
-							data->data[0].ax = x;
-							data->data[0].ay = y;
-							data->data[0].cx = cx;
-							data->data[0].cy = cy;
-							data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
-							data->totalTimeUs = 0;
-							//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-							data->endPoint = 1;
-							data->isDataReady = false;
-							data->exported = false;
-							oState = PRE_INPUT;
-						}
-					} else {
-						if ((cx > STICK_MOVEMENT_THRESHOLD || cx < -STICK_MOVEMENT_THRESHOLD) ||
-						    (cy > STICK_MOVEMENT_THRESHOLD) || (cy < -STICK_MOVEMENT_THRESHOLD)) {
-							// reset data
-							for (int i = 1; i < WAVEFORM_SAMPLES; i++) {
-								data->data[i].ax = 0;
-								data->data[i].ay = 0;
-								data->data[i].cx = 0;
-								data->data[i].cy = 0;
-								data->data[i].timeDiffUs = 0;
-							}
-							stickMove = true;
-							data->data[0].ax = x;
-							data->data[0].ay = y;
-							data->data[0].cx = cx;
-							data->data[0].cy = cy;
-							data->data[0].timeDiffUs = 0; // doesn't make sense to have diff from a nonexistent previous value
-							data->totalTimeUs = 0;
-							//data->data[0].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-							data->endPoint = 1;
-							data->isDataReady = false;
-							data->exported = false;
-							oState = PRE_INPUT;
-						}
-					}
-				}
-				break;
+					break;
+			}
+			
+			// data is marked ready, prep it to show
+			if ((*temp)->isRecordingReady) {
+				stickMove = false;
+				display = true;
+				oState = POST_INPUT_LOCK;
+				stickCooldown = MEASURE_COOLDOWN_FRAMES;
+				snapbackStartPosX = 0;
+				snapbackStartPosY = 0;
+				snapbackCrossed64 = false;
+				(*temp)->recordingType = REC_OSCILLOSCOPE;
+				
+				flipData();
+			}
 		}
-	}
-	if (data->isDataReady && data->totalTimeUs == 0) {
-		for (int i = 0; i < data->endPoint; i++) {
-			data->totalTimeUs += data->data[i].timeDiffUs;
+			
+		// data capture has not yet occurred
+		else {
+			// check criteria for each test to trigger a recording
+			switch (currentTest) {
+				case SNAPBACK:
+					// we're waiting for the stick's 'falling' action
+					if (snapbackCrossed64) {
+						// current value is greater, adjust our top threshold
+						if (abs(selectedStickX) > abs(snapbackStartPosX) || abs(selectedStickY) > abs(snapbackStartPosY)) {
+							snapbackStartPosX = selectedStickX;
+							snapbackStartPosY = selectedStickY;
+						}
+						// has the current value moved beyond STICK_MOVEMENT_THRESHOLD from snapbackStartPos
+						else if (abs(selectedStickX) + (STICK_MOVEMENT_THRESHOLD * 2) <= abs(snapbackStartPosX) ||
+								abs(selectedStickY) + (STICK_MOVEMENT_THRESHOLD * 2) <= abs(snapbackStartPosY)) {
+							stickMove = true;
+						}
+						
+					}
+					// we're looking for the stick to cross +-64
+					else {
+						if (abs(selectedStickX) > 64 || abs(selectedStickY) > 64) {
+							snapbackCrossed64 = true;
+						}
+					}
+					
+					break;
+				
+				case PIVOT:
+					if ((abs(curr.stickX) > STICK_MOVEMENT_THRESHOLD) || (abs(curr.stickY) > STICK_MOVEMENT_THRESHOLD)) {
+						stickMove = true;
+					}
+					break;
+				
+				default:
+					if ((abs(selectedStickX) > STICK_MOVEMENT_THRESHOLD) || (abs(selectedStickY) > STICK_MOVEMENT_THRESHOLD)) {
+						stickMove = true;
+					}
+					break;
+			}
+			
+			if (stickMove) {
+				// assign first value
+				clearRecordingArray(*temp);
+				(*temp)->sampleEnd = 0;
+				
+				int currentIndex = 0;
+				
+				// if pivot or dashback, prepend data
+				switch (currentTest) {
+					case SNAPBACK:
+					case DASHBACK:
+						// prepend ~50 ms of data to the recording
+						int loopStartIndex = startingLoopIndex - 1;
+						if (loopStartIndex == -1) {
+							loopStartIndex = 200;
+						}
+						int loopPrependCount = 0;
+						uint64_t prependedTimeUs = 0;
+						// go back ~25 ms
+						while (prependedTimeUs < 25000) {
+							// break out of loop if data doesn't exist
+							if (startingLoop[loopStartIndex].timeDiffUs == 0) {
+								break;
+							}
+							prependedTimeUs += startingLoop[loopStartIndex].timeDiffUs;
+							loopStartIndex--;
+							if (loopStartIndex == -1) {
+								loopStartIndex = 200;
+							}
+							loopPrependCount++;
+						}
+						for (int i = 0; i < loopPrependCount; i++ ) {
+							(*temp)->samples[(*temp)->sampleEnd] = startingLoop[(loopStartIndex + i) % 200];
+							if ((*temp)->sampleEnd == 0) {
+								(*temp)->samples[0].timeDiffUs = 0;
+								(*temp)->totalTimeUs = 0;
+							}
+							(*temp)->totalTimeUs += (*temp)->samples[(*temp)->sampleEnd].timeDiffUs;
+							(*temp)->sampleEnd++;
+						}
+						currentIndex = (*temp)->sampleEnd;
+						break;
+					default:
+						curr.timeDiffUs = 0;
+						break;
+				}
+				
+				(*temp)->samples[currentIndex] = curr;
+				(*temp)->totalTimeUs += curr.timeDiffUs;
+				(*temp)->sampleEnd = currentIndex + 1;
+				(*temp)->isRecordingReady = false;
+				(*temp)->dataExported = false;
+				oState = PRE_INPUT;
+			}
 		}
 	}
 }
 
-static void displayInstructions(void *currXfb) {
+static void displayInstructions() {
 	setCursorPos(2, 0);
 	printStr("Press X to cycle the current test, results will show above the\n"
 			"waveform. Press Y to cycle between Analog Stick and C-Stick.\n"
 			"Use DPAD left/right to scroll waveform when it is\n"
-			"larger than the displayed area, hold R to move faster.", currXfb);
-	printStr("\n\nCURRENT TEST: ", currXfb);
+			"larger than the displayed area, hold R to move faster.");
+	printStr("\n\nCURRENT TEST: ");
 	switch (currentTest) {
 		case SNAPBACK:
 			printStr("SNAPBACK\n"
 					"Check the min/max value on a given axis depending on where\n"
 					"the stick started. The range in which Melee will not register\n"
 					"a directional input is -22 to +22. Anything outside that range\n"
-					"risks the game registering a non-neutral stick input.", currXfb);
+					"risks the game registering a non-neutral stick input.");
 			break;
 		case PIVOT:
 			printStr("PIVOT\n"
 					"For a successful pivot, the stick's position should stay\n"
 					"above/below +64/-64 for ~16.6ms (1 frame). Less, and a pivot\n"
 					"may not occur; more, and a dashback may occur. The stick\n"
-					"should also hit 80/-80 on both sides.\n", currXfb);
+					"should also hit 80/-80 on both sides.\n");
 			break;
 		case DASHBACK:
 			printStr("DASHBACK\n"
 					"A (vanilla) dashback will be successful when the stick doesn't\n"
 					"get polled between 23 and 64, or -23 and -64.\n"
-					"Less time in this range is better.", currXfb);
+					"Less time in this range is better.");
 			break;
 		default:
-			printStr("NO TEST SELECTED", currXfb);
+			printStr("NO TEST SELECTED");
 			break;
 	}
 	
 	setCursorPos(21, 0);
-	printStr("Press Z to close instructions.", currXfb);
+	printStr("Press Z to close instructions.");
 	
 	if (!buttonLock) {
 		if (*pressed & PAD_TRIGGER_Z) {
@@ -451,97 +386,96 @@ static void displayInstructions(void *currXfb) {
 }
 
 // only run once
-static void setup(WaveformData *d, uint32_t *p, uint32_t *h) {
+static void setup() {
 	setSamplingRateHigh();
-	pressed = p;
-	held = h;
+	if (pressed == NULL) {
+		pressed = getButtonsDownPtr();
+		held = getButtonsHeldPtr();
+	}
 	cb = PAD_SetSamplingCallback(oscilloscopeCallback);
 	state = OSC_POST_SETUP;
 	if(data == NULL) {
-		data = d;
+		data = getRecordingData();
+		temp = getTempData();
 	}
-	if (data->isDataReady && oState == PRE_INPUT) {
+	if ((*data)->isRecordingReady && oState == PRE_INPUT) {
 		oState = POST_INPUT_LOCK;
 	}
+
+	// check if existing recording is valid for this menu
+	if (!(RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_OSCILLOSCOPE_FLAG)) {
+		clearRecordingArray(*data);
+		oState = PRE_INPUT;
+	}
+	
+	// prevent pressing for a short time upon entering menu
+	buttonLock = true;
+	buttonPressCooldown = 5;
 }
 
 // function called from outside
-void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t *h) {
+void menu_oscilloscope() {
 	switch (state) {
 		case OSC_SETUP:
-			setup(data, p, h);
+			setup();
 			break;
 		case OSC_POST_SETUP:
+			// we're getting the address of the object itself here, not the address of the pointer,
+			// which means we will always point to the same object, regardless of a flip
+			ControllerRec *dispData = *data;
+			
 			switch (oState) {
 				case PRE_INPUT:
-					printStr("Waiting for input.", currXfb);
-					printEllipse(ellipseCounter, 20, currXfb);
+					printStr("Waiting for input.");
+					printEllipse(ellipseCounter, 20);
 					ellipseCounter++;
 					if (ellipseCounter == 60) {
 						ellipseCounter = 0;
 					}
-					
-					setCursorPos(21,0);
-					printStr("Current test: ", currXfb);
-					switch (currentTest) {
-						case SNAPBACK:
-							printStr("Snapback", currXfb);
-							break;
-						case PIVOT:
-							printStr("Pivot", currXfb);
-							break;
-						case DASHBACK:
-							printStr("Dashback", currXfb);
-							break;
-						case NO_TEST:
-							printStr("None", currXfb);
-							break;
-						default:
-							printStr("Error", currXfb);
-							break;
-					}
-					break;
 				case POST_INPUT_LOCK:
-					// dont allow new input until cooldown elapses
-					if (stickCooldown != 0) {
-						stickCooldown--;
-						if (stickCooldown == 0) {
-							oState = POST_INPUT;
+					// TODO: this is dumb, do this a better way to fit better
+					if (oState == POST_INPUT_LOCK) {
+						// dont allow new input until cooldown elapses
+						if (stickCooldown != 0) {
+							stickCooldown--;
+							if (stickCooldown == 0) {
+								oState = POST_INPUT;
+							}
+						} else {
+							setCursorPos(2, 28);
+							printStrColor(COLOR_WHITE, COLOR_BLACK, "LOCKED");
 						}
-					} else {
-						setCursorPos(2, 28);
-						printStrColor("LOCKED", currXfb, COLOR_WHITE, COLOR_BLACK);
 					}
 				case POST_INPUT:
-					if (data->isDataReady) {
+					if (dispData->isRecordingReady) {
 						// draw guidelines based on selected test
-						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
-						DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY, currXfb);
+						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE);;
+						DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY);;
 						// lots of the specific values are taken from:
 						// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
 						switch (currentTest) {
 							case PIVOT:
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
+								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN);;
+								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN);;
 								setCursorPos(8, 0);
-								printStr("+64", currXfb);
+								printStr("+64");
 								setCursorPos(15, 0);
-								printStr("-64", currXfb);
+								printStr("-64");
 								break;
 							case DASHBACK:
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN, currXfb);
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN, currXfb);
+								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN);;
+								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN);;
 								setCursorPos(8, 0);
-								printStr("+64", currXfb);
+								printStr("+64");
 								setCursorPos(15, 0);
-								printStr("-64", currXfb);
+								printStr("-64");
 							case SNAPBACK:
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, COLOR_GREEN, currXfb);
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, COLOR_GREEN, currXfb);
+								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, COLOR_GREEN);;
+								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, COLOR_GREEN);;
 								setCursorPos(10, 0);
-								printStr("+23", currXfb);
+								printStr("+23");
 								setCursorPos(13, 0);
-								printStr("-23", currXfb);
+								printStr("-23");
 							default:
 								break;
 						}
@@ -550,15 +484,15 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 						int maxX, maxY;
 
 						// show all data if it will fit
-						if (data->endPoint < 500) {
+						if (dispData->sampleEnd < 500) {
 							dataScrollOffset = 0;
 						// move screen to end of data input if it was further from the last capture
-						} else if (dataScrollOffset > (data->endPoint) - 500) {
-							dataScrollOffset = data->endPoint - 501;
+						} else if (dataScrollOffset > (dispData->sampleEnd) - 500) {
+							dataScrollOffset = dispData->sampleEnd - 501;
 						}
 
-						int prevX = data->data[dataScrollOffset].ax;
-						int prevY = data->data[dataScrollOffset].ay;
+						int prevX = dispData->samples[dataScrollOffset].stickX;
+						int prevY = dispData->samples[dataScrollOffset].stickY;
 
 						// initialize stat values to first point
 						minX = prevX;
@@ -573,28 +507,28 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 						// draw 500 datapoints from the scroll offset
 						for (int i = dataScrollOffset + 1; i < dataScrollOffset + 500; i++) {
 							// make sure we haven't gone outside our bounds
-							if (i == data->endPoint || waveformXPos >= 500) {
+							if (i == dispData->sampleEnd || waveformXPos >= 500) {
 								break;
 							}
 							
 							int currY, currX;
 							if (!showCStick) {
-								currY = data->data[i].ay;
-								currX = data->data[i].ax;
+								currX = dispData->samples[i].stickX;
+								currY = dispData->samples[i].stickY;
 							} else {
-								currY = data->data[i].cy;
-								currX = data->data[i].cx;
+								currX = dispData->samples[i].cStickX;
+								currY = dispData->samples[i].cStickY;
 							}
 
 							// y first
 							DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevY,
 									SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currY,
-									COLOR_BLUE_C, currXfb);
+									COLOR_BLUE_C);
 							prevY = currY;
 							// then x
 							DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevX,
 									SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currX,
-									COLOR_RED_C, currXfb);
+									COLOR_RED_C);
 							prevX = currX;
 
 							// update stat values
@@ -612,7 +546,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 							}
 
 							// adding time from drawn points, to show how long the current view is
-							drawnTicksUs += data->data[i].timeDiffUs;
+							drawnTicksUs += dispData->samples[i].timeDiffUs;
 
 							// update scaling factor
 							waveformPrevXPos = waveformXPos;
@@ -621,15 +555,15 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 
 						// do we have enough data to enable scrolling?
 						// TODO: enable scrolling when scaled
-						if (data->endPoint >= 500 ) {
+						if (dispData->sampleEnd >= 500 ) {
 							// does the user want to scroll the waveform?
 							if (*held & PAD_BUTTON_RIGHT) {
 								if (*held & PAD_TRIGGER_R) {
-									if (dataScrollOffset + 510 < data->endPoint) {
+									if (dataScrollOffset + 510 < dispData->sampleEnd) {
 										dataScrollOffset += 10;
 									}
 								} else {
-									if (dataScrollOffset + 501 < data->endPoint) {
+									if (dataScrollOffset + 501 < dispData->sampleEnd) {
 										dataScrollOffset++;
 									}
 								}
@@ -645,25 +579,24 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 								}
 							}
 						}
-
-						setCursorPos(3, 0);
+						
+						setCursorPos(2, 45);
 						// total time is stored in microseconds, divide by 1000 for milliseconds
 						if (!showCStick) {
-							printStr("Stick ", currXfb);
+							printStr("Shown: Stick");
 						} else {
-							printStr("C-Stick ", currXfb);
+							printStr("Shown: C-Stick");
 						}
-						sprintf(strBuffer, "total: %u, %0.3f ms | Start: %d, Shown: %0.3f ms\n", data->endPoint, (data->totalTimeUs / ((float) 1000)), dataScrollOffset + 1, (drawnTicksUs / ((float) 1000)));
-						printStr(strBuffer, currXfb);
+						setCursorPos(3, 0);
+						
+						printStr("Sample start: %04u/%04u | Time shown: %04llu/%04llu ms\n", dataScrollOffset, dispData->sampleEnd, drawnTicksUs / 1000, dispData->totalTimeUs / 1000);
 						
 						// print test data
 						setCursorPos(20, 0);
 						switch (currentTest) {
 							case SNAPBACK:
-								sprintf(strBuffer, "Min X: %04d | Min Y: %04d   |   ", minX, minY);
-								printStr(strBuffer, currXfb);
-								sprintf(strBuffer, "Max X: %04d | Max Y: %04d\n", maxX, maxY);
-								printStr(strBuffer, currXfb);
+								printStr("Min X: %04d | Min Y: %04d   |   ", minX, minY);
+								printStr("Max X: %04d | Max Y: %04d\n", maxX, maxY);
 								break;
 							case PIVOT:
 								bool pivotHit80 = false;
@@ -673,20 +606,20 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 								int pivotStartIndex = -1, pivotEndIndex = -1;
 								int pivotStartSign = 0;
 								// start from the back of the list
-								for (int i = data->endPoint - 1; i >= 0; i--) {
+								for (int i = dispData->sampleEnd - 1; i >= 0; i--) {
 									// check x coordinate for +-64 (dash threshold)
-									if ( (data->data[i].ax >= 64 || data->data[i].ax <= -64) && !leftPivotRange) {
+									if ((abs(dispData->samples[i].stickX) >= 64) && !leftPivotRange) {
 										if (pivotEndIndex == -1) {
 											pivotEndIndex = i;
 										}
 										// pivot input must hit 80 on both sides
-										if (data->data[i].ax >= 80 || data->data[i].ax <= -80) {
+										if (abs(dispData->samples[i].stickX) >= 80) {
 											pivotHit80 = true;
 										}
 									}
 
 									// are we outside the pivot range and have already logged data of being in range
-									if (pivotEndIndex != -1 && data->data[i].ax < 64 && data->data[i].ax > -64) {
+									if (pivotEndIndex != -1 && abs(dispData->samples[i].stickX) < 64) {
 										leftPivotRange = true;
 										if (pivotStartIndex == -1) {
 											// need the "previous" poll since this one is out of the range
@@ -698,29 +631,29 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 									}
 
 									// look for the initial input
-									if ( (data->data[i].ax >= 64 || data->data[i].ax <= -64) && leftPivotRange) {
+									if (abs(dispData->samples[i].stickX) >= 64 && leftPivotRange) {
 										// used to ensure starting input is from the opposite side
 										if (pivotStartSign == 0) {
-											pivotStartSign = data->data[i].ax;
+											pivotStartSign = dispData->samples[i].stickX;
 										}
 										prevLeftPivotRange = true;
-										if (data->data[i].ax >= 80 || data->data[i].ax <= -80) {
+										if (abs(dispData->samples[i].stickX) >= 80) {
 											prevPivotHit80 = true;
 											break;
 										}
 									}
 								}
-
+								
 								// phobvision doc says both sides need to hit 80 to succeed
 								// multiplication is to ensure signs are correct
-								if (prevPivotHit80 && pivotHit80 && (data->data[pivotEndIndex].ax * pivotStartSign < 0)) {
+								if (prevPivotHit80 && pivotHit80 && (dispData->samples[pivotEndIndex].stickX * pivotStartSign < 0)) {
 									float noTurnPercent = 0;
 									float pivotPercent = 0;
 									float dashbackPercent = 0;
 
 									uint64_t timeInPivotRangeUs = 0;
 									for (int i = pivotStartIndex; i <= pivotEndIndex; i++) {
-										timeInPivotRangeUs += data->data[i].timeDiffUs;
+										timeInPivotRangeUs += dispData->samples[i].timeDiffUs;
 									}
 
 									// convert time to float in milliseconds
@@ -728,40 +661,38 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 
 									// TODO: i think the calculation can be simplified here...
 									// how many milliseconds could a poll occur that would cause a miss
-									float diffFrameTimePoll = FRAME_TIME_MS - timeInPivotRangeMs;
+									float diffFrameTimePoll = FRAME_TIME_MS_F - timeInPivotRangeMs;
 
 									// negative time difference, dashback
 									if (diffFrameTimePoll < 0) {
-										dashbackPercent = ((diffFrameTimePoll * -1) / FRAME_TIME_MS) * 100;
+										dashbackPercent = ((diffFrameTimePoll * -1) / FRAME_TIME_MS_F) * 100;
 										if (dashbackPercent > 100) {
 											dashbackPercent = 100;
 										}
 										pivotPercent = 100 - dashbackPercent;
 										// positive or 0 time diff, no turn
 									} else {
-										noTurnPercent = (diffFrameTimePoll / FRAME_TIME_MS) * 100;
+										noTurnPercent = (diffFrameTimePoll / FRAME_TIME_MS_F) * 100;
 										if (noTurnPercent > 100) {
 											noTurnPercent = 100;
 										}
 										pivotPercent = 100 - noTurnPercent;
 									}
 
-									sprintf(strBuffer, "MS: %2.2f | No turn: %2.0f%% | Pivot: %2.0f%% | Dashback: %2.0f%%",
+									printStr("MS: %2.2f | No turn: %2.0f%% | Pivot: %2.0f%% | Dashback: %2.0f%%",
 											timeInPivotRangeMs, noTurnPercent, pivotPercent, dashbackPercent);
-									printStr(strBuffer, currXfb);
-									//printf("\nUS Total: %llu, Start index: %d, End index: %d", timeInPivotRangeUs, pivotStartIndex, pivotEndIndex);
 								} else {
-									printStr("No pivot input detected.", currXfb);
+									printStr("No pivot input detected.");
 								}
 								break;
 							case DASHBACK:
 								// go forward in list
 								int dashbackStartIndex = -1, dashbackEndIndex = -1;
 								uint64_t timeInRange = 0;
-								for (int i = 0; i < data->endPoint; i++) {
+								for (int i = 0; i < dispData->sampleEnd; i++) {
 									// is the stick in the range
-									if ((data->data[i].ax >= 23 && data->data[i].ax < 64) || (data->data[i].ax <= -23 && data->data[i].ax > -64)) {
-										timeInRange += data->data[i].timeDiffUs;
+									if ((abs(dispData->samples[i].stickX) >= 23 && abs(dispData->samples[i].stickX) < 64)) {
+										timeInRange += dispData->samples[i].timeDiffUs;
 										if (dashbackStartIndex == -1) {
 											dashbackStartIndex = i;
 										}
@@ -780,7 +711,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 									// convert time in microseconds to float time in milliseconds
 									float timeInRangeMs = (timeInRange / 1000.0);
 
-									dashbackPercent = (1.0 - (timeInRangeMs / FRAME_TIME_MS)) * 100;
+									dashbackPercent = (1.0 - (timeInRangeMs / FRAME_TIME_MS_F)) * 100;
 
 									// ucf dashback is a little more involved
 									uint64_t ucfTimeInRange = timeInRange;
@@ -790,14 +721,13 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 										uint64_t usFromPoll = 0;
 										int nextPollIndex = i;
 										// we need the sample that would occur around 1f after
-										while (usFromPoll < 16666) {
+										while (usFromPoll < FRAME_TIME_US) {
 											nextPollIndex++;
-											usFromPoll += data->data[nextPollIndex].timeDiffUs;
+											usFromPoll += dispData->samples[nextPollIndex].timeDiffUs;
 										}
 										// the two frames need to move more than 75 units for UCF to convert it
-										if (data->data[i].ax + data->data[nextPollIndex].ax > 75 ||
-												data->data[i].ax + data->data[nextPollIndex].ax < -75) {
-											ucfTimeInRange -= data->data[i].timeDiffUs;
+										if (abs(dispData->samples[i].stickX) + abs(dispData->samples[nextPollIndex].stickX) > 75) {
+											ucfTimeInRange -= dispData->samples[i].timeDiffUs;
 										}
 									}
 
@@ -805,7 +735,7 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 									if (ucfTimeInRangeMs <= 0) {
 										ucfPercent = 100;
 									} else {
-										ucfPercent = (1.0 - (ucfTimeInRangeMs / FRAME_TIME_MS)) * 100;
+										ucfPercent = (1.0 - (ucfTimeInRangeMs / FRAME_TIME_MS_F)) * 100;
 									}
 
 									// this shouldn't happen in theory, maybe on box?
@@ -823,43 +753,39 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 										ucfPercent = 0;
 									}
 								}
-								sprintf(strBuffer, "Vanilla Success: %2.0f%% | UCF Success: %2.0f%%", dashbackPercent, ucfPercent);
-								printStr(strBuffer, currXfb);
-								break;
-							case NO_TEST:
+								printStr("Vanilla Success: %2.0f%% | UCF Success: %2.0f%%", dashbackPercent, ucfPercent);
 								break;
 							default:
-								printStr("Error?", currXfb);
+								printStr("Error?");
 								break;
 
-						}
-						setCursorPos(21,0);
-						printStr("Current test: ", currXfb);
-						switch (currentTest) {
-							case SNAPBACK:
-								printStr("Snapback", currXfb);
-								break;
-							case PIVOT:
-								printStr("Pivot", currXfb);
-								break;
-							case DASHBACK:
-								printStr("Dashback", currXfb);
-								break;
-							case NO_TEST:
-								printStr("None", currXfb);
-								break;
-							default:
-								printStr("Error", currXfb);
-								break;
 						}
 					} else {
 						oState = PRE_INPUT;
 					}
 					break;
 				default:
-					printStr("How did we get here?", currXfb);
+					printStr("How did we get here?");
 					break;
 			}
+			
+			setCursorPos(21,0);
+			printStr("Current test: ");
+			switch (currentTest) {
+				case SNAPBACK:
+					printStr("Snapback");
+					break;
+				case PIVOT:
+					printStr("Pivot");
+					break;
+				case DASHBACK:
+					printStr("Dashback");
+					break;
+				default:
+					printStr("Error");
+					break;
+			}
+			
 			if (!buttonLock) {
 				if (*pressed & PAD_BUTTON_A && !buttonLock && oState != PRE_INPUT) {
 					if (oState == POST_INPUT_LOCK && stickCooldown == 0) {
@@ -870,14 +796,11 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 					buttonLock = true;
 					buttonPressCooldown = 5;
 				}
-				if (*pressed & PAD_BUTTON_X && !buttonLock && !stickMove) {
+				if (*pressed & PAD_BUTTON_X && !showCStick && !buttonLock && !stickMove) {
 					currentTest++;
 					// check if we overrun our test length
 					if (currentTest == OSCILLOSCOPE_TEST_LEN) {
 						currentTest = SNAPBACK;
-					}
-					if (showCStick && (currentTest != SNAPBACK && currentTest < NO_TEST)) {
-						currentTest = NO_TEST;
 					}
 					buttonLock = true;
 					buttonPressCooldown = 5;
@@ -887,9 +810,8 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 					buttonLock = true;
 					buttonPressCooldown = 5;
 				}
-				if (*pressed & PAD_BUTTON_Y && !buttonLock && !stickMove) {
+				if (*pressed & PAD_BUTTON_Y && currentTest == SNAPBACK && !buttonLock && !stickMove) {
 					showCStick = !showCStick;
-					currentTest = SNAPBACK;
 					buttonLock = true;
 					buttonPressCooldown = 5;
 				}
@@ -902,10 +824,10 @@ void menu_oscilloscope(void *currXfb, WaveformData *data, uint32_t *p, uint32_t 
 			//	}
 			break;
 		case OSC_INSTRUCTIONS:
-			displayInstructions(currXfb);
+			displayInstructions();
 			break;
 		default:
-			printStr("How did we get here?", currXfb);
+			printStr("How did we get here?");
 			break;
 	}
 	if (buttonLock) {
@@ -926,8 +848,8 @@ void menu_oscilloscopeEnd() {
 	pressed = NULL;
 	held = NULL;
 	state = OSC_SETUP;
-	if (!data->isDataReady) {
-		data->endPoint = 0;
+	if (!(*temp)->isRecordingReady) {
+		(*temp)->sampleEnd = 0;
 		stickMove = false;
 	}
 }

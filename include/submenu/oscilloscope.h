@@ -15,11 +15,10 @@
 enum OSC_MENU_STATE { OSC_SETUP, OSC_POST_SETUP, OSC_INSTRUCTIONS };
 enum OSC_STATE { PRE_INPUT, POST_INPUT, POST_INPUT_LOCK };
 
-static const uint8_t OSCILLOSCOPE_TEST_LEN = 4;
-// TODO: remove NO_TEST, since the Continuous Oscilloscope menu exists
-enum OSCILLOSCOPE_TEST { SNAPBACK, PIVOT, DASHBACK, NO_TEST };
+static const uint8_t OSCILLOSCOPE_TEST_LEN = 3;
+enum OSCILLOSCOPE_TEST { SNAPBACK, PIVOT, DASHBACK };
 
-void menu_oscilloscope(void *currXfb, WaveformData *d, uint32_t *p, uint32_t *h);
+void menu_oscilloscope();
 void menu_oscilloscopeEnd();
 
 #endif //GTS_OSCILLOSCOPE_H

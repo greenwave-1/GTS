@@ -8,6 +8,8 @@
 #define GTS_DRAW_H
 
 #include <stdint.h>
+
+#include "images/stickmaps.h"
 #include "stickmap_coordinates.h"
 
 // center of screen, 640x480
@@ -76,29 +78,35 @@
 #define CONT_TEST_CSTICK_CENTER_X 380
 #define CONT_TEST_CSTICK_CENTER_Y 280
 
+// Colors for X and Y graph
+#define COLOR_RED_C 0x846084d7
+#define COLOR_BLUE_C 0x6dd26d72
+
+void setFramebuffer(void *xfb);
 
 void setInterlaced(bool interlaced);
 
 // draw functions
 
-void drawImage(void *currXfb, const unsigned char image[], const unsigned char colorIndex[8], uint16_t offsetX, uint16_t offsetY);
+void displayImage(enum IMAGE newImage, int offsetX, int offsetY);
+//void drawImage(const unsigned char image[], const unsigned char colorIndex[8], uint16_t offsetX, uint16_t offsetY);
 
 // drawing functions from phobconfigtool
-void DrawHLine (int x1, int x2, int y, int color, void *xfb);
-void DrawVLine (int x, int y1, int y2, int color, void *xfb);
-void DrawBox (int x1, int y1, int x2, int y2, int color, void *xfb);
+void DrawHLine (int x1, int x2, int y, int color);
+void DrawVLine (int x, int y1, int y2, int color);
+void DrawBox (int x1, int y1, int x2, int y2, int color);
 
 // expanded drawing functions
-void DrawFilledBox (int x1, int y1, int x2, int y2, int color, void *xfb);
-void DrawLine (int x1, int y1, int x2, int y2, int color, void *xfb);
-void DrawDot (int x, int y, int color, void *xfb);
-void DrawDotAccurate (int x, int y, int color, void *xfb);
-void DrawCircle (int cx, int cy, int r, int color, void *xfb);
-void DrawFilledCircle(int cx, int cy, int rad, int color, void *xfb);
-void DrawFilledBoxCenter(int x, int y, int rad, int color, void *xfb);
-void DrawOctagonalGate(int x, int y, int scale, int color, void *xfb);
+void DrawFilledBox (int x1, int y1, int x2, int y2, int color);
+void DrawLine (int x1, int y1, int x2, int y2, int color);
+void DrawDot (int x, int y, int color);
+void DrawDotAccurate (int x, int y, int color);
+void DrawCircle (int cx, int cy, int r, int color);
+void DrawFilledCircle(int cx, int cy, int rad, int color);
+void DrawFilledBoxCenter(int x, int y, int rad, int color);
+void DrawOctagonalGate(int x, int y, int scale, int color);
 
 // draw for tests in coordinate viewer
-void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which, void *xfb);
+void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which);
 
 #endif //GTS_DRAW_H

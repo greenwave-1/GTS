@@ -5,28 +5,23 @@
 #include "submenu/continuous.h"
 #include "print.h"
 
-#include <stdio.h>
 #include <stdint.h>
+#include <malloc.h>
 
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
 #include <ogc/color.h>
 
-#include "../polling.h"
-#include "../draw.h"
-#include "../waveform.h"
-
-static char strBuffer[100];
+#include "polling.h"
+#include "draw.h"
+#include "waveform.h"
 
 const static uint8_t SCREEN_TIMEPLOT_START = 70;
-
-static const uint32_t COLOR_RED_C = 0x846084d7;
-static const uint32_t COLOR_BLUE_C = 0x6dd26d72;
 
 static enum CONT_MENU_STATE state = CONT_SETUP;
 static enum CONT_STATE cState = INPUT;
 
-static WaveformData data = { {{ 0 }}, 0, 500, true, false, false };
+static ControllerRec *data = NULL;
 static int dataIndex = 0;
 
 static int waveformScaleFactor = 6;
@@ -36,8 +31,8 @@ static bool freeze = false;
 static bool showCStick = false;
 
 static bool buttonLock = false;
-static uint32_t *pressed = NULL;
-static uint32_t *held = NULL;
+static uint16_t *pressed = NULL;
+static uint16_t *held = NULL;
 
 static uint64_t prevSampleCallbackTick = 0;
 static uint64_t sampleCallbackTick = 0;
@@ -72,69 +67,77 @@ static void contSamplingCallback() {
 	
 	*held = PAD_ButtonsHeld(0);
 	
-	
 	if (!freeze) {
-		data.data[dataIndex].ax = PAD_StickX(0);
-		data.data[dataIndex].ay = PAD_StickY(0);
-		data.data[dataIndex].cx = PAD_SubStickX(0);
-		data.data[dataIndex].cy = PAD_SubStickY(0);
+		data->samples[dataIndex].stickX = PAD_StickX(0);
+		data->samples[dataIndex].stickY = PAD_StickY(0);
+		data->samples[dataIndex].cStickX = PAD_SubStickX(0);
+		data->samples[dataIndex].cStickY = PAD_SubStickY(0);
 		frameCounter += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-		if (frameCounter >= 16666) {
-			data.data[dataIndex].timeDiffUs = 1;
+		// abusing timeDiffUs here, 1 means this poll is considered a frame interval, 0 otherwise
+		if (frameCounter >= FRAME_TIME_US) {
+			data->samples[dataIndex].timeDiffUs = 1;
 			frameCounter = 0;
 		} else {
-			data.data[dataIndex].timeDiffUs = 0;
+			data->samples[dataIndex].timeDiffUs = 0;
 		}
 		dataIndex++;
-		if (dataIndex == WAVEFORM_SAMPLES) {
+		if (dataIndex == REC_SAMPLE_MAX) {
 			dataIndex = 0;
 		}
 	}
 }
 
-static void setup(uint32_t *p, uint32_t *h) {
-	pressed = p;
-	held = h;
-	data.endPoint = WAVEFORM_SAMPLES - 1;
+static void setup() {
+	if (pressed == NULL) {
+		pressed = getButtonsDownPtr();
+		held = getButtonsHeldPtr();
+	}
+	if (data == NULL || isContinuousRecDataNull()) {
+		data = malloc(sizeof(ControllerRec));
+		clearRecordingArray(data);
+		setContinuousRecStructPtr(data);
+		data->isRecordingReady = true;
+	}
+	data->sampleEnd = REC_SAMPLE_MAX - 1;
 	setSamplingRateHigh();
 	cb = PAD_SetSamplingCallback(contSamplingCallback);
 	state = CONT_POST_SETUP;
 }
 
-void menu_continuousWaveform(void *currXfb, uint32_t *p, uint32_t *h) {
+void menu_continuousWaveform() {
 	switch (state) {
 		case CONT_SETUP:
-			setup(p, h);
+			setup();
 			break;
 		case CONT_POST_SETUP:
 			setCursorPos(2, 0);
-			printStr("A to freeze. Y to toggle.", currXfb);
+			printStr("A to freeze. Y to toggle.");
 			setCursorPos(20, 0);
-			printStr("Current Stick: ", currXfb);
+			printStr("Current Stick: ");
 			if (!showCStick) {
-				printStr("Analog Stick", currXfb);
+				printStr("Analog Stick");
 			} else {
-				printStr("C-Stick", currXfb);
+				printStr("C-Stick");
 			}
 			if (cState == INPUT_LOCK) {
 				freeze = true;
 				setCursorPos(2, 28);
-				printStrColor("LOCKED", currXfb, COLOR_WHITE, COLOR_BLACK);
+				printStrColor(COLOR_WHITE, COLOR_BLACK, "LOCKED");
 			} else {
 				freeze = false;
 			}
 
-			if (data.isDataReady) {
+			if (data->isRecordingReady) {
 				// draw guidelines based on selected test
 				DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500,
-				        SCREEN_POS_CENTER_Y + 128, COLOR_WHITE, currXfb);
-				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY, currXfb);
+				        SCREEN_POS_CENTER_Y + 128, COLOR_WHITE);
+				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY);;
 				// lots of the specific values are taken from:
 				// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
 				
 				// reset offset if its invalid
-				if (dataScrollOffset > (WAVEFORM_SAMPLES - (500 * waveformScaleFactor))) {
-					dataScrollOffset = (WAVEFORM_SAMPLES - (500 * waveformScaleFactor));
+				if (dataScrollOffset > (REC_SAMPLE_MAX - (500 * waveformScaleFactor))) {
+					dataScrollOffset = (REC_SAMPLE_MAX - (500 * waveformScaleFactor));
 				} else if (dataScrollOffset < 0) {
 					dataScrollOffset = 0;
 				}
@@ -149,23 +152,21 @@ void menu_continuousWaveform(void *currXfb, uint32_t *p, uint32_t *h) {
 				// waveformScaleFactor determines how much information is shown by only drawing every x point
 				int startPoint = (dataIndex - (500 * waveformScaleFactor) - dataScrollOffset);
 				if (startPoint < 0) {
-					startPoint += WAVEFORM_SAMPLES;
+					startPoint += REC_SAMPLE_MAX;
 				}
 				
 				if (cState == INPUT_LOCK && waveformScaleFactor != 6) {
 					// draw scroll bar
-					DrawFilledBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 142, SCREEN_TIMEPLOT_START + 499, SCREEN_POS_CENTER_Y - 140, COLOR_GRAY, currXfb);
+					DrawFilledBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 142, SCREEN_TIMEPLOT_START + 499, SCREEN_POS_CENTER_Y - 140, COLOR_GRAY);;
 					// calculate scroll bar position
 					int scrollBarPosX = 500 - ((dataScrollOffset / (3000.0 - (500 * waveformScaleFactor))) * 500);
-					DrawFilledBox(SCREEN_TIMEPLOT_START + (scrollBarPosX - 1), SCREEN_POS_CENTER_Y - 144, SCREEN_TIMEPLOT_START + scrollBarPosX, SCREEN_POS_CENTER_Y - 138, COLOR_WHITE, currXfb);
+					DrawFilledBox(SCREEN_TIMEPLOT_START + (scrollBarPosX - 1), SCREEN_POS_CENTER_Y - 144, SCREEN_TIMEPLOT_START + scrollBarPosX, SCREEN_POS_CENTER_Y - 138, COLOR_WHITE);;
 				}
 				
 				setCursorPos(21,0);
-				sprintf(strBuffer, "Scaling Factor: %dx", waveformScaleFactor);
-				printStr(strBuffer, currXfb);
+				printStr("Scaling Factor: %dx", waveformScaleFactor);
 				if (cState == INPUT_LOCK) {
-					sprintf(strBuffer, " | Offset: %d", dataScrollOffset);
-					printStr(strBuffer, currXfb);
+					printStr(" | Offset: %d", dataScrollOffset);
 				}
 				
 				int prevIndex = -1;
@@ -173,37 +174,37 @@ void menu_continuousWaveform(void *currXfb, uint32_t *p, uint32_t *h) {
 				for (int i = 0; i < 500; i++) {
 					int currX, currY;
 					if (!showCStick) {
-						currX = data.data[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].ax;
-						currY = data.data[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].ay;
+						currX = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].stickX;
+						currY = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].stickY;
 					} else {
-						currX = data.data[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].cx;
-						currY = data.data[(startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES].cy;
+						currX = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].cStickX;
+						currY = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].cStickY;
 					}
 					
 					// y first
 					DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevY,
 					         SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currY,
-					         COLOR_BLUE_C, currXfb);
+					         COLOR_BLUE_C);
 					prevY = currY;
 					// then x
 					DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevX,
 					         SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currX,
-					         COLOR_RED_C, currXfb);
+					         COLOR_RED_C);
 					prevX = currX;
 					
 					// frame interval stuff
 					if (prevIndex != -1) {
 						for (int j = 0; j < waveformScaleFactor; j++) {
-							if (data.data[(prevIndex + j) % WAVEFORM_SAMPLES].timeDiffUs == 1) {
+							if (data->samples[(prevIndex + j) % REC_SAMPLE_MAX].timeDiffUs == 1) {
 								if (waveformScaleFactor <= 2) {
 									DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
 									        SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
-									        COLOR_GRAY, currXfb);
+									        COLOR_GRAY);
 								}
 							}
 						}
 					}
-					prevIndex = (startPoint + (i * waveformScaleFactor)) % WAVEFORM_SAMPLES;
+					prevIndex = (startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX;
 					
 					// update scaling factor
 					waveformPrevXPos = waveformXPos;

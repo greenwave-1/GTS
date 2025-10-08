@@ -4,16 +4,17 @@
 
 #include "menu.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <ogc/color.h>
 #include <ogc/pad.h>
 #include <ogc/video.h>
+#include <ogc/libversion.h>
 
 #include "waveform.h"
 #include "print.h"
+#include "polling.h"
 
 // TODO: these should go away once all menus have been moved to a separate file
 #include "stickmap_coordinates.h"
@@ -27,17 +28,24 @@
 #include "submenu/plot2d.h"
 #include "submenu/gate.h"
 #include "submenu/plotbutton.h"
+#include "submenu/controllertest.h"
 
 #ifndef VERSION_NUMBER
 #define VERSION_NUMBER "NOVERS_DEV"
+#endif
+
+#ifndef COMMIT_ID
+#define COMMIT_ID "BAD_ID"
+#endif
+
+#ifndef BUILD_DATE
+#define BUILD_DATE "NO_DATE"
 #endif
 
 #define MENUITEMS_LEN 9
 
 // macro for how far the stick has to go before it counts as a movement
 #define MENU_STICK_THRESHOLD 10
-
-const float frameTime = (1000.0 / 60.0);
 
 // enum to keep track of what menu to display, and what logic to run
 static enum CURRENT_MENU currentMenu = MAIN_MENU;
@@ -52,17 +60,17 @@ static enum STICKMAP_LIST selectedStickmap = NONE;
 static int selectedStickmapSub = 0;
 
 // main menu counter
-static uint8_t mainMenuSelection = 0;
+static enum MENU_MAIN_ENTRY_LIST mainMenuCursorPos = 0;
 
 // counter for how many frames b or start have been held
 static uint8_t bHeldCounter = 0;
 
-// data for drawing a waveform
-static WaveformData data = { {{ 0 }}, 0, 0, false, false };
+// displayed struct
+static ControllerRec **data = NULL;
 
 // vars for what buttons are pressed or held
-static uint32_t pressed = 0;
-static uint32_t held = 0;
+static uint16_t *pressed = NULL;
+static uint16_t *held = NULL;
 
 // var for counting how long the stick has been held away from neutral
 static uint8_t stickheld = 0;
@@ -80,15 +88,6 @@ static bool displayInstructions = false;
 
 static int exportReturnCode = -1;
 
-static uint32_t padsConnected = 0;
-
-// stores the controller origin values
-static PADStatus origin[PAD_CHANMAX];
-static bool originRead = false;
-
-// buffer for strings with numbers and stuff using sprintf
-static char strBuffer[100];
-
 // some consumer crt tvs have alignment issues,
 // this determines if certain vertical lines are doubled
 static bool setDrawInterlaceMode = false;
@@ -98,37 +97,61 @@ static uint8_t thanksPageCounter = 0;
 // the "main" for the menus
 // other menu functions are called from here
 // this also handles moving between menus and exiting
-bool menu_runMenu(void *currXfb) {
+bool menu_runMenu() {
+	if (data == NULL) {
+		data = getRecordingData();
+	}
+	
+	if (pressed == NULL) {
+		pressed = getButtonsDownPtr();
+		held = getButtonsHeldPtr();
+	}
+	
 	if (!setDrawInterlaceMode) {
 		if (VIDEO_GetScanMode() == VI_INTERLACE) {
 			setInterlaced(true);
 		}
 		setDrawInterlaceMode = true;
 	}
-	memset(strBuffer, '\0', sizeof(strBuffer));
 	resetCursor();
-	// read inputs
-	padsConnected = PAD_ScanPads();
+	// read inputs get origin status
+	// calls PAD_ScanPads() and PAD_GetOrigin()
+	attemptReadOrigin();
 	
-	// read origin if a controller is connected and we don't have the origin
-	if (!originRead && (padsConnected & 1) == 1 ) {
-		PAD_GetOrigin(origin);
-		originRead = true;
-	}
-	
-	printStr("GCC Test Suite", currXfb);
+	printStr("GCC Test Suite");
 	
 	// check if port 1 is disconnected
-	if ((padsConnected & 1) == 0) {
+	if (!isControllerConnected(CONT_PORT_1)) {
 		setCursorPos(0, 38);
-		printStr("Controller Disconnected!", currXfb);
-		data.isDataReady = false;
-		originRead = false;
+		printStr("Controller Disconnected!");
+		(*data)->isRecordingReady = false;
 	}
 	
-	if (data.isDataReady) {
-		setCursorPos(0, 31);
-		printStr("Oscilloscope Capture in memory!", currXfb);
+	if ((*data)->isRecordingReady) {
+		switch ((*data)->recordingType) {
+			case REC_OSCILLOSCOPE:
+				setCursorPos(0, 31);
+				printStr("Oscilloscope");
+				break;
+			case REC_2DPLOT:
+				setCursorPos(0, 36);
+				printStr("2D Plot");
+				break;
+			case REC_BUTTONTIME:
+				setCursorPos(0, 30);
+				printStr("Button Viewer");
+				break;
+			case REC_TRIGGER_L:
+			case REC_TRIGGER_R:
+				setCursorPos(0, 36);
+				printStr("Trigger");
+				break;
+			default:
+				setCursorPos(0, 36);
+				printStr("Unknown");
+				break;
+		}
+		printStr(" Capture in memory!");
 	} else {
 		exportReturnCode = -1;
 	}
@@ -141,26 +164,26 @@ bool menu_runMenu(void *currXfb) {
 	if (currentMenu != WAVEFORM && currentMenu != CONTINUOUS_WAVEFORM &&
 			currentMenu != PLOT_2D && currentMenu != TRIGGER_WAVEFORM &&
 			currentMenu != GATE_MEASURE && currentMenu != PLOT_BUTTON) {
-		pressed = PAD_ButtonsDown(0);
-		held = PAD_ButtonsHeld(0);
+		*pressed = PAD_ButtonsDown(0);
+		*held = PAD_ButtonsHeld(0);
 	}
 
 	// determine what menu we are in
 	switch (currentMenu) {
 		case MAIN_MENU:
-			menu_mainMenu(currXfb);
+			menu_mainMenu();
 			break;
 		case CONTROLLER_TEST:
-			menu_controllerTest(currXfb);
+			menu_controllerTest();
 			break;
 		case WAVEFORM:
-			menu_oscilloscope(currXfb, &data, &pressed, &held);
+			menu_oscilloscope();
 			break;
 		case PLOT_2D:
-			menu_plot2d(currXfb, &data, &pressed, &held);
+			menu_plot2d();
 			break;
 		case FILE_EXPORT:
-			menu_fileExport(currXfb);
+			menu_fileExport();
 			break;
 		case COORD_MAP:
 			if (displayInstructions) {
@@ -168,69 +191,66 @@ bool menu_runMenu(void *currXfb) {
 					   "category of points.\nMelee Coordinates are shown in thetop-left.\n\n"
 					   "The white line represents the analog stick.\n"
 					   "The yellow line represents the c-stick.\n\n"
-					   "Current Stickmap: ", currXfb);
+					   "Current Stickmap: ");
 				switch (selectedStickmap) {
 					case FF_WD:
-						printStr("Firefox / Wavedash\n", currXfb);
-						printStr(STICKMAP_FF_WD_DESC, currXfb);
+						printStr("Firefox / Wavedash\n");
+						printStr(STICKMAP_FF_WD_DESC);
 						break;
 					case SHIELDDROP:
-						printStr("Shield Drop\n", currXfb);
-						printStr(STICKMAP_SHIELDDROP_DESC, currXfb);
+						printStr("Shield Drop\n");
+						printStr(STICKMAP_SHIELDDROP_DESC);
 						break;
 					case NONE:
 					default:
-						printStr("None\n", currXfb);
+						printStr("None\n");
 						break;
 				}
 			} else {
-				menu_coordinateViewer(currXfb);
+				menu_coordinateViewer();
 			}
 			break;
 		case CONTINUOUS_WAVEFORM:
-			menu_continuousWaveform(currXfb, &pressed, &held);
+			menu_continuousWaveform();
 			break;
 		case TRIGGER_WAVEFORM:
-			menu_triggerOscilloscope(currXfb, &pressed, &held);
+			menu_triggerOscilloscope();
 			break;
 		case THANKS_PAGE:
-			menu_thanksPage(currXfb);
+			menu_thanksPage();
 			break;
 		case GATE_MEASURE:
-			if (originRead == false) {
-				menu_gateControllerDisconnected();
-			}
-			menu_gateMeasure(currXfb, &pressed, &held);
+			menu_gateMeasure();
 			break;
 		case PLOT_BUTTON:
-			menu_plotButton(currXfb, &pressed, &held);
+			menu_plotButton();
 			break;
 		default:
-			printStr("HOW DID WE END UP HERE?\n", currXfb);
+			printStr("HOW DID WE END UP HERE?\n");
 			break;
 	}
 	if (displayInstructions) {
 		setCursorPos(21, 0);
-		printStr("Press Z to close instructions.", currXfb);
+		printStr("Press Z to close instructions.");
 	}
 
 	// move cursor to bottom left
 	setCursorPos(22, 0);
 
 	// exit the program if start is pressed
-	if (pressed & PAD_BUTTON_START && currentMenu == MAIN_MENU) {
-		printStr("Exiting...", currXfb);
+	if (*pressed & PAD_BUTTON_START && currentMenu == MAIN_MENU) {
+		printStr("Exiting...");
 		return true;
 	}
 	
 	// controller test lock stuff
-	else if (held == PAD_BUTTON_START && currentMenu == CONTROLLER_TEST && !startHeldAfter) {
+	else if (*held == PAD_BUTTON_START && currentMenu == CONTROLLER_TEST && !startHeldAfter) {
 		if (lockExitControllerTest) {
-			printStr("Enabling exit, hold for 2 seconds", currXfb);
+			printStr("Enabling exit, hold for 2 seconds");
 		} else {
-			printStr("Disabling exit, hold for 2 seconds", currXfb);
+			printStr("Disabling exit, hold for 2 seconds");
 		}
-		printEllipse(startHeldCounter, 40, currXfb);
+		printEllipse(startHeldCounter, 40);
 		
 		startHeldCounter++;
 		if (startHeldCounter > 121) {
@@ -242,13 +262,13 @@ bool menu_runMenu(void *currXfb) {
 
 	// does the user want to move back to the main menu?
 	// this shouldn't trigger when certain menus are currently recording an input
-	else if (held == PAD_BUTTON_B && currentMenu != MAIN_MENU &&
+	else if (*held == PAD_BUTTON_B && currentMenu != MAIN_MENU &&
 			!lockExitControllerTest &&
 			!menu_plotButtonHasCaptureStarted()) {
 
 		// give user feedback that they are holding the button
-		printStr("Moving back to main menu", currXfb);
-		printEllipse(bHeldCounter, 15, currXfb);
+		printStr("Moving back to main menu");
+		printEllipse(bHeldCounter, 15);
 		bHeldCounter++;
 		
 		// has the button been held long enough?
@@ -273,6 +293,9 @@ bool menu_runMenu(void *currXfb) {
 				case PLOT_BUTTON:
 					menu_plotButtonEnd();
 					break;
+				case CONTROLLER_TEST:
+					menu_controllerTestEnd();
+					break;
 				default:
 					break;
 			}
@@ -285,7 +308,7 @@ bool menu_runMenu(void *currXfb) {
 
 	} else {
 		// does the user want to display instructions?
-		if (pressed & PAD_TRIGGER_Z) {
+		if (*pressed & PAD_TRIGGER_Z) {
 			if (currentMenu == COORD_MAP) {
 				displayInstructions = !displayInstructions;
 			}
@@ -294,23 +317,23 @@ bool menu_runMenu(void *currXfb) {
 		// change bottom message depending on what menu we are in
 		switch (currentMenu) {
 			case MAIN_MENU:
-				printStr("Press Start to exit.", currXfb);
+				printStr("Press Start to exit.");
 				int col = 55 - (sizeof(VERSION_NUMBER));
 				if (col > 25) {
 					setCursorPos(22, col);
-					printStr("Ver: ", currXfb);
-					printStr(VERSION_NUMBER, currXfb);
+					printStr("Ver: ");
+					printStr(VERSION_NUMBER);
 				}
 				break;
 			case CONTROLLER_TEST:
 				if (lockExitControllerTest) {
-					printStr("Exiting disabled, hold Start to re-enable.", currXfb);
+					printStr("Exiting disabled, hold Start to re-enable.");
 				} else {
-					printStr("Hold B to return to main menu, hold start to disable.", currXfb);
+					printStr("Hold B to return to main menu, hold start to disable.");
 				}
 				startHeldCounter = 0;
 				
-				if (startHeldAfter && held ^ PAD_BUTTON_START) {
+				if (startHeldAfter && *held ^ PAD_BUTTON_START) {
 					startHeldAfter = false;
 				}
 				break;
@@ -320,7 +343,7 @@ bool menu_runMenu(void *currXfb) {
 					break;
 				}
 			default:
-				printStr("Hold B to return to main menu.", currXfb);
+				printStr("Hold B to return to main menu.");
 				break;
 		}
 		bHeldCounter = 0;
@@ -330,7 +353,7 @@ bool menu_runMenu(void *currXfb) {
 	return false;
 }
 
-void menu_mainMenu(void *currXfb) {
+void menu_mainMenu() {
 	stickYPrevPos = stickYPos;
 	stickYPos = PAD_StickY(0);
 	int stickDiff = abs(stickYPos - stickYPrevPos);
@@ -359,60 +382,98 @@ void menu_mainMenu(void *currXfb) {
 	for (int i = 0; i < MENUITEMS_LEN; i++) {
 		setCursorPos(2 + i, 0);
 		// is the item we're about to print the currently selected menu?
-		if (mainMenuSelection == i) {
-			printStr("> ", currXfb);
+		if (mainMenuCursorPos == i) {
+			printStr("> ");
 		} else {
 			setCursorPos(2 + i, 2);
 		}
-		printStr(menuItems[i], currXfb);
+		
+		bool valid = false;
+		// add indicator for menus that can view a given recording type
+		if ((*data)->isRecordingReady) {
+			switch (i) {
+				case ENTRY_OSCILLOSCOPE:
+					if (RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_OSCILLOSCOPE_FLAG) {
+						valid = true;
+					}
+					break;
+				case ENTRY_TRIGGER_OSCILLOSCOPE:
+					if (RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] &
+					    (REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG)) {
+						valid = true;
+					}
+					break;
+				case ENTRY_2D_PLOT:
+					if (RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_2DPLOT_FLAG) {
+						valid = true;
+					}
+					break;
+				case ENTRY_BUTTON_PLOT:
+					if (RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_BUTTONTIME_FLAG) {
+						valid = true;
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		if (valid) {
+			printStr("* ");
+		} else {
+			setCursorPos(2 + i, 4);
+		}
+		
+		printStr(menuItems[i]);
+		
+
 
 	}
 
 	// does the user move the cursor?
-	if (pressed & PAD_BUTTON_UP || (up && movable)) {
-		if (mainMenuSelection > 0) {
-			mainMenuSelection--;
+	if (*pressed & PAD_BUTTON_UP || (up && movable)) {
+		if (mainMenuCursorPos > 0) {
+			mainMenuCursorPos--;
 		} else {
-			mainMenuSelection = MENUITEMS_LEN - 1;
+			mainMenuCursorPos = MENUITEMS_LEN - 1;
 		}
-	} else if (pressed & PAD_BUTTON_DOWN || (down && movable)) {
-		if (mainMenuSelection < MENUITEMS_LEN - 1) {
-			mainMenuSelection++;
+	} else if (*pressed & PAD_BUTTON_DOWN || (down && movable)) {
+		if (mainMenuCursorPos < MENUITEMS_LEN - 1) {
+			mainMenuCursorPos++;
 		} else {
-			mainMenuSelection = 0;
+			mainMenuCursorPos = 0;
 		}
 	}
 
 	// does the user want to move into another menu?
 	// else if to ensure that the A press is separate from any dpad stuff
 	// TODO: maybe reorder the enum so that the number and enum match up?
-	else if (pressed & PAD_BUTTON_A) {
-		switch (mainMenuSelection) {
-			case 0:
+	else if (*pressed & PAD_BUTTON_A) {
+		switch (mainMenuCursorPos) {
+			case ENTRY_CONT_TEST:
 				currentMenu = CONTROLLER_TEST;
 				break;
-			case 1:
+			case ENTRY_OSCILLOSCOPE:
 				currentMenu = WAVEFORM;
 				break;
-			case 2:
+			case ENTRY_CONT_OSCILLOSCOPE:
 				currentMenu = CONTINUOUS_WAVEFORM;
 				break;
-			case 3:
+			case ENTRY_TRIGGER_OSCILLOSCOPE:
 				currentMenu = TRIGGER_WAVEFORM;
 				break;
-			case 4:
+			case ENTRY_COORD_VIEWER:
 				currentMenu = COORD_MAP;
 				break;
-			case 5:
+			case ENTRY_2D_PLOT:
 				currentMenu = PLOT_2D;
 				break;
-			case 6:
+			case ENTRY_BUTTON_PLOT:
 				currentMenu = PLOT_BUTTON;
 				break;
-			case 7:
+			case ENTRY_GATE_VIS:
 				currentMenu = GATE_MEASURE;
 				break;
-			case 8:
+			case ENTRY_DATA_EXPORT:
 				currentMenu = FILE_EXPORT;
 				break;
 		}
@@ -437,545 +498,195 @@ void menu_mainMenu(void *currXfb) {
 	}
 }
 
-// controller test submenu
-// basic visual button and stick test
-// also shows coordinates (raw and melee converted), and origin values
-void menu_controllerTest(void *currXfb) {
-	// melee stick coordinates stuff
-	// a lot of this comes from github.com/phobgcc/phobconfigtool
-
-	static WaveformDatapoint stickCoordinatesRaw;
-	static WaveformDatapoint stickCoordinatesMelee;
-
-	// get raw stick values
-	stickCoordinatesRaw.ax = PAD_StickX(0), stickCoordinatesRaw.ay = PAD_StickY(0);
-	stickCoordinatesRaw.cx = PAD_SubStickX(0), stickCoordinatesRaw.cy = PAD_SubStickY(0);
-
-	// get converted stick values
-	stickCoordinatesMelee = convertStickValues(&stickCoordinatesRaw);
-	
-	// print raw stick coordinates
-	setCursorPos(19, 0);
-	sprintf(strBuffer, "Raw XY: (%04d,%04d)", stickCoordinatesRaw.ax, stickCoordinatesRaw.ay);
-	printStr(strBuffer, currXfb);
-	setCursorPos(19, 38);
-	sprintf(strBuffer, "C-Raw XY: (%04d,%04d)", stickCoordinatesRaw.cx, stickCoordinatesRaw.cy);
-	printStr(strBuffer, currXfb);
-	
-	// print melee coordinates
-	setCursorPos(20, 0);
-	printStr("Melee: (", currXfb);
-	// is the value negative?
-	if (stickCoordinatesRaw.ax < 0) {
-		printStr("-", currXfb);
-	} else {
-		printStr("0", currXfb);
-	}
-	// is this a 1.0 value?
-	if (stickCoordinatesMelee.ax == 10000) {
-		printStr("1.0000", currXfb);
-	} else {
-		sprintf(strBuffer, "0.%04d", stickCoordinatesMelee.ax);
-		printStr(strBuffer, currXfb);
-	}
-	printStr(",", currXfb);
-	
-	// is the value negative?
-	if (stickCoordinatesRaw.ay < 0) {
-		printStr("-", currXfb);
-	} else {
-		printStr("0", currXfb);
-	}
-	// is this a 1.0 value?
-	if (stickCoordinatesMelee.ay == 10000) {
-		printStr("1.0000", currXfb);
-	} else {
-		sprintf(strBuffer, "0.%04d", stickCoordinatesMelee.ay);
-		printStr(strBuffer, currXfb);
-	}
-	printStr(")", currXfb);
-	
-	setCursorPos(20, 33);
-	sprintf(strBuffer, "C-Melee: (");
-	printStr(strBuffer, currXfb);
-	// is the value negative?
-	if (stickCoordinatesRaw.cx < 0) {
-		printStr("-", currXfb);
-	} else {
-		printStr("0", currXfb);
-	}
-	// is this a 1.0 value?
-	if (stickCoordinatesMelee.cx == 10000) {
-		printStr("1.0000", currXfb);
-	} else {
-		sprintf(strBuffer, "0.%04d", stickCoordinatesMelee.cx);
-		printStr(strBuffer, currXfb);
-	}
-	printStr(",", currXfb);
-	
-	// is the value negative?
-	if (stickCoordinatesRaw.cy < 0) {
-		printStr("-", currXfb);
-	} else {
-		printStr("0", currXfb);
-	}
-	// is this a 1.0 value?
-	if (stickCoordinatesMelee.cy == 10000) {
-		printStr("1.0000", currXfb);
-	} else {
-		sprintf(strBuffer, "0.%04d", stickCoordinatesMelee.cy);
-		printStr(strBuffer, currXfb);
-	}
-	printStr(")", currXfb);
-	
-	if (originRead) {
-		setCursorPos(21, 0);
-		sprintf(strBuffer, "Origin XY: (%04d,%04d)", origin[0].stickX, origin[0].stickY);
-		printStr(strBuffer, currXfb);
-		setCursorPos(21, 35);
-		sprintf(strBuffer, "C-Origin XY: (%04d,%04d)", origin[0].substickX, origin[0].substickY);
-		printStr(strBuffer, currXfb);
-		
-		if (!(held & PAD_TRIGGER_L)) {
-			setCursorPos(18, 2);
-			sprintf(strBuffer, "L Origin: %d", origin[0].triggerL);
-			printStr(strBuffer, currXfb);
-		}
-		if (!(held & PAD_TRIGGER_R)) {
-			setCursorPos(18, 44);
-			sprintf(strBuffer, "R Origin: %d", origin[0].triggerR);
-			printStr(strBuffer, currXfb);
-		}
-	}
-	
-
-	// visual stuff
-	// Buttons
-
-    // A
-	if (held & PAD_BUTTON_A) {
-		DrawFilledBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_A_Y1,
-					  CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_A_SIZE, CONT_TEST_BUTTON_A_Y1 + CONT_TEST_BUTTON_A_SIZE,
-					  COLOR_WHITE, currXfb);
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_A_X1 + 12, CONT_TEST_BUTTON_A_Y1 + 8, COLOR_BLACK, 'A');
-	} else {
-		DrawBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_A_Y1,
-		        CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_A_SIZE, CONT_TEST_BUTTON_A_Y1 + CONT_TEST_BUTTON_A_SIZE,
-		        COLOR_WHITE, currXfb);
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_A_X1 + 12, CONT_TEST_BUTTON_A_Y1 + 8, COLOR_WHITE, 'A');
-    }
-	
-    // B
-	if (held & PAD_BUTTON_B) {
-		DrawFilledBox(CONT_TEST_BUTTON_B_X1, CONT_TEST_BUTTON_B_Y1,
-		              CONT_TEST_BUTTON_B_X1 + CONT_TEST_BUTTON_B_SIZE, CONT_TEST_BUTTON_B_Y1 + CONT_TEST_BUTTON_B_SIZE,
-		              COLOR_WHITE, currXfb);
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_B_X1 + 8, CONT_TEST_BUTTON_B_Y1 + 5, COLOR_BLACK, 'B');
-	} else {
-		DrawBox(CONT_TEST_BUTTON_B_X1, CONT_TEST_BUTTON_B_Y1,
-		        CONT_TEST_BUTTON_B_X1 + CONT_TEST_BUTTON_B_SIZE, CONT_TEST_BUTTON_B_Y1 + CONT_TEST_BUTTON_B_SIZE,
-		        COLOR_WHITE, currXfb);
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_B_X1 + 8, CONT_TEST_BUTTON_B_Y1 + 5, COLOR_WHITE, 'B');
-	}
-
-	// X
-	if (held & PAD_BUTTON_X) {
-		DrawFilledBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_X_Y1,
-		              CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_X_Y1 + CONT_TEST_BUTTON_XY_LONG,
-		              COLOR_WHITE, currXfb);
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_Z_X1 + 7, CONT_TEST_BUTTON_X_Y1 + 8, COLOR_BLACK, 'X');
-	} else {
-		DrawBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_X_Y1,
-		        CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_X_Y1 + CONT_TEST_BUTTON_XY_LONG,
-		        COLOR_WHITE, currXfb);
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_Z_X1 + 7, CONT_TEST_BUTTON_X_Y1 + 8, COLOR_WHITE, 'X');
-	}
-
-	// Y
-	if (held & PAD_BUTTON_Y) {
-		DrawFilledBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_Y_Y1,
-		              CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_XY_LONG, CONT_TEST_BUTTON_Y_Y1 + CONT_TEST_BUTTON_XY_SHORT,
-		              COLOR_WHITE, currXfb);
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_A_X1 + 12, CONT_TEST_BUTTON_Y_Y1 + 4, COLOR_BLACK, 'Y');
-	} else {
-		DrawBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_Y_Y1,
-		        CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_XY_LONG, CONT_TEST_BUTTON_Y_Y1 + CONT_TEST_BUTTON_XY_SHORT,
-		        COLOR_WHITE, currXfb);
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_A_X1 + 12, CONT_TEST_BUTTON_Y_Y1 + 4, COLOR_WHITE, 'Y');
-	}
-
-    // Z
-	if (held & PAD_TRIGGER_Z) {
-		DrawFilledBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_Z_Y1,
-		              CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_Z_Y1 + CONT_TEST_BUTTON_XY_SHORT,
-		              COLOR_WHITE, currXfb);
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_Z_X1 + 7, CONT_TEST_BUTTON_Z_Y1 + 4, COLOR_BLACK, 'Z');
-		// also enable rumble if z is held
-		PAD_ControlMotor(0, PAD_MOTOR_RUMBLE);
-	} else {
-		DrawBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_Z_Y1,
-		        CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_Z_Y1 + CONT_TEST_BUTTON_XY_SHORT,
-		        COLOR_WHITE, currXfb);
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_Z_X1 + 7, CONT_TEST_BUTTON_Z_Y1 + 4, COLOR_WHITE, 'Z');
-		// stop rumble if z is not held
-		PAD_ControlMotor(0, PAD_MOTOR_STOP);
-	}
-
-	// Start
-	if (held & PAD_BUTTON_START) {
-		DrawFilledBox(CONT_TEST_BUTTON_START_X1, CONT_TEST_BUTTON_START_Y1,
-		              CONT_TEST_BUTTON_START_X1 + CONT_TEST_BUTTON_START_LEN, CONT_TEST_BUTTON_START_Y1 + CONT_TEST_BUTTON_START_WIDTH,
-		              COLOR_WHITE, currXfb);
-		// TODO: this is ugly
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 7, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'S');
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 17, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'T');
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 27, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'A');
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 37, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'R');
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 47, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'T');
-	} else {
-		DrawBox(CONT_TEST_BUTTON_START_X1, CONT_TEST_BUTTON_START_Y1,
-		        CONT_TEST_BUTTON_START_X1 + CONT_TEST_BUTTON_START_LEN, CONT_TEST_BUTTON_START_Y1 + CONT_TEST_BUTTON_START_WIDTH,
-		        COLOR_WHITE, currXfb);
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 7, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'S');
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 17, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'T');
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 27, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'A');
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 37, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'R');
-		drawCharDirect(currXfb, CONT_TEST_BUTTON_START_X1 + 47, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'T');
-	}
-	
-	// DPad
-	// up
-	if (held & PAD_BUTTON_UP) {
-		DrawFilledBox(CONT_TEST_DPAD_UP_X1, CONT_TEST_DPAD_UP_Y1,
-		        CONT_TEST_DPAD_UP_X1 + CONT_TEST_DPAD_SHORT, CONT_TEST_DPAD_UP_Y1 + CONT_TEST_DPAD_LONG,
-		        COLOR_WHITE, currXfb);
-	} else {
-		DrawBox(CONT_TEST_DPAD_UP_X1, CONT_TEST_DPAD_UP_Y1,
-		        CONT_TEST_DPAD_UP_X1 + CONT_TEST_DPAD_SHORT, CONT_TEST_DPAD_UP_Y1 + CONT_TEST_DPAD_LONG,
-		        COLOR_WHITE, currXfb);
-	}
-	
-	// down
-	if (held & PAD_BUTTON_DOWN) {
-		DrawFilledBox(CONT_TEST_DPAD_UP_X1, CONT_TEST_DPAD_DOWN_Y1,
-		              CONT_TEST_DPAD_UP_X1 + CONT_TEST_DPAD_SHORT, CONT_TEST_DPAD_DOWN_Y1 + CONT_TEST_DPAD_LONG,
-		              COLOR_WHITE, currXfb);
-	} else {
-		DrawBox(CONT_TEST_DPAD_UP_X1, CONT_TEST_DPAD_DOWN_Y1,
-		        CONT_TEST_DPAD_UP_X1 + CONT_TEST_DPAD_SHORT, CONT_TEST_DPAD_DOWN_Y1 + CONT_TEST_DPAD_LONG,
-		        COLOR_WHITE, currXfb);
-	}
-	
-	
-	//left
-	if (held & PAD_BUTTON_LEFT) {
-		DrawFilledBox(CONT_TEST_DPAD_LEFT_X1, CONT_TEST_DPAD_LEFT_Y1,
-		              CONT_TEST_DPAD_LEFT_X1 + CONT_TEST_DPAD_LONG, CONT_TEST_DPAD_LEFT_Y1 + CONT_TEST_DPAD_SHORT,
-		              COLOR_WHITE, currXfb);
-	} else {
-		DrawBox(CONT_TEST_DPAD_LEFT_X1, CONT_TEST_DPAD_LEFT_Y1,
-		        CONT_TEST_DPAD_LEFT_X1 + CONT_TEST_DPAD_LONG, CONT_TEST_DPAD_LEFT_Y1 + CONT_TEST_DPAD_SHORT,
-		        COLOR_WHITE, currXfb);
-	}
-	
-	// right
-	if (held & PAD_BUTTON_RIGHT) {
-		DrawFilledBox(CONT_TEST_DPAD_RIGHT_X1, CONT_TEST_DPAD_LEFT_Y1,
-					  CONT_TEST_DPAD_RIGHT_X1 + CONT_TEST_DPAD_LONG, CONT_TEST_DPAD_LEFT_Y1 + CONT_TEST_DPAD_SHORT,
-		              COLOR_WHITE, currXfb);
-	} else {
-		DrawBox(CONT_TEST_DPAD_RIGHT_X1, CONT_TEST_DPAD_LEFT_Y1,
-				CONT_TEST_DPAD_RIGHT_X1 + CONT_TEST_DPAD_LONG, CONT_TEST_DPAD_LEFT_Y1 + CONT_TEST_DPAD_SHORT,
-		        COLOR_WHITE, currXfb);
-	}
-	
-	 
-	// Analog L Slider
-	//DrawBox(53, 69, 66, 326, COLOR_WHITE, currXfb);
-	DrawBox(CONT_TEST_TRIGGER_L_X1, CONT_TEST_TRIGGER_Y1,
-			CONT_TEST_TRIGGER_L_X1 + CONT_TEST_TRIGGER_WIDTH + 1, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN + 1,
-			COLOR_WHITE, currXfb);
-	if (held & PAD_TRIGGER_L) {
-		DrawFilledBox(CONT_TEST_TRIGGER_L_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerL(0)),
-		              CONT_TEST_TRIGGER_L_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
-		              COLOR_BLUE, currXfb);
-	} else {
-		DrawFilledBox(CONT_TEST_TRIGGER_L_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerL(0)),
-				CONT_TEST_TRIGGER_L_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
-				COLOR_RED, currXfb);
-	}
-	
-	setCursorPos(17,2);
-	sprintf(strBuffer, "Analog L: %d", PAD_TriggerL(0));
-	printStr(strBuffer, currXfb);
-	if (held & PAD_TRIGGER_L) {
-		setCursorPos(18, 2);
-		printStr("Digital L Pressed", currXfb);
-	}
-	
-	// Analog R Slider
-	DrawBox(CONT_TEST_TRIGGER_R_X1, CONT_TEST_TRIGGER_Y1,
-	        CONT_TEST_TRIGGER_R_X1 + CONT_TEST_TRIGGER_WIDTH + 1, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN + 1,
-	        COLOR_WHITE, currXfb);
-	if (held & PAD_TRIGGER_R) {
-		DrawFilledBox(CONT_TEST_TRIGGER_R_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerR(0)),
-		              CONT_TEST_TRIGGER_R_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
-		              COLOR_BLUE, currXfb);
-	} else {
-		DrawFilledBox(CONT_TEST_TRIGGER_R_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerR(0)),
-		              CONT_TEST_TRIGGER_R_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
-		              COLOR_RED, currXfb);
-	}
-	
-	setCursorPos(17,44);
-	sprintf(strBuffer, "Analog R: %d", PAD_TriggerR(0));
-	printStr(strBuffer, currXfb);
-	if (held & PAD_TRIGGER_R) {
-		setCursorPos(18, 40);
-		printStr("Digital R Pressed", currXfb);
-	}
-
-	// Analog Stick
-	// calculate screen coordinates for stick position drawing
-	int xfbCoordX = (stickCoordinatesMelee.ax / 250);
-	if (stickCoordinatesRaw.ax < 0) {
-		xfbCoordX *= -1;
-	}
-	xfbCoordX += CONT_TEST_STICK_CENTER_X;
-	
-	int xfbCoordY = (stickCoordinatesMelee.ay / 250);
-	if (stickCoordinatesRaw.ay > 0) {
-		xfbCoordY *= -1;
-	}
-	xfbCoordY += CONT_TEST_STICK_CENTER_Y;
-	
-	int xfbCoordCX = (stickCoordinatesMelee.cx / 250);
-	if (stickCoordinatesRaw.cx < 0) {
-		xfbCoordCX *= -1;
-	}
-	xfbCoordCX += CONT_TEST_CSTICK_CENTER_X;
-	
-	int xfbCoordCY = (stickCoordinatesMelee.cy / 250);
-	if (stickCoordinatesRaw.cy > 0) {
-		xfbCoordCY *= -1;
-	}
-	xfbCoordCY += CONT_TEST_CSTICK_CENTER_Y;
-	
-	// analog stick
-	DrawOctagonalGate(CONT_TEST_STICK_CENTER_X, CONT_TEST_STICK_CENTER_Y, 2, COLOR_GRAY, currXfb); // perimeter
-	DrawLine(CONT_TEST_STICK_CENTER_X, CONT_TEST_STICK_CENTER_Y,
-	         CONT_TEST_STICK_CENTER_X + (stickCoordinatesRaw.ax / 2), CONT_TEST_STICK_CENTER_Y - (stickCoordinatesRaw.ay / 2),
-			 COLOR_SILVER, currXfb); // line from center
-	for (int i = CONT_TEST_STICK_RAD / 2; i > 0; i -= 5) {
-		DrawCircle(CONT_TEST_STICK_CENTER_X + (stickCoordinatesRaw.ax / 2), CONT_TEST_STICK_CENTER_Y - (stickCoordinatesRaw.ay / 2), i, COLOR_WHITE, currXfb);
-	} // smaller circle
-	
-	// c-stick
-	DrawOctagonalGate(CONT_TEST_CSTICK_CENTER_X, CONT_TEST_CSTICK_CENTER_Y, 2, COLOR_GRAY, currXfb); // perimeter
-	DrawLine(CONT_TEST_CSTICK_CENTER_X, CONT_TEST_CSTICK_CENTER_Y,
-	         CONT_TEST_CSTICK_CENTER_X + (stickCoordinatesRaw.cx / 2), CONT_TEST_CSTICK_CENTER_Y - (stickCoordinatesRaw.cy / 2),
-	         COLOR_MEDGRAY, currXfb); // line from center
-	DrawFilledCircle(CONT_TEST_CSTICK_CENTER_X + (stickCoordinatesRaw.cx / 2), CONT_TEST_CSTICK_CENTER_Y - (stickCoordinatesRaw.cy / 2),
-	                 CONT_TEST_STICK_RAD / 2, COLOR_YELLOW, currXfb); // smaller circle
-}
-
-void menu_fileExport(void *currXfb) {
+void menu_fileExport() {
 	// make sure data is actually present
-	if (data.isDataReady) {
-		if (data.exported) {
+	if ((*data)->isRecordingReady) {
+		if ((*data)->dataExported) {
 			// print status after print
 			switch (exportReturnCode) {
 				case 0:
-					printStr("File exported successfully.", currXfb);
+					printStr("File exported successfully.");
 					break;
 				case 1:
-					printStr("Data was marked as not ready, this shouldn't happen!", currXfb);
+					printStr("Data was marked as not ready, this shouldn't happen!");
 					break;
 				case 2:
-					printStr("Failed to init filesystem.", currXfb);
+					printStr("Failed to init filesystem.");
 					break;
 				case 3:
-					printStr("Failed to create parent directory.", currXfb);
+					printStr("Failed to create parent directory.");
 					break;
 				case 4:
-					printStr("Failed to create file, file already exists!", currXfb);
+					printStr("Failed to create file, file already exists!");
 					break;
 				default:
-					printStr("How did we get here?", currXfb);
+					printStr("How did we get here?");
 					break;
 			}
 		} else {
-			printStr("Attempting to export data...", currXfb);
-			exportReturnCode = exportData(&data);
+			printStr("Attempting to export data...");
+			exportReturnCode = exportData();
 		}
 	} else {
-		printStr("No data to export, record an input first.", currXfb);
+		printStr("No data to export, record an input first.");
 	}
 }
 
 // coordinate viewer submenu
 // draws melee coordinates for both sticks on a circle
 // "overlays" can be toggled to show specific coordinate groups (shield drop, for example)
-void menu_coordinateViewer(void *currXfb) {
+void menu_coordinateViewer() {
 	// melee stick coordinates stuff
 	// a lot of this comes from github.com/phobgcc/phobconfigtool
 	
-	printStr("Press Z for instructions", currXfb);
+	printStr("Press Z for instructions");
 	
-	static WaveformDatapoint stickCoordinatesRaw;
-	static WaveformDatapoint stickCoordinatesMelee;
+	static ControllerSample stickRaw;
+	static MeleeCoordinates stickMelee;
 	
 	// get raw stick values
-	stickCoordinatesRaw.ax = PAD_StickX(0), stickCoordinatesRaw.ay = PAD_StickY(0);
-	stickCoordinatesRaw.cx = PAD_SubStickX(0), stickCoordinatesRaw.cy = PAD_SubStickY(0);
+	stickRaw.stickX = PAD_StickX(0), stickRaw.stickY = PAD_StickY(0);
+	stickRaw.cStickX = PAD_SubStickX(0), stickRaw.cStickY = PAD_SubStickY(0);
 	
 	// get converted stick values
-	stickCoordinatesMelee = convertStickValues(&stickCoordinatesRaw);
+	stickMelee = convertStickRawToMelee(stickRaw);
 	
 	// print melee coordinates
 	setCursorPos(4, 0);
-	printStr("Stick X: ", currXfb);
+	printStr("Stick X: ");
 	// is the value negative?
-	if (stickCoordinatesRaw.ax < 0) {
-		printStr("-", currXfb);
+	if (stickRaw.stickX < 0) {
+		printStr("-");
 	}
 	// is this a 1.0 value?
-	if (stickCoordinatesMelee.ax == 10000) {
-		printStr("1.0\n", currXfb);
+	if (stickMelee.stickXUnit == 10000) {
+		printStr("1.0\n");
 	} else {
-		sprintf(strBuffer, "0.%04d\n", stickCoordinatesMelee.ax);
-		printStr(strBuffer, currXfb);
+		printStr("0.%04d\n", stickMelee.stickXUnit);
 	}
 	
 	// print melee coordinates
-	printStr("Stick Y: ", currXfb);
+	printStr("Stick Y: ");
 	// is the value negative?
-	if (stickCoordinatesRaw.ay < 0) {
-		printStr("-", currXfb);
+	if (stickRaw.stickY < 0) {
+		printStr("-");
 	}
 	// is this a 1.0 value?
-	if (stickCoordinatesMelee.ay == 10000) {
-		printStr("1.0\n", currXfb);
+	if (stickMelee.stickYUnit == 10000) {
+		printStr("1.0\n");
 	} else {
-		sprintf(strBuffer, "0.%04d\n", stickCoordinatesMelee.ay);
-		printStr(strBuffer, currXfb);
+		printStr("0.%04d\n", stickMelee.stickYUnit);
 	}
 	
 	// print melee coordinates
-	printStr("\nC-Stick X: ", currXfb);
+	printStr("\nC-Stick X: ");
 	// is the value negative?
-	if (stickCoordinatesRaw.cx < 0) {
-		printStr("-", currXfb);
+	if (stickRaw.cStickX < 0) {
+		printStr("-");
 	}
 	// is this a 1.0 value?
-	if (stickCoordinatesMelee.cx == 10000) {
-		printStr("1.0\n", currXfb);
+	if (stickMelee.cStickXUnit == 10000) {
+		printStr("1.0\n");
 	} else {
-		sprintf(strBuffer, "0.%04d\n", stickCoordinatesMelee.cx);
-		printStr(strBuffer, currXfb);
+		printStr("0.%04d\n", stickMelee.cStickXUnit);
 	}
 	
 	// print melee coordinates
-	printStr("C-Stick Y: ", currXfb);
+	printStr("C-Stick Y: ");
 	// is the value negative?
-	if (stickCoordinatesRaw.cy < 0) {
-		printStr("-", currXfb);
+	if (stickRaw.cStickY < 0) {
+		printStr("-");
 	}
 	// is this a 1.0 value?
-	if (stickCoordinatesMelee.cy == 10000) {
-		printStr("1.0\n", currXfb);
+	if (stickMelee.cStickYUnit == 10000) {
+		printStr("1.0\n");
 	} else {
-		sprintf(strBuffer, "0.%04d\n", stickCoordinatesMelee.cy);
-		printStr(strBuffer, currXfb);
+		printStr("0.%04d\n", stickMelee.cStickYUnit);
 	}
 	
 	setCursorPos(19, 0);
-	printStr("Stickmap: ", currXfb);
-	int stickmapRetVal = isCoordValid(selectedStickmap, stickCoordinatesMelee);
+	printStr("Stickmap: ");
+	int stickmapRetVal = isCoordValid(selectedStickmap, stickMelee);
 	switch (selectedStickmap) {
 		case FF_WD:
-			printStr("Firefox/Wavedash\n", currXfb);
-			printStr("Visible: ", currXfb);
+			printStr("Firefox/Wavedash\n");
+			printStr("Visible: ");
 			if (selectedStickmapSub == 0) {
-				printStr("ALL", currXfb);
+				printStr("ALL");
 			} else {
-				printStrColor(STICKMAP_FF_WD_RETVALS[selectedStickmapSub], currXfb,
-							  STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][0], STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][1]);
-				//sprintf(strBuffer, "%s\n", );
-				//printStr(strBuffer, currXfb);
+				printStrColor(STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][0], STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][1],
+							  STICKMAP_FF_WD_RETVALS[selectedStickmapSub]);
 			}
-			printStr("\nResult: ", currXfb);
-			printStrColor(STICKMAP_FF_WD_RETVALS[stickmapRetVal], currXfb,
-						  STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][0], STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][1]);
+			printStr("\nResult: ");
+			printStrColor(STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][0], STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][1],
+						  STICKMAP_FF_WD_RETVALS[stickmapRetVal]);
 			break;
 		case SHIELDDROP:
-			printStr("Shield Drop\n", currXfb);
-			printStr("Visible: ", currXfb);
+			printStr("Shield Drop\n");
+			printStr("Visible: ");
 			if (selectedStickmapSub == 0) {
-				printStr("ALL", currXfb);
+				printStr("ALL");
 			} else {
-				//sprintf(strBuffer, "%s\n", STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub]);
-				//printStr(strBuffer, currXfb);
-				printStrColor(STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub], currXfb,
-				              STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][0], STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][1]);
+				printStrColor(STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][0], STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][1],
+							  STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub]);
 			}
-			printStr("\nResult: ", currXfb);
-			printStrColor(STICKMAP_SHIELDDROP_RETVALS[stickmapRetVal], currXfb,
-						  STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][0], STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][1]);
+			printStr("\nResult: ");
+			printStrColor(STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][0], STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][1],
+						  STICKMAP_SHIELDDROP_RETVALS[stickmapRetVal]);
 			break;
 		case NONE:
 		default:
-			printStr("NONE", currXfb);
+			printStr("NONE");
 			break;
 	}
 	
 	
 	// calculate screen coordinates for stick position drawing
-	int xfbCoordX = (stickCoordinatesMelee.ax / 125) * 2;
-	if (stickCoordinatesRaw.ax < 0) {
+	int xfbCoordX = (stickMelee.stickXUnit / 125) * 2;
+	if (stickRaw.stickX < 0) {
 		xfbCoordX *= -1;
 	}
 	xfbCoordX += COORD_CIRCLE_CENTER_X;
 	
-	int xfbCoordY = (stickCoordinatesMelee.ay / 125) * 2;
-	if (stickCoordinatesRaw.ay > 0) {
+	int xfbCoordY = (stickMelee.stickYUnit / 125) * 2;
+	if (stickRaw.stickY > 0) {
 		xfbCoordY *= -1;
 	}
 	xfbCoordY += SCREEN_POS_CENTER_Y;
 	
-	int xfbCoordCX = (stickCoordinatesMelee.cx / 125) * 2;
-	if (stickCoordinatesRaw.cx < 0) {
+	int xfbCoordCX = (stickMelee.cStickXUnit / 125) * 2;
+	if (stickRaw.cStickX < 0) {
 		xfbCoordCX *= -1;
 	}
 	xfbCoordCX += COORD_CIRCLE_CENTER_X;
 	
-	int xfbCoordCY = (stickCoordinatesMelee.cy / 125) * 2;
-	if (stickCoordinatesRaw.cy > 0) {
+	int xfbCoordCY = (stickMelee.cStickYUnit / 125) * 2;
+	if (stickRaw.cStickY > 0) {
 		xfbCoordCY *= -1;
 	}
 	xfbCoordCY += SCREEN_POS_CENTER_Y;
 	
 	// draw stickbox bounds
-	DrawCircle(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, 160, COLOR_MEDGRAY, currXfb);
+	DrawCircle(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, 160, COLOR_MEDGRAY);;
 	
-	DrawStickmapOverlay(selectedStickmap, selectedStickmapSub, currXfb);
+	DrawStickmapOverlay(selectedStickmap, selectedStickmapSub);;
 
 	// draw analog stick line
-	DrawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordX, xfbCoordY, COLOR_WHITE, currXfb);
-	DrawBox(xfbCoordX - 4, xfbCoordY - 4, xfbCoordX + 4, xfbCoordY + 4, COLOR_WHITE, currXfb);
+	DrawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordX, xfbCoordY, COLOR_WHITE);;
+	DrawBox(xfbCoordX - 4, xfbCoordY - 4, xfbCoordX + 4, xfbCoordY + 4, COLOR_WHITE);;
 	
 	// draw c-stick line
-	DrawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, COLOR_YELLOW, currXfb);
-	DrawFilledBox(xfbCoordCX - 2, xfbCoordCY - 2, xfbCoordCX + 2, xfbCoordCY + 2, COLOR_YELLOW, currXfb);
+	DrawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, COLOR_YELLOW);;
+	DrawFilledBox(xfbCoordCX - 2, xfbCoordCY - 2, xfbCoordCX + 2, xfbCoordCY + 2, COLOR_YELLOW);;
 	
-	if (pressed & PAD_BUTTON_X) {
+	if (*pressed & PAD_BUTTON_X) {
 		selectedStickmap++;
 		selectedStickmapSub = 0;
 		if (selectedStickmap == 3) {
 			selectedStickmap = 0;
 		}
 	}
-	if (pressed & PAD_BUTTON_Y) {
+	if (*pressed & PAD_BUTTON_Y) {
 		selectedStickmapSub++;
 		switch (selectedStickmap) {
 			case (FF_WD):
@@ -997,11 +708,20 @@ void menu_coordinateViewer(void *currXfb) {
 }
 
 // self-explanatory
-void menu_thanksPage(void *currXfb) {
+void menu_thanksPage() {
 	printStr("Thanks to:\n"
 			 "PhobGCC team and Discord\n"
 			 "DevkitPro team\n"
 			 "Extrems\n"
 			 "SmashScope\n"
-			 "Z. B. Wells", currXfb);
+			 "Z. B. Wells");
+	
+	setCursorPos(18,0);
+	printStr("Compiled with: ");
+	printStr(_V_STRING);
+	printStr("\nBuild Date: ");
+	printStr(BUILD_DATE);
+	printStr("\nGTS Commit ID: ");
+	printStr(COMMIT_ID);
+
 }

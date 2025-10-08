@@ -19,25 +19,22 @@
 // number of pixels between given columns
 #define LINE_SPACING 2
 
-void drawChar(unsigned char bitmap[],
-              const unsigned int color,
+void drawChar(const unsigned int color,
               const char character);
 
-void drawCharDirect(unsigned char bitmap[],
-			   uint16_t x,
+void drawCharDirect(uint16_t x,
 			   uint16_t y,
                const unsigned int color,
                const char character);
 
-void drawString(unsigned char bitmap[],
-                const uint32_t bg_color,
+void drawString(const uint32_t bg_color,
 				const uint32_t fg_color,
                 const char string[]);
 
-void printStr(const char* str, void *xfb);
-void printStrColor(const char* str, void *xfb, const uint32_t bg_color, const uint32_t fg_color);
+void printStr(const char* str, ...);
+void printStrColor(const uint32_t bg_color, const uint32_t fg_color, const char* str, ...);
 
-void printEllipse(const int counter, const int interval, void *currXfb);
+void printEllipse(const int counter, const int interval);
 
 void resetCursor();
 void setCursorPos(int row, int col);
