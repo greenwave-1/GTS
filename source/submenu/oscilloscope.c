@@ -35,6 +35,14 @@ static enum OSCILLOSCOPE_TEST currentTest = SNAPBACK;
 static int waveformScaleFactor = 1;
 static int dataScrollOffset = 0;
 
+// stores current captured data
+static ControllerSample curr;
+
+// acts as a prepend loop
+// once conditions are met, ~25ms of previous data is added to the start of the capture from here
+static ControllerSample startingLoop[200];
+static int startingLoopIndex = 0;
+
 static uint8_t stickCooldown = 0;
 static int8_t snapbackStartPosX = 0, snapbackStartPosY = 0;
 static int8_t snapbackPrevPosX = 0, snapbackPrevPosY = 0;
@@ -64,7 +72,6 @@ static void oscilloscopeCallback() {
 		prevSampleCallbackTick = sampleCallbackTick;
 	}
 	
-	static int8_t stickX, stickY, cStickX, cStickY;
 	PAD_ScanPads();
 	
 	// keep buttons in a "pressed" state long enough for code to see it
@@ -83,30 +90,40 @@ static void oscilloscopeCallback() {
 	
 	*held = PAD_ButtonsHeld(0);
 	
-	// read stick position if not locked
+	// record current data
+	curr.stickX = PAD_StickX(0);
+	curr.stickY = PAD_StickY(0);
+	curr.cStickX = PAD_SubStickX(0);
+	curr.cStickY = PAD_SubStickY(0);
+	curr.timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+	
+	// add data to prepend loop
+	startingLoop[startingLoopIndex] = curr;
+	startingLoopIndex++;
+	if (startingLoopIndex == 200) {
+		startingLoopIndex = 0;
+	}
+	
+	int8_t selectedStickX, selectedStickY;
+	if (showCStick) {
+		selectedStickX = curr.cStickX;
+		selectedStickY = curr.cStickY;
+	} else {
+		selectedStickX = curr.stickX;
+		selectedStickY = curr.stickY;
+	}
+	
+	// reset our input cooldown if the stick is not in the origin
+	if (stickCooldown != 0 && ((abs(selectedStickX) > STICK_MOVEMENT_THRESHOLD) || (abs(selectedStickY) > STICK_MOVEMENT_THRESHOLD))) {
+		stickCooldown = MEASURE_COOLDOWN_FRAMES;
+	}
+	
+	// are we ready to check for stick inputs?
 	if (oState != POST_INPUT_LOCK) {
-		stickX = PAD_StickX(0);
-		stickY = PAD_StickY(0);
-		cStickX = PAD_SubStickX(0);
-		cStickY = PAD_SubStickY(0);
-		
-		int8_t selectedStickX, selectedStickY;
-		if (showCStick) {
-			selectedStickX = cStickX;
-			selectedStickY = cStickY;
-		} else {
-			selectedStickX = stickX;
-			selectedStickY = stickY;
-		}
-		
 		// data capture is currently happening
 		if (stickMove) {
-			// set values
-			(*temp)->samples[(*temp)->sampleEnd].stickX = stickX;
-			(*temp)->samples[(*temp)->sampleEnd].stickY = stickY;
-			(*temp)->samples[(*temp)->sampleEnd].cStickX = cStickX;
-			(*temp)->samples[(*temp)->sampleEnd].cStickY = cStickY;
-			(*temp)->samples[(*temp)->sampleEnd].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+			// capture recorded sample
+			(*temp)->samples[(*temp)->sampleEnd] = curr;
 			(*temp)->totalTimeUs += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 			(*temp)->sampleEnd++;
 			
@@ -117,7 +134,12 @@ static void oscilloscopeCallback() {
 					// has the stick stopped moving?
 					if (abs(selectedStickX - snapbackPrevPosX) < STICK_MOVEMENT_THRESHOLD &&
 					    abs(selectedStickY - snapbackPrevPosY) < STICK_MOVEMENT_THRESHOLD) {
-						timeStoppedMoving += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
+						// are we close to the origin?
+						int multiplier = 1;
+						if ((abs(selectedStickX) < STICK_MOVEMENT_THRESHOLD) && (abs(selectedStickY) < STICK_MOVEMENT_THRESHOLD)) {
+							multiplier = 4;
+						}
+						timeStoppedMoving += multiplier * (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
 					} else {
 						timeStoppedMoving = 0;
 					}
@@ -143,7 +165,7 @@ static void oscilloscopeCallback() {
 				case PIVOT:
 					// are we close to the origin?
 					// this doesn't use the selectedStick values, idk if c-stick pivots are a thing...
-					if ((abs(stickX) < STICK_MOVEMENT_THRESHOLD) && (abs(stickY) < STICK_MOVEMENT_THRESHOLD)) {
+					if ((abs(curr.stickX) < STICK_MOVEMENT_THRESHOLD) && (abs(curr.stickY) < STICK_MOVEMENT_THRESHOLD)) {
 						timeStickInOrigin += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
 					} else {
 						timeStickInOrigin = 0;
@@ -237,7 +259,7 @@ static void oscilloscopeCallback() {
 					break;
 				
 				case PIVOT:
-					if ((abs(stickX) > STICK_MOVEMENT_THRESHOLD) || (abs(stickY) > STICK_MOVEMENT_THRESHOLD)) {
+					if ((abs(curr.stickX) > STICK_MOVEMENT_THRESHOLD) || (abs(curr.stickY) > STICK_MOVEMENT_THRESHOLD)) {
 						stickMove = true;
 					}
 					break;
@@ -252,12 +274,53 @@ static void oscilloscopeCallback() {
 			if (stickMove) {
 				// assign first value
 				clearRecordingArray(*temp);
-				(*temp)->samples[0].stickX = stickX;
-				(*temp)->samples[0].stickY = stickY;
-				(*temp)->samples[0].cStickX = cStickX;
-				(*temp)->samples[0].cStickY = cStickY;
-				(*temp)->samples[0].timeDiffUs = 0;
-				(*temp)->sampleEnd = 1;
+				(*temp)->sampleEnd = 0;
+				
+				int currentIndex = 0;
+				
+				// if pivot or dashback, prepend data
+				switch (currentTest) {
+					case SNAPBACK:
+					case DASHBACK:
+						// prepend ~50 ms of data to the recording
+						int loopStartIndex = startingLoopIndex - 1;
+						if (loopStartIndex == -1) {
+							loopStartIndex = 200;
+						}
+						int loopPrependCount = 0;
+						uint64_t prependedTimeUs = 0;
+						// go back ~25 ms
+						while (prependedTimeUs < 25000) {
+							// break out of loop if data doesn't exist
+							if (startingLoop[loopStartIndex].timeDiffUs == 0) {
+								break;
+							}
+							prependedTimeUs += startingLoop[loopStartIndex].timeDiffUs;
+							loopStartIndex--;
+							if (loopStartIndex == -1) {
+								loopStartIndex = 200;
+							}
+							loopPrependCount++;
+						}
+						for (int i = 0; i < loopPrependCount; i++ ) {
+							(*temp)->samples[(*temp)->sampleEnd] = startingLoop[(loopStartIndex + i) % 200];
+							if ((*temp)->sampleEnd == 0) {
+								(*temp)->samples[0].timeDiffUs = 0;
+								(*temp)->totalTimeUs = 0;
+							}
+							(*temp)->totalTimeUs += (*temp)->samples[(*temp)->sampleEnd].timeDiffUs;
+							(*temp)->sampleEnd++;
+						}
+						currentIndex = (*temp)->sampleEnd;
+						break;
+					default:
+						curr.timeDiffUs = 0;
+						break;
+				}
+				
+				(*temp)->samples[currentIndex] = curr;
+				(*temp)->totalTimeUs += curr.timeDiffUs;
+				(*temp)->sampleEnd = currentIndex + 1;
 				(*temp)->isRecordingReady = false;
 				(*temp)->dataExported = false;
 				oState = PRE_INPUT;

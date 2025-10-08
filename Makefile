@@ -6,13 +6,11 @@ default: all
 # dolphin path or executable
 emupath := flatpak run org.DolphinEmu.dolphin-emu
 
-# wiiload device for wii
-# this can be the physical usb gecko, or over the network
-runwii: export WIILOAD=/dev/ttyUSB0
+# wiiload via physical USB Gecko
+#export WIILOAD := /dev/ttyUSB0
 
-# wiiload device for gamecube
-# does swiss not support the physical usb gecko for wiiload?
-rungc: export WIILOAD=tcp:10.20.204.108
+# wiiload via network
+export WIILOAD := tcp:10.200.200.150
 
 # this can be any of the run targets
 run: runwii
