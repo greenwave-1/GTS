@@ -43,7 +43,7 @@ static ControllerRec **data = NULL, **temp = NULL;
 // stores current captured data
 static ControllerSample curr;
 // acts as a prepend loop
-// once conditions are met, ~50ms of previous data is added to the start of the capture from here
+// once conditions are met, ~25ms of previous data is added to the start of the capture from here
 static ControllerSample startingLoop[200];
 static int startingLoopIndex = 0;
 static bool startedCapture = false;
@@ -123,15 +123,15 @@ void triggerSamplingCallback() {
 			if (captureSelection != TRIGGER_NONE) {
 				clearRecordingArray(*temp);
 				(*temp)->sampleEnd = 0;
-				// prepend ~50 ms of data to the recording
+				// prepend ~25 ms of data to the recording
 				int loopStartIndex = startingLoopIndex - 1;
 				if (loopStartIndex == -1) {
 					loopStartIndex = 200;
 				}
 				int loopPrependCount = 0;
 				uint64_t prependedTimeUs = 0;
-				// go back 50 ms
-				while (prependedTimeUs < 50000) {
+				// go back 25 ms
+				while (prependedTimeUs < 25000) {
 					// break out of loop if data doesn't exist
 					if (startingLoop[loopStartIndex].timeDiffUs == 0) {
 						break;
@@ -381,6 +381,8 @@ void menu_triggerOscilloscope() {
 								buttonPressCooldown = 5;
 							}
 						}
+					} else {
+						trigState = TRIG_INPUT;
 					}
 					if (!buttonLock) {
 						if (*pressed & PAD_TRIGGER_Z) {
