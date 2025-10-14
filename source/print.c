@@ -17,14 +17,17 @@
 
 #include <ogc/color.h>
 
+#include "gx.h"
 #include "font.h"
 #include "draw.h"
 
+// buffer for variable arg strings
 static char strBuffer[1000];
 
-static int currX = 0;
-static int currY = 0;
-
+// real screen coordinates of our 'cursor'
+static int cursorX = 0;
+static int cursorY = 0;
+/*
 //Draws 8x15 character in the specified location according to the ascii codepoints
 void drawChar(const unsigned int color,
               const char character) {
@@ -95,12 +98,108 @@ void drawString(const uint32_t bg_color,
 		i++;
 	}
 }
+*/
+
+void drawCharDirect(uint16_t x,
+                    uint16_t y,
+                    const unsigned int color,
+                    const char character) {
+	return;
+}
+
+static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bgColor) {
+	// pointer for iterating over string
+	const char* curr = str;
+	
+	// stores size of a given character from the font
+	int texturePosX1, texturePosY1;
+	
+	int startingX = cursorX, startingY = cursorY;
+	int workingX = startingX, workingY = startingY;
+	
+	// loop until we hit a null terminator
+	for ( ; *curr != '\0'; curr++) {
+		// lower than space, larger than tilde, and not newline
+		if((*curr < 0x20 && *curr != '\n') || *curr > 0x7e) {
+			continue;
+		}
+		
+		// get texture coordinates
+		// font sheet starts at 0x20 ascii, 10 chars per line
+		int charIndex = (*curr) - 0x20;
+		texturePosX1 = (charIndex % 10) * 8;
+		texturePosY1 = (charIndex / 10) * 16;
+		
+		// go to a "new line" if drawing would put us outside the safe area, or if newline
+		if (cursorX + 10 > 640 - (PRINT_PADDING_HORIZONTAL * 2) || *curr == '\n') {
+			if (!draw) {
+				drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 18,
+			       cursorX + PRINT_PADDING_HORIZONTAL + 2, cursorY + PRINT_PADDING_VERTICAL, bgColor);
+			}
+			cursorY += 16 + LINE_SPACING;
+			cursorX = 0;
+			workingX = cursorX;
+			workingY = cursorY;
+			if (*curr == '\n') {
+				continue;
+			}
+		}
+		
+		// determine real coordinates for drawing
+		if (draw) {
+			int quadX1 = cursorX + PRINT_PADDING_HORIZONTAL;
+			int quadY1 = cursorY + PRINT_PADDING_VERTICAL;
+			int quadX2 = quadX1 + 8;
+			int quadY2 = quadY1 - 16;
+			
+			// get secondary coordinates for texture
+			int texturePosX2 = texturePosX1 + 8;
+			int texturePosY2 = texturePosY1 + 16;
+			
+			// draw the char
+			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+			
+			GX_Position2s16(quadX1, quadY2);
+			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
+			GX_TexCoord2s16(texturePosX1, texturePosY1);
+			
+			GX_Position2s16(quadX2, quadY2);
+			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
+			GX_TexCoord2s16(texturePosX2, texturePosY1);
+			
+			GX_Position2s16(quadX2, quadY1);
+			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
+			GX_TexCoord2s16(texturePosX2, texturePosY2);
+			
+			GX_Position2s16(quadX1, quadY1);
+			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
+			GX_TexCoord2s16(texturePosX1, texturePosY2);
+			
+			GX_End();
+		}
+		
+		// advance cursor
+		cursorX += 10;
+	}
+	if (workingX != cursorX && !draw) {
+		drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 18,
+		       cursorX + PRINT_PADDING_HORIZONTAL + 2, cursorY + PRINT_PADDING_VERTICAL, bgColor);
+	}
+	if (!draw) {
+		cursorX = startingX;
+		cursorY = startingY;
+	}
+}
 
 void printStr(const char* str, ...) {
 	va_list list;
 	va_start(list, str);
 	vsnprintf(strBuffer, 999, str, list);
-	drawString(COLOR_BLACK, COLOR_WHITE, strBuffer);
+	changeLoadedTexmap(TEXMAP_FONT);
+	handleString(strBuffer, false, GX_COLOR_WHITE, GX_COLOR_BLACK);
+	handleString(strBuffer, true, GX_COLOR_WHITE, GX_COLOR_BLACK);
+	//drawString(COLOR_BLACK, COLOR_WHITE, strBuffer);
 	va_end(list);
 }
 
@@ -108,7 +207,7 @@ void printStrColor(const uint32_t bg_color, const uint32_t fg_color, const char*
 	va_list list;
 	va_start(list, str);
 	vsnprintf(strBuffer, 999, str, list);
-	drawString(bg_color, fg_color, strBuffer);
+	//drawString(bg_color, fg_color, strBuffer);
 	va_end(list);
 }
 
@@ -125,6 +224,6 @@ void resetCursor() {
 }
 
 void setCursorPos(int row, int col) {
-	currY = row * (15 + LINE_SPACING);
-	currX = col * 10;
+	cursorY = row * (16 + LINE_SPACING);
+	cursorX = col * 10;
 }

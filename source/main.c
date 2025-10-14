@@ -7,6 +7,7 @@
 #include "print.h"
 #include "draw.h"
 #include "waveform.h"
+#include "gx.h"
 
 #ifdef DEBUGLOG
 #include "logging.h"
@@ -22,9 +23,8 @@
 #endif
 
 // basic stuff from the template
-static void *xfb1 = NULL;
-static void *xfb2 = NULL;
-bool xfbSwitch = false;
+static void *xfb[2] = { NULL, NULL };
+static int xfbSwitch = 0;
 static GXRModeObj *rmode = NULL;
 
 static VIRetraceCallback cb;
@@ -33,6 +33,11 @@ static char* resetMessage = "Reset button pressed, exiting...";
 
 void retraceCallback(uint32_t retraceCnt) {
 	setSamplingRate();
+	
+	debugLog("Wrap: %u", getFifoVal());
+	uint8_t overhi, underlow, readidle, cmdidle, brkpt;
+	GX_GetGPStatus(&overhi, &underlow, &readidle, &cmdidle, &brkpt);
+	debugLog("GPStatus: %u %u %u %u %u\n", overhi, underlow, readidle, cmdidle, brkpt);
 	//#ifdef DEBUGGDB
 	//if (SYS_ResetButtonDown()) {
 		//_break();
@@ -69,19 +74,19 @@ int main(int argc, char **argv) {
 
 	rmode = VIDEO_GetPreferredMode(NULL);
 
-	xfb1 = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
-	xfb2 = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
+	xfb[0] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
+	xfb[1] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 	
 	//CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 	//CON_Init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-	VIDEO_ClearFrameBuffer(rmode, xfb1, COLOR_BLACK);
-	VIDEO_ClearFrameBuffer(rmode, xfb2, COLOR_BLACK);
+	VIDEO_ClearFrameBuffer(rmode, xfb[0], COLOR_BLACK);
+	VIDEO_ClearFrameBuffer(rmode, xfb[1], COLOR_BLACK);
 
 	VIDEO_Configure(rmode);
 
-	VIDEO_SetNextFramebuffer(xfb1);
+	VIDEO_SetNextFramebuffer(xfb[xfbSwitch]);
 
-	VIDEO_SetBlack(FALSE);
+	VIDEO_SetBlack(false);
 
 	VIDEO_Flush();
 
@@ -89,6 +94,8 @@ int main(int argc, char **argv) {
 	
 	cb = VIDEO_SetPostRetraceCallback(retraceCallback);
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
+	
+	setupGX(rmode);
 
 	bool normalExit = false;
 	
@@ -105,7 +112,7 @@ int main(int argc, char **argv) {
 	setupLogging(USBGECKO_B);
 	
 	if (getLoggingType() == NETWORKSOCK) {
-		setFramebuffer(xfb1);
+		setFramebuffer(xfb[xfbSwitch]);
 		printStr("Setting up network...\n");
 		while (!isNetworkConfigured()) {
 			VIDEO_WaitVSync();
@@ -213,7 +220,7 @@ int main(int argc, char **argv) {
 			#endif
 		default:
 			resetCursor();
-			setFramebuffer(xfb1);
+			setFramebuffer(xfb[xfbSwitch]);
 			printStr("\n\nUnsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n"
 					 "Program will exit in 5 seconds...");
 			for (int i = 0; i < 300; i++) {
@@ -226,7 +233,7 @@ int main(int argc, char **argv) {
 	setSamplingRateNormal();
 	if (isUnsupportedMode()) { // unsupported mode is probably 240p? no idea
 		resetCursor();
-		setFramebuffer(xfb1);
+		setFramebuffer(xfb[xfbSwitch]);
 		printStr("\n\nUnsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n"
 				 "Program will exit in 5 seconds...");
 		for (int i = 0; i < 300; i++) {
@@ -247,6 +254,10 @@ int main(int argc, char **argv) {
 		}
 		#endif
 		
+		if (SYS_ResetButtonDown()) {
+			break;
+		}
+		
 		#ifdef BENCH
 		time = gettime();
 		#endif
@@ -256,30 +267,25 @@ int main(int argc, char **argv) {
 			break;
 		}
 
+		/*
 		// check which framebuffer is next
 		if (xfbSwitch) {
-			VIDEO_ClearFrameBuffer(rmode, xfb1, COLOR_BLACK);
+			//VIDEO_ClearFrameBuffer(rmode, xfb1, COLOR_BLACK);
 			//CON_Init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 			currXfb = xfb1;
 		} else {
-			VIDEO_ClearFrameBuffer(rmode, xfb2, COLOR_BLACK);
+			//VIDEO_ClearFrameBuffer(rmode, xfb2, COLOR_BLACK);
 			//CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 			currXfb = xfb2;
-		}
+		}*/
 		
-		setFramebuffer(currXfb);
+		setFramebuffer(xfb[xfbSwitch]);
 		
+		startDraw(rmode);
+		resetCursor();
+		//printStr("Hello there");
 		// run menu
 		normalExit = menu_runMenu();
-
-		// change framebuffer for next frame
-		if (xfbSwitch) {
-			VIDEO_SetNextFramebuffer(xfb1);
-		} else {
-			VIDEO_SetNextFramebuffer(xfb2);
-		}
-		xfbSwitch = !xfbSwitch;
-		
 		
 		#ifdef BENCH
 		us = ticks_to_microsecs(gettime() - time);
@@ -287,14 +293,23 @@ int main(int argc, char **argv) {
 		printStrColor(COLOR_WHITE, COLOR_BLACK, "%d", us);
 		#endif
 		
-		if (SYS_ResetButtonDown()) {
-			break;
-		}
+		xfbSwitch ^= 1;
+		
+		finishDraw(xfb[xfbSwitch]);
+		
+		// change framebuffer for next frame
+		VIDEO_SetNextFramebuffer(xfb[xfbSwitch]);
 
 		// Wait for the next frame
 		VIDEO_Flush();
 		VIDEO_WaitVSync();
 	}
+	
+	// return some of our stuff to normal before exit
+	// not sure if its needed but eh
+	setSamplingRateNormal();
+	PAD_SetSamplingCallback(NULL);
+	VIDEO_SetPostRetraceCallback(NULL);
 	
 	// close log
 	#ifdef DEBUGLOG
@@ -303,7 +318,7 @@ int main(int argc, char **argv) {
 	
 	// clear screen and show message if not exiting "normally" (pressing start on main menu)
 	if (!normalExit) {
-		VIDEO_ClearFrameBuffer(rmode, currXfb, COLOR_BLACK);
+		startDraw(rmode);
 		setCursorPos(10, 15);
 		
 		// dumb way to have a different message show, while also avoiding two #if defined().
@@ -319,7 +334,16 @@ int main(int argc, char **argv) {
 		#endif
 		
 		printStr(strPointer);
+		xfbSwitch ^= 1;
+		
+		finishDraw(xfb[xfbSwitch]);
+		VIDEO_SetNextFramebuffer(xfb[xfbSwitch]);
 	}
+	
+	// draw one more frame, since buffer is 1 frame behind
+	startDraw(rmode);
+	xfbSwitch ^= 1;
+	finishDraw(xfb[xfbSwitch]);
 	
 	VIDEO_Flush();
 	// show final frame for at least one second
@@ -330,14 +354,8 @@ int main(int argc, char **argv) {
 	// free memory (probably don't need to do this but eh)
 	freeControllerRecStructs();
 	
-	// return some of our stuff to normal before exit
-	// not sure if its needed but eh
-	setSamplingRateNormal();
-	PAD_SetSamplingCallback(NULL);
-	
 	// avoid distorted graphics on GC (I have no idea if this actually does what I think it does...)
 	// https://github.com/emukidid/swiss-gc: cube/swiss/source/video.c -> unsetVideo()
-	VIDEO_SetPostRetraceCallback(NULL);
 	VIDEO_SetBlack(true);
 	VIDEO_Flush();
 	VIDEO_WaitVSync();

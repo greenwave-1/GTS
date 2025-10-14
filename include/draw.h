@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 
+#include "gx.h"
 #include "images/stickmaps.h"
 #include "stickmap_coordinates.h"
 

@@ -11,6 +11,13 @@
 
 #include "textures.h"
 #include "textures_tpl.h"
+
+const GXColor GX_COLOR_WHITE = {0xFF, 0xFF, 0xFF, 0xFF};
+const GXColor GX_COLOR_BLACK = {0x00, 0x00, 0x00, 0xFF};
+const GXColor GX_COLOR_RED = {0xFF, 0x00, 0x00, 0xFF};
+const GXColor GX_COLOR_GREEN = {0x00, 0xFF, 0x00, 0xFF};
+const GXColor GX_COLOR_BLUE = {0x00, 0x00, 0xFF, 0xFF};
+
 // default fifo size, specific number from provided gx examples
 #define DEFAULT_FIFO_SIZE (256 * 1024)
 
@@ -19,7 +26,7 @@ static enum CURRENT_VTX_MODE currentVtxMode = VTX_NONE;
 // address of memory allocated for fifo
 static void *gp_fifo = nullptr;
 // fifo object itself that we will interface with
-//static GXFifoObj *gxFifoObj = nullptr;
+static GXFifoObj *gxFifoObj = nullptr;
 
 // matrix math stuff
 static Mtx view, model, modelview;
@@ -89,8 +96,8 @@ void setupGX(GXRModeObj *rmode) {
 	memset(gp_fifo, 0, DEFAULT_FIFO_SIZE);
 	
 	// start gx stuff
-	GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
-	//gxFifoObj = GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
+	//GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
+	gxFifoObj = GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
 	
 	// setup gx to clear background on each new frame
 	GXColor background = {0,0,0,0xff};
@@ -177,7 +184,9 @@ void setupGX(GXRModeObj *rmode) {
 	TPL_GetTexture(&tpl, ledgel, &stickmapTexArr[4]);
 	TPL_GetTexture(&tpl, ledger, &stickmapTexArr[5]);
 	
-	TPL_CloseTPLFile(&tpl);
+	//TPL_CloseTPLFile(&tpl);
+	
+	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
 	
 	// setup our camera at the origin
 	// looking down the -z axis with y up
@@ -197,6 +206,10 @@ void setupGX(GXRModeObj *rmode) {
 	
 }
 
+uint8_t getFifoVal() {
+	return GX_GetFifoWrap(gxFifoObj);
+}
+
 // start and end of draw
 void startDraw(GXRModeObj *rmode) {
 	GX_SetViewport(0, 0, rmode->fbWidth, rmode->efbHeight, 0, 1);
@@ -206,6 +219,8 @@ void startDraw(GXRModeObj *rmode) {
 	guMtxConcat(view,model,modelview);
 	
 	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
+	
+	GX_SetLineWidth(16, GX_TO_ZERO);
 }
 
 void finishDraw(void *xfb) {
@@ -216,4 +231,24 @@ void finishDraw(void *xfb) {
 	//GX_SetColorUpdate(GX_TRUE);
 	
 	GX_CopyDisp(xfb, GX_TRUE);
+}
+
+void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
+	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+	
+	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+	
+	GX_Position3s16(x1, y1, -5);
+	GX_Color3u8(color.r, color.g, color.b);
+	
+	GX_Position3s16(x2, y1, -5);
+	GX_Color3u8(color.r, color.g, color.b);
+	
+	GX_Position3s16(x2, y2, -5);
+	GX_Color3u8(color.r, color.g, color.b);
+	
+	GX_Position3s16(x1, y2, -5);
+	GX_Color3u8(color.r, color.g, color.b);
+	
+	GX_End();
 }

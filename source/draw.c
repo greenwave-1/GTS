@@ -33,6 +33,9 @@ uint32_t imageBuffer[(BUFFER_SIZE_X)][BUFFER_SIZE_Y];
 // Decodes a given image into imageBuffer
 // decoding the image is costly, so we decode it once, then just copy from the decoded buffer on subsequent frames
 static void copyImageToBuffer(const unsigned char image[], const unsigned char colorIndex[8]) {
+	
+	return;
+	
 	// get information on the image to be drawn
 	// first four bytes are dimensions
 	int newX = image[0] << 8 | image[1];
@@ -133,6 +136,8 @@ static void copyImageToBuffer(const unsigned char image[], const unsigned char c
 }
 
 void displayImage(enum IMAGE newImage, int offsetX, int offsetY) {
+	
+	return;
 	// do we need to draw a different image?
 	if (currImage != newImage) {
 		switch (newImage) {
@@ -254,6 +259,8 @@ void drawImage(const unsigned char image[], const unsigned char colorIndex[8], u
 * takes in values to draw a horizontal line of a given color
 */
 void DrawHLine (int x1, int x2, int y, int color) {
+	
+	return;
 	for (int i = x1; i <= x2; i++) {
 		DrawDotAccurate(i, y, color);
 	}
@@ -264,6 +271,8 @@ void DrawHLine (int x1, int x2, int y, int color) {
 * takes in values to draw a vertical line of a given color
 */
 void DrawVLine (int x, int y1, int y2, int color) {
+	
+	return;
 	for (int i = y1; i <= y2; i++) {
 		DrawDot(x, i, color);
 	}
@@ -274,6 +283,8 @@ void DrawVLine (int x, int y1, int y2, int color) {
 * takes in values to draw a box of a given color
 */
 void DrawBox (int x1, int y1, int x2, int y2, int color) {
+	
+	return;
 	DrawHLine (x1, x2, y1, color);
 	DrawHLine (x1, x2, y2, color);
 	DrawVLine (x1, y1, y2, color);
@@ -283,6 +294,8 @@ void DrawBox (int x1, int y1, int x2, int y2, int color) {
 
 // since every pixel between should be filled, we don't worry about "accurate" drawing
 void DrawFilledBox (int x1, int y1, int x2, int y2, int color) {
+	
+	return;
 	for (int i = x1; i < x2 + 1; i++) {
 		for (int j = y1; j < y2; j++) {
 			currXfb[(i >> 1) + (640 * j) / 2] = color;
@@ -293,6 +306,8 @@ void DrawFilledBox (int x1, int y1, int x2, int y2, int color) {
 
 // draw a line given two coordinates, using Bresenham's line-drawing algorithm
 void DrawLine(int x1, int y1, int x2, int y2, int color) {
+	
+	return;
 	// use simpler algorithm if line is horizontal or vertical
 	if (x1 == x2) {
 		if (y1 < y2) {
@@ -357,6 +372,8 @@ void DrawLine(int x1, int y1, int x2, int y2, int color) {
 
 
 void DrawDot (int x, int y, int color) {
+	
+	return;
 	if (do2xHorizontalDraw) {
 		x >>= 1;
 		currXfb[x + (640 * y) / 2] = color;
@@ -367,6 +384,8 @@ void DrawDot (int x, int y, int color) {
 
 
 void DrawDotAccurate (int x, int y, int color) {
+	
+	return;
 	int index = (x >> 1) + (640 * y) / 2;
 	uint32_t data = currXfb[index];
 	
@@ -404,6 +423,8 @@ void DrawDotAccurate (int x, int y, int color) {
 
 // mostly taken from https://www.geeksforgeeks.org/mid-point-circle-drawing-algorithm/
 void DrawCircle (int cx, int cy, int r, int color) {
+	
+	return;
 	int x = r, y = 0;
 	
 	if (r > 0) {
@@ -448,6 +469,8 @@ void DrawCircle (int cx, int cy, int r, int color) {
 // https://stackoverflow.com/questions/1201200/fast-algorithm-for-drawing-filled-circles
 // originally this just called DrawCircle for a smaller radius, but it broke when I fixed the DrawDot function.
 void DrawFilledCircle(int cx, int cy, int r, int color) {
+	
+	return;
 	for (int ty = (r * -1); ty <= r; ty++) {
 		for (int tx = (r * -1); tx <= r; tx++) {
 			if ( (tx * tx) + (ty * ty) <= (r * r)) {
@@ -460,12 +483,16 @@ void DrawFilledCircle(int cx, int cy, int r, int color) {
 
 // rad should be number of pixels from the center, _not_ including the center
 void DrawFilledBoxCenter(int x, int y, int rad, int color) {
+	
+	return;
 	int topLeftX = x - rad;
 	int topLeftY = y - rad;
 	DrawFilledBox(topLeftX, topLeftY, x + rad, y + rad, color);
 }
 
 void DrawOctagonalGate(int x, int y, int scale, int color) {
+	
+	return;
 	const int CARDINAL_MAX = 100 / scale;
 	const int DIAGONAL_MAX = 74 / scale;
 	// analog stick
@@ -497,6 +524,8 @@ void DrawOctagonalGate(int x, int y, int scale, int color) {
 
 
 void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which) {
+	
+	return;
 	switch (stickmap) {
 		case (FF_WD):
 			// bools for which parts to draw
