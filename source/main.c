@@ -34,10 +34,10 @@ static char* resetMessage = "Reset button pressed, exiting...";
 void retraceCallback(uint32_t retraceCnt) {
 	setSamplingRate();
 	
-	debugLog("Wrap: %u", getFifoVal());
-	uint8_t overhi, underlow, readidle, cmdidle, brkpt;
-	GX_GetGPStatus(&overhi, &underlow, &readidle, &cmdidle, &brkpt);
-	debugLog("GPStatus: %u %u %u %u %u\n", overhi, underlow, readidle, cmdidle, brkpt);
+	//debugLog("Wrap: %u", getFifoVal());
+	//uint8_t overhi, underlow, readidle, cmdidle, brkpt;
+	//GX_GetGPStatus(&overhi, &underlow, &readidle, &cmdidle, &brkpt);
+	//debugLog("GPStatus: %u %u %u %u %u\n", overhi, underlow, readidle, cmdidle, brkpt);
 	//#ifdef DEBUGGDB
 	//if (SYS_ResetButtonDown()) {
 		//_break();

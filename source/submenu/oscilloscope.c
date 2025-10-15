@@ -458,9 +458,9 @@ void menu_oscilloscope() {
 						switch (currentTest) {
 							case PIVOT:
 								drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y + 64,
-										 SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, GX_COLOR_GREEN);
+										 SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, GX_COLOR_DARKGREEN);
 								drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 64,
-										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, GX_COLOR_GREEN);
+										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, GX_COLOR_DARKGREEN);
 								setCursorPos(8, 0);
 								printStr("+64");
 								setCursorPos(15, 0);
@@ -468,18 +468,18 @@ void menu_oscilloscope() {
 								break;
 							case DASHBACK:
 								drawLine(SCREEN_TIMEPLOT_START,  SCREEN_POS_CENTER_Y + 64,
-										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, GX_COLOR_GREEN);
+										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, GX_COLOR_DARKGREEN);
 								drawLine(SCREEN_TIMEPLOT_START,  SCREEN_POS_CENTER_Y - 64,
-										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, GX_COLOR_GREEN);
+										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, GX_COLOR_DARKGREEN);
 								setCursorPos(8, 0);
 								printStr("+64");
 								setCursorPos(15, 0);
 								printStr("-64");
 							case SNAPBACK:
 								drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y + 23,
-										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, GX_COLOR_GREEN);
+										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, GX_COLOR_DARKGREEN);
 								drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 23,
-										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, GX_COLOR_GREEN);
+										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, GX_COLOR_DARKGREEN);
 								setCursorPos(10, 0);
 								printStr("+23");
 								setCursorPos(13, 0);
@@ -550,8 +550,6 @@ void menu_oscilloscope() {
 						
 						updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 						
-						GX_SetLineWidth(24, GX_TO_ONE);
-						
 						bool drawX = true;
 						
 						int biggestValueX = abs(maxX) >= abs(minX) ? abs(maxX) : abs(minX);
@@ -582,7 +580,6 @@ void menu_oscilloscope() {
 									}
 								}
 								
-								
 								GX_Position3s16(SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - curr, -2 + line);
 								if (drawX) {
 									GX_Color3u8(GX_COLOR_RED_X.r, GX_COLOR_RED_X.g, GX_COLOR_RED_X.b);
@@ -597,8 +594,6 @@ void menu_oscilloscope() {
 							drawX = !drawX;
 						}
 						
-						GX_SetLineWidth(16, GX_TO_ONE);
-					
 						// do we have enough data to enable scrolling?
 						// TODO: enable scrolling when scaled
 						if (dispData->sampleEnd >= 500 ) {

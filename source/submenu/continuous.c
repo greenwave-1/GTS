@@ -14,7 +14,6 @@
 
 #include "polling.h"
 #include "gx.h"
-#include "draw.h"
 #include "waveform.h"
 
 const static uint8_t SCREEN_TIMEPLOT_START = 70;
@@ -144,11 +143,7 @@ void menu_continuousWaveform() {
 				} else if (dataScrollOffset < 0) {
 					dataScrollOffset = 0;
 				}
-				
-				int prevX = 0;
-				int prevY = 0;
-				
-				int waveformPrevXPos = 0;
+
 				int waveformXPos = 1;
 				
 				// calculate start point
@@ -160,10 +155,14 @@ void menu_continuousWaveform() {
 				
 				if (cState == INPUT_LOCK && waveformScaleFactor != 6) {
 					// draw scroll bar
-					DrawFilledBox(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 142, SCREEN_TIMEPLOT_START + 499, SCREEN_POS_CENTER_Y - 140, COLOR_GRAY);;
+					GX_SetLineWidth(24, GX_TO_ZERO);
+					drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 140,
+							 SCREEN_TIMEPLOT_START + 499, SCREEN_POS_CENTER_Y - 140, GX_COLOR_GRAY);
 					// calculate scroll bar position
 					int scrollBarPosX = 500 - ((dataScrollOffset / (3000.0 - (500 * waveformScaleFactor))) * 500);
-					DrawFilledBox(SCREEN_TIMEPLOT_START + (scrollBarPosX - 1), SCREEN_POS_CENTER_Y - 144, SCREEN_TIMEPLOT_START + scrollBarPosX, SCREEN_POS_CENTER_Y - 138, COLOR_WHITE);;
+					drawSolidBox(SCREEN_TIMEPLOT_START + scrollBarPosX - 6, SCREEN_POS_CENTER_Y - 144,
+								 SCREEN_TIMEPLOT_START + scrollBarPosX + 6, SCREEN_POS_CENTER_Y - 136,
+								 false, GX_COLOR_WHITE);
 				}
 				
 				setCursorPos(21,0);
@@ -173,36 +172,37 @@ void menu_continuousWaveform() {
 				}
 				
 				int prevIndex = -1;
+				int frameIntervals[500] = { 0 };
+				int frameIntervalCount = 0;
 				// draw graph
+				updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+				
+				GX_SetLineWidth(16, GX_TO_ZERO);
+				
+				GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 500);
+				
+				// y first
 				for (int i = 0; i < 500; i++) {
-					int currX, currY;
+					int curr;
 					if (!showCStick) {
-						currX = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].stickX;
-						currY = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].stickY;
+						curr = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].stickY;
 					} else {
-						currX = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].cStickX;
-						currY = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].cStickY;
+						curr = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].cStickY;
 					}
 					
-					// y first
-					DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevY,
-					         SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currY,
-					         COLOR_BLUE_C);
-					prevY = currY;
-					// then x
-					DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevX,
-					         SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currX,
-					         COLOR_RED_C);
-					prevX = currX;
+					GX_Position3s16(SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - curr, -3);
+					GX_Color3u8(GX_COLOR_BLUE_Y.r, GX_COLOR_BLUE_Y.g, GX_COLOR_BLUE_Y.b);
 					
 					// frame interval stuff
 					if (prevIndex != -1) {
 						for (int j = 0; j < waveformScaleFactor; j++) {
 							if (data->samples[(prevIndex + j) % REC_SAMPLE_MAX].timeDiffUs == 1) {
 								if (waveformScaleFactor <= 2) {
-									DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
-									        SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
-									        COLOR_GRAY);
+									frameIntervals[frameIntervalCount] = waveformXPos;
+									frameIntervalCount++;
+									//DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
+									        //SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
+									        //COLOR_GRAY);
 								}
 							}
 						}
@@ -210,9 +210,50 @@ void menu_continuousWaveform() {
 					prevIndex = (startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX;
 					
 					// update scaling factor
-					waveformPrevXPos = waveformXPos;
 					waveformXPos++;
 				}
+				
+				GX_End();
+				
+				// frame intervals
+				
+				GX_SetLineWidth(8, GX_TO_ZERO);
+				GX_Begin(GX_LINES, GX_VTXFMT0, frameIntervalCount * 2);
+				
+				for (int i = 0; i < frameIntervalCount; i++) {
+					GX_Position3s16(SCREEN_TIMEPLOT_START + frameIntervals[i], (SCREEN_POS_CENTER_Y - 127), -5);
+					GX_Color3u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b);
+					
+					GX_Position3s16(SCREEN_TIMEPLOT_START + frameIntervals[i], (SCREEN_POS_CENTER_Y - 112), -5);
+					GX_Color3u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b);
+				}
+				
+				GX_End();
+				
+				GX_SetLineWidth(16, GX_TO_ZERO);
+				
+				waveformXPos = 1;
+				// then x
+				GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 500);
+				
+				for (int i = 0; i < 500; i++) {
+					int curr;
+					if (!showCStick) {
+						curr = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].stickX;
+					} else {
+						curr = data->samples[(startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX].cStickX;
+					}
+					
+					GX_Position3s16(SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - curr, -3);
+					GX_Color3u8(GX_COLOR_RED_X.r, GX_COLOR_RED_X.g, GX_COLOR_RED_X.b);
+					
+					prevIndex = (startPoint + (i * waveformScaleFactor)) % REC_SAMPLE_MAX;
+					
+					// update scaling factor
+					waveformXPos++;
+				}
+				
+				GX_End();
 				
 				if (!buttonLock){
 					if (*pressed & PAD_BUTTON_A && !buttonLock) {
