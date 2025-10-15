@@ -114,7 +114,9 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 	// stores size of a given character from the font
 	int texturePosX1, texturePosY1;
 	
+	// starting cursor values, stored so that we can restore them if we didn't actually print anything
 	int startingX = cursorX, startingY = cursorY;
+	// "working" values, used to determine if we need to draw a background color
 	int workingX = startingX, workingY = startingY;
 	
 	// loop until we hit a null terminator
@@ -132,11 +134,12 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 		
 		// go to a "new line" if drawing would put us outside the safe area, or if newline
 		if (cursorX + 10 > 640 - (PRINT_PADDING_HORIZONTAL * 2) || *curr == '\n') {
+			// draw our background color, if applicable
 			if (!draw) {
 				drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 18,
-			       cursorX + PRINT_PADDING_HORIZONTAL + 2, cursorY + PRINT_PADDING_VERTICAL, bgColor);
+			       cursorX + PRINT_PADDING_HORIZONTAL + 2, cursorY + PRINT_PADDING_VERTICAL, false, bgColor);
 			}
-			cursorY += 16 + LINE_SPACING;
+			cursorY += 15 + LINE_SPACING;
 			cursorX = 0;
 			workingX = cursorX;
 			workingY = cursorY;
@@ -150,16 +153,34 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 			int quadX1 = cursorX + PRINT_PADDING_HORIZONTAL;
 			int quadY1 = cursorY + PRINT_PADDING_VERTICAL;
 			int quadX2 = quadX1 + 8;
-			int quadY2 = quadY1 - 16;
+			int quadY2 = quadY1 + 15;
 			
 			// get secondary coordinates for texture
 			int texturePosX2 = texturePosX1 + 8;
-			int texturePosY2 = texturePosY1 + 16;
+			int texturePosY2 = texturePosY1 + 15;
 			
 			// draw the char
 			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
+			
 			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
+			GX_Position2s16(quadX1, quadY1);
+			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
+			GX_TexCoord2s16(texturePosX1, texturePosY1);
+			
+			GX_Position2s16(quadX2, quadY1);
+			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
+			GX_TexCoord2s16(texturePosX2, texturePosY1);
+			
+			GX_Position2s16(quadX2, quadY2);
+			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
+			GX_TexCoord2s16(texturePosX2, texturePosY2);
+			
+			GX_Position2s16(quadX1, quadY2);
+			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
+			GX_TexCoord2s16(texturePosX1, texturePosY2);
+			
+			/*
 			GX_Position2s16(quadX1, quadY2);
 			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
 			GX_TexCoord2s16(texturePosX1, texturePosY1);
@@ -175,7 +196,7 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 			GX_Position2s16(quadX1, quadY1);
 			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
 			GX_TexCoord2s16(texturePosX1, texturePosY2);
-			
+			*/
 			GX_End();
 		}
 		
@@ -184,7 +205,7 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 	}
 	if (workingX != cursorX && !draw) {
 		drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 18,
-		       cursorX + PRINT_PADDING_HORIZONTAL + 2, cursorY + PRINT_PADDING_VERTICAL, bgColor);
+		       cursorX + PRINT_PADDING_HORIZONTAL + 2, cursorY + PRINT_PADDING_VERTICAL, false, bgColor);
 	}
 	if (!draw) {
 		cursorX = startingX;
@@ -224,6 +245,6 @@ void resetCursor() {
 }
 
 void setCursorPos(int row, int col) {
-	cursorY = row * (16 + LINE_SPACING);
+	cursorY = row * (15 + LINE_SPACING);
 	cursorX = col * 10;
 }

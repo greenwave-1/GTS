@@ -368,10 +368,12 @@ void menu_controllerTest() {
 			// L
 			int sliderBottomY = LAYOUT_ANALOG_SLIDER_POS_Y + 255;
 			int sliderTopY = sliderBottomY - PAD_TriggerL(0);
+			GX_SetLineWidth(24, GX_TO_ZERO);
 			
 			GXColor sliderColor = GX_COLOR_BLUE;
 			if (*held & PAD_TRIGGER_L) {
 				sliderColor = GX_COLOR_RED;
+				GX_SetLineWidth(32, GX_TO_ZERO);
 			}
 			
 			updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
@@ -411,12 +413,15 @@ void menu_controllerTest() {
 			
 			GX_End();
 			
+			GX_SetLineWidth(24, GX_TO_ZERO);
+			
 			// R
 			sliderTopY = sliderBottomY - PAD_TriggerR(0);
 			
 			sliderColor = GX_COLOR_BLUE;
 			if (*held & PAD_TRIGGER_R) {
 				sliderColor = GX_COLOR_RED;
+				GX_SetLineWidth(32, GX_TO_ZERO);
 			}
 			
 			GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
@@ -454,6 +459,7 @@ void menu_controllerTest() {
 			
 			GX_End();
 			
+			GX_SetLineWidth(16, GX_TO_ZERO);
 			
 			updateVtxDesc(VTX_TEX_NOCOLOR, GX_REPLACE);
 			
@@ -533,20 +539,20 @@ void menu_controllerTest() {
 			
 			GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
 			
-			GX_Position3s16(LAYOUT_CSTICK_POS_X + cStickModX, LAYOUT_CSTICK_POS_Y - cStickModY, -2);
+			GX_Position3s16(LAYOUT_CSTICK_POS_X + cStickModX, LAYOUT_CSTICK_POS_Y - cStickModY - 1, -2);
 			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X, TEX_CSTICK_CAP_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS + cStickModX,
-			                LAYOUT_CSTICK_POS_Y - cStickModY, -2);
+			                LAYOUT_CSTICK_POS_Y - cStickModY - 1, -2);
 			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS, TEX_CSTICK_CAP_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS + cStickModX,
-			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS - cStickModY, -2);
+			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS - cStickModY - 1, -2);
 			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS,
 			                TEX_CSTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
 			GX_Position3s16(LAYOUT_CSTICK_POS_X + cStickModX,
-			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS - cStickModY, -2);
+			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS - cStickModY - 1, -2);
 			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X,
 			                TEX_CSTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			

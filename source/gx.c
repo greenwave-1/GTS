@@ -6,6 +6,7 @@
 
 #include <malloc.h>
 #include <memory.h>
+#include <stdlib.h>
 
 #include <ogc/tpl.h>
 
@@ -17,11 +18,14 @@ const GXColor GX_COLOR_BLACK = {0x00, 0x00, 0x00, 0xFF};
 const GXColor GX_COLOR_RED = {0xFF, 0x00, 0x00, 0xFF};
 const GXColor GX_COLOR_GREEN = {0x00, 0xFF, 0x00, 0xFF};
 const GXColor GX_COLOR_BLUE = {0x00, 0x00, 0xFF, 0xFF};
+const GXColor GX_COLOR_YELLOW = {0xFF, 0xFF, 0x00, 0xFF};
+
 
 // default fifo size, specific number from provided gx examples
 #define DEFAULT_FIFO_SIZE (256 * 1024)
 
 static enum CURRENT_VTX_MODE currentVtxMode = VTX_NONE;
+static int currentTexmap = TEXMAP_NONE;
 
 // address of memory allocated for fifo
 static void *gp_fifo = nullptr;
@@ -81,10 +85,13 @@ void updateVtxDesc(enum CURRENT_VTX_MODE mode, int tevOp) {
 // change the texture used for tev op
 // (this changes what texture will be drawn on a primitive)
 void changeLoadedTexmap(int newTexmap) {
-	if (newTexmap == TEXMAP_NONE) {
-		GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
-	} else {
-		GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, newTexmap, GX_COLOR0A0);
+	if (currentTexmap != newTexmap) {
+		if (newTexmap == TEXMAP_NONE) {
+			GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
+		} else {
+			GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, newTexmap, GX_COLOR0A0);
+		}
+		currentTexmap = newTexmap;
 	}
 }
 
@@ -233,10 +240,24 @@ void finishDraw(void *xfb) {
 	GX_CopyDisp(xfb, GX_TRUE);
 }
 
-void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
+void drawLine(int x1, int y1, int x2, int y2, GXColor color) {
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	
-	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+	GX_Begin(GX_LINES, GX_VTXFMT0, 2);
+	
+	GX_Position3s16(x1, y1, -5);
+	GX_Color3u8(color.r, color.g, color.b);
+	
+	GX_Position3s16(x2, y2, -5);
+	GX_Color3u8(color.r, color.g, color.b);
+	
+	GX_End();
+}
+
+void drawBox(int x1, int y1, int x2, int y2, GXColor color) {
+	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+	
+	GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 5);
 	
 	GX_Position3s16(x1, y1, -5);
 	GX_Color3u8(color.r, color.g, color.b);
@@ -248,6 +269,38 @@ void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
 	GX_Color3u8(color.r, color.g, color.b);
 	
 	GX_Position3s16(x1, y2, -5);
+	GX_Color3u8(color.r, color.g, color.b);
+	
+	GX_Position3s16(x1, y1, -5);
+	GX_Color3u8(color.r, color.g, color.b);
+	
+	GX_End();
+	
+}
+
+
+void drawSolidBox(int x1, int y1, int x2, int y2, bool centered, GXColor color) {
+	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+	
+	int offsetX = 0, offsetY = 0;
+	
+	if (centered) {
+		offsetX = abs(x2 - x1) / 2;
+		offsetY = abs(y2 - y1) / 2;
+	}
+	
+	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+	
+	GX_Position3s16(x1 - offsetX, y1 - offsetY, -5);
+	GX_Color3u8(color.r, color.g, color.b);
+	
+	GX_Position3s16(x2 - offsetX, y1 - offsetY, -5);
+	GX_Color3u8(color.r, color.g, color.b);
+	
+	GX_Position3s16(x2 - offsetX, y2 - offsetY, -5);
+	GX_Color3u8(color.r, color.g, color.b);
+	
+	GX_Position3s16(x1 - offsetX, y2 - offsetY, -5);
 	GX_Color3u8(color.r, color.g, color.b);
 	
 	GX_End();

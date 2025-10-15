@@ -76,7 +76,7 @@
 // top-left coordinate for a given button, when drawn on the screen
 
 #define LAYOUT_A_POS_X 383 // 320 + 32 (padding) + 31
-#define LAYOUT_A_POS_Y 66
+#define LAYOUT_A_POS_Y 80
 
 #define LAYOUT_B_POS_X (LAYOUT_A_POS_X - 50)
 #define LAYOUT_B_POS_Y (LAYOUT_A_POS_Y + 45)
@@ -93,21 +93,21 @@
 #define LAYOUT_START_POS_X 256 // x center of screen - 64
 #define LAYOUT_START_POS_Y 66
 
-#define LAYOUT_DPAD_POS_X 152
-#define LAYOUT_DPAD_POS_Y 200
+#define LAYOUT_DPAD_POS_X 192
+#define LAYOUT_DPAD_POS_Y 215
 
 #define LAYOUT_ANALOG_SLIDER_POS_X 66
 #define LAYOUT_ANALOG_SLIDER_POS_Y 64
 
 #define LAYOUT_ASTICK_GATE_POS_X 124 // 120
-#define LAYOUT_ASTICK_GATE_POS_Y 64
+#define LAYOUT_ASTICK_GATE_POS_Y 79
 
 // stick cap texture is 128x128, gate is 132x132, so + 2 to center on gate
 #define LAYOUT_ASTICK_CAP_POS_X (LAYOUT_ASTICK_GATE_POS_X + 2)
 #define LAYOUT_ASTICK_CAP_POS_Y (LAYOUT_ASTICK_GATE_POS_Y + 2)
 
-#define LAYOUT_CSTICK_POS_X 380
-#define LAYOUT_CSTICK_POS_Y 200
+#define LAYOUT_CSTICK_POS_X 320
+#define LAYOUT_CSTICK_POS_Y 215
 
 
 

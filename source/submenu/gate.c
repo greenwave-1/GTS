@@ -10,7 +10,7 @@
 #include <ogc/timesupp.h>
 #include <ogc/color.h>
 
-#include "draw.h"
+#include "gx.h"
 #include "polling.h"
 #include "print.h"
 
@@ -162,27 +162,47 @@ void menu_gateMeasure() {
 						printStr("Resetting");
 						printEllipse(yPressFrameCounter, 30);
 					}
+					
+					updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 					// draw box around plot area
-					DrawBox(SCREEN_POS_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
+					drawBox(SCREEN_POS_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
 					        SCREEN_POS_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
-					        COLOR_WHITE);
+					        GX_COLOR_WHITE);
 					
 					// draw each
-					if (showC) {
-						for (int i = 0; i < 256; i++) {
-							if (gateMinMax[i].init) {
-								DrawDot(SCREEN_POS_CENTER_X - 128 + i, SCREEN_POS_CENTER_Y - gateMinMax[i].cMax, COLOR_YELLOW);;
-								DrawDot(SCREEN_POS_CENTER_X - 128 + i, SCREEN_POS_CENTER_Y - gateMinMax[i].cMin, COLOR_YELLOW);;
-							}
-						}
-					} else {
-						for (int i = 0; i < 256; i++) {
-							if (gateMinMax[i].init) {
-								DrawDot(SCREEN_POS_CENTER_X - 128 + i, SCREEN_POS_CENTER_Y - gateMinMax[i].max, COLOR_WHITE);;
-								DrawDot(SCREEN_POS_CENTER_X - 128 + i, SCREEN_POS_CENTER_Y - gateMinMax[i].min, COLOR_WHITE);;
-							}
+					int totalPoints = 0;
+					int validPointIndexes[256] = {0};
+					
+					// figure out how many points we need to draw
+					for (int i = 0; i < 256; i++) {
+						if (gateMinMax[i].init) {
+							validPointIndexes[totalPoints] = i;
+							totalPoints++;
 						}
 					}
+					
+					GX_SetPointSize(8, GX_TO_ZERO);
+					GX_Begin(GX_POINTS, GX_VTXFMT0, totalPoints * 2);
+					
+					if (showC) {
+						for (int i = 0; i < totalPoints; i++) {
+							GX_Position3s16(SCREEN_POS_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].cMax, -5);
+							GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
+							
+							GX_Position3s16(SCREEN_POS_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].cMin, -5);
+							GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
+						}
+					} else {
+						for (int i = 0; i < totalPoints; i++) {
+							GX_Position3s16(SCREEN_POS_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].max, -5);
+							GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+							
+							GX_Position3s16(SCREEN_POS_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].min, -5);
+							GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+						}
+					}
+					GX_End();
+					
 					
 					if (!buttonLock) {
 						if (*pressed & PAD_TRIGGER_Z) {

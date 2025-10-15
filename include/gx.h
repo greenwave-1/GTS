@@ -9,6 +9,11 @@
 //#include <stdint.h>
 #include <ogc/tpl.h>
 
+// center of screen, 640x480
+#define SCREEN_POS_CENTER_X 320
+#define SCREEN_POS_CENTER_Y 240
+#define COORD_CIRCLE_CENTER_X 450
+
 #define TEXMAP_NONE GX_TEXMAP_NULL
 #define TEXMAP_FONT GX_TEXMAP0
 #define TEXMAP_CONTROLLER GX_TEXMAP1
@@ -19,6 +24,7 @@ extern const GXColor GX_COLOR_BLACK;
 extern const GXColor GX_COLOR_RED;
 extern const GXColor GX_COLOR_GREEN;
 extern const GXColor GX_COLOR_BLUE;
+extern const GXColor GX_COLOR_YELLOW;
 
 // enum to keep track of the vertex description state
 // this _should_ prevent adding unnecessary config commands? idk
@@ -41,6 +47,9 @@ void startDraw(GXRModeObj *rmode);
 void finishDraw(void *xfb);
 
 // basic drawing functions
-void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color);
+void drawLine(int x1, int y1, int x2, int y2, GXColor color);
+
+void drawBox(int x1, int y1, int x2, int y2, GXColor color);
+void drawSolidBox(int x1, int y1, int x2, int y2, bool centered, GXColor color);
 
 #endif //GTS_GX_H
