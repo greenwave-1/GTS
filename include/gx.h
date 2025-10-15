@@ -19,12 +19,19 @@
 #define TEXMAP_CONTROLLER GX_TEXMAP1
 #define TEXMAP_STICKMAPS GX_TEXMAP2
 
-extern const GXColor GX_COLOR_WHITE;
-extern const GXColor GX_COLOR_BLACK;
-extern const GXColor GX_COLOR_RED;
-extern const GXColor GX_COLOR_GREEN;
-extern const GXColor GX_COLOR_BLUE;
-extern const GXColor GX_COLOR_YELLOW;
+// normal colors
+#define GX_COLOR_WHITE (GXColor) {0xFF, 0xFF, 0xFF, 0xFF}
+#define GX_COLOR_BLACK (GXColor) {0x00, 0x00, 0x00, 0xFF}
+#define GX_COLOR_GRAY (GXColor) {0x80, 0x80, 0x80, 0xFF}
+#define GX_COLOR_SILVER (GXColor) {0xC0, 0xC0, 0xC0, 0xFF}
+#define GX_COLOR_RED (GXColor) {0xFF, 0x00, 0x00, 0xFF}
+#define GX_COLOR_GREEN (GXColor) {0x00, 0xFF, 0x00, 0xFF}
+#define GX_COLOR_BLUE (GXColor) {0x00, 0x00, 0xFF, 0xFF}
+#define GX_COLOR_YELLOW (GXColor) {0xFF, 0xFF, 0x00, 0xFF}
+
+// specific colors
+#define GX_COLOR_RED_X (GXColor) {0xFF, 0x20, 0x00, 0xFF}
+#define GX_COLOR_BLUE_Y (GXColor) {0x00, 0x6A, 0xFF, 0xFF}
 
 // enum to keep track of the vertex description state
 // this _should_ prevent adding unnecessary config commands? idk

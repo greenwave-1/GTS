@@ -13,6 +13,7 @@
 #include <ogc/color.h>
 
 #include "polling.h"
+#include "gx.h"
 #include "draw.h"
 #include "waveform.h"
 
@@ -122,16 +123,18 @@ void menu_continuousWaveform() {
 			if (cState == INPUT_LOCK) {
 				freeze = true;
 				setCursorPos(2, 28);
-				printStrColor(COLOR_WHITE, COLOR_BLACK, "LOCKED");
+				printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
 			} else {
 				freeze = false;
 			}
 
 			if (data->isRecordingReady) {
 				// draw guidelines based on selected test
-				DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500,
-				        SCREEN_POS_CENTER_Y + 128, COLOR_WHITE);
-				DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY);;
+				drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 501,
+				        SCREEN_POS_CENTER_Y + 128, GX_COLOR_WHITE);
+				drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, GX_COLOR_GRAY);
+				
+				
 				// lots of the specific values are taken from:
 				// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
 				

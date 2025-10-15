@@ -316,14 +316,14 @@ void menu_plotButton() {
 					
 					setCursorPos(4,7);
 					if (stickThresholdSelected) {
-						printStrColor(COLOR_WHITE, COLOR_BLACK, "Stick Threshold:");
+						printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "Stick Threshold:");
 						printStr(" %3u", stickThreshold);
 						setCursorPos(4, 32);
 						printStr("Trigger Threshold: %3u", triggerThreshold);
 					} else {
 						printStr("Stick Threshold: %3u", stickThreshold);
 						setCursorPos(4, 32);
-						printStrColor(COLOR_WHITE, COLOR_BLACK, "Trigger Threshold:");
+						printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "Trigger Threshold:");
 						printStr(" %3u", triggerThreshold);
 					}
 					
@@ -331,12 +331,13 @@ void menu_plotButton() {
 					//printStr("Capture length: %3dms", (capture400Toggle ? 400 : 200));
 					
 					if (dispData->isRecordingReady) {
-						DrawBox(SCREEN_TIMEPLOT_START - 55, SCREEN_TIMEPLOT_Y_TOP - 1, 600, SCREEN_TIMEPLOT_Y_BOTTOM + 1, COLOR_WHITE);;
+						drawBox(SCREEN_TIMEPLOT_START - 55, SCREEN_TIMEPLOT_Y_TOP - 1,
+								600, SCREEN_TIMEPLOT_Y_BOTTOM + 1, GX_COLOR_WHITE);
 						
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
 							setCursorPos(7 + button, 4);
 							if (button == triggeringInputDisplay) {
-								printStrColor(COLOR_WHITE, COLOR_BLACK, BUTTON_STR[button]);
+								printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, BUTTON_STR[button]);
 							} else {
 								printStr(BUTTON_STR[button]);
 							}
@@ -346,9 +347,9 @@ void menu_plotButton() {
 						ButtonPressedTime buttons[13] = { {0, false} };
 						
 						// initial "frame" line
-						DrawFilledBox(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_Y_TOP,
+						drawSolidBox(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_Y_TOP,
 						              SCREEN_TIMEPLOT_START + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
-									  COLOR_SILVER);
+									  false, GX_COLOR_SILVER);
 						
 						int currMs = 0;
 						int frameIntervalIndex = 0;
@@ -361,9 +362,9 @@ void menu_plotButton() {
 							if (totalTimeUs >= (1000 * currMs)) {
 								currMs++;
 								if (totalTimeUs / 1000 >= FRAME_INTERVAL_MS[frameIntervalIndex]) {
-									DrawFilledBox(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
+									drawSolidBox(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
 												  SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
-												  COLOR_GRAY);
+												  false, GX_COLOR_GRAY);
 									
 									/*
 									if (menuDisplay400) {
@@ -425,9 +426,9 @@ void menu_plotButton() {
 								
 								// draw bar if button state was triggered
 								if (result) {
-									DrawFilledBox(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
+									drawSolidBox(SCREEN_TIMEPLOT_START + (currMs * 2) - 1, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
 									              SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
-												  COLOR_WHITE);
+												  false, GX_COLOR_WHITE);
 									/*
 									if (menuDisplay400) {
 										DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
@@ -468,9 +469,9 @@ void menu_plotButton() {
 						}
 						
 						// draw end line
-						DrawFilledBox(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
+						drawSolidBox(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
 						              SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
-						              COLOR_GRAY);
+						              false, GX_COLOR_GRAY);
 						/*if (menuDisplay400) {
 							DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_Y_TOP,
 							          SCREEN_TIMEPLOT_Y_BOTTOM,
@@ -494,7 +495,7 @@ void menu_plotButton() {
 								}
 								// indicate the initial input with black on white text
 								if (button == triggeringInputDisplay) {
-									printStrColor(COLOR_WHITE, COLOR_BLACK, "%2.2ff", frames);
+									printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "%2.2ff", frames);
 								} else {
 									printStr("%2.2ff", frames);
 								}

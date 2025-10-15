@@ -386,9 +386,9 @@ void menu_plot2d() {
 						displayImage(selectedImage, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 						
 						// draw box around plot area
-						DrawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
+						drawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
 						        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
-						        COLOR_WHITE);
+						        GX_COLOR_WHITE);
 						
 						uint64_t timeFromFirstSampleDraw = 0;
 						int frameCounter = 0;
@@ -424,11 +424,11 @@ void menu_plot2d() {
 						}
 						
 						// highlight last sample with a box
-						DrawBox( (COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].stickX) - 3,
+						drawBox( (COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].stickX) - 3,
 						         (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) - 3,
 						         (COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].stickX) + 3,
 						         (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) + 3,
-								 COLOR_WHITE);
+								 GX_COLOR_WHITE);
 						
 						float timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
 						setCursorPos(8, 0);

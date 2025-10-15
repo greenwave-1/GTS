@@ -95,7 +95,7 @@ void displayImage(enum IMAGE newImage, int offsetX, int offsetY);
 // drawing functions from phobconfigtool
 void DrawHLine (int x1, int x2, int y, int color);
 void DrawVLine (int x, int y1, int y2, int color);
-void DrawBox (int x1, int y1, int x2, int y2, int color);
+//void DrawBox (int x1, int y1, int x2, int y2, int color);
 
 // expanded drawing functions
 void DrawFilledBox (int x1, int y1, int x2, int y2, int color);

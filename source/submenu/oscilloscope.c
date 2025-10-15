@@ -12,7 +12,7 @@
 #include <ogc/color.h>
 
 #include "print.h"
-#include "draw.h"
+#include "gx.h"
 #include "polling.h"
 #include "stickmap_coordinates.h"
 
@@ -443,35 +443,43 @@ void menu_oscilloscope() {
 							}
 						} else {
 							setCursorPos(2, 28);
-							printStrColor(COLOR_WHITE, COLOR_BLACK, "LOCKED");
+							printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
 						}
 					}
 				case POST_INPUT:
 					if (dispData->isRecordingReady) {
 						// draw guidelines based on selected test
-						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE);;
-						DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, COLOR_GRAY);;
+						drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
+								SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_WHITE);
+						drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y,
+								 SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, GX_COLOR_GRAY);
 						// lots of the specific values are taken from:
 						// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
 						switch (currentTest) {
 							case PIVOT:
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN);;
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN);;
+								drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y + 64,
+										 SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, GX_COLOR_GREEN);
+								drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 64,
+										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, GX_COLOR_GREEN);
 								setCursorPos(8, 0);
 								printStr("+64");
 								setCursorPos(15, 0);
 								printStr("-64");
 								break;
 							case DASHBACK:
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, COLOR_GREEN);;
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, COLOR_GREEN);;
+								drawLine(SCREEN_TIMEPLOT_START,  SCREEN_POS_CENTER_Y + 64,
+										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, GX_COLOR_GREEN);
+								drawLine(SCREEN_TIMEPLOT_START,  SCREEN_POS_CENTER_Y - 64,
+										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, GX_COLOR_GREEN);
 								setCursorPos(8, 0);
 								printStr("+64");
 								setCursorPos(15, 0);
 								printStr("-64");
 							case SNAPBACK:
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, COLOR_GREEN);;
-								DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, COLOR_GREEN);;
+								drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y + 23,
+										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, GX_COLOR_GREEN);
+								drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 23,
+										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, GX_COLOR_GREEN);
 								setCursorPos(10, 0);
 								printStr("+23");
 								setCursorPos(13, 0);
@@ -500,14 +508,15 @@ void menu_oscilloscope() {
 						minY = prevY;
 						maxY = prevY;
 
-						int waveformPrevXPos = 0;
-						int waveformXPos = waveformScaleFactor;
+						int waveformXPos = 0;
 						uint64_t drawnTicksUs = 0;
-
-						// draw 500 datapoints from the scroll offset
-						for (int i = dataScrollOffset + 1; i < dataScrollOffset + 500; i++) {
-							// make sure we haven't gone outside our bounds
-							if (i == dispData->sampleEnd || waveformXPos >= 500) {
+						
+						int totalPointsToDraw = 0;
+						
+						// calculate how many points we're going to draw
+						// we also get min and max values here
+						for (int i = 0; i < 500; i++) {
+							if (dataScrollOffset + i == dispData->sampleEnd) {
 								break;
 							}
 							
@@ -519,40 +528,77 @@ void menu_oscilloscope() {
 								currX = dispData->samples[i].cStickX;
 								currY = dispData->samples[i].cStickY;
 							}
-
-							// y first
-							DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevY,
-									SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currY,
-									COLOR_BLUE_C);
-							prevY = currY;
-							// then x
-							DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, SCREEN_POS_CENTER_Y - prevX,
-									SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currX,
-									COLOR_RED_C);
-							prevX = currX;
-
-							// update stat values
-							if (minX > prevX) {
-								minX = prevX;
+							
+							if (minX > currX) {
+								minX = currX;
 							}
-							if (maxX < prevX) {
-								maxX = prevX;
+							if (maxX < currX) {
+								maxX = currX;
 							}
-							if (minY > prevY) {
-								minY = prevY;
+							if (minY > currY) {
+								minY = currY;
 							}
-							if (maxY < prevY) {
-								maxY = prevY;
+							if (maxY < currY) {
+								maxY = currY;
 							}
-
+							
 							// adding time from drawn points, to show how long the current view is
 							drawnTicksUs += dispData->samples[i].timeDiffUs;
-
-							// update scaling factor
-							waveformPrevXPos = waveformXPos;
-							waveformXPos += waveformScaleFactor;
+							
+							totalPointsToDraw++;
 						}
-
+						
+						updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+						
+						GX_SetLineWidth(24, GX_TO_ONE);
+						
+						bool drawX = true;
+						
+						int biggestValueX = abs(maxX) >= abs(minX) ? abs(maxX) : abs(minX);
+						int biggestValueY = abs(maxY) >= abs(minY) ? abs(maxY) : abs(minY);
+						
+						if (biggestValueX >= biggestValueY) {
+							drawX = false;
+						}
+						
+						for (int line = 0; line < 2; line++) {
+							waveformXPos = 0;
+							
+							GX_Begin(GX_LINESTRIP, GX_VTXFMT0, totalPointsToDraw);
+							
+							for (int i = dataScrollOffset; i < dataScrollOffset + totalPointsToDraw; i++) {
+								int curr;
+								if (drawX) {
+									if (!showCStick) {
+										curr = dispData->samples[i].stickX;
+									} else {
+										curr = dispData->samples[i].cStickX;
+									}
+								} else {
+									if (!showCStick) {
+										curr = dispData->samples[i].stickY;
+									} else {
+										curr = dispData->samples[i].cStickY;
+									}
+								}
+								
+								
+								GX_Position3s16(SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - curr, -2 + line);
+								if (drawX) {
+									GX_Color3u8(GX_COLOR_RED_X.r, GX_COLOR_RED_X.g, GX_COLOR_RED_X.b);
+								} else {
+									GX_Color3u8(GX_COLOR_BLUE_Y.r, GX_COLOR_BLUE_Y.g, GX_COLOR_BLUE_Y.b);
+								}
+								waveformXPos += waveformScaleFactor;
+							}
+							
+							GX_End();
+							
+							drawX = !drawX;
+						}
+						
+						GX_SetLineWidth(16, GX_TO_ONE);
+					
 						// do we have enough data to enable scrolling?
 						// TODO: enable scrolling when scaled
 						if (dispData->sampleEnd >= 500 ) {

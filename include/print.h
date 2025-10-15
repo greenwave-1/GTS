@@ -12,6 +12,8 @@
 
 #include <stdint.h>
 
+#include "gx.h"
+
 // padding on both sides that print funtion won't touch
 #define PRINT_PADDING_HORIZONTAL 10
 #define PRINT_PADDING_VERTICAL 40
@@ -32,7 +34,7 @@ void drawString(const uint32_t bg_color,
                 const char string[]);
 
 void printStr(const char* str, ...);
-void printStrColor(const uint32_t bg_color, const uint32_t fg_color, const char* str, ...);
+void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* str, ...);
 
 void printEllipse(const int counter, const int interval);
 

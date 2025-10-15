@@ -238,14 +238,16 @@ void menu_triggerOscilloscope() {
 					// TODO: this is dumb, do this a better way to fit better
 					if (trigState == TRIG_DISPLAY_LOCK) {
 						setCursorPos(2, 28);
-						printStrColor(COLOR_WHITE, COLOR_BLACK, "LOCKED");
+						printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
 					}
 				case TRIG_DISPLAY:
 					if (dispData->isRecordingReady) {
 						// bounding box
-						DrawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 128, COLOR_WHITE);;
+						drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
+								SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_WHITE);;
 						// line at 43, start of melee analog shield range
-						DrawHLine(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_START + 499, (SCREEN_POS_CENTER_Y + 85), COLOR_GRAY);;
+						drawLine(SCREEN_TIMEPLOT_START, (SCREEN_POS_CENTER_Y + 85),
+								  SCREEN_TIMEPLOT_START + 500, (SCREEN_POS_CENTER_Y + 85), GX_COLOR_GRAY);;
 						
 						uint8_t curr = 0, prev = 0;
 						bool currDigital = false;

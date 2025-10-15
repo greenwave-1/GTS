@@ -103,8 +103,6 @@ int main(int argc, char **argv) {
 	_break();
 	#endif
 	
-	void *currXfb = NULL;
-	
 	// there is a makefile target that will enable this
 	#ifdef DEBUGLOG
 	

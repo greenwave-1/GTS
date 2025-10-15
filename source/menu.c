@@ -13,6 +13,7 @@
 #include <ogc/libversion.h>
 
 #include "waveform.h"
+#include "gx.h"
 #include "print.h"
 #include "polling.h"
 
@@ -672,12 +673,12 @@ void menu_coordinateViewer() {
 	DrawStickmapOverlay(selectedStickmap, selectedStickmapSub);;
 
 	// draw analog stick line
-	DrawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordX, xfbCoordY, COLOR_WHITE);;
-	DrawBox(xfbCoordX - 4, xfbCoordY - 4, xfbCoordX + 4, xfbCoordY + 4, COLOR_WHITE);;
+	drawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordX, xfbCoordY, GX_COLOR_WHITE);
+	drawBox(xfbCoordX - 4, xfbCoordY - 4, xfbCoordX + 4, xfbCoordY + 4, GX_COLOR_WHITE);
 	
 	// draw c-stick line
-	DrawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, COLOR_YELLOW);;
-	DrawFilledBox(xfbCoordCX - 2, xfbCoordCY - 2, xfbCoordCX + 2, xfbCoordCY + 2, COLOR_YELLOW);;
+	drawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, GX_COLOR_YELLOW);
+	drawSolidBox(xfbCoordCX - 2, xfbCoordCY - 2, xfbCoordCX + 2, xfbCoordCY + 2, false, GX_COLOR_YELLOW);
 	
 	if (*pressed & PAD_BUTTON_X) {
 		selectedStickmap++;

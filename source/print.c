@@ -137,7 +137,7 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 			// draw our background color, if applicable
 			if (!draw) {
 				drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 2,
-			       cursorX + PRINT_PADDING_HORIZONTAL + 2, cursorY + PRINT_PADDING_VERTICAL + 18, false, bgColor);
+			       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 16, false, bgColor);
 			}
 			cursorY += 15 + LINE_SPACING;
 			cursorX = 0;
@@ -205,7 +205,7 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 	}
 	if (workingX != cursorX && !draw) {
 		drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 2,
-		       cursorX + PRINT_PADDING_HORIZONTAL + 2, cursorY + PRINT_PADDING_VERTICAL + 18, false, bgColor);
+		       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 16, false, bgColor);
 	}
 	if (!draw) {
 		cursorX = startingX;
@@ -224,10 +224,12 @@ void printStr(const char* str, ...) {
 	va_end(list);
 }
 
-void printStrColor(const uint32_t bg_color, const uint32_t fg_color, const char* str, ...) {
+void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* str, ...) {
 	va_list list;
 	va_start(list, str);
 	vsnprintf(strBuffer, 999, str, list);
+	handleString(strBuffer, false, fg_color, bg_color);
+	handleString(strBuffer, true, fg_color, bg_color);
 	//drawString(bg_color, fg_color, strBuffer);
 	va_end(list);
 }

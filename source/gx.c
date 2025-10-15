@@ -13,13 +13,6 @@
 #include "textures.h"
 #include "textures_tpl.h"
 
-const GXColor GX_COLOR_WHITE = {0xFF, 0xFF, 0xFF, 0xFF};
-const GXColor GX_COLOR_BLACK = {0x00, 0x00, 0x00, 0xFF};
-const GXColor GX_COLOR_RED = {0xFF, 0x00, 0x00, 0xFF};
-const GXColor GX_COLOR_GREEN = {0x00, 0xFF, 0x00, 0xFF};
-const GXColor GX_COLOR_BLUE = {0x00, 0x00, 0xFF, 0xFF};
-const GXColor GX_COLOR_YELLOW = {0xFF, 0xFF, 0x00, 0xFF};
-
 
 // default fifo size, specific number from provided gx examples
 #define DEFAULT_FIFO_SIZE (256 * 1024)

@@ -15,9 +15,9 @@ const char* STICKMAP_FF_WD_DESC = "Min/Max coordinates for Firefox and Wavedash 
 
 const char* STICKMAP_FF_WD_RETVALS[] = {"MISS", "SAFE", "UNSAFE"};
 
-const uint32_t STICKMAP_FF_WD_RETCOLORS[][2] = { {COLOR_BLACK, COLOR_WHITE},
-                                            {COLOR_LIME, COLOR_BLACK},
-                                            {COLOR_YELLOW, COLOR_BLACK} };
+const GXColor STICKMAP_FF_WD_RETCOLORS[][2] = { {GX_COLOR_BLACK, GX_COLOR_WHITE},
+                                            {GX_COLOR_GREEN, GX_COLOR_BLACK},
+                                            {GX_COLOR_YELLOW, GX_COLOR_BLACK} };
 
 
 const int STICKMAP_FF_WD_ENUM_LEN = 3;
@@ -40,10 +40,10 @@ const char* STICKMAP_SHIELDDROP_DESC = "Coorinates for Vanilla and UCF Shield dr
 
 const char* STICKMAP_SHIELDDROP_RETVALS[] = { "MISS", "VANILLA", "UCF LOWER", "UCF v0.84 UPPER" };
 
-const uint32_t STICKMAP_SHIELDDROP_RETCOLORS[][2] = { {COLOR_BLACK, COLOR_WHITE},
-                                                 {COLOR_LIME, COLOR_BLACK},
-                                                 {COLOR_BLUE, COLOR_WHITE},
-                                                 {COLOR_YELLOW, COLOR_BLACK} };
+const GXColor STICKMAP_SHIELDDROP_RETCOLORS[][2] = { {GX_COLOR_BLACK, GX_COLOR_WHITE},
+                                                 {GX_COLOR_GREEN, GX_COLOR_BLACK},
+                                                 {GX_COLOR_BLUE, GX_COLOR_WHITE},
+                                                 {GX_COLOR_YELLOW, GX_COLOR_BLACK} };
 
 const int STICKMAP_SHIELDDROP_ENUM_LEN = 4;
 
