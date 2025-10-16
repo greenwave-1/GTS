@@ -84,39 +84,22 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 			
 			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
-			GX_Position2s16(quadX1, quadY1);
+			GX_Position3s16(quadX1, quadY1, 0);
 			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
 			GX_TexCoord2s16(texturePosX1, texturePosY1);
 			
-			GX_Position2s16(quadX2, quadY1);
+			GX_Position3s16(quadX2, quadY1, 0);
 			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
 			GX_TexCoord2s16(texturePosX2, texturePosY1);
 			
-			GX_Position2s16(quadX2, quadY2);
+			GX_Position3s16(quadX2, quadY2, 0);
 			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
 			GX_TexCoord2s16(texturePosX2, texturePosY2);
 			
-			GX_Position2s16(quadX1, quadY2);
+			GX_Position3s16(quadX1, quadY2, 0);
 			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
 			GX_TexCoord2s16(texturePosX1, texturePosY2);
 			
-			/*
-			GX_Position2s16(quadX1, quadY2);
-			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
-			GX_TexCoord2s16(texturePosX1, texturePosY1);
-			
-			GX_Position2s16(quadX2, quadY2);
-			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
-			GX_TexCoord2s16(texturePosX2, texturePosY1);
-			
-			GX_Position2s16(quadX2, quadY1);
-			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
-			GX_TexCoord2s16(texturePosX2, texturePosY2);
-			
-			GX_Position2s16(quadX1, quadY1);
-			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
-			GX_TexCoord2s16(texturePosX1, texturePosY2);
-			*/
 			GX_End();
 		}
 		
