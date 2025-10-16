@@ -150,7 +150,7 @@ void menu_controllerTest() {
 				printStr("Digital R Pressed");
 			}
 			
-			updateVtxDesc(VTX_TEX_NOCOLOR, GX_REPLACE);
+			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
 			
 			changeLoadedTexmap(TEXMAP_CONTROLLER);
 			
@@ -161,22 +161,26 @@ void menu_controllerTest() {
 				texOffsetX += TEX_NORMAL_DIMENSIONS;
 			}
 			
-			GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
 			GX_Position3s16(LAYOUT_A_POS_X, LAYOUT_A_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b, GX_COLOR_GREEN.a);
 			GX_TexCoord2s16(texOffsetX, TEX_A_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_A_POS_X + TEX_NORMAL_DIMENSIONS,
 			                LAYOUT_A_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b, GX_COLOR_GREEN.a);
 			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_A_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_A_POS_X + TEX_NORMAL_DIMENSIONS,
 			                LAYOUT_A_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b, GX_COLOR_GREEN.a);
 			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
 			                TEX_A_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
 			GX_Position3s16(LAYOUT_A_POS_X,
 			                LAYOUT_A_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b, GX_COLOR_GREEN.a);
 			GX_TexCoord2s16(texOffsetX,
 			                TEX_A_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
@@ -188,22 +192,26 @@ void menu_controllerTest() {
 				texOffsetX += TEX_NORMAL_DIMENSIONS;
 			}
 			
-			GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
 			GX_Position3s16(LAYOUT_B_POS_X, LAYOUT_B_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b, GX_COLOR_RED.a);
 			GX_TexCoord2s16(texOffsetX, TEX_B_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_B_POS_X + TEX_NORMAL_DIMENSIONS,
 			                LAYOUT_B_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b, GX_COLOR_RED.a);
 			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_B_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_B_POS_X + TEX_NORMAL_DIMENSIONS,
 			                LAYOUT_B_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b, GX_COLOR_RED.a);
 			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
 			                TEX_B_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
 			GX_Position3s16(LAYOUT_B_POS_X,
 			                LAYOUT_B_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b, GX_COLOR_RED.a);
 			GX_TexCoord2s16(texOffsetX,
 			                TEX_B_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
@@ -215,22 +223,26 @@ void menu_controllerTest() {
 				texOffsetX += TEX_NORMAL_DIMENSIONS;
 			}
 			
-			GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
 			GX_Position3s16(LAYOUT_X_POS_X, LAYOUT_X_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 			GX_TexCoord2s16(texOffsetX, TEX_X_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_X_POS_X + TEX_NORMAL_DIMENSIONS,
 			                LAYOUT_X_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_X_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_X_POS_X + TEX_NORMAL_DIMENSIONS,
 			                LAYOUT_X_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
 			                TEX_X_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
 			GX_Position3s16(LAYOUT_X_POS_X,
 			                LAYOUT_X_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 			GX_TexCoord2s16(texOffsetX,
 			                TEX_X_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
@@ -242,22 +254,26 @@ void menu_controllerTest() {
 				texOffsetX += TEX_NORMAL_DIMENSIONS;
 			}
 			
-			GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
 			GX_Position3s16(LAYOUT_Y_POS_X, LAYOUT_Y_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 			GX_TexCoord2s16(texOffsetX, TEX_Y_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_Y_POS_X + TEX_NORMAL_DIMENSIONS,
 			                LAYOUT_Y_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_Y_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_Y_POS_X + TEX_NORMAL_DIMENSIONS,
 			                LAYOUT_Y_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
 			                TEX_Y_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
 			GX_Position3s16(LAYOUT_Y_POS_X,
 			                LAYOUT_Y_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 			GX_TexCoord2s16(texOffsetX,
 			                TEX_Y_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
@@ -272,26 +288,32 @@ void menu_controllerTest() {
 				PAD_ControlMotor(0, PAD_MOTOR_STOP);
 			}
 			
-			GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
 			GX_Position3s16(LAYOUT_Z_POS_X, LAYOUT_Z_POS_Y, -4);
+			GX_Color4u8(0x93, 0x70, 0xDB, 0xFF);
 			GX_TexCoord2s16(texOffsetX, TEX_Z_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_Z_POS_X + TEX_NORMAL_DIMENSIONS,
 			                LAYOUT_Z_POS_Y, -4);
+			GX_Color4u8(0x93, 0x70, 0xDB, 0xFF);
 			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_Z_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_Z_POS_X + TEX_NORMAL_DIMENSIONS,
 			                LAYOUT_Z_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(0x93, 0x70, 0xDB, 0xFF);
 			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
 			                TEX_Z_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
 			GX_Position3s16(LAYOUT_Z_POS_X,
 			                LAYOUT_Z_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(0x93, 0x70, 0xDB, 0xFF);
 			GX_TexCoord2s16(texOffsetX,
 			                TEX_Z_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
 			GX_End();
+			
+			updateVtxDesc(VTX_TEX_NOCOLOR, GX_REPLACE);
 			
 			// Start
 			texOffsetX = TEX_START_OFFSET_X;
@@ -540,22 +562,28 @@ void menu_controllerTest() {
 			int cStickModX = PAD_SubStickX(0) / 2;
 			int cStickModY = PAD_SubStickY(0) / 2;
 			
-			GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
+			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
+			
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
 			GX_Position3s16(LAYOUT_CSTICK_POS_X + cStickModX, LAYOUT_CSTICK_POS_Y - cStickModY - 1, -2);
+			GX_Color4u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b, GX_COLOR_YELLOW.a);
 			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X, TEX_CSTICK_CAP_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS + cStickModX,
 			                LAYOUT_CSTICK_POS_Y - cStickModY - 1, -2);
+			GX_Color4u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b, GX_COLOR_YELLOW.a);
 			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS, TEX_CSTICK_CAP_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS + cStickModX,
 			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS - cStickModY - 1, -2);
+			GX_Color4u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b, GX_COLOR_YELLOW.a);
 			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS,
 			                TEX_CSTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
 			GX_Position3s16(LAYOUT_CSTICK_POS_X + cStickModX,
 			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS - cStickModY - 1, -2);
+			GX_Color4u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b, GX_COLOR_YELLOW.a);
 			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X,
 			                TEX_CSTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
