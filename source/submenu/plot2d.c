@@ -15,6 +15,7 @@
 #include "polling.h"
 #include "draw.h"
 #include "images/stickmaps.h"
+#include "logging.h"
 
 // orange for button press samples
 #define COLOR_ORANGE 0xAD1EADBA
@@ -398,37 +399,72 @@ void menu_plot2d() {
 						        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
 						        GX_COLOR_WHITE);
 						
+						// we need to calculate vertices ahead of time
+						
 						uint64_t timeFromFirstSampleDraw = 0;
-						int frameCounter = 0;
-						// draw plot
-						// y is negated because of how the graph is drawn
-						// TODO: why does this need to be <= to avoid an off-by-one? step through logic later this is bugging me
+						
+						int frameIntervalIndex = 0;
+						int frameIntervalList[3000] = { -1 };
+						
+						// this is <= because lastDrawPoint is zero indexed
 						for (int i = map2dStartIndex; i <= lastDrawPoint; i++) {
 							// don't add from the first value
 							if (i != map2dStartIndex) {
 								timeFromFirstSampleDraw += dispData->samples[i].timeDiffUs;
 							}
-
-							// is this a frame interval?
-							if ((timeFromFirstSampleDraw / FRAME_TIME_US) > frameCounter) {
-								if (dispData->samples[i].buttons != 0) {
-									DrawFilledCircle(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
-									                 SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, 2, COLOR_ORANGE);
+							if ((timeFromFirstSampleDraw / FRAME_TIME_US) > frameIntervalIndex) {
+								frameIntervalList[frameIntervalIndex] = i;
+								frameIntervalIndex++;
+							}
+						}
+						
+						int dataIndex = map2dStartIndex;
+						int currFrameInterval = 0;
+						
+						updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+						
+						// this is <= because lastDrawPoint is zero indexed
+						while (dataIndex <= lastDrawPoint) {
+							// is our current datapoint a frame interval?
+							if (dataIndex == frameIntervalList[currFrameInterval]) {
+								GX_SetPointSize(24, GX_TO_ZERO);
+								GX_Begin(GX_POINTS, GX_VTXFMT0, 1);
+								GX_Position3s16(COORD_CIRCLE_CENTER_X + dispData->samples[dataIndex].stickX,
+								                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].stickY, -4);
+								if (dispData->samples[dataIndex].buttons != 0) {
+									GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
 								} else {
-									DrawFilledCircle(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
-									                 SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, 2, COLOR_WHITE);
+									GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
 								}
-								frameCounter++;
-							// not a frame interval
-							} else {
-								if (dispData->samples[i].buttons != 0) {
-									DrawDot(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
-									        SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, COLOR_ORANGE);
+								currFrameInterval++;
+								dataIndex++;
+							}
+							// samples between frame interval
+							else {
+								GX_SetPointSize(8, GX_TO_ZERO);
+								
+								int pointsToDraw;
+								if (currFrameInterval != frameIntervalIndex) {
+									pointsToDraw = frameIntervalList[currFrameInterval] - dataIndex;
 								} else {
-									DrawDot(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
-									        SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, COLOR_WHITE);
+									pointsToDraw = lastDrawPoint - dataIndex + 1;
+								}
+								
+								GX_Begin(GX_POINTS, GX_VTXFMT0, pointsToDraw);
+								
+								int endPoint = dataIndex + pointsToDraw;
+								while (dataIndex < endPoint) {
+									GX_Position3s16(COORD_CIRCLE_CENTER_X + dispData->samples[dataIndex].stickX,
+									                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].stickY, -4);
+									if (dispData->samples[dataIndex].buttons != 0) {
+										GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
+									} else {
+										GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+									}
+									dataIndex++;
 								}
 							}
+							GX_End();
 						}
 						
 						// highlight last sample with a box
@@ -438,7 +474,7 @@ void menu_plot2d() {
 						         (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) + 3,
 								 GX_COLOR_WHITE);
 						
-						float timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
+						double timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
 						setCursorPos(8, 0);
 						printStr("Total MS: %6.2f\n", timeFromStartMs);
 						printStr("Total frames: %2.2f", timeFromStartMs / FRAME_TIME_MS_F);

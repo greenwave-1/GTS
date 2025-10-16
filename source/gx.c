@@ -124,6 +124,7 @@ void setupGX(GXRModeObj *rmode) {
 	// start gx stuff
 	//GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
 	gxFifoObj = GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
+	//GX_InitFifoLimits(gxFifoObj, DEFAULT_FIFO_SIZE - GX_FIFO_HIWATERMARK, DEFAULT_FIFO_SIZE / 2);
 	
 	// setup gx to clear background on each new frame
 	GXColor background = {0,0,0,0xff};
