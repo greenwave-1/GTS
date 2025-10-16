@@ -19,7 +19,6 @@
 
 #include "gx.h"
 #include "font.h"
-#include "draw.h"
 
 // buffer for variable arg strings
 static char strBuffer[1000];
@@ -27,85 +26,6 @@ static char strBuffer[1000];
 // real screen coordinates of our 'cursor'
 static int cursorX = 0;
 static int cursorY = 0;
-/*
-//Draws 8x15 character in the specified location according to the ascii codepoints
-void drawChar(const unsigned int color,
-              const char character) {
-	if((character < 0x20 && character != '\n') || character > 0x7e) { //lower than space, larger than tilde, and not newline
-		return;
-	}
-	// advance row if newline or if we would draw outside of bounds
-	if (character == '\n' || currX + 10 > (640 - (PRINT_PADDING_HORIZONTAL * 2))) {
-		currY += 15 + LINE_SPACING;
-		currX = 0;
-		if (character == '\n') {
-			return;
-		}
-	}
-	// stop drawing altogether if row is too far
-	if ((currY + 15) >= (479 - (PRINT_PADDING_VERTICAL * 2))) {
-		return;
-	}
-	
-	// skip "drawing" if its just a space
-	if (character != ' ') {
-		// decode font character and draw it
-		for (int row = 0; row < 15; row++) {
-			uint32_t rowOffset = (row + currY + PRINT_PADDING_VERTICAL);
-			for (int col = 0; col < 8; col++) {
-				if ((font[(character - 0x20) * 15 + row] << col) & 0b10000000) {
-					uint16_t colOffset = col + currX + PRINT_PADDING_HORIZONTAL;
-					DrawDotAccurate(colOffset, rowOffset, color);
-				}
-			}
-		}
-	}
-	
-	currX += 10;
-}
-
-// draw a character but ignore "rows" and "columns"
-void drawCharDirect(uint16_t x,
-                    uint16_t y,
-                    const unsigned int color,
-                    const char character) {
-	if(character < 0x20 || character > 0x7e) { //lower than space, larger than tilde
-		return;
-	}
-	for(int row = 0; row < 15; row++) {
-		uint32_t rowOffset = (row+y);
-		for(int col = 0; col < 8; col++) {
-			if((font[(character-0x20)*15+row] << col) & 0b10000000) {
-				uint16_t colOffset = col+x;
-				DrawDotAccurate(colOffset, rowOffset, color);
-			}
-		}
-	}
-}
-
-void drawString(const uint32_t bg_color,
-				const uint32_t fg_color,
-                const char string[]) {
-	uint16_t i = 0;
-	const char nullChar[] = "";
-	while(string[i] != nullChar[0]) {
-		if (bg_color != COLOR_BLACK) {
-			DrawFilledBox(currX + PRINT_PADDING_HORIZONTAL - 2, currY + PRINT_PADDING_VERTICAL - 2,
-			              currX + PRINT_PADDING_HORIZONTAL + 10, currY + PRINT_PADDING_VERTICAL + 15,
-			              bg_color);
-		}
-		drawChar(fg_color, string[i]);
-		i++;
-	}
-}
-*/
-
-void drawCharDirect(uint16_t x,
-                    uint16_t y,
-                    const unsigned int color,
-                    const char character) {
-	return;
-}
 
 static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bgColor) {
 	// pointer for iterating over string

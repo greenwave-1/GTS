@@ -5,7 +5,6 @@
 #include "menu.h"
 #include "polling.h"
 #include "print.h"
-#include "draw.h"
 #include "waveform.h"
 #include "gx.h"
 
@@ -110,7 +109,6 @@ int main(int argc, char **argv) {
 	setupLogging(USBGECKO_B);
 	
 	if (getLoggingType() == NETWORKSOCK) {
-		setFramebuffer(xfb[xfbSwitch]);
 		printStr("Setting up network...\n");
 		while (!isNetworkConfigured()) {
 			VIDEO_WaitVSync();
@@ -218,7 +216,6 @@ int main(int argc, char **argv) {
 			#endif
 		default:
 			resetCursor();
-			setFramebuffer(xfb[xfbSwitch]);
 			printStr("\n\nUnsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n"
 					 "Program will exit in 5 seconds...");
 			for (int i = 0; i < 300; i++) {
@@ -231,7 +228,6 @@ int main(int argc, char **argv) {
 	setSamplingRateNormal();
 	if (isUnsupportedMode()) { // unsupported mode is probably 240p? no idea
 		resetCursor();
-		setFramebuffer(xfb[xfbSwitch]);
 		printStr("\n\nUnsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n"
 				 "Program will exit in 5 seconds...");
 		for (int i = 0; i < 300; i++) {
@@ -264,8 +260,6 @@ int main(int argc, char **argv) {
 		if (normalExit) {
 			break;
 		}
-		
-		setFramebuffer(xfb[xfbSwitch]);
 		
 		startDraw(rmode);
 		resetCursor();

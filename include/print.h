@@ -21,14 +21,6 @@
 // number of pixels between given columns
 #define LINE_SPACING 2
 
-void drawChar(const unsigned int color,
-              const char character);
-
-void drawCharDirect(uint16_t x,
-			   uint16_t y,
-               const unsigned int color,
-               const char character);
-
 void drawString(const uint32_t bg_color,
 				const uint32_t fg_color,
                 const char string[]);

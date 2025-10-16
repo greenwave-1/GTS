@@ -20,7 +20,6 @@
 
 // TODO: these should go away once all menus have been moved to a separate file
 #include "stickmap_coordinates.h"
-#include "draw.h"
 #include "file/file.h"
 
 // should I have a "parent" header that includes these?
@@ -87,10 +86,6 @@ static bool displayInstructions = false;
 
 static int exportReturnCode = -1;
 
-// some consumer crt tvs have alignment issues,
-// this determines if certain vertical lines are doubled
-static bool setDrawInterlaceMode = false;
-
 static uint8_t thanksPageCounter = 0;
 
 // the "main" for the menus
@@ -105,13 +100,7 @@ bool menu_runMenu() {
 		pressed = getButtonsDownPtr();
 		held = getButtonsHeldPtr();
 	}
-	
-	if (!setDrawInterlaceMode) {
-		if (VIDEO_GetScanMode() == VI_INTERLACE) {
-			setInterlaced(true);
-		}
-		setDrawInterlaceMode = true;
-	}
+
 	resetCursor();
 	// read inputs get origin status
 	// calls PAD_ScanPads() and PAD_GetOrigin()

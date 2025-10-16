@@ -13,7 +13,6 @@
 
 #include "polling.h"
 #include "print.h"
-#include "draw.h"
 
 const static int SCREEN_TIMEPLOT_START = 95;
 const static int SCREEN_TIMEPLOT_Y_TOP = 150;
