@@ -267,6 +267,9 @@ void menu_controllerTest() {
 			texOffsetX = TEX_Z_OFFSET_X;
 			if (*held & PAD_TRIGGER_Z) {
 				texOffsetX += TEX_NORMAL_DIMENSIONS;
+				PAD_ControlMotor(0, PAD_MOTOR_RUMBLE);
+			} else {
+				PAD_ControlMotor(0, PAD_MOTOR_STOP);
 			}
 			
 			GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
