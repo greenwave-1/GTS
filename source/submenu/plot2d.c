@@ -13,9 +13,7 @@
 
 #include "print.h"
 #include "polling.h"
-#include "draw.h"
 #include "images/stickmaps.h"
-#include "logging.h"
 
 // orange for button press samples
 #define COLOR_ORANGE 0xAD1EADBA
