@@ -88,6 +88,32 @@ void changeLoadedTexmap(int newTexmap) {
 	}
 }
 
+void changeStickmapTexture(enum IMAGE image) {
+	switch (image) {
+		case DEADZONE:
+			GX_LoadTexObj(&(stickmapTexArr[0]), TEXMAP_STICKMAPS);
+			break;
+		case A_WAIT:
+			GX_LoadTexObj(&(stickmapTexArr[1]), TEXMAP_STICKMAPS);
+			break;
+		case MOVE_WAIT:
+			GX_LoadTexObj(&(stickmapTexArr[2]), TEXMAP_STICKMAPS);
+			break;
+		case CROUCH:
+			GX_LoadTexObj(&(stickmapTexArr[3]), TEXMAP_STICKMAPS);
+			break;
+		case LEDGE_L:
+			GX_LoadTexObj(&(stickmapTexArr[4]), TEXMAP_STICKMAPS);
+			break;
+		case LEDGE_R:
+			GX_LoadTexObj(&(stickmapTexArr[5]), TEXMAP_STICKMAPS);
+			break;
+		case NO_IMAGE:
+		default:
+			break;
+	}
+}
+
 // basic initialization stuff
 void setupGX(GXRModeObj *rmode) {
 	// allocate fifo space, 32 byte aligned
@@ -113,8 +139,8 @@ void setupGX(GXRModeObj *rmode) {
 	GX_SetDispCopyDst(rmode->fbWidth, xfbHeight);
 	GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
 	
-	//GX_SetCopyFilter(GX_FALSE, NULL, GX_FALSE, NULL);
-	GX_SetCopyFilter(rmode->aa, rmode->sample_pattern, GX_TRUE, rmode->vfilter);
+	GX_SetCopyFilter(GX_FALSE, NULL, GX_FALSE, NULL);
+	//GX_SetCopyFilter(rmode->aa, rmode->sample_pattern, GX_TRUE, rmode->vfilter);
 	GX_SetFieldMode(rmode->field_rendering,((rmode->viHeight==2*rmode->xfbHeight)?GX_ENABLE:GX_DISABLE));
 	
 	GX_SetCullMode(GX_CULL_NONE);

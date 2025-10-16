@@ -17,7 +17,8 @@
 #include <ogc/timesupp.h>
 #include <ogc/color.h>
 
-#include "draw.h"
+#include "gx.h"
+#include "waveform.h"
 #include "polling.h"
 #include "print.h"
 
@@ -249,59 +250,85 @@ void menu_triggerOscilloscope() {
 						drawLine(SCREEN_TIMEPLOT_START, (SCREEN_POS_CENTER_Y + 85),
 								  SCREEN_TIMEPLOT_START + 500, (SCREEN_POS_CENTER_Y + 85), GX_COLOR_GRAY);;
 						
-						uint8_t curr = 0, prev = 0;
-						bool currDigital = false;
-						int waveformXPos = 1, waveformPrevXPos = 0;
+						uint8_t curr = 0;
+						
+						uint16_t selectionMask;
+						
+						if (displaySelection == TRIGGER_L) {
+							selectionMask = PAD_TRIGGER_L;
+						} else if (displaySelection == TRIGGER_R) {
+							selectionMask = PAD_TRIGGER_R;
+						} else {
+							printStr("Data ready but selection is not valid.");
+							break;
+						}
 						
 						uint64_t totalTime = 0;
 						
-						// draw 500 datapoints
+						// we need to calculate the total number of vertices ahead of time,
+						// frame interval and digital press will be an unknown amount
+						int frameIntervalIndex = 0;
+						int frameIntervalList[500];
+						int digitalPressInterval = 0;
+						int digitalPressList[500];
+						
+						// cycle through data and determine frame intervals and digital presses
 						for (int i = 0; i < 500; i++) {
-							// make sure we haven't gone outside our bounds
-							if (i == dispData->sampleEnd || waveformXPos >= 500) {
-								break;
-							}
-							
-							switch (displaySelection) {
-								case TRIGGER_L:
-									curr = dispData->samples[i].triggerL;
-									currDigital = dispData->samples[i].buttons & PAD_TRIGGER_L;
-									break;
-								case TRIGGER_R:
-									curr = dispData->samples[i].triggerR;
-									currDigital = dispData->samples[i].buttons & PAD_TRIGGER_R;
-									break;
-								default:
-									//dispData->isRecordingReady = false;
-									printStr("Data ready but selection is not valid.");
-									break;
-							}
-							
 							// frame intervals
 							totalTime += dispData->samples[i].timeDiffUs;
 							if (totalTime >= FRAME_TIME_US) {
-								DrawLine(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 127),
-								         SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y - 112),
-								         COLOR_GRAY);
+								frameIntervalList[frameIntervalIndex] = i;
+								frameIntervalIndex++;
 								totalTime = 0;
 							}
 							
-							// analog
-							DrawLine(SCREEN_TIMEPLOT_START + waveformPrevXPos, (SCREEN_POS_CENTER_Y + 128) - prev,
-							         SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y + 128) - curr,
-							         COLOR_WHITE);
-							prev = curr;
+							// digital presses
+							if (dispData->samples[i].buttons & selectionMask) {
+								digitalPressList[digitalPressInterval] = i;
+								digitalPressInterval++;
+							}
+						}
+						
+						// draw frame intervals
+						updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+						
+						GX_Begin(GX_LINES, GX_VTXFMT0, (frameIntervalIndex * 2));
+						for (int i = 0; i < frameIntervalIndex; i++) {
+							GX_Position3s16(SCREEN_TIMEPLOT_START + frameIntervalList[i], (SCREEN_POS_CENTER_Y - 127), -5);
+							GX_Color3u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b);
 							
-							// digital
-							if (currDigital) {
-								DrawDot(SCREEN_TIMEPLOT_START + waveformXPos, (SCREEN_POS_CENTER_Y + 28),
-										COLOR_LIME);
+							GX_Position3s16(SCREEN_TIMEPLOT_START + frameIntervalList[i], (SCREEN_POS_CENTER_Y - 112), -5);
+							GX_Color3u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b);
+						}
+						GX_End();
+						
+						// draw digital presses
+						GX_Begin(GX_POINTS, GX_VTXFMT0, digitalPressInterval);
+						for (int i = 0; i < digitalPressInterval; i++) {
+							GX_Position3s16(SCREEN_TIMEPLOT_START + digitalPressList[i], (SCREEN_POS_CENTER_Y + 28), -4);
+							GX_Color3u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b);
+						}
+						GX_End();
+						
+						// draw analog data
+						GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 500);
+						for (int i = 0; i < 500; i++) {
+							switch (displaySelection) {
+								case TRIGGER_L:
+									curr = dispData->samples[i].triggerL;
+									break;
+								case TRIGGER_R:
+									curr = dispData->samples[i].triggerR;
+									break;
+								default:
+									curr = 0;
+									break;
 							}
 							
-							// update scaling factor
-							waveformPrevXPos = waveformXPos;
-							waveformXPos++;
+							GX_Position3s16(SCREEN_TIMEPLOT_START + i, (SCREEN_POS_CENTER_Y + 128) - curr, -3);
+							GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
 						}
+						GX_End();
 						
 						setCursorPos(3, 27);
 						switch (displaySelection) {

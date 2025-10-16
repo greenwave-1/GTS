@@ -343,47 +343,55 @@ void menu_plot2d() {
 							printStr("0.%04d", convertedCoords.stickYUnit);
 						}
 						printStr(")\n\n");
-						printStr("Stickmap: ");
 						
-						// draw image below 2d plot, and print while we're at it
+						updateVtxDesc(VTX_TEX_NOCOLOR, GX_MODULATE);
+						changeLoadedTexmap(TEXMAP_STICKMAPS);
+						changeStickmapTexture(selectedImage);
+						
+						// draw image
+						if (selectedImage != NO_IMAGE) {
+							GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
+							
+							GX_Position3s16(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128, -5);
+							GX_TexCoord2s16(0, 0);
+							
+							GX_Position3s16(COORD_CIRCLE_CENTER_X + 127, SCREEN_POS_CENTER_Y - 128, -5);
+							GX_TexCoord2s16(255, 0);
+							
+							GX_Position3s16(COORD_CIRCLE_CENTER_X + 127, SCREEN_POS_CENTER_Y + 127, -5);
+							GX_TexCoord2s16(255, 255);
+							
+							GX_Position3s16(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y + 127, -5);
+							GX_TexCoord2s16(0, 255);
+							
+							GX_End();
+						}
+						
+						printStr("Stickmap: ");
 						switch (selectedImage) {
 							case A_WAIT:
 								printStr("Wait Attacks");
-								//drawImage(await_image, await_indexes, COORD_CIRCLE_CENTER_X - 127,
-								//          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case CROUCH:
 								printStr("Crouch");
-								//drawImage(crouch_image, crouch_indexes, COORD_CIRCLE_CENTER_X - 127,
-								//          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case DEADZONE:
 								printStr("Deadzones");
-								//drawImage(deadzone_image, deadzone_indexes, COORD_CIRCLE_CENTER_X - 127,
-								//          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case LEDGE_L:
 								printStr("Left Ledge");
-								//drawImage(ledgeL_image, ledgeL_indexes, COORD_CIRCLE_CENTER_X - 127,
-								//          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case LEDGE_R:
 								printStr("Right Ledge");
-								//drawImage(ledgeR_image, ledgeR_indexes, COORD_CIRCLE_CENTER_X - 127,
-								//          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case MOVE_WAIT:
 								printStr("Wait Movement");
-								//drawImage(movewait_image, movewait_indexes, COORD_CIRCLE_CENTER_X - 127,
-								//          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case NO_IMAGE:
 								printStr("None");
 							default:
 								break;
 						}
-						
-						displayImage(selectedImage, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
 						
 						// draw box around plot area
 						drawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
