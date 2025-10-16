@@ -264,18 +264,6 @@ int main(int argc, char **argv) {
 		if (normalExit) {
 			break;
 		}
-
-		/*
-		// check which framebuffer is next
-		if (xfbSwitch) {
-			//VIDEO_ClearFrameBuffer(rmode, xfb1, COLOR_BLACK);
-			//CON_Init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-			currXfb = xfb1;
-		} else {
-			//VIDEO_ClearFrameBuffer(rmode, xfb2, COLOR_BLACK);
-			//CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-			currXfb = xfb2;
-		}*/
 		
 		setFramebuffer(xfb[xfbSwitch]);
 		
