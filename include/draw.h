@@ -107,7 +107,4 @@ void DrawFilledCircle(int cx, int cy, int rad, int color);
 void DrawFilledBoxCenter(int x, int y, int rad, int color);
 void DrawOctagonalGate(int x, int y, int scale, int color);
 
-// draw for tests in coordinate viewer
-void DrawStickmapOverlay(enum STICKMAP_LIST stickmap, int which);
-
 #endif //GTS_DRAW_H

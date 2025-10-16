@@ -349,7 +349,7 @@ void menu_plotButton() {
 						// initial "frame" line
 						drawSolidBox(SCREEN_TIMEPLOT_START, SCREEN_TIMEPLOT_Y_TOP,
 						              SCREEN_TIMEPLOT_START + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
-									  false, GX_COLOR_SILVER);
+									  GX_COLOR_SILVER);
 						
 						int currMs = 0;
 						int frameIntervalIndex = 0;
@@ -364,7 +364,7 @@ void menu_plotButton() {
 								if (totalTimeUs / 1000 >= FRAME_INTERVAL_MS[frameIntervalIndex]) {
 									drawSolidBox(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
 												  SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
-												  false, GX_COLOR_GRAY);
+												  GX_COLOR_GRAY);
 									
 									/*
 									if (menuDisplay400) {
@@ -428,7 +428,7 @@ void menu_plotButton() {
 								if (result) {
 									drawSolidBox(SCREEN_TIMEPLOT_START + (currMs * 2) - 1, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
 									              SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton) + SCREEN_CHAR_SIZE,
-												  false, GX_COLOR_WHITE);
+												  GX_COLOR_WHITE);
 									/*
 									if (menuDisplay400) {
 										DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_CHAR_TOP + (17 * currButton),
@@ -471,7 +471,7 @@ void menu_plotButton() {
 						// draw end line
 						drawSolidBox(SCREEN_TIMEPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
 						              SCREEN_TIMEPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
-						              false, GX_COLOR_GRAY);
+						              GX_COLOR_GRAY);
 						/*if (menuDisplay400) {
 							DrawVLine(SCREEN_TIMEPLOT_START + currMs, SCREEN_TIMEPLOT_Y_TOP,
 							          SCREEN_TIMEPLOT_Y_BOTTOM,

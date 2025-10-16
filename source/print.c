@@ -137,7 +137,7 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 			// draw our background color, if applicable
 			if (!draw) {
 				drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 2,
-			       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 16, false, bgColor);
+			       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 16, bgColor);
 			}
 			cursorY += 15 + LINE_SPACING;
 			cursorX = 0;
@@ -205,7 +205,7 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 	}
 	if (workingX != cursorX && !draw) {
 		drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 2,
-		       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 16, false, bgColor);
+		       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 16, bgColor);
 	}
 	if (!draw) {
 		cursorX = startingX;

@@ -298,15 +298,15 @@ void drawBox(int x1, int y1, int x2, int y2, GXColor color) {
 }
 
 
-void drawSolidBox(int x1, int y1, int x2, int y2, bool centered, GXColor color) {
+void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	
 	int offsetX = 0, offsetY = 0;
 	
-	if (centered) {
-		offsetX = abs(x2 - x1) / 2;
-		offsetY = abs(y2 - y1) / 2;
-	}
+	//if (centered) {
+	//	offsetX = abs(x2 - x1) / 2;
+	//	offsetY = abs(y2 - y1) / 2;
+	//}
 	
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 	

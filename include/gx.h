@@ -62,6 +62,6 @@ void finishDraw(void *xfb);
 void drawLine(int x1, int y1, int x2, int y2, GXColor color);
 
 void drawBox(int x1, int y1, int x2, int y2, GXColor color);
-void drawSolidBox(int x1, int y1, int x2, int y2, bool centered, GXColor color);
+void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color);
 
 #endif //GTS_GX_H

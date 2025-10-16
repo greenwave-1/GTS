@@ -181,7 +181,7 @@ void menu_gateMeasure() {
 						}
 					}
 					
-					GX_SetPointSize(8, GX_TO_ZERO);
+					GX_SetPointSize(12, GX_TO_ZERO);
 					GX_Begin(GX_POINTS, GX_VTXFMT0, totalPoints * 2);
 					
 					if (showC) {

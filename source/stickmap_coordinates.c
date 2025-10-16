@@ -149,6 +149,9 @@ int isCoordValid(enum STICKMAP_LIST test, MeleeCoordinates coords) {
 	return ret;
 }
 
+// we're storing coordinates as whole integers of the decimal part
+// each visible unit is 0.0125, so we divide by 125 to get the number of units moved
+// then scaled by 2x for visibility
 int toStickmap(int meleeCoord) {
 	return ((meleeCoord / 125) * 2);
 }

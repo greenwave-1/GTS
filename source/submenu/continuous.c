@@ -162,7 +162,7 @@ void menu_continuousWaveform() {
 					int scrollBarPosX = 500 - ((dataScrollOffset / (3000.0 - (500 * waveformScaleFactor))) * 500);
 					drawSolidBox(SCREEN_TIMEPLOT_START + scrollBarPosX - 6, SCREEN_POS_CENTER_Y - 144,
 								 SCREEN_TIMEPLOT_START + scrollBarPosX + 6, SCREEN_POS_CENTER_Y - 136,
-								 false, GX_COLOR_WHITE);
+								 GX_COLOR_WHITE);
 				}
 				
 				setCursorPos(21,0);
