@@ -220,7 +220,7 @@ void startDraw(GXRModeObj *rmode) {
 	
 	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 	
-	GX_SetLineWidth(16, GX_TO_ZERO);
+	GX_SetLineWidth(12, GX_TO_ZERO);
 }
 
 void finishDraw(void *xfb) {

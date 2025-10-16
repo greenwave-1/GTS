@@ -177,7 +177,7 @@ void menu_continuousWaveform() {
 				// draw graph
 				updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 				
-				GX_SetLineWidth(16, GX_TO_ZERO);
+				GX_SetLineWidth(12, GX_TO_ZERO);
 				
 				GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 500);
 				
@@ -217,7 +217,7 @@ void menu_continuousWaveform() {
 				
 				// frame intervals
 				
-				GX_SetLineWidth(8, GX_TO_ZERO);
+				GX_SetLineWidth(12, GX_TO_ZERO);
 				GX_Begin(GX_LINES, GX_VTXFMT0, frameIntervalCount * 2);
 				
 				for (int i = 0; i < frameIntervalCount; i++) {
@@ -230,7 +230,7 @@ void menu_continuousWaveform() {
 				
 				GX_End();
 				
-				GX_SetLineWidth(16, GX_TO_ZERO);
+				GX_SetLineWidth(12, GX_TO_ZERO);
 				
 				waveformXPos = 1;
 				// then x

@@ -459,7 +459,7 @@ void menu_controllerTest() {
 			
 			GX_End();
 			
-			GX_SetLineWidth(16, GX_TO_ZERO);
+			GX_SetLineWidth(12, GX_TO_ZERO);
 			
 			updateVtxDesc(VTX_TEX_NOCOLOR, GX_REPLACE);
 			
