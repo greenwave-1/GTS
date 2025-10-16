@@ -192,12 +192,6 @@ int main(int argc, char **argv) {
 	}
 	*/
 	
-	
-	#ifdef BENCH
-	long long unsigned int time = 0;
-	int us = 0;
-	#endif
-	
 	switch (VIDEO_GetCurrentTvMode()) {
 		case VI_NTSC:
 		case VI_EURGB60:
@@ -239,6 +233,13 @@ int main(int argc, char **argv) {
 	// allocate memory for recording structs
 	initControllerRecStructs();
 	
+	
+	#ifdef BENCH
+	long long unsigned int time = 0;
+	int gxtime = 0;
+	int us = 0;
+	#endif
+	
 	// main loop of the program
 	// exits when menu_runMenu() returns true, or when either power or reset are pressed
 	while (true) {
@@ -269,13 +270,17 @@ int main(int argc, char **argv) {
 		
 		#ifdef BENCH
 		us = ticks_to_microsecs(gettime() - time);
-		setCursorPos(22, 56);
-		printStrColor(COLOR_WHITE, COLOR_BLACK, "%d", us);
+		setCursorPos(23, 40);
+		printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOGIC: %d | GX: %d", us, gxtime);
 		#endif
 		
 		xfbSwitch ^= 1;
 		
 		finishDraw(xfb[xfbSwitch]);
+		
+		#ifdef BENCH
+		gxtime = ticks_to_microsecs(gettime() - time);
+		#endif
 		
 		// change framebuffer for next frame
 		VIDEO_SetNextFramebuffer(xfb[xfbSwitch]);
