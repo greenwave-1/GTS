@@ -150,6 +150,103 @@ void menu_controllerTest() {
 				printStr("Digital R Pressed");
 			}
 			
+			// triggers
+			// L
+			int sliderBottomY = LAYOUT_ANALOG_SLIDER_POS_Y + 255;
+			int sliderTopY = sliderBottomY - PAD_TriggerL(0);
+			GX_SetLineWidth(24, GX_TO_ZERO);
+			
+			GXColor sliderColor = GX_COLOR_BLUE;
+			if (*held & PAD_TRIGGER_L) {
+				sliderColor = GX_COLOR_RED;
+				GX_SetLineWidth(32, GX_TO_ZERO);
+			}
+			
+			updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+			
+			GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, sliderTopY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderTopY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderBottomY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_End();
+			
+			GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 5);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderBottomY, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_End();
+			
+			GX_SetLineWidth(24, GX_TO_ZERO);
+			
+			// R
+			sliderTopY = sliderBottomY - PAD_TriggerR(0);
+			
+			sliderColor = GX_COLOR_BLUE;
+			if (*held & PAD_TRIGGER_R) {
+				sliderColor = GX_COLOR_RED;
+				GX_SetLineWidth(32, GX_TO_ZERO);
+			}
+			
+			GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+			
+			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, sliderTopY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderTopY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_End();
+			
+			GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 5);
+			
+			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_End();
+			
+			GX_SetLineWidth(12, GX_TO_ZERO);
+			
 			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
 			
 			changeLoadedTexmap(TEXMAP_CONTROLLER);
@@ -313,35 +410,6 @@ void menu_controllerTest() {
 			
 			GX_End();
 			
-			updateVtxDesc(VTX_TEX_NOCOLOR, GX_REPLACE);
-			
-			// Start
-			texOffsetX = TEX_START_OFFSET_X;
-			if (*held & PAD_BUTTON_START) {
-				texOffsetX += TEX_NORMAL_DIMENSIONS;
-			}
-			
-			GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
-			
-			GX_Position3s16(LAYOUT_START_POS_X, LAYOUT_START_POS_Y, -4);
-			GX_TexCoord2s16(texOffsetX, TEX_START_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_START_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_START_POS_Y, -4);
-			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_START_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_START_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_START_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
-			                TEX_START_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_Position3s16(LAYOUT_START_POS_X,
-			                LAYOUT_START_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-			GX_TexCoord2s16(texOffsetX,
-			                TEX_START_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_End();
-			
 			// d-pad
 			int dpadPressedIndex = 1;
 			int dpadPressedOffsets[5];
@@ -365,146 +433,90 @@ void menu_controllerTest() {
 			}
 			
 			for (int i = 0; i < dpadPressedIndex; i++) {
+				GXColor color = GX_COLOR_SILVER;
+				if (i != 0) {
+					color = GX_COLOR_WHITE;
+				}
 				texOffsetX = dpadPressedOffsets[i];
 				
-				GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
+				GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 				
 				GX_Position3s16(LAYOUT_DPAD_POS_X, LAYOUT_DPAD_POS_Y, -4);
+				GX_Color4u8(color.r, color.g, color.b, color.a);
 				GX_TexCoord2s16(texOffsetX, TEX_DPAD_OFFSET_Y);
 				
 				GX_Position3s16(LAYOUT_DPAD_POS_X + TEX_NORMAL_DIMENSIONS,
 				                LAYOUT_DPAD_POS_Y, -4);
+				GX_Color4u8(color.r, color.g, color.b, color.a);
 				GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_DPAD_OFFSET_Y);
 				
 				GX_Position3s16(LAYOUT_DPAD_POS_X + TEX_NORMAL_DIMENSIONS,
 				                LAYOUT_DPAD_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+				GX_Color4u8(color.r, color.g, color.b, color.a);
 				GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
 				                TEX_DPAD_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 				
 				GX_Position3s16(LAYOUT_DPAD_POS_X,
 				                LAYOUT_DPAD_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+				GX_Color4u8(color.r, color.g, color.b, color.a);
 				GX_TexCoord2s16(texOffsetX,
 				                TEX_DPAD_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 				
 				GX_End();
 			}
 			
-			// triggers
-			// L
-			int sliderBottomY = LAYOUT_ANALOG_SLIDER_POS_Y + 255;
-			int sliderTopY = sliderBottomY - PAD_TriggerL(0);
-			GX_SetLineWidth(24, GX_TO_ZERO);
-			
-			GXColor sliderColor = GX_COLOR_BLUE;
-			if (*held & PAD_TRIGGER_L) {
-				sliderColor = GX_COLOR_RED;
-				GX_SetLineWidth(32, GX_TO_ZERO);
+			// Start
+			texOffsetX = TEX_START_OFFSET_X;
+			if (*held & PAD_BUTTON_START) {
+				texOffsetX += TEX_NORMAL_DIMENSIONS;
 			}
 			
-			updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
-			GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+			GX_Position3s16(LAYOUT_START_POS_X, LAYOUT_START_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(texOffsetX, TEX_START_OFFSET_Y);
 			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, sliderTopY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			GX_Position3s16(LAYOUT_START_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_START_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_START_OFFSET_Y);
 			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderTopY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			GX_Position3s16(LAYOUT_START_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_START_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
+			                TEX_START_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderBottomY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
-			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
-			
-			GX_End();
-			
-			GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 5);
-			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderBottomY, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			GX_Position3s16(LAYOUT_START_POS_X,
+			                LAYOUT_START_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(texOffsetX,
+			                TEX_START_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
 			GX_End();
-			
-			GX_SetLineWidth(24, GX_TO_ZERO);
-			
-			// R
-			sliderTopY = sliderBottomY - PAD_TriggerR(0);
-			
-			sliderColor = GX_COLOR_BLUE;
-			if (*held & PAD_TRIGGER_R) {
-				sliderColor = GX_COLOR_RED;
-				GX_SetLineWidth(32, GX_TO_ZERO);
-			}
-			
-			GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
-			
-			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, sliderTopY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
-			
-			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderTopY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
-			
-			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
-			
-			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
-			
-			GX_End();
-			
-			GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 5);
-			
-			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_End();
-			
-			GX_SetLineWidth(12, GX_TO_ZERO);
-			
-			updateVtxDesc(VTX_TEX_NOCOLOR, GX_REPLACE);
 			
 			// stick gate
-			GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
 			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X, LAYOUT_ASTICK_GATE_POS_Y, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
 			GX_TexCoord2s16(TEX_ASTICK_GATE_OFFSET_X, TEX_ASTICK_GATE_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X + TEX_ASTICK_GATE_DIMENSIONS,
 			                LAYOUT_ASTICK_GATE_POS_Y, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
 			GX_TexCoord2s16(TEX_ASTICK_GATE_OFFSET_X + TEX_ASTICK_GATE_DIMENSIONS, TEX_ASTICK_GATE_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X + TEX_ASTICK_GATE_DIMENSIONS,
 			                LAYOUT_ASTICK_GATE_POS_Y + TEX_ASTICK_GATE_DIMENSIONS, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
 			GX_TexCoord2s16(TEX_ASTICK_GATE_OFFSET_X + TEX_ASTICK_GATE_DIMENSIONS,
 			                TEX_ASTICK_GATE_OFFSET_Y + TEX_ASTICK_GATE_DIMENSIONS);
 			
 			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X,
 			                LAYOUT_ASTICK_GATE_POS_Y + TEX_ASTICK_GATE_DIMENSIONS, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
 			GX_TexCoord2s16(TEX_ASTICK_GATE_OFFSET_X,
 			                TEX_ASTICK_GATE_OFFSET_Y + TEX_ASTICK_GATE_DIMENSIONS);
 			
@@ -514,44 +526,52 @@ void menu_controllerTest() {
 			int stickModX = PAD_StickX(0) / 2;
 			int stickModY = PAD_StickY(0) / 2;
 			
-			GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
 			GX_Position3s16(LAYOUT_ASTICK_CAP_POS_X + stickModX, LAYOUT_ASTICK_CAP_POS_Y - stickModY, -2);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
 			GX_TexCoord2s16(TEX_ASTICK_CAP_OFFSET_X, TEX_ASTICK_CAP_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_ASTICK_CAP_POS_X + TEX_NORMAL_DIMENSIONS + stickModX,
 			                LAYOUT_ASTICK_CAP_POS_Y - stickModY, -2);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
 			GX_TexCoord2s16(TEX_ASTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS, TEX_ASTICK_CAP_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_ASTICK_CAP_POS_X + TEX_NORMAL_DIMENSIONS + stickModX,
 			                LAYOUT_ASTICK_CAP_POS_Y + TEX_NORMAL_DIMENSIONS - stickModY, -2);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
 			GX_TexCoord2s16(TEX_ASTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS,
 			                TEX_ASTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
 			GX_Position3s16(LAYOUT_ASTICK_CAP_POS_X + stickModX,
 			                LAYOUT_ASTICK_CAP_POS_Y + TEX_NORMAL_DIMENSIONS - stickModY, -2);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
 			GX_TexCoord2s16(TEX_ASTICK_CAP_OFFSET_X,
 			                TEX_ASTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
 			GX_End();
 			
 			// c-stick gate
-			GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
 			GX_Position3s16(LAYOUT_CSTICK_POS_X, LAYOUT_CSTICK_POS_Y, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
 			GX_TexCoord2s16(TEX_CSTICK_GATE_OFFSET_X, TEX_CSTICK_GATE_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS,
 			                LAYOUT_CSTICK_POS_Y, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
 			GX_TexCoord2s16(TEX_CSTICK_GATE_OFFSET_X + TEX_NORMAL_DIMENSIONS, TEX_CSTICK_GATE_OFFSET_Y);
 			
 			GX_Position3s16(LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS,
 			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
 			GX_TexCoord2s16(TEX_CSTICK_GATE_OFFSET_X + TEX_NORMAL_DIMENSIONS,
 			                TEX_CSTICK_GATE_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
 			GX_Position3s16(LAYOUT_CSTICK_POS_X,
 			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
 			GX_TexCoord2s16(TEX_CSTICK_GATE_OFFSET_X,
 			                TEX_CSTICK_GATE_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
@@ -561,8 +581,6 @@ void menu_controllerTest() {
 			// c-stick cap
 			int cStickModX = PAD_SubStickX(0) / 2;
 			int cStickModY = PAD_SubStickY(0) / 2;
-			
-			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
 			
 			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
