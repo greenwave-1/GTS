@@ -24,6 +24,8 @@ static enum STICKMAP_LIST selectedStickmap = NONE;
 // will be casted to whichever stickmap is selected
 static int selectedStickmapSub = 0;
 
+static bool menuLockEnabled = false;
+
 static void setup() {
 	if (pressed == NULL) {
 		pressed = getButtonsDownPtr();
@@ -223,7 +225,7 @@ static void displayInstructions() {
 			break;
 	}
 	
-	if (*pressed & PAD_TRIGGER_Z) {
+	if (*pressed & PAD_TRIGGER_Z || menuLockEnabled) {
 		menuState = COORD_VIEW_POST_SETUP;
 	}
 }
@@ -240,7 +242,11 @@ void menu_coordView() {
 			// melee stick coordinates stuff
 			// a lot of this comes from github.com/phobgcc/phobconfigtool
 			
-			printStr("Press Z for instructions");
+			if (!menuLockEnabled) {
+				printStr("Press Z for instructions");
+			} else {
+				printStr("Use D-Pad Right and Up to\nchange stickmap settings");
+			}
 			
 			static ControllerSample stickRaw;
 			static MeleeCoordinates stickMelee;
@@ -253,7 +259,7 @@ void menu_coordView() {
 			stickMelee = convertStickRawToMelee(stickRaw);
 			
 			// print melee coordinates
-			setCursorPos(4, 0);
+			setCursorPos(10, 0);
 			printStr("Stick X: ");
 			// is the value negative?
 			if (stickRaw.stickX < 0) {
@@ -389,35 +395,66 @@ void menu_coordView() {
 			drawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, GX_COLOR_YELLOW);
 			drawSolidBox(xfbCoordCX - 2, xfbCoordCY - 2, xfbCoordCX + 2, xfbCoordCY + 2, GX_COLOR_YELLOW);
 			
-			if (*pressed & PAD_BUTTON_X) {
-				selectedStickmap++;
-				selectedStickmapSub = 0;
-				if (selectedStickmap == 3) {
-					selectedStickmap = 0;
+			// we disable
+			if (!menuLockEnabled) {
+				if (*pressed & PAD_BUTTON_X) {
+					selectedStickmap++;
+					selectedStickmapSub = 0;
+					if (selectedStickmap == 3) {
+						selectedStickmap = 0;
+					}
 				}
-			}
-			if (*pressed & PAD_BUTTON_Y) {
-				selectedStickmapSub++;
-				switch (selectedStickmap) {
-					case (FF_WD):
-						if (selectedStickmapSub == STICKMAP_FF_WD_ENUM_LEN) {
+				if (*pressed & PAD_BUTTON_Y) {
+					selectedStickmapSub++;
+					switch (selectedStickmap) {
+						case (FF_WD):
+							if (selectedStickmapSub == STICKMAP_FF_WD_ENUM_LEN) {
+								selectedStickmapSub = 0;
+							}
+							break;
+						case (SHIELDDROP):
+							if (selectedStickmapSub == STICKMAP_SHIELDDROP_ENUM_LEN) {
+								selectedStickmapSub = 0;
+							}
+							break;
+						case (NONE):
+						default:
 							selectedStickmapSub = 0;
-						}
-						break;
-					case (SHIELDDROP):
-						if (selectedStickmapSub == STICKMAP_SHIELDDROP_ENUM_LEN) {
-							selectedStickmapSub = 0;
-						}
-						break;
-					case (NONE):
-					default:
-						selectedStickmapSub = 0;
-						break;
+							break;
+					}
 				}
-			}
-			
-			if (*pressed & PAD_TRIGGER_Z) {
-				menuState = COORD_VIEW_INSTRUCTIONS;
+				
+				if (*pressed & PAD_TRIGGER_Z) {
+					menuState = COORD_VIEW_INSTRUCTIONS;
+				}
+			} else {
+				// change controls to use d-pad
+				if (*pressed == PAD_BUTTON_RIGHT) {
+					selectedStickmap++;
+					selectedStickmapSub = 0;
+					if (selectedStickmap == 3) {
+						selectedStickmap = 0;
+					}
+				}
+				if (*pressed == PAD_BUTTON_UP) {
+					selectedStickmapSub++;
+					switch (selectedStickmap) {
+						case (FF_WD):
+							if (selectedStickmapSub == STICKMAP_FF_WD_ENUM_LEN) {
+								selectedStickmapSub = 0;
+							}
+							break;
+						case (SHIELDDROP):
+							if (selectedStickmapSub == STICKMAP_SHIELDDROP_ENUM_LEN) {
+								selectedStickmapSub = 0;
+							}
+							break;
+						case (NONE):
+						default:
+							selectedStickmapSub = 0;
+							break;
+					}
+				}
 			}
 			
 			break;
@@ -430,4 +467,8 @@ void menu_coordView() {
 void menu_coordViewEnd() {
 	// not sure if this is actually useful, maybe get rid of it...
 	//menuState = COORD_VIEW_SETUP;
+}
+
+void menu_coordViewSetLockState(bool state) {
+	menuLockEnabled = state;
 }

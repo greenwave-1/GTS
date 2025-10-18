@@ -13,4 +13,6 @@ enum COORD_VIEW_MENU_STATE { COORD_VIEW_SETUP, COORD_VIEW_POST_SETUP, COORD_VIEW
 void menu_coordView();
 void menu_coordViewEnd();
 
+void menu_coordViewSetLockState(bool state);
+
 #endif //GTS_COORDINATEVIEWER_H

@@ -51,7 +51,7 @@
 static enum CURRENT_MENU currentMenu = MAIN_MENU;
 
 // lock var for controller test
-static bool lockExitControllerTest = false;
+static bool lockExitEnabled = false;
 static bool startHeldAfter = false;
 static uint8_t startHeldCounter = 0;
 
@@ -174,6 +174,7 @@ bool menu_runMenu() {
 			menu_fileExport();
 			break;
 		case COORD_MAP:
+			menu_coordViewSetLockState(lockExitEnabled);
 			menu_coordView();
 			break;
 		case CONTINUOUS_WAVEFORM:
@@ -210,8 +211,8 @@ bool menu_runMenu() {
 	}
 	
 	// controller test lock stuff
-	else if (*held == PAD_BUTTON_START && currentMenu == CONTROLLER_TEST && !startHeldAfter) {
-		if (lockExitControllerTest) {
+	else if (*held == PAD_BUTTON_START && (currentMenu == CONTROLLER_TEST || currentMenu == COORD_MAP) && !startHeldAfter) {
+		if (lockExitEnabled) {
 			printStr("Enabling exit, hold for 2 seconds");
 		} else {
 			printStr("Disabling exit, hold for 2 seconds");
@@ -220,7 +221,7 @@ bool menu_runMenu() {
 		
 		startHeldCounter++;
 		if (startHeldCounter > 121) {
-			lockExitControllerTest = !lockExitControllerTest;
+			lockExitEnabled = !lockExitEnabled;
 			startHeldCounter = 0;
 			startHeldAfter = true;
 		}
@@ -229,7 +230,7 @@ bool menu_runMenu() {
 	// does the user want to move back to the main menu?
 	// this shouldn't trigger when certain menus are currently recording an input
 	else if (*held == PAD_BUTTON_B && currentMenu != MAIN_MENU &&
-			!lockExitControllerTest &&
+			!lockExitEnabled &&
 			!menu_plotButtonHasCaptureStarted()) {
 
 		// give user feedback that they are holding the button
@@ -291,8 +292,9 @@ bool menu_runMenu() {
 					printStr(VERSION_NUMBER);
 				}
 				break;
+			case COORD_MAP:
 			case CONTROLLER_TEST:
-				if (lockExitControllerTest) {
+				if (lockExitEnabled) {
 					printStr("Exiting disabled, hold Start to re-enable.");
 				} else {
 					printStr("Hold B to return to main menu, hold start to disable.");
