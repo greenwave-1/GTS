@@ -7,7 +7,6 @@
 #include <stdint.h>
 
 #include <ogc/pad.h>
-#include <ogc/color.h>
 
 #include "gx.h"
 #include "submenu/controllertest_constants.h"
@@ -134,6 +133,8 @@ void menu_controllerTest() {
 					setCursorPos(18, 44);
 					printStr("R Origin: %d", origin.triggerR);
 				}
+				setCursorPos(0, 40);
+				printStr("Press Z to test Rumble");
 			}
 			
 			setCursorPos(17,2);
@@ -149,6 +150,8 @@ void menu_controllerTest() {
 				setCursorPos(18, 40);
 				printStr("Digital R Pressed");
 			}
+			
+			// gui
 			
 			// triggers
 			// L

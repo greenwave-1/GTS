@@ -4,8 +4,6 @@
 
 #include "stickmap_coordinates.h"
 
-#include <ogc/color.h>
-
 // init all the extern strings
 // refer to stickmap_coordinates.h for descriptions of these values
 const char* STICKMAP_FF_WD_DESC = "Min/Max coordinates for Firefox and Wavedash notches around\ncardinals\n\n"

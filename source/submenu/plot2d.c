@@ -9,11 +9,9 @@
 
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
-#include <ogc/color.h>
 
 #include "print.h"
 #include "polling.h"
-#include "images/stickmaps.h"
 
 // orange for button press samples
 #define COLOR_ORANGE 0xAD1EADBA
@@ -345,7 +343,7 @@ void menu_plot2d() {
 						
 						updateVtxDesc(VTX_TEX_NOCOLOR, GX_MODULATE);
 						changeLoadedTexmap(TEXMAP_STICKMAPS);
-						changeStickmapTexture(selectedImage);
+						changeStickmapTexture((int) selectedImage);
 						
 						// draw image
 						if (selectedImage != NO_IMAGE) {

@@ -8,7 +8,6 @@
 
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
-#include <ogc/color.h>
 
 #include "gx.h"
 #include "polling.h"

@@ -33,10 +33,14 @@ static char* resetMessage = "Reset button pressed, exiting...";
 void retraceCallback(uint32_t retraceCnt) {
 	setSamplingRate();
 	
+	// reading fifo and gp status stuff
+	// debugging
 	//debugLog("Wrap: %u", getFifoVal());
 	//uint8_t overhi, underlow, readidle, cmdidle, brkpt;
 	//GX_GetGPStatus(&overhi, &underlow, &readidle, &cmdidle, &brkpt);
 	//debugLog("GPStatus: %u %u %u %u %u\n", overhi, underlow, readidle, cmdidle, brkpt);
+	
+	// can be used to make the reset button be a breakpoint? idk
 	//#ifdef DEBUGGDB
 	//if (SYS_ResetButtonDown()) {
 		//_break();
@@ -76,8 +80,6 @@ int main(int argc, char **argv) {
 	xfb[0] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 	xfb[1] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 	
-	//CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-	//CON_Init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
 	VIDEO_ClearFrameBuffer(rmode, xfb[0], COLOR_BLACK);
 	VIDEO_ClearFrameBuffer(rmode, xfb[1], COLOR_BLACK);
 
@@ -91,7 +93,6 @@ int main(int argc, char **argv) {
 
 	VIDEO_WaitVSync();
 	
-	cb = VIDEO_SetPostRetraceCallback(retraceCallback);
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
 	
 	setupGX(rmode);
@@ -131,67 +132,7 @@ int main(int argc, char **argv) {
 	#endif
 	
 	#endif
-	
-	
-	// TODO: WIP Logic for forcing interlaced
-	// this needs much more logic than what's present
-	// mainly, using the correct tv mode instead of just doing ntsc
-	// probably will need testing from PAL users
-	/*
-	// wait a couple frames, inputs don't register initially???
-	PAD_ScanPads();
-	VIDEO_WaitVSync();
-	PAD_ScanPads();
-	VIDEO_WaitVSync();
-	PAD_ScanPads();
-	
-	uint32_t buttons = PAD_ButtonsHeld(0);
-	//uint32_t useless = 42069;
-	
-	// check if b is held and we are in progressive scan
-	if (buttons & PAD_BUTTON_B) {
-		char msg[500];
-		memset(msg, 0, sizeof(msg));
-		uint32_t scanMode = VIDEO_GetScanMode();
-		uint32_t tvMode = VIDEO_GetCurrentTvMode();
-		snprintf(msg, 500, "B held, Progressive scan: %d | TV Mode: %d\r\n\0", scanMode, tvMode);
-		usb_sendbuffer(1, msg, 500);
-		usb_flush(EXI_CHANNEL_1);
-		if (scanMode == 2) {
-			memset(msg, 0, sizeof(msg));
-			snprintf(msg, 500, "Progressive Scan detected, asking if user wants to force interlaced\n\0");
-			usb_sendbuffer(1, msg, 500);
-			usb_flush(EXI_CHANNEL_1);
-			
-			// force interlaced
-			VIDEO_Configure(&TVNtsc480IntDf);
-			
-			VIDEO_ClearFrameBuffer(rmode, xfb2, COLOR_BLACK);
-			CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-			currXfb = xfb2;
-			VIDEO_SetNextFramebuffer(xfb2);
-			
-			xfbSwitch = true;
-			
-			printf("\x1b[3;0H");
-			printf("Press A to enable progressive scan, press B to disable\n");
-			while (true) {
-				VIDEO_Flush();
-				VIDEO_WaitVSync();
-				PAD_ScanPads();
-				buttons = PAD_ButtonsDown(0);
-				if (buttons & PAD_BUTTON_A) {
-					VIDEO_Configure(&TVNtsc480Prog);
-					break;
-				}
-				if (buttons & PAD_BUTTON_B) {
-					break;
-				}
-			}
-		}
-	}
-	*/
-	
+
 	switch (VIDEO_GetCurrentTvMode()) {
 		case VI_NTSC:
 		case VI_EURGB60:
@@ -230,6 +171,10 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 	
+	// register retrace callback function
+	// VIDEO_Flush() clears our custom xy values, so they're set again here
+	cb = VIDEO_SetPostRetraceCallback(retraceCallback);
+	
 	// allocate memory for recording structs
 	initControllerRecStructs();
 	
@@ -263,8 +208,7 @@ int main(int argc, char **argv) {
 		}
 		
 		startDraw(rmode);
-		resetCursor();
-		//printStr("Hello there");
+		
 		// run menu
 		normalExit = menu_runMenu();
 		
@@ -292,8 +236,9 @@ int main(int argc, char **argv) {
 	
 	// return some of our stuff to normal before exit
 	// not sure if its needed but eh
-	setSamplingRateNormal();
 	PAD_SetSamplingCallback(NULL);
+	setSamplingRateNormal();
+	setSamplingRate();
 	VIDEO_SetPostRetraceCallback(NULL);
 	
 	// close log

@@ -2,23 +2,17 @@
 // Created on 2025/03/14.
 //
 
-// Code in use from the PhobGCC project is licensed under GPLv3. A copy of this license is provided in the root
-// directory of this project's repository.
+// code for printing our custom font from a texture
 
-// Upstream URL for the PhobGCC project is: https://github.com/PhobGCC/PhobGCC-SW
-
-// the majority of this was adapted from the Phobgcc PhobVision code:
-// https://github.com/PhobGCC/PhobGCC-SW/tree/main/PhobGCC/rp2040
+// previously, this housed a direct framebuffer draw implementation,
+// which was heavily modified from the PhobGCC project, specifically PhobVision
 
 #include "print.h"
 
 #include <stdio.h>
 #include <stdarg.h>
 
-#include <ogc/color.h>
-
 #include "gx.h"
-#include "font.h"
 
 // buffer for variable arg strings
 static char strBuffer[1000];
@@ -27,6 +21,8 @@ static char strBuffer[1000];
 static int cursorX = 0;
 static int cursorY = 0;
 
+// this is almost directly adapted from the provided romfont example, but modified for our specific fontsheet,
+// as well as support for background colors
 static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bgColor) {
 	// pointer for iterating over string
 	const char* curr = str;
@@ -57,7 +53,7 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 			// draw our background color, if applicable
 			if (!draw) {
 				drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 2,
-			       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 16, bgColor);
+			       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 15, bgColor);
 			}
 			cursorY += 15 + LINE_SPACING;
 			cursorX = 0;
@@ -108,7 +104,7 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 	}
 	if (workingX != cursorX && !draw) {
 		drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 2,
-		       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 16, bgColor);
+		       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 15, bgColor);
 	}
 	if (!draw) {
 		cursorX = startingX;
@@ -116,6 +112,7 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 	}
 }
 
+// TODO: there's a better way to do this instead of calling handleString twice...
 void printStr(const char* str, ...) {
 	va_list list;
 	va_start(list, str);
@@ -123,7 +120,6 @@ void printStr(const char* str, ...) {
 	changeLoadedTexmap(TEXMAP_FONT);
 	handleString(strBuffer, false, GX_COLOR_WHITE, GX_COLOR_BLACK);
 	handleString(strBuffer, true, GX_COLOR_WHITE, GX_COLOR_BLACK);
-	//drawString(COLOR_BLACK, COLOR_WHITE, strBuffer);
 	va_end(list);
 }
 
@@ -133,7 +129,6 @@ void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* s
 	vsnprintf(strBuffer, 999, str, list);
 	handleString(strBuffer, false, fg_color, bg_color);
 	handleString(strBuffer, true, fg_color, bg_color);
-	//drawString(bg_color, fg_color, strBuffer);
 	va_end(list);
 }
 

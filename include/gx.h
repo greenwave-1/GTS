@@ -9,8 +9,6 @@
 //#include <stdint.h>
 #include <ogc/tpl.h>
 
-#include "images/stickmaps.h"
-
 // center of screen, 640x480
 #define SCREEN_POS_CENTER_X 320
 #define SCREEN_POS_CENTER_Y 240
@@ -47,12 +45,13 @@ void updateVtxDesc(enum CURRENT_VTX_MODE mode, int tevOp);
 // (this changes what texture will be drawn on a primitive)
 void changeLoadedTexmap(int newTexmap);
 
-void changeStickmapTexture(enum IMAGE image);
+void changeStickmapTexture(int image);
 
 // basic initialization stuff
 void setupGX(GXRModeObj *rmode);
 
-uint8_t getFifoVal();
+// debugging stuff
+//uint8_t getFifoVal();
 
 // start and end of draw
 void startDraw(GXRModeObj *rmode);

@@ -2,6 +2,12 @@
 // Created on 10/14/25.
 //
 
+// custom wrapper to try and make dealing with gx easier
+
+// most of this is pulled from the provided examples, other projects that use gx (swiss-gc),
+// and this https://devkitpro.org/wiki/libogc/GX (that last one is very old tho).
+// most of this is likely incorrect in some way...
+
 #include "gx.h"
 
 #include <malloc.h>
@@ -22,8 +28,11 @@ static int currentTexmap = TEXMAP_NONE;
 
 // address of memory allocated for fifo
 static void *gp_fifo = nullptr;
-// fifo object itself that we will interface with
-static GXFifoObj *gxFifoObj = nullptr;
+
+// fifo object itself
+// only used if we need to actually interface with the fifo later
+// (basically for debugging)
+//static GXFifoObj *gxFifoObj = nullptr;
 
 // matrix math stuff
 static Mtx view, model, modelview;
@@ -88,29 +97,11 @@ void changeLoadedTexmap(int newTexmap) {
 	}
 }
 
-void changeStickmapTexture(enum IMAGE image) {
-	switch (image) {
-		case DEADZONE:
-			GX_LoadTexObj(&(stickmapTexArr[0]), TEXMAP_STICKMAPS);
-			break;
-		case A_WAIT:
-			GX_LoadTexObj(&(stickmapTexArr[1]), TEXMAP_STICKMAPS);
-			break;
-		case MOVE_WAIT:
-			GX_LoadTexObj(&(stickmapTexArr[2]), TEXMAP_STICKMAPS);
-			break;
-		case CROUCH:
-			GX_LoadTexObj(&(stickmapTexArr[3]), TEXMAP_STICKMAPS);
-			break;
-		case LEDGE_L:
-			GX_LoadTexObj(&(stickmapTexArr[4]), TEXMAP_STICKMAPS);
-			break;
-		case LEDGE_R:
-			GX_LoadTexObj(&(stickmapTexArr[5]), TEXMAP_STICKMAPS);
-			break;
-		case NO_IMAGE:
-		default:
-			break;
+// expects enum IMAGE as defined in plot2d.h
+void changeStickmapTexture(int image) {
+	if (image > 0 && image < 7) {
+		// texmap array doesn't hold a "no image" texture, so we have to shift index by one from the provided enum
+		GX_LoadTexObj(&(stickmapTexArr[image - 1]), TEXMAP_STICKMAPS);
 	}
 }
 
@@ -122,8 +113,8 @@ void setupGX(GXRModeObj *rmode) {
 	memset(gp_fifo, 0, DEFAULT_FIFO_SIZE);
 	
 	// start gx stuff
-	//GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
-	gxFifoObj = GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
+	GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
+	//gxFifoObj = GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
 	//GX_InitFifoLimits(gxFifoObj, DEFAULT_FIFO_SIZE - GX_FIFO_HIWATERMARK, DEFAULT_FIFO_SIZE / 2);
 	
 	// setup gx to clear background on each new frame
@@ -154,20 +145,22 @@ void setupGX(GXRModeObj *rmode) {
 	GX_SetVtxDesc(GX_VA_CLR0, GX_DIRECT);
 	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
 	
-	// VTXFMT0, configured for primitive drawing with signed 16 bit coordinates
+	// VTXFMT0, configured for primitive drawing
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGB, GX_RGB8, 0);
 	
-	// VTXFMT1, configured for font drawing
+	// VTXFMT1, configured for display textures, while also modifying colors
 	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_TEX0, GX_TEX_ST, GX_S16, 0);
 	
-	// VTXFMT2, configured to display texture
+	// VTXFMT2, configured to display texture, no modification of color directly
 	GX_SetVtxAttrFmt(GX_VTXFMT2, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT2, GX_VA_TEX0, GX_TEX_ST, GX_S16, 0);
 	
 	currentVtxMode = VTX_NONE;
+	
+	// TODO: most of this is where I lose my understanding of gx, something's probably wrong in here...
 	
 	GX_SetNumChans(1);
 	//GX_SetChanCtrl(GX_COLOR0A0, GX_ENABLE, GX_SRC_VTX, GX_SRC_VTX, 0, GX_DF_NONE, GX_AF_NONE);
@@ -211,7 +204,7 @@ void setupGX(GXRModeObj *rmode) {
 	TPL_GetTexture(&tpl, ledgel, &stickmapTexArr[4]);
 	TPL_GetTexture(&tpl, ledger, &stickmapTexArr[5]);
 	
-	//TPL_CloseTPLFile(&tpl);
+	TPL_CloseTPLFile(&tpl);
 	
 	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
 	
@@ -233,9 +226,11 @@ void setupGX(GXRModeObj *rmode) {
 	
 }
 
+/*
 uint8_t getFifoVal() {
 	return GX_GetFifoWrap(gxFifoObj);
 }
+*/
 
 // start and end of draw
 void startDraw(GXRModeObj *rmode) {
@@ -302,25 +297,18 @@ void drawBox(int x1, int y1, int x2, int y2, GXColor color) {
 void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	
-	int offsetX = 0, offsetY = 0;
-	
-	//if (centered) {
-	//	offsetX = abs(x2 - x1) / 2;
-	//	offsetY = abs(y2 - y1) / 2;
-	//}
-	
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 	
-	GX_Position3s16(x1 - offsetX, y1 - offsetY, -5);
+	GX_Position3s16(x1, y1, -5);
 	GX_Color3u8(color.r, color.g, color.b);
 	
-	GX_Position3s16(x2 - offsetX, y1 - offsetY, -5);
+	GX_Position3s16(x2, y1, -5);
 	GX_Color3u8(color.r, color.g, color.b);
 	
-	GX_Position3s16(x2 - offsetX, y2 - offsetY, -5);
+	GX_Position3s16(x2, y2, -5);
 	GX_Color3u8(color.r, color.g, color.b);
 	
-	GX_Position3s16(x1 - offsetX, y2 - offsetY, -5);
+	GX_Position3s16(x1, y2, -5);
 	GX_Color3u8(color.r, color.g, color.b);
 	
 	GX_End();

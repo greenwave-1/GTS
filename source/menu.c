@@ -8,7 +8,6 @@
 #include <string.h>
 #include <math.h>
 
-#include <ogc/color.h>
 #include <ogc/pad.h>
 #include <ogc/video.h>
 #include <ogc/libversion.h>
@@ -19,7 +18,6 @@
 #include "polling.h"
 
 // TODO: these should go away once all menus have been moved to a separate file
-#include "stickmap_coordinates.h"
 #include "file/file.h"
 
 // should I have a "parent" header that includes these?
@@ -77,10 +75,8 @@ static uint8_t stickLockoutCounter = 0;
 static bool stickLockout = false;
 
 // menu item strings
-//static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Coordinate Viewer", "2D Plot", "Export Data", "Continuous Waveform" };
 static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Continuous Stick Oscilloscope", "Trigger Oscilloscope",
                                                 "Coordinate Viewer", "2D Plot", "Button Timing Viewer", "Gate Visualizer", "Export Data"};
-
 
 static bool displayInstructions = false;
 
@@ -115,7 +111,8 @@ bool menu_runMenu() {
 		(*data)->isRecordingReady = false;
 	}
 	
-	if ((*data)->isRecordingReady) {
+	// TODO: is there a better way to have an indicator but also have more screen space?
+	if ((*data)->isRecordingReady && currentMenu == MAIN_MENU) {
 		switch ((*data)->recordingType) {
 			case REC_OSCILLOSCOPE:
 				setCursorPos(0, 31);
@@ -192,7 +189,7 @@ bool menu_runMenu() {
 			menu_plotButton();
 			break;
 		default:
-			printStr("HOW DID WE END UP HERE?\n");
+			printStr("currentMenu is invalid value, how did this happen?\n");
 			break;
 	}
 	if (displayInstructions) {
@@ -384,11 +381,7 @@ void menu_mainMenu() {
 		} else {
 			setCursorPos(2 + i, 4);
 		}
-		
 		printStr(menuItems[i]);
-		
-
-
 	}
 
 	// does the user move the cursor?
@@ -501,6 +494,7 @@ void menu_thanksPage() {
 			 "DevkitPro team\n"
 			 "Extrems\n"
 			 "SmashScope\n"
+			 "bkacjios / m-overlay\n"
 			 "Z. B. Wells");
 	
 	setCursorPos(18,0);

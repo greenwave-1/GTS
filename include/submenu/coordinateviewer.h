@@ -2,6 +2,9 @@
 // Created on 10/16/25.
 //
 
+// coordinate viewer submenu
+// displays coordinates in melee-converted units (0-80)
+
 #ifndef GTS_COORDINATEVIEWER_H
 #define GTS_COORDINATEVIEWER_H
 

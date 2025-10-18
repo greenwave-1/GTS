@@ -9,7 +9,6 @@
 
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
-#include <ogc/color.h>
 
 #include "print.h"
 #include "gx.h"

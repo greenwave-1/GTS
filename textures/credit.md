@@ -1,5 +1,11 @@
-controller.png: github.com/bkacjios/m-overlay format based on github.com/univrsal/input-overlay
+### controller.png 
+- assets from https://github.com/bkacjios/m-overlay -> source/textures/buttons/
+- texture format based on https://github.com/univrsal/input-overlay -> presets/gamecube/gamecube.png
 
-stickmaps: github.com/phobgcc/phobgcc-sw (manually generated into pngs from runlength encoding)
+### font.png
+- https://github.com/phobgcc/phobgcc-sw -> PhobGCC/rp2040/include/images/font.h
+- Manually decoded into a png from runlength encoding
 
-font: same as above
+### Stickmaps
+- https://github.com/phobgcc/phobgcc-sw -> PhobGCC/rp2040/include/images/
+- Manually decoded into pngs from runlength encoding

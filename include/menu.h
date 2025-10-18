@@ -24,7 +24,6 @@ bool menu_runMenu();
 void menu_mainMenu();
 void menu_controllerTest();
 void menu_fileExport();
-void menu_coordinateViewer();
 void menu_thanksPage();
 
 
