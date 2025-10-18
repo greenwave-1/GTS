@@ -83,6 +83,9 @@ static bool displayInstructions = false;
 static int exportReturnCode = -1;
 
 static uint8_t thanksPageCounter = 0;
+static bool thanksPageCodeActive = false;
+static int thanksPageRumbleCounter = 0;
+static int thanksPageSequenceIndex = 0;
 
 // the "main" for the menus
 // other menu functions are called from here
@@ -262,6 +265,10 @@ bool menu_runMenu() {
 				case COORD_MAP:
 					menu_coordViewEnd();
 					break;
+				case THANKS_PAGE:
+					thanksPageSequenceIndex = 0;
+					thanksPageRumbleCounter = 0;
+					PAD_ControlMotor(3, PAD_MOTOR_STOP);
 				default:
 					break;
 			}
@@ -487,6 +494,10 @@ void menu_fileExport() {
 	}
 }
 
+const static uint16_t thanksPageSequence[] = { PAD_BUTTON_UP, PAD_BUTTON_UP, PAD_BUTTON_DOWN, PAD_BUTTON_DOWN,
+                                           PAD_BUTTON_LEFT, PAD_BUTTON_RIGHT, PAD_BUTTON_LEFT, PAD_BUTTON_RIGHT,
+                                           PAD_BUTTON_B, PAD_BUTTON_A, PAD_BUTTON_START };
+
 // self-explanatory
 void menu_thanksPage() {
 	printStr("Thanks to:\n"
@@ -504,5 +515,35 @@ void menu_thanksPage() {
 	printStr(BUILD_DATE);
 	printStr("\nGTS Commit ID: ");
 	printStr(COMMIT_ID);
+	
+	if (thanksPageCodeActive) {
+		setCursorPos(10, 20);
+		printStr("A secret is revealed!");
+	}
 
+	uint16_t port4 = PAD_ButtonsDown(3);
+	
+	if (port4 != 0) {
+		if (port4 == thanksPageSequence[thanksPageSequenceIndex]) {
+			thanksPageSequenceIndex++;
+			thanksPageRumbleCounter = 7;
+		} else {
+			thanksPageSequenceIndex = 0;
+		}
+	}
+	
+	if (thanksPageSequenceIndex == 11) {
+		thanksPageCodeActive = !thanksPageCodeActive;
+		menu_controllerTestToggleRumbleSecret(thanksPageCodeActive);
+		thanksPageSequenceIndex = 0;
+		thanksPageRumbleCounter = 60;
+	}
+	
+	if (thanksPageRumbleCounter > 0) {
+		PAD_ControlMotor(3, PAD_MOTOR_RUMBLE);
+		thanksPageRumbleCounter--;
+		if (thanksPageRumbleCounter == 0) {
+			PAD_ControlMotor(3, PAD_MOTOR_STOP_HARD);
+		}
+	}
 }

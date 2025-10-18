@@ -17,6 +17,10 @@
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
 
+static bool rumbleSecret = false;
+static int rumbleIndex = 0;
+const static int rumbleOffsets[][2] = { {-2, -2}, {-2, 2}, {2, 2}, {2, -2} };
+
 static enum CONTROLLER_TEST_MENU_STATE menuState = CONT_TEST_SETUP;
 
 static void setup() {
@@ -384,8 +388,16 @@ void menu_controllerTest() {
 			if (*held & PAD_TRIGGER_Z) {
 				texOffsetX += TEX_NORMAL_DIMENSIONS;
 				PAD_ControlMotor(0, PAD_MOTOR_RUMBLE);
+				if (rumbleSecret) {
+					GX_SetScissorBoxOffset(rumbleOffsets[rumbleIndex][0], rumbleOffsets[rumbleIndex][1]);
+					rumbleIndex++;
+					rumbleIndex %= 4;
+				}
 			} else {
 				PAD_ControlMotor(0, PAD_MOTOR_STOP);
+				if (rumbleSecret) {
+					GX_SetScissorBoxOffset(0, 0);
+				}
 			}
 			
 			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
@@ -617,4 +629,8 @@ void menu_controllerTest() {
 void menu_controllerTestEnd() {
 	// not sure if this is actually useful, maybe get rid of it...
 	//menuState = CONT_TEST_SETUP;
+}
+
+void menu_controllerTestToggleRumbleSecret(bool state) {
+	rumbleSecret = state;
 }
