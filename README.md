@@ -65,4 +65,5 @@ pick up the project again after the website for SmashScope went down, and made s
 it repeatedly). Also thanks for putting up with me in the Discord :)
 - SmashScope and its creators for giving me a baseline to strive for
 - The DevkitPro team and Extrems for making stuff like this a lot more accessible
+- bkacjios / m-overlay for button assets
 - Z. B. Wells for being my "Archaic Language Consultant"
