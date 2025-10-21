@@ -396,7 +396,7 @@ void menu_triggerOscilloscope() {
 						}
 						
 						setCursorPos(20, 0);
-						printStr("Digital PS: %3.1f%% | ADT PS: %3.1f%% | No PS: %3.1f%%", psDigital, psADT, psNone);
+						printStr("Digital PS: %5.1f%% | ADT PS: %5.1f%% | No PS: %5.1f%%", psDigital, psADT, psNone);
 						
 						if (!buttonLock) {
 							if (*pressed & PAD_BUTTON_A) {
