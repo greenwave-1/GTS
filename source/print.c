@@ -21,6 +21,10 @@ static char strBuffer[1000];
 static int cursorX = 0;
 static int cursorY = 0;
 
+// z depth
+static int cursorZ = -1;
+static int cursorPrevZ = -1;
+
 // this is almost directly adapted from the provided romfont example, but modified for our specific fontsheet,
 // as well as support for background colors
 static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bgColor) {
@@ -52,8 +56,10 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 		if (cursorX + 10 > 640 - (PRINT_PADDING_HORIZONTAL * 2) || *curr == '\n') {
 			// draw our background color, if applicable
 			if (!draw) {
+				setDepth(cursorZ - 1);
 				drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 2,
 			       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 15, bgColor);
+				restorePrevDepth();
 			}
 			cursorY += 15 + LINE_SPACING;
 			cursorX = 0;
@@ -80,19 +86,19 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 			
 			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
-			GX_Position3s16(quadX1, quadY1, 0);
+			GX_Position3s16(quadX1, quadY1, cursorZ);
 			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
 			GX_TexCoord2s16(texturePosX1, texturePosY1);
 			
-			GX_Position3s16(quadX2, quadY1, 0);
+			GX_Position3s16(quadX2, quadY1, cursorZ);
 			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
 			GX_TexCoord2s16(texturePosX2, texturePosY1);
 			
-			GX_Position3s16(quadX2, quadY2, 0);
+			GX_Position3s16(quadX2, quadY2, cursorZ);
 			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
 			GX_TexCoord2s16(texturePosX2, texturePosY2);
 			
-			GX_Position3s16(quadX1, quadY2, 0);
+			GX_Position3s16(quadX1, quadY2, cursorZ);
 			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
 			GX_TexCoord2s16(texturePosX1, texturePosY2);
 			
@@ -103,8 +109,10 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 		cursorX += 10;
 	}
 	if (workingX != cursorX && !draw) {
+		setDepth(cursorZ - 1);
 		drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 2,
 		       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 15, bgColor);
+		restorePrevDepth();
 	}
 	if (!draw) {
 		cursorX = startingX;
@@ -142,6 +150,8 @@ void printEllipse(const int counter, const int interval) {
 
 void resetCursor() {
 	setCursorPos(0,0);
+	cursorZ = -1;
+	cursorPrevZ = -1;
 }
 
 void setCursorPos(int row, int col) {
@@ -152,4 +162,13 @@ void setCursorPos(int row, int col) {
 void setCursorXY(int x, int y) {
 	cursorX = x;
 	cursorY = y;
+}
+
+void setCursorDepth(int z) {
+	cursorPrevZ = cursorZ;
+	cursorZ = z;
+}
+
+void restorePrevCursorDepth() {
+	cursorZ = cursorPrevZ;
 }

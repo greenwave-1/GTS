@@ -44,6 +44,10 @@ static GXTexObj fontTex;
 static GXTexObj controllerTex;
 static GXTexObj stickmapTexArr[6];
 
+// keeps track of our current z depth, for drawing helper functions
+static int zDepth = -5;
+static int zPrevDepth = -5;
+
 // change vertex descriptions to one of the above, specifying the tev combiner op if necessary
 void updateVtxDesc(enum CURRENT_VTX_MODE mode, int tevOp) {
 	// only run if we are drawing something different
@@ -243,6 +247,7 @@ void startDraw(GXRModeObj *rmode) {
 	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 	
 	GX_SetLineWidth(12, GX_TO_ZERO);
+	zDepth = -5;
 }
 
 void finishDraw(void *xfb) {
@@ -255,15 +260,24 @@ void finishDraw(void *xfb) {
 	GX_CopyDisp(xfb, GX_TRUE);
 }
 
+void setDepth(int z) {
+	zPrevDepth = zDepth;
+	zDepth = z;
+}
+
+void restorePrevDepth() {
+	zDepth = zPrevDepth;
+}
+
 void drawLine(int x1, int y1, int x2, int y2, GXColor color) {
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	
 	GX_Begin(GX_LINES, GX_VTXFMT0, 2);
 	
-	GX_Position3s16(x1, y1, -5);
+	GX_Position3s16(x1, y1, zDepth);
 	GX_Color3u8(color.r, color.g, color.b);
 	
-	GX_Position3s16(x2, y2, -5);
+	GX_Position3s16(x2, y2, zDepth);
 	GX_Color3u8(color.r, color.g, color.b);
 	
 	GX_End();
@@ -274,23 +288,22 @@ void drawBox(int x1, int y1, int x2, int y2, GXColor color) {
 	
 	GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 5);
 	
-	GX_Position3s16(x1, y1, -5);
+	GX_Position3s16(x1, y1, zDepth);
 	GX_Color3u8(color.r, color.g, color.b);
 	
-	GX_Position3s16(x2, y1, -5);
+	GX_Position3s16(x2, y1, zDepth);
 	GX_Color3u8(color.r, color.g, color.b);
 	
-	GX_Position3s16(x2, y2, -5);
+	GX_Position3s16(x2, y2, zDepth);
 	GX_Color3u8(color.r, color.g, color.b);
 	
-	GX_Position3s16(x1, y2, -5);
+	GX_Position3s16(x1, y2, zDepth);
 	GX_Color3u8(color.r, color.g, color.b);
 	
-	GX_Position3s16(x1, y1, -5);
+	GX_Position3s16(x1, y1, zDepth);
 	GX_Color3u8(color.r, color.g, color.b);
 	
 	GX_End();
-	
 }
 
 void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
@@ -298,16 +311,16 @@ void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
 	
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 	
-	GX_Position3s16(x1, y1, -5);
+	GX_Position3s16(x1, y1, zDepth);
 	GX_Color3u8(color.r, color.g, color.b);
 	
-	GX_Position3s16(x2, y1, -5);
+	GX_Position3s16(x2, y1, zDepth);
 	GX_Color3u8(color.r, color.g, color.b);
 	
-	GX_Position3s16(x2, y2, -5);
+	GX_Position3s16(x2, y2, zDepth);
 	GX_Color3u8(color.r, color.g, color.b);
 	
-	GX_Position3s16(x1, y2, -5);
+	GX_Position3s16(x1, y2, zDepth);
 	GX_Color3u8(color.r, color.g, color.b);
 	
 	GX_End();

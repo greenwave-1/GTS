@@ -58,6 +58,8 @@ void startDraw(GXRModeObj *rmode);
 void finishDraw(void *xfb);
 
 // basic drawing functions
+void setDepth(int z);
+void restorePrevDepth();
 void drawLine(int x1, int y1, int x2, int y2, GXColor color);
 
 void drawBox(int x1, int y1, int x2, int y2, GXColor color);

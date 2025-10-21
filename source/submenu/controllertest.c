@@ -56,6 +56,7 @@ void menu_controllerTest() {
 			
 			// print raw stick coordinates
 			setCursorPos(19, 0);
+			setCursorDepth(-10);
 			printStr("Raw XY: (%04d,%04d)", stickRaw.stickX, stickRaw.stickY);
 			setCursorPos(19, 38);
 			printStr("C-Raw XY: (%04d,%04d)", stickRaw.cStickX, stickRaw.cStickY);
@@ -166,6 +167,8 @@ void menu_controllerTest() {
 				setCursorPos(18, 40);
 				printStr("Digital R Pressed");
 			}
+			
+			restorePrevCursorDepth();
 			
 			// gui
 			
