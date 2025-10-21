@@ -32,5 +32,6 @@ void printEllipse(const int counter, const int interval);
 
 void resetCursor();
 void setCursorPos(int row, int col);
+void setCursorXY(int x, int y);
 
 #endif //GTS_PRINT_H

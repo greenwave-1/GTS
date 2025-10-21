@@ -148,3 +148,8 @@ void setCursorPos(int row, int col) {
 	cursorY = row * (15 + LINE_SPACING);
 	cursorX = col * 10;
 }
+
+void setCursorXY(int x, int y) {
+	cursorX = x;
+	cursorY = y;
+}

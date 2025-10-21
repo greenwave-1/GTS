@@ -137,7 +137,19 @@ void menu_controllerTest() {
 					setCursorPos(18, 44);
 					printStr("R Origin: %d", origin.triggerR);
 				}
-				setCursorPos(0, 40);
+				if (rumbleSecret) {
+					setCursorPos(0, 39);
+				} else {
+					if (*held & PAD_TRIGGER_Z) {
+						setCursorXY(390 + rumbleOffsets[rumbleIndex][0], rumbleOffsets[rumbleIndex][1]);
+						rumbleIndex++;
+						rumbleIndex %= 4;
+					} else {
+						setCursorPos(0, 39);
+						rumbleIndex = 0;
+					}
+				}
+				
 				printStr("Press Z to test Rumble");
 			}
 			
