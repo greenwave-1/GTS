@@ -22,8 +22,8 @@ static int cursorX = 0;
 static int cursorY = 0;
 
 // z depth
-static int cursorZ = -1;
-static int cursorPrevZ = -1;
+static int cursorZ = -5;
+static int cursorPrevZ = -5;
 
 // this is almost directly adapted from the provided romfont example, but modified for our specific fontsheet,
 // as well as support for background colors
@@ -150,8 +150,8 @@ void printEllipse(const int counter, const int interval) {
 
 void resetCursor() {
 	setCursorPos(0,0);
-	cursorZ = -1;
-	cursorPrevZ = -1;
+	cursorZ = -5;
+	cursorPrevZ = -5;
 }
 
 void setCursorPos(int row, int col) {
