@@ -15,6 +15,7 @@
 #include "gx.h"
 
 // buffer for variable arg strings
+// there's a better way to do this...
 static char strBuffer[1000];
 
 // real screen coordinates of our 'cursor'

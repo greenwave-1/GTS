@@ -2,11 +2,16 @@
 // Created on 10/14/25.
 //
 
+// custom wrapper to try and make dealing with gx easier
+
+// most of this is pulled from the provided examples, other projects that use gx (swiss-gc),
+// and this https://devkitpro.org/wiki/libogc/GX (that last one is very old tho).
+// most of this is likely incorrect in multiple way...
+
 #ifndef GTS_GX_H
 #define GTS_GX_H
 
 #include <ogc/gx.h>
-//#include <stdint.h>
 #include <ogc/tpl.h>
 
 // center of screen, 640x480
@@ -20,6 +25,7 @@
 #define TEXMAP_STICKMAPS GX_TEXMAP2
 
 // normal colors
+// mostly based on ogc/color.h
 #define GX_COLOR_WHITE (GXColor) {0xFF, 0xFF, 0xFF, 0xFF}
 #define GX_COLOR_BLACK (GXColor) {0x00, 0x00, 0x00, 0xFF}
 #define GX_COLOR_GRAY (GXColor) {0x80, 0x80, 0x80, 0xFF}
@@ -30,7 +36,7 @@
 #define GX_COLOR_DARKGREEN (GXColor) {0x00, 0x80, 0x00, 0xFF}
 #define GX_COLOR_YELLOW (GXColor) {0xFF, 0xFF, 0x00, 0xFF}
 
-// specific colors
+// 'custom' colors
 #define GX_COLOR_RED_X (GXColor) {0xFF, 0x20, 0x00, 0xFF}
 #define GX_COLOR_BLUE_Y (GXColor) {0x00, 0x6A, 0xFF, 0xFF}
 
@@ -45,6 +51,7 @@ void updateVtxDesc(enum CURRENT_VTX_MODE mode, int tevOp);
 // (this changes what texture will be drawn on a primitive)
 void changeLoadedTexmap(int newTexmap);
 
+// update what stickmap texture is loaded into TEXMAP_STICKMAPS
 void changeStickmapTexture(int image);
 
 // basic initialization stuff

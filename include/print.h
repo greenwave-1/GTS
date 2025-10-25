@@ -2,9 +2,11 @@
 // Created on 2025/03/14.
 //
 
-// utilities for drawing the phobvision font, and handing a virtual cursor
+// utilities for drawing a custom font from a texture, and handing a virtual cursor.
+// currently using the PhobVision font.
 
-// the majority of this was adapted from the Phobgcc PhobVision code:
+// previously, this housed a direct framebuffer draw implementation,
+// which was heavily modified from the PhobGCC project, specifically PhobVision:
 // https://github.com/PhobGCC/PhobGCC-SW/tree/main/PhobGCC/rp2040
 
 #ifndef GTS_PRINT_H

@@ -181,6 +181,7 @@ void menu_gateMeasure() {
 					}
 					
 					GX_SetPointSize(12, GX_TO_ZERO);
+					// totalPoints * 2 because each entry in the array contains both min and max
 					GX_Begin(GX_POINTS, GX_VTXFMT0, totalPoints * 2);
 					
 					if (showC) {

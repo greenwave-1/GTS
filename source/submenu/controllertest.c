@@ -141,6 +141,7 @@ void menu_controllerTest() {
 				if (rumbleSecret) {
 					setCursorPos(0, 39);
 				} else {
+					// 'shake' the rumble text if z is held
 					if (*held & PAD_TRIGGER_Z) {
 						setCursorXY(390 + rumbleOffsets[rumbleIndex][0], rumbleOffsets[rumbleIndex][1]);
 						rumbleIndex++;

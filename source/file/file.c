@@ -1,4 +1,3 @@
-
 #include "file/file.h"
 
 #include <fat.h>

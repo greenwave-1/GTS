@@ -6,7 +6,7 @@
 
 // most of this is pulled from the provided examples, other projects that use gx (swiss-gc),
 // and this https://devkitpro.org/wiki/libogc/GX (that last one is very old tho).
-// most of this is likely incorrect in some way...
+// most of this is likely incorrect in multiple way...
 
 #include "gx.h"
 
@@ -164,7 +164,8 @@ void setupGX(GXRModeObj *rmode) {
 	
 	currentVtxMode = VTX_NONE;
 	
-	// TODO: most of this is where I lose my understanding of gx, something's probably wrong in here...
+	// TODO: this is where my understanding of the code goes completely out the window,
+	// TODO: there's probably multiple things wrong here, even more than above...
 	
 	GX_SetNumChans(1);
 	//GX_SetChanCtrl(GX_COLOR0A0, GX_ENABLE, GX_SRC_VTX, GX_SRC_VTX, 0, GX_DF_NONE, GX_AF_NONE);

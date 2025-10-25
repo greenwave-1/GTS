@@ -2,6 +2,8 @@
 // Created on 10/14/25.
 //
 
+// specific screen coordinates for texture layout in controllertest.c
+
 #ifndef GTS_CONTROLLERTEST_CONSTANTS_H
 #define GTS_CONTROLLERTEST_CONSTANTS_H
 
@@ -47,6 +49,7 @@
 
 // analog sliders
 // analog sliders are 116x24
+// UNUSED
 #define TEX_ANALOG_SLIDER_DIMENSIONS_X 116
 #define TEX_ANALOG_SLIDER_DIMENSIONS_Y 24
 
@@ -99,7 +102,7 @@
 #define LAYOUT_ANALOG_SLIDER_POS_X 66
 #define LAYOUT_ANALOG_SLIDER_POS_Y 64
 
-#define LAYOUT_ASTICK_GATE_POS_X 124 // 120
+#define LAYOUT_ASTICK_GATE_POS_X 124
 #define LAYOUT_ASTICK_GATE_POS_Y 79
 
 // stick cap texture is 128x128, gate is 132x132, so + 2 to center on gate
