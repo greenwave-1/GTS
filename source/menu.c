@@ -140,7 +140,7 @@ bool menu_runMenu() {
 				break;
 		}
 		printStr(" Capture in memory!");
-	} else {
+	} else if (!(*data)->isRecordingReady) {
 		exportReturnCode = -1;
 	}
 	setCursorPos(2, 0);
