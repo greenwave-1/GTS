@@ -23,6 +23,7 @@
 #define TEXMAP_FONT GX_TEXMAP0
 #define TEXMAP_CONTROLLER GX_TEXMAP1
 #define TEXMAP_STICKMAPS GX_TEXMAP2
+#define TEXMAP_P GX_TEXMAP3
 
 // normal colors
 // mostly based on ogc/color.h
@@ -50,6 +51,8 @@ void updateVtxDesc(enum CURRENT_VTX_MODE mode, int tevOp);
 // change the texture used for tev op
 // (this changes what texture will be drawn on a primitive)
 void changeLoadedTexmap(int newTexmap);
+
+void getCurrentTexmapDims(int *width, int *height);
 
 // update what stickmap texture is loaded into TEXMAP_STICKMAPS
 void changeStickmapTexture(int image);

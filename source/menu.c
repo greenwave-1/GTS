@@ -321,6 +321,123 @@ bool menu_runMenu() {
 	return false;
 }
 
+static int colSelection = 0;
+static const int colNum = 5;
+static const int colHeight = 24;
+static const uint8_t colSet[][10] = {
+		{ 0x5b, 0xce, 0xfa },
+		{ 0xf5, 0xa9, 0xb8 },
+		{ 0xff, 0xff, 0xff },
+		{ 0xf5, 0xa9, 0xb8 },
+		{ 0x5b, 0xce, 0xfa },
+		
+		{ 0xe2, 0x8c, 0x00 },
+		{ 0xec, 0xcd, 0x00 },
+		{ 0xff, 0xff, 0xff },
+		{ 0x62, 0xae, 0xdc },
+		{ 0x20, 0x38, 0x56 }
+};
+
+static void menu_mainMenuDraw() {
+	const int startX = 400, startY = 80;
+	
+	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+	
+	// texture
+	if (colSelection == 0) {
+		// background quad
+		GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+		
+		GX_Position3s16(startX - 3, startY - 6, -2);
+		GX_Color3u8(0xff, 0xff, 0xff);
+		
+		GX_Position3s16(startX + 203, startY - 6, -2);
+		GX_Color3u8(0xff, 0xff, 0xff);
+		
+		GX_Position3s16(startX + 203, startY + 126, -2);
+		GX_Color3u8(0xff, 0xff, 0xff);
+		
+		GX_Position3s16(startX - 3, startY + 126, -2);
+		GX_Color3u8(0xff, 0xff, 0xff);
+		
+		GX_End();
+		
+		updateVtxDesc(VTX_TEX_NOCOLOR, GX_MODULATE);
+		changeLoadedTexmap(TEXMAP_P);
+		
+		int width, height;
+		getCurrentTexmapDims(&width, &height);
+		
+		int heightOffset = (height - 120) / 2;
+		
+		GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
+		
+		GX_Position3s16(startX, startY - heightOffset, -1);
+		GX_TexCoord2s16(0, 0);
+		
+		GX_Position3s16(startX + width, startY - heightOffset, -1);
+		GX_TexCoord2s16(width, 0);
+		
+		GX_Position3s16(startX + width, (startY - heightOffset) + height, -1);
+		GX_TexCoord2s16(width, height);
+		
+		GX_Position3s16(startX, (startY - heightOffset) + height, -1);
+		GX_TexCoord2s16(0, height);
+		
+		GX_End();
+	}
+	// raw quads
+	else {
+		// background quad
+		GX_Begin(GX_QUADS, GX_VTXFMT0, 24);
+		
+		GX_Position3s16(startX - 2, startY - 2, -2);
+		GX_Color3u8(0xff, 0xff, 0xff);
+		
+		GX_Position3s16(startX + 202, startY - 2, -2);
+		GX_Color3u8(0xff, 0xff, 0xff);
+		
+		GX_Position3s16(startX + 202, startY + 122, -2);
+		GX_Color3u8(0xff, 0xff, 0xff);
+		
+		GX_Position3s16(startX - 2, startY + 122, -2);
+		GX_Color3u8(0xff, 0xff, 0xff);
+		
+		int indexStart = (colSelection - 1) * 5;
+		
+		for (int i = 0; i < colNum; i++) {
+			// colSelection - 1 because 1 = index 0
+			GX_Position3s16(startX, startY + (colHeight * i), -1);
+			GX_Color3u8(colSet[indexStart + i][0], colSet[indexStart + i][1], colSet[indexStart + i][2]);
+			
+			GX_Position3s16(startX + 200, startY + (colHeight * i), -1);
+			GX_Color3u8(colSet[indexStart + i][0], colSet[indexStart + i][1], colSet[indexStart + i][2]);
+			
+			GX_Position3s16(startX + 200, startY + (colHeight * (i + 1)), -1);
+			GX_Color3u8(colSet[indexStart + i][0], colSet[indexStart + i][1], colSet[indexStart + i][2]);
+			
+			GX_Position3s16(startX, startY + (colHeight * (i + 1)), -1);
+			GX_Color3u8(colSet[indexStart + i][0], colSet[indexStart + i][1], colSet[indexStart + i][2]);
+		}
+		
+		GX_End();
+		
+		if (colSelection == 1) {
+			// this is in reference to a close friend of mine, not me
+			setCursorPos(10, 45);
+			printStr("G + A <3");
+		}
+	}
+	
+	// cycle through options
+	if (PAD_ButtonsDown(1) == PAD_BUTTON_A) {
+		colSelection++;
+		colSelection %= 3;
+	}
+}
+
+static bool mainMenuDraw = false;
+
 void menu_mainMenu() {
 	stickYPrevPos = stickYPos;
 	stickYPos = PAD_StickY(0);
@@ -460,6 +577,14 @@ void menu_mainMenu() {
 	} else {
 		thanksPageCounter = 0;
 	}
+	
+	if (mainMenuDraw) {
+		menu_mainMenuDraw();
+	}
+	
+	if (PAD_ButtonsDown(1) == PAD_TRIGGER_Z) {
+		mainMenuDraw = !mainMenuDraw;
+	}
 }
 
 void menu_fileExport() {
@@ -549,3 +674,4 @@ void menu_thanksPage() {
 		}
 	}
 }
+

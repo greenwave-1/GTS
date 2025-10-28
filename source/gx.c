@@ -43,6 +43,7 @@ static TPLFile tpl;
 static GXTexObj fontTex;
 static GXTexObj controllerTex;
 static GXTexObj stickmapTexArr[6];
+static GXTexObj pTex;
 
 // keeps track of our current z depth, for drawing helper functions
 static int zDepth = -5;
@@ -98,6 +99,31 @@ void changeLoadedTexmap(int newTexmap) {
 			GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, newTexmap, GX_COLOR0A0);
 		}
 		currentTexmap = newTexmap;
+	}
+}
+
+void getCurrentTexmapDims(int *width, int *height) {
+	switch (currentTexmap) {
+		case TEXMAP_CONTROLLER:
+			*width = GX_GetTexObjWidth(&controllerTex);
+			*height = GX_GetTexObjHeight(&controllerTex);
+			break;
+		case TEXMAP_FONT:
+			*width = GX_GetTexObjWidth(&fontTex);
+			*height = GX_GetTexObjHeight(&fontTex);
+			break;
+		case TEXMAP_P:
+			*width = GX_GetTexObjWidth(&pTex);
+			*height = GX_GetTexObjHeight(&pTex);
+			break;
+		case TEXMAP_STICKMAPS:
+			// all of these are the same, so any will do
+			*width = GX_GetTexObjWidth(&(stickmapTexArr[0]));
+			*height = GX_GetTexObjHeight(&(stickmapTexArr[0]));
+			break;
+		case TEXMAP_NONE:
+		default:
+			break;
 	}
 }
 
@@ -208,6 +234,9 @@ void setupGX(GXRModeObj *rmode) {
 	TPL_GetTexture(&tpl, crouch, &stickmapTexArr[3]);
 	TPL_GetTexture(&tpl, ledgel, &stickmapTexArr[4]);
 	TPL_GetTexture(&tpl, ledger, &stickmapTexArr[5]);
+	
+	TPL_GetTexture(&tpl, p, &pTex);
+	GX_LoadTexObj(&pTex, TEXMAP_P);
 	
 	TPL_CloseTPLFile(&tpl);
 	
