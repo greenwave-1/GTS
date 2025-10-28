@@ -27,21 +27,23 @@ this.
 - Polling rate is not perfectly uniform. This is something that can't be dealt with easily while also reading
 at a high rate. Polling in progressive scan seems to be much better, however.
 - Specific tests need confirmation for correctness.
-- Everything is drawn directly on the framebuffer with the CPU, need to move to using GX_ 
-functions at some point.
 - A lot of logic that shouldn't be in menu.c is, needs to be moved to other files.
 - Other things I can't think of right now...
 
 ## Usage:
 Grab the latest release in [Releases](https://github.com/greenwave-1/GTS/releases).
 
-The two files that are important are `GTS_GC.dol` and `wii.zip`.
-
-`GTS_GC.dol` is for GameCube. Place the file in a location that you can launch it from. 
+- Gamecube: 
+Download `GTS_GC.dol`, and place it in a location you can launch it from.
 Having a way to load [Swiss](https://github.com/emukidid/swiss-gc) is preferred.
-This file should also be used for Dolphin. Dolphin requires a recent version to function (2506a or newer).
 
-`wii.zip` is for Wii. Extract the zip to the Wii's SD card, and launch from the Homebrew Channel. 
+- Wii:
+Download `wii.zip` and extract it to the Wii's SD card. Then, launch from the Homebrew Channel.
+
+- Dolphin:
+Download `GTS_GC.dol`, and open it via Dolphin.
+Note that GTS requires a recent version to function (2506a or newer),
+and that Dolphin support is considered secondary to real hardware.
 
 ## Building:
 - Install devkitpro

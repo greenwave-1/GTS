@@ -5,6 +5,8 @@ As a general rule, I will ignore any and all contributions that appear to use LL
 For issues/bug reports, try to provide:
 
 - The current version that experiences the issue
+  - Current version information can be seen via the 'Thanks' page 
+  - Hold Z on port 4 on the main menu to show it
 - If applicable, the oldest version that also experiences the issue
 - The platform used (GameCube, Wii, Dolphin). For Dolphin, also provide the version used
 - Instructions for reproducing the issue, if possible
