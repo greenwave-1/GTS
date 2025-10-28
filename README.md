@@ -58,6 +58,9 @@ and that Dolphin support is considered secondary to real hardware.
 - A numbered release can be made with ```make release <version string>```, or using the bash script to also make
 a distributable zip file for wii
 
+## Reporting Problems:
+For problems, open an issue. Be sure to check `CONTRIBUTING.md` to make things easier. Please don't DM me. 
+
 ## Why?
 Originally, I wanted a test program that worked on Gamecube, since SmashScope was for Wii only. I got motivation to
 pick up the project again after the website for SmashScope went down, and made significant progress since then. 
