@@ -256,7 +256,7 @@ static void displayInstructions() {
 			 "passed between the recording starting, and when the first\n"
 			 "input was detected for a given button.\n\n"
 			 "Use the D-Pad to adjust the thresholds.\n"
-			 "Hold R to change thresholds faster.\n"
+			 "Hold R to change thresholds faster.\n\n"
 			 "Hold Start to toggle Auto-Trigger. Enabling this removes\n"
 			 "the need to press A, but disables the instruction menu (Z),\n"
 			 "and the R modifier.\n");
@@ -309,7 +309,7 @@ void menu_plotButton() {
 					
 				case BUTTON_DISPLAY:
 					if (!autoCapture && state != BUTTON_INPUT) {
-						printStr("Press A to start read, press Z for instructions");
+						printStr("Press A to prepare a recording, press Z for instructions");
 					}
 					
 					setCursorPos(4,7);

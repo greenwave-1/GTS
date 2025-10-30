@@ -205,10 +205,14 @@ static void drawStickmapOverlay(enum STICKMAP_LIST stickmap, int which) {
 
 static void displayInstructions() {
 	setCursorPos(2, 0);
-	printStr("Press X to cycle the stickmap being tested, and Y to cycle\nwhich "
-	         "category of points.\nMelee Coordinates are shown in thetop-left.\n\n"
-	         "The white line represents the analog stick.\n"
-	         "The yellow line represents the c-stick.\n\n"
+	printStr("Press X to change the overall coordinate category, and Y to\n"
+			 "change what subset of coordinates are shown. Melee\n"
+			 "Coordinates are shown on the left.\n\n"
+	         "The white line shows the analog stick's position, and the\n"
+			 "yellow line shows the c-stick's position.\n\n"
+			 "Hold Start to 'lock' the menu. This disables the\n"
+			 "instructions page (Z) and exiting (B), and swaps X/Y with\n"
+			 "DPad Up and Right.\n\n"
 	         "Current Stickmap: ");
 	switch (selectedStickmap) {
 		case FF_WD:
@@ -245,7 +249,7 @@ void menu_coordView() {
 			if (!menuLockEnabled) {
 				printStr("Press Z for instructions");
 			} else {
-				printStr("Use D-Pad Right and Up to\nchange stickmap settings");
+				printStr("Use D-Pad Right and Up to change\nthe coordinate category.");
 			}
 			
 			static ControllerSample stickRaw;

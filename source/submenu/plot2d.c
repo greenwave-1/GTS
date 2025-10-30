@@ -212,18 +212,16 @@ static void setup() {
 static void displayInstructions() {
 	setCursorPos(2, 0);
 	printStr("Press A to prepare a recording. Recording will start with\n"
-			 "any button press, or the stick moving.\n"
+			 "any button press, or the stick moving.\n\n"
 			 "Press X to cycle the stickmap background. Use DPAD left/right\n"
 			 "to change what the last point drawn is. Information on the\n"
 			 "last chosen point is shown on the left.\n\n"
-			 "Hold R to add or remove points faster.\n"
-	         "Hold L to move one point at a time.\n\n"
-			 "Hold Y to move the \"starting sample\" with the\n"
-	         "same controls as above. Information for the selected\n"
-			 "range is shown on the left.\n\n"
+			 "Hold R to go faster, or L to move one point at a time.\n\n"
+			 "Hold Y to move the \"starting sample\" with the same controls as\n"
+			 "above. Info for the selected range is shown on the left.\n\n"
 	         "Hold Start to toggle Auto-Trigger. Enabling this removes\n"
-	         "the need to press A, but disables the instruction menu and\n"
-	         "only allows the stick to start a recording.\n");
+	         "the need to press A, but disables the instruction menu (Z),\n"
+			 "and only allows the stick to start a recording.\n");
 	
 	setCursorPos(21, 0);
 	printStr("Press Z to close instructions.");
@@ -267,7 +265,7 @@ void menu_plot2d() {
 							ellipseCounter = 0;
 						}
 					} else {
-						printStr("Press A to start read, press Z for instructions");
+						printStr("Press A to prepare a recording, press Z for instructions");
 					}
 					
 					// check if last draw point needs to be reset

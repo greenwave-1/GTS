@@ -194,7 +194,7 @@ static void displayInstructions() {
 	setCursorPos(2, 0);
 	printStr("Press and release either trigger to capture. A capture will\n"
 			 "start if a digital press is detected, or if the analog value\n"
-			 "is above 42. Capture will once the buffer fills\n"
+			 "is above 42. Capture will be displayed once the buffer fills\n"
 			 "(500 samples).\n\n"
 			 "A Green line indicates when a digital press is detected.\n"
 			 "A Gray line shows the minimum value Melee uses for Analog\n"
