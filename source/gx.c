@@ -103,27 +103,29 @@ void changeLoadedTexmap(int newTexmap) {
 }
 
 void getCurrentTexmapDims(int *width, int *height) {
+	GXTexObj *selection = NULL;
 	switch (currentTexmap) {
 		case TEXMAP_CONTROLLER:
-			*width = GX_GetTexObjWidth(&controllerTex);
-			*height = GX_GetTexObjHeight(&controllerTex);
+			selection = &controllerTex;
 			break;
 		case TEXMAP_FONT:
-			*width = GX_GetTexObjWidth(&fontTex);
-			*height = GX_GetTexObjHeight(&fontTex);
+			selection = &fontTex;
 			break;
 		case TEXMAP_P:
-			*width = GX_GetTexObjWidth(&pTex);
-			*height = GX_GetTexObjHeight(&pTex);
+			selection = &pTex;
 			break;
 		case TEXMAP_STICKMAPS:
 			// all of these are the same, so any will do
-			*width = GX_GetTexObjWidth(&(stickmapTexArr[0]));
-			*height = GX_GetTexObjHeight(&(stickmapTexArr[0]));
+			selection = &(stickmapTexArr[0]);
 			break;
 		case TEXMAP_NONE:
 		default:
 			break;
+	}
+	
+	if (selection != NULL) {
+		*width = GX_GetTexObjWidth(selection);
+		*height = GX_GetTexObjHeight(selection);
 	}
 }
 
