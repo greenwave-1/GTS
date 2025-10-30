@@ -17,10 +17,10 @@ include $(DEVKITPRO)/libogc2/wii_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	GTS_wii
 BUILD		:=	build_wii
-SOURCES		:=	source source/submenu source/file source/images
+SOURCES		:=	source source/submenu source/util source/images
 DATA		:=	data
 TEXTURES	:=  textures
-INCLUDES	:=  include include/submenu include/file include/images
+INCLUDES	:=  include include/submenu include/util include/images
 
 #---------------------------------------------------------------------------------
 # options for code generation

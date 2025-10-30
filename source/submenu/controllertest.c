@@ -57,13 +57,13 @@ void menu_controllerTest() {
 			// print raw stick coordinates
 			setCursorPos(19, 0);
 			setCursorDepth(-10);
-			printStr("Raw XY: (%04d,%04d)", stickRaw.stickX, stickRaw.stickY);
-			setCursorPos(19, 38);
-			printStr("C-Raw XY: (%04d,%04d)", stickRaw.cStickX, stickRaw.cStickY);
+			printStr("Raw XY:    (%04d,%04d)", stickRaw.stickX, stickRaw.stickY);
+			setCursorPos(19, 32);
+			printStr("C-Raw XY:    (%04d,%04d)", stickRaw.cStickX, stickRaw.cStickY);
 			
 			// print melee coordinates
 			setCursorPos(20, 0);
-			printStr("Melee: (");
+			printStr("Melee:  (");
 			// is the value negative?
 			if (stickRaw.stickX < 0) {
 				printStr("-");
@@ -92,8 +92,8 @@ void menu_controllerTest() {
 			}
 			printStr(")");
 			
-			setCursorPos(20, 33);
-			printStr("C-Melee: (");
+			setCursorPos(20, 32);
+			printStr("C-Melee:  (");
 			// is the value negative?
 			if (stickRaw.cStickX < 0) {
 				printStr("-");
@@ -127,7 +127,7 @@ void menu_controllerTest() {
 				PADStatus origin = getOriginStatus(CONT_PORT_1);
 				setCursorPos(21, 0);
 				printStr("Origin XY: (%04d,%04d)", origin.stickX, origin.stickY);
-				setCursorPos(21, 35);
+				setCursorPos(21, 32);
 				printStr("C-Origin XY: (%04d,%04d)", origin.substickX, origin.substickY);
 				
 				if (!(*held & PAD_TRIGGER_L)) {

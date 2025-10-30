@@ -16,7 +16,7 @@
 #include <ogc/exi.h>
 #include <ogc/system.h>
 
-#include "file/file.h"
+#include "util/file.h"
 
 static lwp_t socket_thread = (lwp_t) NULL;
 

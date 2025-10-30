@@ -17,10 +17,10 @@ include $(DEVKITPRO)/libogc2/gamecube_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	GTS_gc
 BUILD		:=	build_gc
-SOURCES		:=	source source/submenu source/file source/images
+SOURCES		:=	source source/submenu source/util source/images
 DATA		:=	data
 TEXTURES	:=  textures
-INCLUDES	:=  include include/submenu include/file include/images
+INCLUDES	:=  include include/submenu include/util include/images
 
 #---------------------------------------------------------------------------------
 # options for code generation
