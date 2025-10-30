@@ -23,6 +23,39 @@ const static int rumbleOffsets[][2] = { {-2, -2}, {-2, 2}, {2, 2}, {2, -2} };
 
 static enum CONTROLLER_TEST_MENU_STATE menuState = CONT_TEST_SETUP;
 
+const static uint16_t codeInputSequence[] = { PAD_BUTTON_UP, PAD_BUTTON_UP, PAD_BUTTON_DOWN, PAD_BUTTON_DOWN,
+                                               PAD_BUTTON_LEFT, PAD_BUTTON_RIGHT, PAD_BUTTON_LEFT, PAD_BUTTON_RIGHT,
+                                               PAD_BUTTON_B, PAD_BUTTON_A, PAD_BUTTON_START };
+static int codeInputSequenceIndex = 0;
+static int codeInputRumbleCounter = 0;
+
+static void controllerTestCheckInput() {
+	uint16_t port4 = PAD_ButtonsDown(3);
+	
+	if (port4 != 0) {
+		if (port4 == codeInputSequence[codeInputSequenceIndex]) {
+			codeInputSequenceIndex++;
+			codeInputRumbleCounter = 7;
+		} else {
+			codeInputSequenceIndex = 0;
+		}
+	}
+	
+	if (codeInputSequenceIndex == 11) {
+		rumbleSecret = !rumbleSecret;
+		codeInputSequenceIndex = 0;
+		codeInputRumbleCounter = 60;
+	}
+	
+	if (codeInputRumbleCounter > 0) {
+		PAD_ControlMotor(3, PAD_MOTOR_RUMBLE);
+		codeInputRumbleCounter--;
+		if (codeInputRumbleCounter == 0) {
+			PAD_ControlMotor(3, PAD_MOTOR_STOP_HARD);
+		}
+	}
+}
+
 static void setup() {
 	if (pressed == NULL) {
 		pressed = getButtonsDownPtr();
@@ -139,7 +172,8 @@ void menu_controllerTest() {
 					printStr("R Origin: %d", origin.triggerR);
 				}
 				if (rumbleSecret) {
-					setCursorPos(0, 39);
+					setCursorPos(0, 37);
+					printStr("Press Z to test 'Rumble'");
 				} else {
 					// 'shake' the rumble text if z is held
 					if (*held & PAD_TRIGGER_Z) {
@@ -150,9 +184,8 @@ void menu_controllerTest() {
 						setCursorPos(0, 39);
 						rumbleIndex = 0;
 					}
+					printStr("Press Z to test Rumble");
 				}
-				
-				printStr("Press Z to test Rumble");
 			}
 			
 			setCursorPos(17,2);
@@ -637,6 +670,8 @@ void menu_controllerTest() {
 			                TEX_CSTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
 			
 			GX_End();
+			
+			controllerTestCheckInput();
 
 			break;
 	}
@@ -645,8 +680,4 @@ void menu_controllerTest() {
 void menu_controllerTestEnd() {
 	// not sure if this is actually useful, maybe get rid of it...
 	//menuState = CONT_TEST_SETUP;
-}
-
-void menu_controllerTestToggleRumbleSecret(bool state) {
-	rumbleSecret = state;
 }
