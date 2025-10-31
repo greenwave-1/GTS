@@ -5,6 +5,7 @@
 #include "util/datetime.h"
 
 #include <time.h>
+#include <malloc.h>
 
 static struct tm * getCurrTimeInfo() {
 	time_t currTime;
@@ -16,8 +17,21 @@ static struct tm * getCurrTimeInfo() {
 	return timeinfo;
 }
 
+// YY-MM-DD_HH-MM-SS format
 char *getDateTimeStr() {
-	return NULL;
+	// 32 chars max
+	char *retStr = malloc(sizeof(char) * 32);
+	
+	// get current time
+	time_t currTime;
+	struct tm * timeinfo;
+	time(&currTime);
+	timeinfo = localtime(&currTime);
+	
+	// YYYY-MM-DD_HH-MM-SS_microS
+	strftime(retStr, 32, "%Y-%m-%d_%H-%M-%S", timeinfo);
+	
+	return retStr;
 }
 
 #ifndef NO_DATE_CHECK

@@ -2,6 +2,7 @@
 
 #include <fat.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <sys/stat.h>
@@ -11,6 +12,7 @@
 
 #include "waveform.h"
 #include "print.h"
+#include "util/file.h"
 
 // appended to the file, in order to prevent files from being overwritten
 // technically this can only occur if someone exports multiple in one second
@@ -61,16 +63,7 @@ int exportData() {
 	}
 	
 	// get current time in YY-MM-DD_HH-MM-SS format
-	time_t currTime;
-	struct tm * timeinfo;
-	
-	char timeStr[32];
-	{
-		time(&currTime);
-		timeinfo = localtime(&currTime);
-		// YYYY-MM-DD_HH-MM-SS_microS
-		strftime(timeStr, 32, "%Y-%m-%d_%H-%M-%S", timeinfo);
-	}
+	char *timeStr = getDateTimeStr();
 	
 	// create directory if it doesn't exist
 	// https://stackoverflow.com/questions/7430248/creating-a-new-directory-in-c
@@ -186,6 +179,8 @@ int exportData() {
 	}
 	
 	fclose(fptr);
+	
+	free(timeStr);
 	
 	return 0;
 }
