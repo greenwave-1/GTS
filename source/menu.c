@@ -20,6 +20,12 @@
 // TODO: these should go away once all menus have been moved to a separate file
 #include "util/file.h"
 
+#ifndef NO_DATE_CHECK
+#include "util/datetime.h"
+static bool dateChecked = false;
+static enum DATE_CHECK_LIST date;
+#endif
+
 // should I have a "parent" header that includes these?
 #include "submenu/oscilloscope.h"
 #include "submenu/continuous.h"
@@ -102,7 +108,27 @@ bool menu_runMenu() {
 	// calls PAD_ScanPads() and PAD_GetOrigin()
 	attemptReadOrigin();
 	
+	
+	#ifndef NO_DATE_CHECK
+	if (!dateChecked) {
+		date = checkDate();
+		dateChecked = true;
+	}
+	
+	// in case a future check doesn't want to print the text normally...
+	switch (date) {
+		case DATE_NICE:
+		case DATE_PM:
+		case DATE_CMAS:
+			drawDateSpecial(date);
+		case DATE_NONE:
+		default:
+			printStr("GCC Test Suite");
+			break;
+	}
+	#else
 	printStr("GCC Test Suite");
+	#endif
 	
 	// check if port 1 is disconnected
 	if (!isControllerConnected(CONT_PORT_1)) {

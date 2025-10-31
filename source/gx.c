@@ -357,3 +357,110 @@ void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
 	
 	GX_End();
 }
+
+#ifndef NO_DATE_CHECK
+const static int colorList[][3] = {
+		{ 0xe5, 0x00, 0x00 },
+		{ 0xff, 0x8d, 0x00 },
+		{ 0xff, 0xee, 0x00 },
+		{ 0x02, 0x81, 0x21 },
+		{ 0x00, 0x4c, 0xff },
+		{ 0x77, 0x00, 0x88 },
+		
+		{ 0xe5, 0x00, 0x00 },
+		{ 0xe5, 0x00, 0x00 },
+		{ 0xe5, 0x00, 0x00 },
+		{ 0xe5, 0x00, 0x00 },
+		{ 0xe5, 0x00, 0x00 }
+		
+};
+void drawDateSpecial(enum DATE_CHECK_LIST date) {
+	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+	int sizeOfQuads = 144;
+	switch (date) {
+		case DATE_NICE:
+			// 1 quad
+			GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+			GX_Position3s16(5, 35, -10);
+			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
+			
+			GX_Position3s16(9 + 144, 35, -10);
+			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
+			
+			GX_Position3s16(9 + 144, 58, -10);
+			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
+			
+			GX_Position3s16(5, 58, -10);
+			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
+			
+			GX_End();
+			break;
+		case DATE_PM:
+			// 6 quads total across 144 pixels
+			sizeOfQuads = 144 / 6;
+			GX_Begin(GX_QUADS, GX_VTXFMT0, 4 * 6);
+			for (int i = 0; i < 6; i++) {
+				GX_Position3s16(5 + (sizeOfQuads * i), 35, -10);
+				GX_Color3u8(colorList[i][0], colorList[i][1], colorList[i][2]);
+				
+				GX_Position3s16(9 + (sizeOfQuads * (i + 1)), 35, -10);
+				GX_Color3u8(colorList[i][0], colorList[i][1], colorList[i][2]);
+				
+				GX_Position3s16(9 + (sizeOfQuads * (i + 1)), 58, -10);
+				GX_Color3u8(colorList[i][0], colorList[i][1], colorList[i][2]);
+				
+				GX_Position3s16(5 + (sizeOfQuads * i), 58, -10);
+				GX_Color3u8(colorList[i][0], colorList[i][1], colorList[i][2]);
+			}
+			GX_End();
+			break;
+		case DATE_CMAS:
+			sizeOfQuads = 144 / 3;
+			// 2 quads
+			GX_Begin(GX_QUADS, GX_VTXFMT0, 4 * 3);
+			
+			GX_Position3s16(5, 35, -10);
+			GX_Color3u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b);
+			
+			GX_Position3s16(9 + sizeOfQuads, 35, -10);
+			GX_Color3u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b);
+			
+			GX_Position3s16(9 + sizeOfQuads, 58, -10);
+			GX_Color3u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b);
+			
+			GX_Position3s16(5, 58, -10);
+			GX_Color3u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b);
+			
+			
+			GX_Position3s16(9 + sizeOfQuads, 35, -10);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(9 + (sizeOfQuads * 2), 35, -10);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(9 + (sizeOfQuads * 2), 58, -10);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(9 + sizeOfQuads, 58, -10);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			
+			GX_Position3s16(9 + (sizeOfQuads * 2), 35, -10);
+			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
+			
+			GX_Position3s16(9 + 144, 35, -10);
+			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
+			
+			GX_Position3s16(9 + 144, 58, -10);
+			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
+			
+			GX_Position3s16(9 + (sizeOfQuads * 2), 58, -10);
+			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
+			
+			GX_End();
+		default:
+			break;
+	}
+}
+#endif
+

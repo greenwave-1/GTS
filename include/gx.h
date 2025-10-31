@@ -37,6 +37,9 @@
 #define GX_COLOR_DARKGREEN (GXColor) {0x00, 0x80, 0x00, 0xFF}
 #define GX_COLOR_YELLOW (GXColor) {0xFF, 0xFF, 0x00, 0xFF}
 
+// hacky way to tell print function to not draw a background, if desired
+#define GX_COLOR_NONE (GXColor) {0x00, 0x00, 0x00, 0x00}
+
 // 'custom' colors
 #define GX_COLOR_RED_X (GXColor) {0xFF, 0x20, 0x00, 0xFF}
 #define GX_COLOR_BLUE_Y (GXColor) {0x00, 0x6A, 0xFF, 0xFF}
@@ -74,5 +77,10 @@ void drawLine(int x1, int y1, int x2, int y2, GXColor color);
 
 void drawBox(int x1, int y1, int x2, int y2, GXColor color);
 void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color);
+
+#ifndef NO_DATE_CHECK
+#include "util/datetime.h"
+void drawDateSpecial(enum DATE_CHECK_LIST date);
+#endif
 
 #endif //GTS_GX_H

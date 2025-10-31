@@ -1,0 +1,47 @@
+//
+// Created on 10/29/25.
+//
+
+#include "util/datetime.h"
+
+#include <time.h>
+
+static struct tm * getCurrTimeInfo() {
+	time_t currTime;
+	struct tm * timeinfo;
+	
+	time(&currTime);
+	timeinfo = localtime(&currTime);
+	
+	return timeinfo;
+}
+
+char *getDateTimeStr() {
+	return NULL;
+}
+
+#ifndef NO_DATE_CHECK
+
+enum DATE_CHECK_LIST checkDate() {
+	struct tm * timeinfo = getCurrTimeInfo();
+	
+	if (timeinfo->tm_mon == 3) {
+		if (timeinfo->tm_mday == 20) {
+			return DATE_NICE;
+		}
+	}
+	
+	if (timeinfo->tm_mon == 5) {
+		return DATE_PM;
+	}
+	
+	if (timeinfo->tm_mon == 11) {
+		if (timeinfo->tm_mday == 24 || timeinfo->tm_mday == 25) {
+			return DATE_CMAS;
+		}
+	}
+	
+	return DATE_NONE;
+}
+
+#endif

@@ -136,7 +136,11 @@ void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* s
 	va_list list;
 	va_start(list, str);
 	vsnprintf(strBuffer, 999, str, list);
-	handleString(strBuffer, false, fg_color, bg_color);
+	// only do background if it isn't transparent
+	// we don't actually do transparency on bg stuff, but its useful for this check...
+	if (bg_color.a != 0x00) {
+		handleString(strBuffer, false, fg_color, bg_color);
+	}
 	handleString(strBuffer, true, fg_color, bg_color);
 	va_end(list);
 }
