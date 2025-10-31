@@ -9,7 +9,7 @@
 #include <ogc/si.h>
 
 #ifdef DEBUGLOG
-#include "logging.h"
+#include "util/logging.h"
 #endif
 
 // rough time in milliseconds where a vsync would occur

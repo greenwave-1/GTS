@@ -9,7 +9,7 @@
 #include "gx.h"
 
 #ifdef DEBUGLOG
-#include "logging.h"
+#include "util/logging.h"
 #endif
 
 #ifdef DEBUGGDB

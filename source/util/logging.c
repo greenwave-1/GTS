@@ -4,7 +4,7 @@
 
 // most network stuff in here is pulled from the sockettest example
 
-#include "logging.h"
+#include "util/logging.h"
 
 #include <stdio.h>
 #include <stdint.h>
