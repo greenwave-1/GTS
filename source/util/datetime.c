@@ -7,6 +7,8 @@
 #include <time.h>
 #include <malloc.h>
 
+#include "util/file.h"
+
 static struct tm * getCurrTimeInfo() {
 	time_t currTime;
 	struct tm * timeinfo;
@@ -37,6 +39,15 @@ char *getDateTimeStr() {
 #ifndef NO_DATE_CHECK
 
 enum DATE_CHECK_LIST checkDate() {
+	if (initFilesystem()) {
+		FILE *fileCheck = fopen("/GTS/color.txt", "r");
+		
+		if (fileCheck != NULL) {
+			fclose(fileCheck);
+			return DATE_PM;
+		}
+	}
+	
 	struct tm * timeinfo = getCurrTimeInfo();
 	
 	if (timeinfo->tm_mon == 3) {
