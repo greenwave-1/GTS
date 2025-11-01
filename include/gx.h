@@ -70,6 +70,8 @@ void setupGX(GXRModeObj *rmode);
 void startDraw(GXRModeObj *rmode);
 void finishDraw(void *xfb);
 
+void setScreenOffset(int x, int y);
+
 // basic drawing functions
 void setDepth(int z);
 void restorePrevDepth();

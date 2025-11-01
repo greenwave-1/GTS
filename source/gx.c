@@ -282,7 +282,9 @@ void startDraw(GXRModeObj *rmode) {
 	zDepth = -5;
 }
 
+static int offsetX = 0, offsetY = 0;
 void finishDraw(void *xfb) {
+	GX_SetScissorBoxOffset(offsetX, offsetY);
 	//GX_Flush();
 	GX_DrawDone();
 	
@@ -290,6 +292,11 @@ void finishDraw(void *xfb) {
 	//GX_SetColorUpdate(GX_TRUE);
 	
 	GX_CopyDisp(xfb, GX_TRUE);
+}
+
+void setScreenOffset(int x, int y) {
+	offsetX = x;
+	offsetY = y;
 }
 
 void setDepth(int z) {

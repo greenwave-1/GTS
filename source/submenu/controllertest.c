@@ -178,11 +178,8 @@ void menu_controllerTest() {
 					// 'shake' the rumble text if z is held
 					if (*held & PAD_TRIGGER_Z) {
 						setCursorXY(390 + rumbleOffsets[rumbleIndex][0], rumbleOffsets[rumbleIndex][1]);
-						rumbleIndex++;
-						rumbleIndex %= 4;
 					} else {
 						setCursorPos(0, 39);
-						rumbleIndex = 0;
 					}
 					printStr("Press Z to test Rumble");
 				}
@@ -436,17 +433,6 @@ void menu_controllerTest() {
 			texOffsetX = TEX_Z_OFFSET_X;
 			if (*held & PAD_TRIGGER_Z) {
 				texOffsetX += TEX_NORMAL_DIMENSIONS;
-				PAD_ControlMotor(0, PAD_MOTOR_RUMBLE);
-				if (rumbleSecret) {
-					GX_SetScissorBoxOffset(rumbleOffsets[rumbleIndex][0], rumbleOffsets[rumbleIndex][1]);
-					rumbleIndex++;
-					rumbleIndex %= 4;
-				}
-			} else {
-				PAD_ControlMotor(0, PAD_MOTOR_STOP);
-				if (rumbleSecret) {
-					GX_SetScissorBoxOffset(0, 0);
-				}
 			}
 			
 			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
@@ -672,6 +658,23 @@ void menu_controllerTest() {
 			GX_End();
 			
 			controllerTestCheckInput();
+			
+			// enable rumble if z is held
+			if (*held & PAD_TRIGGER_Z) {
+				PAD_ControlMotor(0, PAD_MOTOR_RUMBLE);
+				if (rumbleSecret) {
+					// called indirectly so that there isn't anything that is 'lagging behind'
+					setScreenOffset(rumbleOffsets[rumbleIndex][0], rumbleOffsets[rumbleIndex][1]);
+				}
+				rumbleIndex++;
+				rumbleIndex %= 4;
+			} else {
+				PAD_ControlMotor(0, PAD_MOTOR_STOP);
+				if (rumbleSecret) {
+					setScreenOffset(0, 0);
+				}
+				rumbleIndex = 0;
+			}
 
 			break;
 	}
