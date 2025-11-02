@@ -6,7 +6,7 @@
 #include "polling.h"
 #include "print.h"
 #include "waveform.h"
-#include "gx.h"
+#include "util/gx.h"
 
 #ifdef DEBUGLOG
 #include "util/logging.h"

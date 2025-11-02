@@ -11,7 +11,7 @@
 #include <ogc/timesupp.h>
 
 #include "print.h"
-#include "gx.h"
+#include "util/gx.h"
 #include "polling.h"
 
 const static uint8_t STICK_MOVEMENT_THRESHOLD = 5;

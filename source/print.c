@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "gx.h"
+#include "util/gx.h"
 
 // buffer for variable arg strings
 // there's a better way to do this...

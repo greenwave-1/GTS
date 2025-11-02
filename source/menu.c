@@ -13,7 +13,7 @@
 #include <ogc/libversion.h>
 
 #include "waveform.h"
-#include "gx.h"
+#include "util/gx.h"
 #include "print.h"
 #include "polling.h"
 

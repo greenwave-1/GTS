@@ -8,7 +8,7 @@
 // and this https://devkitpro.org/wiki/libogc/GX (that last one is very old tho).
 // most of this is likely incorrect in multiple way...
 
-#include "gx.h"
+#include "util/gx.h"
 
 #include <malloc.h>
 #include <memory.h>

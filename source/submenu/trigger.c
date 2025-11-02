@@ -16,7 +16,7 @@
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
 
-#include "gx.h"
+#include "util/gx.h"
 #include "waveform.h"
 #include "polling.h"
 #include "print.h"

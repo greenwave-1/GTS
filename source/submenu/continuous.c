@@ -12,7 +12,7 @@
 #include <ogc/timesupp.h>
 
 #include "polling.h"
-#include "gx.h"
+#include "util/gx.h"
 #include "waveform.h"
 
 const static uint8_t SCREEN_TIMEPLOT_START = 70;

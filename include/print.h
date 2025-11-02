@@ -14,7 +14,7 @@
 
 #include <stdint.h>
 
-#include "gx.h"
+#include "util/gx.h"
 
 // padding on both sides that print funtion won't touch
 #define PRINT_PADDING_HORIZONTAL 10
