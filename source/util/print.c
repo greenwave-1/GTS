@@ -7,7 +7,7 @@
 // previously, this housed a direct framebuffer draw implementation,
 // which was heavily modified from the PhobGCC project, specifically PhobVision
 
-#include "print.h"
+#include "util/print.h"
 
 #include <stdio.h>
 #include <stdarg.h>

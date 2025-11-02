@@ -3,7 +3,6 @@
 //
 
 #include "submenu/continuous.h"
-#include "print.h"
 
 #include <stdint.h>
 #include <malloc.h>
@@ -11,7 +10,8 @@
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
 
-#include "polling.h"
+#include "util/print.h"
+#include "util/polling.h"
 #include "util/gx.h"
 #include "waveform.h"
 

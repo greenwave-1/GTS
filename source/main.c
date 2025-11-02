@@ -3,10 +3,10 @@
 #include <gccore.h>
 
 #include "menu.h"
-#include "polling.h"
-#include "print.h"
 #include "waveform.h"
 #include "util/gx.h"
+#include "util/polling.h"
+#include "util/print.h"
 
 #ifdef DEBUGLOG
 #include "util/logging.h"

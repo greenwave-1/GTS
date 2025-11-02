@@ -10,9 +10,9 @@
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
 
-#include "print.h"
+#include "util/print.h"
 #include "util/gx.h"
-#include "polling.h"
+#include "util/polling.h"
 
 const static uint8_t STICK_MOVEMENT_THRESHOLD = 5;
 const static uint8_t STICK_ORIGIN_TIME_THRESHOLD_MS = 50;

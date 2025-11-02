@@ -18,8 +18,8 @@
 
 #include "util/gx.h"
 #include "waveform.h"
-#include "polling.h"
-#include "print.h"
+#include "util/polling.h"
+#include "util/print.h"
 
 const static uint8_t SCREEN_TIMEPLOT_START = 70;
 const static int TRIGGER_SAMPLES = 500;

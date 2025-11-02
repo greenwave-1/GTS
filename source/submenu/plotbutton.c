@@ -10,8 +10,8 @@
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
 
-#include "polling.h"
-#include "print.h"
+#include "util/polling.h"
+#include "util/print.h"
 
 const static int SCREEN_TIMEPLOT_START = 95;
 const static int SCREEN_TIMEPLOT_Y_TOP = 150;

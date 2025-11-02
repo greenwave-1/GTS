@@ -10,8 +10,8 @@
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
 
-#include "print.h"
-#include "polling.h"
+#include "util/print.h"
+#include "util/polling.h"
 
 // orange for button press samples
 #define COLOR_ORANGE 0xAD1EADBA

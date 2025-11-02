@@ -11,8 +11,8 @@
 
 #include "util/gx.h"
 #include "waveform.h"
-#include "polling.h"
-#include "print.h"
+#include "util/polling.h"
+#include "util/print.h"
 
 enum STICKMAP_LIST { NONE, FF_WD, SHIELDDROP };
 

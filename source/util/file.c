@@ -11,7 +11,7 @@
 #include <ogc/pad.h>
 
 #include "waveform.h"
-#include "print.h"
+#include "util/print.h"
 #include "util/file.h"
 
 // appended to the file, in order to prevent files from being overwritten

@@ -10,8 +10,8 @@
 
 #include "util/gx.h"
 #include "waveform.h"
-#include "polling.h"
-#include "print.h"
+#include "util/polling.h"
+#include "util/print.h"
 
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;

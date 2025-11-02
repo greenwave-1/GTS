@@ -10,8 +10,8 @@
 #include <ogc/timesupp.h>
 
 #include "util/gx.h"
-#include "polling.h"
-#include "print.h"
+#include "util/polling.h"
+#include "util/print.h"
 
 static enum GATE_MENU_STATE menuState = GATE_SETUP;
 static enum GATE_STATE state = GATE_INIT;

@@ -14,8 +14,8 @@
 
 #include "waveform.h"
 #include "util/gx.h"
-#include "print.h"
-#include "polling.h"
+#include "util/print.h"
+#include "util/polling.h"
 
 // TODO: these should go away once all menus have been moved to a separate file
 #include "util/file.h"
