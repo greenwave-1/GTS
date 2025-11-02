@@ -13,7 +13,6 @@
 #include "print.h"
 #include "gx.h"
 #include "polling.h"
-#include "stickmap_coordinates.h"
 
 const static uint8_t STICK_MOVEMENT_THRESHOLD = 5;
 const static uint8_t STICK_ORIGIN_TIME_THRESHOLD_MS = 50;

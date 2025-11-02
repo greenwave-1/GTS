@@ -9,7 +9,6 @@
 #include <ogc/pad.h>
 
 #include "gx.h"
-#include "submenu/controllertest_constants.h"
 #include "waveform.h"
 #include "polling.h"
 #include "print.h"
