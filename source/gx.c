@@ -365,7 +365,6 @@ void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
 	GX_End();
 }
 
-#ifndef NO_DATE_CHECK
 const static int colorList[][3] = {
 		{ 0xe5, 0x00, 0x00 },
 		{ 0xff, 0x8d, 0x00 },
@@ -469,5 +468,3 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 			break;
 	}
 }
-#endif
-

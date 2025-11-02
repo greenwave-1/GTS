@@ -14,6 +14,8 @@
 #include <ogc/gx.h>
 #include <ogc/tpl.h>
 
+#include "util/datetime.h"
+
 // center of screen, 640x480
 #define SCREEN_POS_CENTER_X 320
 #define SCREEN_POS_CENTER_Y 240
@@ -80,9 +82,6 @@ void drawLine(int x1, int y1, int x2, int y2, GXColor color);
 void drawBox(int x1, int y1, int x2, int y2, GXColor color);
 void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color);
 
-#ifndef NO_DATE_CHECK
-#include "util/datetime.h"
 void drawDateSpecial(enum DATE_CHECK_LIST date);
-#endif
 
 #endif //GTS_GX_H

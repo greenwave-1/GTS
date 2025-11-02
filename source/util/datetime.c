@@ -36,8 +36,6 @@ char *getDateTimeStr() {
 	return retStr;
 }
 
-#ifndef NO_DATE_CHECK
-
 enum DATE_CHECK_LIST checkDate() {
 	if (initFilesystem()) {
 		FILE *fileCheck = fopen("/GTS/color.txt", "r");
@@ -68,5 +66,3 @@ enum DATE_CHECK_LIST checkDate() {
 	
 	return DATE_NONE;
 }
-
-#endif
