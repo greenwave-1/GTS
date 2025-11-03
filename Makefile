@@ -13,9 +13,11 @@ export WIILOAD := /dev/ttyUSB0
 #export WIILOAD := tcp:10.200.200.150
 
 # this can be any of the run targets
+# note that the wii binary won't run on gamecube, and vice versa
+# set this to whatever your testing environment is
 run: runwii
 
-# this can be debuglog (prints info to usb gecko), or debuggdb (actual remote debugger)
+# this can be debuglog (prints info in a configurable way), or debuggdb (actual remote debugger)
 debug: debuglog
 
 clean: gc-clean wii-clean

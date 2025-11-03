@@ -9,12 +9,9 @@
 
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
-#include <ogc/color.h>
 
-#include "print.h"
-#include "polling.h"
-#include "draw.h"
-#include "images/stickmaps.h"
+#include "util/print.h"
+#include "util/polling.h"
 
 // orange for button press samples
 #define COLOR_ORANGE 0xAD1EADBA
@@ -215,18 +212,16 @@ static void setup() {
 static void displayInstructions() {
 	setCursorPos(2, 0);
 	printStr("Press A to prepare a recording. Recording will start with\n"
-			 "any button press, or the stick moving.\n"
+			 "any button press, or the stick moving.\n\n"
 			 "Press X to cycle the stickmap background. Use DPAD left/right\n"
 			 "to change what the last point drawn is. Information on the\n"
 			 "last chosen point is shown on the left.\n\n"
-			 "Hold R to add or remove points faster.\n"
-	         "Hold L to move one point at a time.\n\n"
-			 "Hold Y to move the \"starting sample\" with the\n"
-	         "same controls as above. Information for the selected\n"
-			 "range is shown on the left.\n\n"
+			 "Hold R to go faster, or L to move one point at a time.\n\n"
+			 "Hold Y to move the \"starting sample\" with the same controls as\n"
+			 "above. Info for the selected range is shown on the left.\n\n"
 	         "Hold Start to toggle Auto-Trigger. Enabling this removes\n"
-	         "the need to press A, but disables the instruction menu and\n"
-	         "only allows the stick to start a recording.\n");
+	         "the need to press A, but disables the instruction menu (Z),\n"
+			 "and only allows the stick to start a recording.\n");
 	
 	setCursorPos(21, 0);
 	printStr("Press Z to close instructions.");
@@ -270,7 +265,7 @@ void menu_plot2d() {
 							ellipseCounter = 0;
 						}
 					} else {
-						printStr("Press A to start read, press Z for instructions");
+						printStr("Press A to prepare a recording, press Z for instructions");
 					}
 					
 					// check if last draw point needs to be reset
@@ -343,39 +338,49 @@ void menu_plot2d() {
 							printStr("0.%04d", convertedCoords.stickYUnit);
 						}
 						printStr(")\n\n");
-						printStr("Stickmap: ");
 						
-						// draw image below 2d plot, and print while we're at it
+						updateVtxDesc(VTX_TEX_NOCOLOR, GX_MODULATE);
+						changeLoadedTexmap(TEXMAP_STICKMAPS);
+						changeStickmapTexture((int) selectedImage);
+						
+						// draw image
+						if (selectedImage != NO_IMAGE) {
+							GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
+							
+							GX_Position3s16(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128, -5);
+							GX_TexCoord2s16(0, 0);
+							
+							GX_Position3s16(COORD_CIRCLE_CENTER_X + 127, SCREEN_POS_CENTER_Y - 128, -5);
+							GX_TexCoord2s16(255, 0);
+							
+							GX_Position3s16(COORD_CIRCLE_CENTER_X + 127, SCREEN_POS_CENTER_Y + 127, -5);
+							GX_TexCoord2s16(255, 255);
+							
+							GX_Position3s16(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y + 127, -5);
+							GX_TexCoord2s16(0, 255);
+							
+							GX_End();
+						}
+						
+						printStr("Stickmap: ");
 						switch (selectedImage) {
 							case A_WAIT:
 								printStr("Wait Attacks");
-								//drawImage(await_image, await_indexes, COORD_CIRCLE_CENTER_X - 127,
-								//          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case CROUCH:
 								printStr("Crouch");
-								//drawImage(crouch_image, crouch_indexes, COORD_CIRCLE_CENTER_X - 127,
-								//          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case DEADZONE:
 								printStr("Deadzones");
-								//drawImage(deadzone_image, deadzone_indexes, COORD_CIRCLE_CENTER_X - 127,
-								//          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case LEDGE_L:
 								printStr("Left Ledge");
-								//drawImage(ledgeL_image, ledgeL_indexes, COORD_CIRCLE_CENTER_X - 127,
-								//          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case LEDGE_R:
 								printStr("Right Ledge");
-								//drawImage(ledgeR_image, ledgeR_indexes, COORD_CIRCLE_CENTER_X - 127,
-								//          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case MOVE_WAIT:
 								printStr("Wait Movement");
-								//drawImage(movewait_image, movewait_indexes, COORD_CIRCLE_CENTER_X - 127,
-								//          SCREEN_POS_CENTER_Y - 127);
 								break;
 							case NO_IMAGE:
 								printStr("None");
@@ -383,54 +388,87 @@ void menu_plot2d() {
 								break;
 						}
 						
-						displayImage(selectedImage, COORD_CIRCLE_CENTER_X - 127, SCREEN_POS_CENTER_Y - 127);
-						
 						// draw box around plot area
-						DrawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
+						drawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
 						        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
-						        COLOR_WHITE);
+						        GX_COLOR_WHITE);
+						
+						// we need to calculate vertices ahead of time
 						
 						uint64_t timeFromFirstSampleDraw = 0;
-						int frameCounter = 0;
-						// draw plot
-						// y is negated because of how the graph is drawn
-						// TODO: why does this need to be <= to avoid an off-by-one? step through logic later this is bugging me
+						
+						int frameIntervalIndex = 0;
+						int frameIntervalList[3000] = { -1 };
+						
+						// this is <= because lastDrawPoint is zero indexed
 						for (int i = map2dStartIndex; i <= lastDrawPoint; i++) {
 							// don't add from the first value
 							if (i != map2dStartIndex) {
 								timeFromFirstSampleDraw += dispData->samples[i].timeDiffUs;
 							}
-
-							// is this a frame interval?
-							if ((timeFromFirstSampleDraw / FRAME_TIME_US) > frameCounter) {
-								if (dispData->samples[i].buttons != 0) {
-									DrawFilledCircle(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
-									                 SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, 2, COLOR_ORANGE);
-								} else {
-									DrawFilledCircle(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
-									                 SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, 2, COLOR_WHITE);
-								}
-								frameCounter++;
-							// not a frame interval
-							} else {
-								if (dispData->samples[i].buttons != 0) {
-									DrawDot(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
-									        SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, COLOR_ORANGE);
-								} else {
-									DrawDot(COORD_CIRCLE_CENTER_X + dispData->samples[i].stickX,
-									        SCREEN_POS_CENTER_Y - dispData->samples[i].stickY, COLOR_WHITE);
-								}
+							if ((timeFromFirstSampleDraw / FRAME_TIME_US) > frameIntervalIndex) {
+								frameIntervalList[frameIntervalIndex] = i;
+								frameIntervalIndex++;
 							}
 						}
 						
+						int dataIndex = map2dStartIndex;
+						int currFrameInterval = 0;
+						
+						updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+						
+						// this is <= because lastDrawPoint is zero indexed
+						while (dataIndex <= lastDrawPoint) {
+							// is our current datapoint a frame interval?
+							if (dataIndex == frameIntervalList[currFrameInterval]) {
+								GX_SetPointSize(24, GX_TO_ZERO);
+								GX_Begin(GX_POINTS, GX_VTXFMT0, 1);
+								GX_Position3s16(COORD_CIRCLE_CENTER_X + dispData->samples[dataIndex].stickX,
+								                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].stickY, -4);
+								if (dispData->samples[dataIndex].buttons != 0) {
+									GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
+								} else {
+									GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+								}
+								currFrameInterval++;
+								dataIndex++;
+							}
+							// samples between frame interval
+							else {
+								GX_SetPointSize(8, GX_TO_ZERO);
+								
+								int pointsToDraw;
+								if (currFrameInterval != frameIntervalIndex) {
+									pointsToDraw = frameIntervalList[currFrameInterval] - dataIndex;
+								} else {
+									pointsToDraw = lastDrawPoint - dataIndex + 1;
+								}
+								
+								GX_Begin(GX_POINTS, GX_VTXFMT0, pointsToDraw);
+								
+								int endPoint = dataIndex + pointsToDraw;
+								while (dataIndex < endPoint) {
+									GX_Position3s16(COORD_CIRCLE_CENTER_X + dispData->samples[dataIndex].stickX,
+									                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].stickY, -4);
+									if (dispData->samples[dataIndex].buttons != 0) {
+										GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
+									} else {
+										GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+									}
+									dataIndex++;
+								}
+							}
+							GX_End();
+						}
+						
 						// highlight last sample with a box
-						DrawBox( (COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].stickX) - 3,
+						drawBox( (COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].stickX) - 3,
 						         (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) - 3,
 						         (COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].stickX) + 3,
 						         (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) + 3,
-								 COLOR_WHITE);
+								 GX_COLOR_WHITE);
 						
-						float timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
+						double timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
 						setCursorPos(8, 0);
 						printStr("Total MS: %6.2f\n", timeFromStartMs);
 						printStr("Total frames: %2.2f", timeFromStartMs / FRAME_TIME_MS_F);

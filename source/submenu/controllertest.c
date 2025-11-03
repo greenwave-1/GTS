@@ -7,16 +7,53 @@
 #include <stdint.h>
 
 #include <ogc/pad.h>
-#include <ogc/color.h>
 
-#include "polling.h"
-#include "print.h"
-#include "draw.h"
+#include "util/gx.h"
+#include "waveform.h"
+#include "util/polling.h"
+#include "util/print.h"
 
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
 
+static bool rumbleSecret = false;
+static int rumbleIndex = 0;
+const static int rumbleOffsets[][2] = { {-2, -2}, {-2, 2}, {2, 2}, {2, -2} };
+
 static enum CONTROLLER_TEST_MENU_STATE menuState = CONT_TEST_SETUP;
+
+const static uint16_t codeInputSequence[] = { PAD_BUTTON_UP, PAD_BUTTON_UP, PAD_BUTTON_DOWN, PAD_BUTTON_DOWN,
+                                               PAD_BUTTON_LEFT, PAD_BUTTON_RIGHT, PAD_BUTTON_LEFT, PAD_BUTTON_RIGHT,
+                                               PAD_BUTTON_B, PAD_BUTTON_A, PAD_BUTTON_START };
+static int codeInputSequenceIndex = 0;
+static int codeInputRumbleCounter = 0;
+
+static void controllerTestCheckInput() {
+	uint16_t port4 = PAD_ButtonsDown(3);
+	
+	if (port4 != 0) {
+		if (port4 == codeInputSequence[codeInputSequenceIndex]) {
+			codeInputSequenceIndex++;
+			codeInputRumbleCounter = 7;
+		} else {
+			codeInputSequenceIndex = 0;
+		}
+	}
+	
+	if (codeInputSequenceIndex == 11) {
+		rumbleSecret = !rumbleSecret;
+		codeInputSequenceIndex = 0;
+		codeInputRumbleCounter = 60;
+	}
+	
+	if (codeInputRumbleCounter > 0) {
+		PAD_ControlMotor(3, PAD_MOTOR_RUMBLE);
+		codeInputRumbleCounter--;
+		if (codeInputRumbleCounter == 0) {
+			PAD_ControlMotor(3, PAD_MOTOR_STOP_HARD);
+		}
+	}
+}
 
 static void setup() {
 	if (pressed == NULL) {
@@ -51,13 +88,14 @@ void menu_controllerTest() {
 			
 			// print raw stick coordinates
 			setCursorPos(19, 0);
-			printStr("Raw XY: (%04d,%04d)", stickRaw.stickX, stickRaw.stickY);
-			setCursorPos(19, 38);
-			printStr("C-Raw XY: (%04d,%04d)", stickRaw.cStickX, stickRaw.cStickY);
+			setCursorDepth(-10);
+			printStr("Raw XY:    (%04d,%04d)", stickRaw.stickX, stickRaw.stickY);
+			setCursorPos(19, 32);
+			printStr("C-Raw XY:    (%04d,%04d)", stickRaw.cStickX, stickRaw.cStickY);
 			
 			// print melee coordinates
 			setCursorPos(20, 0);
-			printStr("Melee: (");
+			printStr("Melee:  (");
 			// is the value negative?
 			if (stickRaw.stickX < 0) {
 				printStr("-");
@@ -86,8 +124,8 @@ void menu_controllerTest() {
 			}
 			printStr(")");
 			
-			setCursorPos(20, 33);
-			printStr("C-Melee: (");
+			setCursorPos(20, 32);
+			printStr("C-Melee:  (");
 			// is the value negative?
 			if (stickRaw.cStickX < 0) {
 				printStr("-");
@@ -121,7 +159,7 @@ void menu_controllerTest() {
 				PADStatus origin = getOriginStatus(CONT_PORT_1);
 				setCursorPos(21, 0);
 				printStr("Origin XY: (%04d,%04d)", origin.stickX, origin.stickY);
-				setCursorPos(21, 35);
+				setCursorPos(21, 32);
 				printStr("C-Origin XY: (%04d,%04d)", origin.substickX, origin.substickY);
 				
 				if (!(*held & PAD_TRIGGER_L)) {
@@ -132,163 +170,18 @@ void menu_controllerTest() {
 					setCursorPos(18, 44);
 					printStr("R Origin: %d", origin.triggerR);
 				}
-			}
-			
-			
-			// visual stuff
-			// Buttons
-			
-			// A
-			if (*held & PAD_BUTTON_A) {
-				DrawFilledBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_A_Y1,
-				              CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_A_SIZE, CONT_TEST_BUTTON_A_Y1 + CONT_TEST_BUTTON_A_SIZE,
-				              COLOR_WHITE);
-				drawCharDirect(CONT_TEST_BUTTON_A_X1 + 12, CONT_TEST_BUTTON_A_Y1 + 8, COLOR_BLACK, 'A');
-			} else {
-				DrawBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_A_Y1,
-				        CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_A_SIZE, CONT_TEST_BUTTON_A_Y1 + CONT_TEST_BUTTON_A_SIZE,
-				        COLOR_WHITE);
-				drawCharDirect(CONT_TEST_BUTTON_A_X1 + 12, CONT_TEST_BUTTON_A_Y1 + 8, COLOR_WHITE, 'A');
-			}
-			
-			// B
-			if (*held & PAD_BUTTON_B) {
-				DrawFilledBox(CONT_TEST_BUTTON_B_X1, CONT_TEST_BUTTON_B_Y1,
-				              CONT_TEST_BUTTON_B_X1 + CONT_TEST_BUTTON_B_SIZE, CONT_TEST_BUTTON_B_Y1 + CONT_TEST_BUTTON_B_SIZE,
-				              COLOR_WHITE);
-				drawCharDirect(CONT_TEST_BUTTON_B_X1 + 8, CONT_TEST_BUTTON_B_Y1 + 5, COLOR_BLACK, 'B');
-			} else {
-				DrawBox(CONT_TEST_BUTTON_B_X1, CONT_TEST_BUTTON_B_Y1,
-				        CONT_TEST_BUTTON_B_X1 + CONT_TEST_BUTTON_B_SIZE, CONT_TEST_BUTTON_B_Y1 + CONT_TEST_BUTTON_B_SIZE,
-				        COLOR_WHITE);
-				drawCharDirect(CONT_TEST_BUTTON_B_X1 + 8, CONT_TEST_BUTTON_B_Y1 + 5, COLOR_WHITE, 'B');
-			}
-			
-			// X
-			if (*held & PAD_BUTTON_X) {
-				DrawFilledBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_X_Y1,
-				              CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_X_Y1 + CONT_TEST_BUTTON_XY_LONG,
-				              COLOR_WHITE);
-				drawCharDirect(CONT_TEST_BUTTON_Z_X1 + 7, CONT_TEST_BUTTON_X_Y1 + 8, COLOR_BLACK, 'X');
-			} else {
-				DrawBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_X_Y1,
-				        CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_X_Y1 + CONT_TEST_BUTTON_XY_LONG,
-				        COLOR_WHITE);
-				drawCharDirect(CONT_TEST_BUTTON_Z_X1 + 7, CONT_TEST_BUTTON_X_Y1 + 8, COLOR_WHITE, 'X');
-			}
-			
-			// Y
-			if (*held & PAD_BUTTON_Y) {
-				DrawFilledBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_Y_Y1,
-				              CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_XY_LONG, CONT_TEST_BUTTON_Y_Y1 + CONT_TEST_BUTTON_XY_SHORT,
-				              COLOR_WHITE);
-				drawCharDirect(CONT_TEST_BUTTON_A_X1 + 12, CONT_TEST_BUTTON_Y_Y1 + 4, COLOR_BLACK, 'Y');
-			} else {
-				DrawBox(CONT_TEST_BUTTON_A_X1, CONT_TEST_BUTTON_Y_Y1,
-				        CONT_TEST_BUTTON_A_X1 + CONT_TEST_BUTTON_XY_LONG, CONT_TEST_BUTTON_Y_Y1 + CONT_TEST_BUTTON_XY_SHORT,
-				        COLOR_WHITE);
-				drawCharDirect(CONT_TEST_BUTTON_A_X1 + 12, CONT_TEST_BUTTON_Y_Y1 + 4, COLOR_WHITE, 'Y');
-			}
-			
-			// Z
-			if (*held & PAD_TRIGGER_Z) {
-				DrawFilledBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_Z_Y1,
-				              CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_Z_Y1 + CONT_TEST_BUTTON_XY_SHORT,
-				              COLOR_WHITE);
-				drawCharDirect(CONT_TEST_BUTTON_Z_X1 + 7, CONT_TEST_BUTTON_Z_Y1 + 4, COLOR_BLACK, 'Z');
-				// also enable rumble if z is held
-				PAD_ControlMotor(0, PAD_MOTOR_RUMBLE);
-			} else {
-				DrawBox(CONT_TEST_BUTTON_Z_X1, CONT_TEST_BUTTON_Z_Y1,
-				        CONT_TEST_BUTTON_Z_X1 + CONT_TEST_BUTTON_XY_SHORT, CONT_TEST_BUTTON_Z_Y1 + CONT_TEST_BUTTON_XY_SHORT,
-				        COLOR_WHITE);
-				drawCharDirect(CONT_TEST_BUTTON_Z_X1 + 7, CONT_TEST_BUTTON_Z_Y1 + 4, COLOR_WHITE, 'Z');
-				// stop rumble if z is not *held
-				PAD_ControlMotor(0, PAD_MOTOR_STOP);
-			}
-			
-			// Start
-			if (*held & PAD_BUTTON_START) {
-				DrawFilledBox(CONT_TEST_BUTTON_START_X1, CONT_TEST_BUTTON_START_Y1,
-				              CONT_TEST_BUTTON_START_X1 + CONT_TEST_BUTTON_START_LEN, CONT_TEST_BUTTON_START_Y1 + CONT_TEST_BUTTON_START_WIDTH,
-				              COLOR_WHITE);
-				// TODO: this is ugly
-				drawCharDirect(CONT_TEST_BUTTON_START_X1 + 7, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'S');
-				drawCharDirect(CONT_TEST_BUTTON_START_X1 + 17, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'T');
-				drawCharDirect(CONT_TEST_BUTTON_START_X1 + 27, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'A');
-				drawCharDirect(CONT_TEST_BUTTON_START_X1 + 37, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'R');
-				drawCharDirect(CONT_TEST_BUTTON_START_X1 + 47, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_BLACK, 'T');
-			} else {
-				DrawBox(CONT_TEST_BUTTON_START_X1, CONT_TEST_BUTTON_START_Y1,
-				        CONT_TEST_BUTTON_START_X1 + CONT_TEST_BUTTON_START_LEN, CONT_TEST_BUTTON_START_Y1 + CONT_TEST_BUTTON_START_WIDTH,
-				        COLOR_WHITE);
-				drawCharDirect(CONT_TEST_BUTTON_START_X1 + 7, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'S');
-				drawCharDirect(CONT_TEST_BUTTON_START_X1 + 17, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'T');
-				drawCharDirect(CONT_TEST_BUTTON_START_X1 + 27, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'A');
-				drawCharDirect(CONT_TEST_BUTTON_START_X1 + 37, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'R');
-				drawCharDirect(CONT_TEST_BUTTON_START_X1 + 47, CONT_TEST_BUTTON_START_Y1 + 5, COLOR_WHITE, 'T');
-			}
-			
-			// DPad
-			// up
-			if (*held & PAD_BUTTON_UP) {
-				DrawFilledBox(CONT_TEST_DPAD_UP_X1, CONT_TEST_DPAD_UP_Y1,
-				              CONT_TEST_DPAD_UP_X1 + CONT_TEST_DPAD_SHORT, CONT_TEST_DPAD_UP_Y1 + CONT_TEST_DPAD_LONG,
-				              COLOR_WHITE);
-			} else {
-				DrawBox(CONT_TEST_DPAD_UP_X1, CONT_TEST_DPAD_UP_Y1,
-				        CONT_TEST_DPAD_UP_X1 + CONT_TEST_DPAD_SHORT, CONT_TEST_DPAD_UP_Y1 + CONT_TEST_DPAD_LONG,
-				        COLOR_WHITE);
-			}
-			
-			// down
-			if (*held & PAD_BUTTON_DOWN) {
-				DrawFilledBox(CONT_TEST_DPAD_UP_X1, CONT_TEST_DPAD_DOWN_Y1,
-				              CONT_TEST_DPAD_UP_X1 + CONT_TEST_DPAD_SHORT, CONT_TEST_DPAD_DOWN_Y1 + CONT_TEST_DPAD_LONG,
-				              COLOR_WHITE);
-			} else {
-				DrawBox(CONT_TEST_DPAD_UP_X1, CONT_TEST_DPAD_DOWN_Y1,
-				        CONT_TEST_DPAD_UP_X1 + CONT_TEST_DPAD_SHORT, CONT_TEST_DPAD_DOWN_Y1 + CONT_TEST_DPAD_LONG,
-				        COLOR_WHITE);
-			}
-			
-			
-			//left
-			if (*held & PAD_BUTTON_LEFT) {
-				DrawFilledBox(CONT_TEST_DPAD_LEFT_X1, CONT_TEST_DPAD_LEFT_Y1,
-				              CONT_TEST_DPAD_LEFT_X1 + CONT_TEST_DPAD_LONG, CONT_TEST_DPAD_LEFT_Y1 + CONT_TEST_DPAD_SHORT,
-				              COLOR_WHITE);
-			} else {
-				DrawBox(CONT_TEST_DPAD_LEFT_X1, CONT_TEST_DPAD_LEFT_Y1,
-				        CONT_TEST_DPAD_LEFT_X1 + CONT_TEST_DPAD_LONG, CONT_TEST_DPAD_LEFT_Y1 + CONT_TEST_DPAD_SHORT,
-				        COLOR_WHITE);
-			}
-			
-			// right
-			if (*held & PAD_BUTTON_RIGHT) {
-				DrawFilledBox(CONT_TEST_DPAD_RIGHT_X1, CONT_TEST_DPAD_LEFT_Y1,
-				              CONT_TEST_DPAD_RIGHT_X1 + CONT_TEST_DPAD_LONG, CONT_TEST_DPAD_LEFT_Y1 + CONT_TEST_DPAD_SHORT,
-				              COLOR_WHITE);
-			} else {
-				DrawBox(CONT_TEST_DPAD_RIGHT_X1, CONT_TEST_DPAD_LEFT_Y1,
-				        CONT_TEST_DPAD_RIGHT_X1 + CONT_TEST_DPAD_LONG, CONT_TEST_DPAD_LEFT_Y1 + CONT_TEST_DPAD_SHORT,
-				        COLOR_WHITE);
-			}
-			
-			
-			// Analog L Slider
-			//DrawBox(53, 69, 66, 326, COLOR_WHITE);;
-			DrawBox(CONT_TEST_TRIGGER_L_X1, CONT_TEST_TRIGGER_Y1,
-			        CONT_TEST_TRIGGER_L_X1 + CONT_TEST_TRIGGER_WIDTH + 1, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN + 1,
-			        COLOR_WHITE);
-			if (*held & PAD_TRIGGER_L) {
-				DrawFilledBox(CONT_TEST_TRIGGER_L_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerL(0)),
-				              CONT_TEST_TRIGGER_L_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
-				              COLOR_BLUE);
-			} else {
-				DrawFilledBox(CONT_TEST_TRIGGER_L_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerL(0)),
-				              CONT_TEST_TRIGGER_L_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
-				              COLOR_RED);
+				if (rumbleSecret) {
+					setCursorPos(0, 37);
+					printStr("Press Z to test 'Rumble'");
+				} else {
+					// 'shake' the rumble text if z is held
+					if (*held & PAD_TRIGGER_Z) {
+						setCursorXY(390 + rumbleOffsets[rumbleIndex][0], rumbleOffsets[rumbleIndex][1]);
+					} else {
+						setCursorPos(0, 39);
+					}
+					printStr("Press Z to test Rumble");
+				}
 			}
 			
 			setCursorPos(17,2);
@@ -298,20 +191,6 @@ void menu_controllerTest() {
 				printStr("Digital L Pressed");
 			}
 			
-			// Analog R Slider
-			DrawBox(CONT_TEST_TRIGGER_R_X1, CONT_TEST_TRIGGER_Y1,
-			        CONT_TEST_TRIGGER_R_X1 + CONT_TEST_TRIGGER_WIDTH + 1, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN + 1,
-			        COLOR_WHITE);
-			if (*held & PAD_TRIGGER_R) {
-				DrawFilledBox(CONT_TEST_TRIGGER_R_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerR(0)),
-				              CONT_TEST_TRIGGER_R_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
-				              COLOR_BLUE);
-			} else {
-				DrawFilledBox(CONT_TEST_TRIGGER_R_X1 + 2, CONT_TEST_TRIGGER_Y1 + 1 + (255 - PAD_TriggerR(0)),
-				              CONT_TEST_TRIGGER_R_X1 + CONT_TEST_TRIGGER_WIDTH, CONT_TEST_TRIGGER_Y1 + CONT_TEST_TRIGGER_LEN,
-				              COLOR_RED);
-			}
-			
 			setCursorPos(17,44);
 			printStr("Analog R: %d", PAD_TriggerR(0));
 			if (*held & PAD_TRIGGER_R) {
@@ -319,54 +198,483 @@ void menu_controllerTest() {
 				printStr("Digital R Pressed");
 			}
 			
-			// Analog Stick
-			// calculate screen coordinates for stick position drawing
-			int xfbCoordX = (stickMelee.stickXUnit / 250);
-			if (stickRaw.stickX < 0) {
-				xfbCoordX *= -1;
-			}
-			xfbCoordX += CONT_TEST_STICK_CENTER_X;
+			restorePrevCursorDepth();
 			
-			int xfbCoordY = (stickMelee.stickYUnit / 250);
-			if (stickRaw.stickY > 0) {
-				xfbCoordY *= -1;
-			}
-			xfbCoordY += CONT_TEST_STICK_CENTER_Y;
+			// gui
 			
-			int xfbCoordCX = (stickMelee.cStickXUnit / 250);
-			if (stickRaw.cStickX < 0) {
-				xfbCoordCX *= -1;
-			}
-			xfbCoordCX += CONT_TEST_CSTICK_CENTER_X;
+			// triggers
+			// L
+			int sliderBottomY = LAYOUT_ANALOG_SLIDER_POS_Y + 255;
+			int sliderTopY = sliderBottomY - PAD_TriggerL(0);
+			GX_SetLineWidth(24, GX_TO_ZERO);
 			
-			int xfbCoordCY = (stickMelee.cStickYUnit / 250);
-			if (stickRaw.cStickY > 0) {
-				xfbCoordCY *= -1;
-			}
-			xfbCoordCY += CONT_TEST_CSTICK_CENTER_Y;
-			
-			// analog stick
-			// line from center
-			DrawOctagonalGate(CONT_TEST_STICK_CENTER_X, CONT_TEST_STICK_CENTER_Y, 2, COLOR_GRAY);; // perimeter
-			DrawLine(CONT_TEST_STICK_CENTER_X, CONT_TEST_STICK_CENTER_Y,
-			         CONT_TEST_STICK_CENTER_X + (stickRaw.stickX / 2), CONT_TEST_STICK_CENTER_Y - (stickRaw.stickY / 2),
-			         COLOR_SILVER);
-			// smaller circles
-			for (int i = CONT_TEST_STICK_RAD / 2; i > 0; i -= 5) {
-				DrawCircle(CONT_TEST_STICK_CENTER_X + (stickRaw.stickX / 2), CONT_TEST_STICK_CENTER_Y - (stickRaw.stickY / 2), i, COLOR_WHITE);;
+			GXColor sliderColor = GX_COLOR_BLUE;
+			if (*held & PAD_TRIGGER_L) {
+				sliderColor = GX_COLOR_RED;
+				GX_SetLineWidth(32, GX_TO_ZERO);
 			}
 			
-			// c-stick
-			// perimeter
-			DrawOctagonalGate(CONT_TEST_CSTICK_CENTER_X, CONT_TEST_CSTICK_CENTER_Y, 2, COLOR_GRAY);;
-			// line from center
-			DrawLine(CONT_TEST_CSTICK_CENTER_X, CONT_TEST_CSTICK_CENTER_Y,
-			         CONT_TEST_CSTICK_CENTER_X + (stickRaw.cStickX / 2), CONT_TEST_CSTICK_CENTER_Y - (stickRaw.cStickY / 2),
-			         COLOR_MEDGRAY);
-			// smaller circle
-			DrawFilledCircle(CONT_TEST_CSTICK_CENTER_X + (stickRaw.cStickX / 2), CONT_TEST_CSTICK_CENTER_Y - (stickRaw.cStickY / 2),
-			                 CONT_TEST_STICK_RAD / 2, COLOR_YELLOW);
-							 
+			updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+			
+			GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, sliderTopY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderTopY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderBottomY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_End();
+			
+			GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 5);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderBottomY, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_End();
+			
+			GX_SetLineWidth(24, GX_TO_ZERO);
+			
+			// R
+			sliderTopY = sliderBottomY - PAD_TriggerR(0);
+			
+			sliderColor = GX_COLOR_BLUE;
+			if (*held & PAD_TRIGGER_R) {
+				sliderColor = GX_COLOR_RED;
+				GX_SetLineWidth(32, GX_TO_ZERO);
+			}
+			
+			GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+			
+			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, sliderTopY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderTopY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -3);
+			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			
+			GX_End();
+			
+			GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 5);
+			
+			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_End();
+			
+			GX_SetLineWidth(12, GX_TO_ZERO);
+			
+			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
+			
+			changeLoadedTexmap(TEXMAP_CONTROLLER);
+			
+			// buttons
+			// A
+			int texOffsetX = TEX_A_OFFSET_X;
+			if (*held & PAD_BUTTON_A) {
+				texOffsetX += TEX_NORMAL_DIMENSIONS;
+			}
+			
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+			
+			GX_Position3s16(LAYOUT_A_POS_X, LAYOUT_A_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b, GX_COLOR_GREEN.a);
+			GX_TexCoord2s16(texOffsetX, TEX_A_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_A_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_A_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b, GX_COLOR_GREEN.a);
+			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_A_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_A_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_A_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b, GX_COLOR_GREEN.a);
+			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
+			                TEX_A_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_Position3s16(LAYOUT_A_POS_X,
+			                LAYOUT_A_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b, GX_COLOR_GREEN.a);
+			GX_TexCoord2s16(texOffsetX,
+			                TEX_A_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_End();
+			
+			// B
+			texOffsetX = TEX_B_OFFSET_X;
+			if (*held & PAD_BUTTON_B) {
+				texOffsetX += TEX_NORMAL_DIMENSIONS;
+			}
+			
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+			
+			GX_Position3s16(LAYOUT_B_POS_X, LAYOUT_B_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b, GX_COLOR_RED.a);
+			GX_TexCoord2s16(texOffsetX, TEX_B_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_B_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_B_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b, GX_COLOR_RED.a);
+			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_B_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_B_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_B_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b, GX_COLOR_RED.a);
+			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
+			                TEX_B_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_Position3s16(LAYOUT_B_POS_X,
+			                LAYOUT_B_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b, GX_COLOR_RED.a);
+			GX_TexCoord2s16(texOffsetX,
+			                TEX_B_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_End();
+			
+			// X
+			texOffsetX = TEX_X_OFFSET_X;
+			if (*held & PAD_BUTTON_X) {
+				texOffsetX += TEX_NORMAL_DIMENSIONS;
+			}
+			
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+			
+			GX_Position3s16(LAYOUT_X_POS_X, LAYOUT_X_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
+			GX_TexCoord2s16(texOffsetX, TEX_X_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_X_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_X_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
+			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_X_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_X_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_X_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
+			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
+			                TEX_X_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_Position3s16(LAYOUT_X_POS_X,
+			                LAYOUT_X_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
+			GX_TexCoord2s16(texOffsetX,
+			                TEX_X_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_End();
+			
+			// Y
+			texOffsetX = TEX_Y_OFFSET_X;
+			if (*held & PAD_BUTTON_Y) {
+				texOffsetX += TEX_NORMAL_DIMENSIONS;
+			}
+			
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+			
+			GX_Position3s16(LAYOUT_Y_POS_X, LAYOUT_Y_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
+			GX_TexCoord2s16(texOffsetX, TEX_Y_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_Y_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_Y_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
+			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_Y_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_Y_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_Y_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
+			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
+			                TEX_Y_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_Position3s16(LAYOUT_Y_POS_X,
+			                LAYOUT_Y_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
+			GX_TexCoord2s16(texOffsetX,
+			                TEX_Y_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_End();
+			
+			// Z
+			texOffsetX = TEX_Z_OFFSET_X;
+			if (*held & PAD_TRIGGER_Z) {
+				texOffsetX += TEX_NORMAL_DIMENSIONS;
+			}
+			
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+			
+			GX_Position3s16(LAYOUT_Z_POS_X, LAYOUT_Z_POS_Y, -4);
+			GX_Color4u8(0x93, 0x70, 0xDB, 0xFF);
+			GX_TexCoord2s16(texOffsetX, TEX_Z_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_Z_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_Z_POS_Y, -4);
+			GX_Color4u8(0x93, 0x70, 0xDB, 0xFF);
+			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_Z_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_Z_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_Z_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(0x93, 0x70, 0xDB, 0xFF);
+			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
+			                TEX_Z_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_Position3s16(LAYOUT_Z_POS_X,
+			                LAYOUT_Z_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(0x93, 0x70, 0xDB, 0xFF);
+			GX_TexCoord2s16(texOffsetX,
+			                TEX_Z_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_End();
+			
+			// d-pad
+			int dpadPressedIndex = 1;
+			int dpadPressedOffsets[5];
+			dpadPressedOffsets[0] = TEX_DPAD_OFFSET_X;
+			
+			if (*held & PAD_BUTTON_UP) {
+				dpadPressedOffsets[dpadPressedIndex] = TEX_DPAD_UP_OFFSET_X;
+				dpadPressedIndex++;
+			}
+			if (*held & PAD_BUTTON_RIGHT) {
+				dpadPressedOffsets[dpadPressedIndex] = TEX_DPAD_RIGHT_OFFSET_X;
+				dpadPressedIndex++;
+			}
+			if (*held & PAD_BUTTON_LEFT) {
+				dpadPressedOffsets[dpadPressedIndex] = TEX_DPAD_LEFT_OFFSET_X;
+				dpadPressedIndex++;
+			}
+			if (*held & PAD_BUTTON_DOWN) {
+				dpadPressedOffsets[dpadPressedIndex] = TEX_DPAD_DOWN_OFFSET_X;
+				dpadPressedIndex++;
+			}
+			
+			for (int i = 0; i < dpadPressedIndex; i++) {
+				GXColor color = GX_COLOR_SILVER;
+				if (i != 0) {
+					color = GX_COLOR_WHITE;
+				}
+				texOffsetX = dpadPressedOffsets[i];
+				
+				GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+				
+				GX_Position3s16(LAYOUT_DPAD_POS_X, LAYOUT_DPAD_POS_Y, -4);
+				GX_Color4u8(color.r, color.g, color.b, color.a);
+				GX_TexCoord2s16(texOffsetX, TEX_DPAD_OFFSET_Y);
+				
+				GX_Position3s16(LAYOUT_DPAD_POS_X + TEX_NORMAL_DIMENSIONS,
+				                LAYOUT_DPAD_POS_Y, -4);
+				GX_Color4u8(color.r, color.g, color.b, color.a);
+				GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_DPAD_OFFSET_Y);
+				
+				GX_Position3s16(LAYOUT_DPAD_POS_X + TEX_NORMAL_DIMENSIONS,
+				                LAYOUT_DPAD_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+				GX_Color4u8(color.r, color.g, color.b, color.a);
+				GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
+				                TEX_DPAD_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+				
+				GX_Position3s16(LAYOUT_DPAD_POS_X,
+				                LAYOUT_DPAD_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+				GX_Color4u8(color.r, color.g, color.b, color.a);
+				GX_TexCoord2s16(texOffsetX,
+				                TEX_DPAD_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+				
+				GX_End();
+			}
+			
+			// Start
+			texOffsetX = TEX_START_OFFSET_X;
+			if (*held & PAD_BUTTON_START) {
+				texOffsetX += TEX_NORMAL_DIMENSIONS;
+			}
+			
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+			
+			GX_Position3s16(LAYOUT_START_POS_X, LAYOUT_START_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(texOffsetX, TEX_START_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_START_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_START_POS_Y, -4);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_START_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_START_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_START_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
+			                TEX_START_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_Position3s16(LAYOUT_START_POS_X,
+			                LAYOUT_START_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(texOffsetX,
+			                TEX_START_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_End();
+			
+			// stick gate
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+			
+			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X, LAYOUT_ASTICK_GATE_POS_Y, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
+			GX_TexCoord2s16(TEX_ASTICK_GATE_OFFSET_X, TEX_ASTICK_GATE_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X + TEX_ASTICK_GATE_DIMENSIONS,
+			                LAYOUT_ASTICK_GATE_POS_Y, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
+			GX_TexCoord2s16(TEX_ASTICK_GATE_OFFSET_X + TEX_ASTICK_GATE_DIMENSIONS, TEX_ASTICK_GATE_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X + TEX_ASTICK_GATE_DIMENSIONS,
+			                LAYOUT_ASTICK_GATE_POS_Y + TEX_ASTICK_GATE_DIMENSIONS, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
+			GX_TexCoord2s16(TEX_ASTICK_GATE_OFFSET_X + TEX_ASTICK_GATE_DIMENSIONS,
+			                TEX_ASTICK_GATE_OFFSET_Y + TEX_ASTICK_GATE_DIMENSIONS);
+			
+			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X,
+			                LAYOUT_ASTICK_GATE_POS_Y + TEX_ASTICK_GATE_DIMENSIONS, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
+			GX_TexCoord2s16(TEX_ASTICK_GATE_OFFSET_X,
+			                TEX_ASTICK_GATE_OFFSET_Y + TEX_ASTICK_GATE_DIMENSIONS);
+			
+			GX_End();
+			
+			// stick cap
+			int stickModX = PAD_StickX(0) / 2;
+			int stickModY = PAD_StickY(0) / 2;
+			
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+			
+			GX_Position3s16(LAYOUT_ASTICK_CAP_POS_X + stickModX, LAYOUT_ASTICK_CAP_POS_Y - stickModY, -2);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(TEX_ASTICK_CAP_OFFSET_X, TEX_ASTICK_CAP_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_ASTICK_CAP_POS_X + TEX_NORMAL_DIMENSIONS + stickModX,
+			                LAYOUT_ASTICK_CAP_POS_Y - stickModY, -2);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(TEX_ASTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS, TEX_ASTICK_CAP_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_ASTICK_CAP_POS_X + TEX_NORMAL_DIMENSIONS + stickModX,
+			                LAYOUT_ASTICK_CAP_POS_Y + TEX_NORMAL_DIMENSIONS - stickModY, -2);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(TEX_ASTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS,
+			                TEX_ASTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_Position3s16(LAYOUT_ASTICK_CAP_POS_X + stickModX,
+			                LAYOUT_ASTICK_CAP_POS_Y + TEX_NORMAL_DIMENSIONS - stickModY, -2);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(TEX_ASTICK_CAP_OFFSET_X,
+			                TEX_ASTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_End();
+			
+			// c-stick gate
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+			
+			GX_Position3s16(LAYOUT_CSTICK_POS_X, LAYOUT_CSTICK_POS_Y, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
+			GX_TexCoord2s16(TEX_CSTICK_GATE_OFFSET_X, TEX_CSTICK_GATE_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_CSTICK_POS_Y, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
+			GX_TexCoord2s16(TEX_CSTICK_GATE_OFFSET_X + TEX_NORMAL_DIMENSIONS, TEX_CSTICK_GATE_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS,
+			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
+			GX_TexCoord2s16(TEX_CSTICK_GATE_OFFSET_X + TEX_NORMAL_DIMENSIONS,
+			                TEX_CSTICK_GATE_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_Position3s16(LAYOUT_CSTICK_POS_X,
+			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS, -2);
+			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
+			GX_TexCoord2s16(TEX_CSTICK_GATE_OFFSET_X,
+			                TEX_CSTICK_GATE_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_End();
+			
+			
+			// c-stick cap
+			int cStickModX = PAD_SubStickX(0) / 2;
+			int cStickModY = PAD_SubStickY(0) / 2;
+			
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+			
+			GX_Position3s16(LAYOUT_CSTICK_POS_X + cStickModX, LAYOUT_CSTICK_POS_Y - cStickModY - 1, -2);
+			GX_Color4u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b, GX_COLOR_YELLOW.a);
+			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X, TEX_CSTICK_CAP_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS + cStickModX,
+			                LAYOUT_CSTICK_POS_Y - cStickModY - 1, -2);
+			GX_Color4u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b, GX_COLOR_YELLOW.a);
+			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS, TEX_CSTICK_CAP_OFFSET_Y);
+			
+			GX_Position3s16(LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS + cStickModX,
+			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS - cStickModY - 1, -2);
+			GX_Color4u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b, GX_COLOR_YELLOW.a);
+			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS,
+			                TEX_CSTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_Position3s16(LAYOUT_CSTICK_POS_X + cStickModX,
+			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS - cStickModY - 1, -2);
+			GX_Color4u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b, GX_COLOR_YELLOW.a);
+			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X,
+			                TEX_CSTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
+			
+			GX_End();
+			
+			controllerTestCheckInput();
+			
+			// enable rumble if z is held
+			if (*held & PAD_TRIGGER_Z) {
+				PAD_ControlMotor(0, PAD_MOTOR_RUMBLE);
+				if (rumbleSecret) {
+					// called indirectly so that there isn't anything that is 'lagging behind'
+					setScreenOffset(rumbleOffsets[rumbleIndex][0], rumbleOffsets[rumbleIndex][1]);
+				}
+				rumbleIndex++;
+				rumbleIndex %= 4;
+			} else {
+				PAD_ControlMotor(0, PAD_MOTOR_STOP);
+				if (rumbleSecret) {
+					setScreenOffset(0, 0);
+				}
+				rumbleIndex = 0;
+			}
+
 			break;
 	}
 }

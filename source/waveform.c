@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+// bitwise or'd flags that specify what recordings are valid for a given menu
 const uint8_t RECORDING_TYPE_VALID_MENUS[] = { 0,
 											   REC_OSCILLOSCOPE_FLAG | REC_2DPLOT_FLAG,
 											   REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG,
@@ -129,6 +130,7 @@ MeleeCoordinates convertStickRawToMelee(ControllerSample sample) {
 	ret.cStickXUnit = (((float) ret.cStickXUnit) * 0.0125) * 10000;
 	ret.cStickYUnit = (((float) ret.cStickYUnit) * 0.0125) * 10000;
 	
+	// record if a given axis was negative, since we don't retain that info in the converted units
 	ret.stickXNegative = (sample.stickX < 0) ? true : false;
 	ret.stickYNegative = (sample.stickY < 0) ? true : false;
 	ret.cStickXNegative = (sample.cStickX < 0) ? true : false;

@@ -3,13 +3,13 @@
 #include <gccore.h>
 
 #include "menu.h"
-#include "polling.h"
-#include "print.h"
-#include "draw.h"
 #include "waveform.h"
+#include "util/gx.h"
+#include "util/polling.h"
+#include "util/print.h"
 
 #ifdef DEBUGLOG
-#include "logging.h"
+#include "util/logging.h"
 #endif
 
 #ifdef DEBUGGDB
@@ -22,9 +22,8 @@
 #endif
 
 // basic stuff from the template
-static void *xfb1 = NULL;
-static void *xfb2 = NULL;
-bool xfbSwitch = false;
+static void *xfb[2] = { NULL, NULL };
+static int xfbSwitch = 0;
 static GXRModeObj *rmode = NULL;
 
 static VIRetraceCallback cb;
@@ -33,6 +32,15 @@ static char* resetMessage = "Reset button pressed, exiting...";
 
 void retraceCallback(uint32_t retraceCnt) {
 	setSamplingRate();
+	
+	// reading fifo and gp status stuff
+	// debugging
+	//debugLog("Wrap: %u", getFifoVal());
+	//uint8_t overhi, underlow, readidle, cmdidle, brkpt;
+	//GX_GetGPStatus(&overhi, &underlow, &readidle, &cmdidle, &brkpt);
+	//debugLog("GPStatus: %u %u %u %u %u\n", overhi, underlow, readidle, cmdidle, brkpt);
+	
+	// can be used to make the reset button be a breakpoint? idk
 	//#ifdef DEBUGGDB
 	//if (SYS_ResetButtonDown()) {
 		//_break();
@@ -69,34 +77,31 @@ int main(int argc, char **argv) {
 
 	rmode = VIDEO_GetPreferredMode(NULL);
 
-	xfb1 = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
-	xfb2 = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
+	xfb[0] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
+	xfb[1] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 	
-	//CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-	//CON_Init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-	VIDEO_ClearFrameBuffer(rmode, xfb1, COLOR_BLACK);
-	VIDEO_ClearFrameBuffer(rmode, xfb2, COLOR_BLACK);
+	VIDEO_ClearFrameBuffer(rmode, xfb[0], COLOR_BLACK);
+	VIDEO_ClearFrameBuffer(rmode, xfb[1], COLOR_BLACK);
 
 	VIDEO_Configure(rmode);
 
-	VIDEO_SetNextFramebuffer(xfb1);
+	VIDEO_SetNextFramebuffer(xfb[xfbSwitch]);
 
-	VIDEO_SetBlack(FALSE);
+	VIDEO_SetBlack(false);
 
 	VIDEO_Flush();
 
 	VIDEO_WaitVSync();
 	
-	cb = VIDEO_SetPostRetraceCallback(retraceCallback);
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
+	
+	setupGX(rmode);
 
 	bool normalExit = false;
 	
 	#ifdef DEBUGGDB
 	_break();
 	#endif
-	
-	void *currXfb = NULL;
 	
 	// there is a makefile target that will enable this
 	#ifdef DEBUGLOG
@@ -105,7 +110,6 @@ int main(int argc, char **argv) {
 	setupLogging(USBGECKO_B);
 	
 	if (getLoggingType() == NETWORKSOCK) {
-		setFramebuffer(xfb1);
 		printStr("Setting up network...\n");
 		while (!isNetworkConfigured()) {
 			VIDEO_WaitVSync();
@@ -128,73 +132,7 @@ int main(int argc, char **argv) {
 	#endif
 	
 	#endif
-	
-	
-	// TODO: WIP Logic for forcing interlaced
-	// this needs much more logic than what's present
-	// mainly, using the correct tv mode instead of just doing ntsc
-	// probably will need testing from PAL users
-	/*
-	// wait a couple frames, inputs don't register initially???
-	PAD_ScanPads();
-	VIDEO_WaitVSync();
-	PAD_ScanPads();
-	VIDEO_WaitVSync();
-	PAD_ScanPads();
-	
-	uint32_t buttons = PAD_ButtonsHeld(0);
-	//uint32_t useless = 42069;
-	
-	// check if b is held and we are in progressive scan
-	if (buttons & PAD_BUTTON_B) {
-		char msg[500];
-		memset(msg, 0, sizeof(msg));
-		uint32_t scanMode = VIDEO_GetScanMode();
-		uint32_t tvMode = VIDEO_GetCurrentTvMode();
-		snprintf(msg, 500, "B held, Progressive scan: %d | TV Mode: %d\r\n\0", scanMode, tvMode);
-		usb_sendbuffer(1, msg, 500);
-		usb_flush(EXI_CHANNEL_1);
-		if (scanMode == 2) {
-			memset(msg, 0, sizeof(msg));
-			snprintf(msg, 500, "Progressive Scan detected, asking if user wants to force interlaced\n\0");
-			usb_sendbuffer(1, msg, 500);
-			usb_flush(EXI_CHANNEL_1);
-			
-			// force interlaced
-			VIDEO_Configure(&TVNtsc480IntDf);
-			
-			VIDEO_ClearFrameBuffer(rmode, xfb2, COLOR_BLACK);
-			CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-			currXfb = xfb2;
-			VIDEO_SetNextFramebuffer(xfb2);
-			
-			xfbSwitch = true;
-			
-			printf("\x1b[3;0H");
-			printf("Press A to enable progressive scan, press B to disable\n");
-			while (true) {
-				VIDEO_Flush();
-				VIDEO_WaitVSync();
-				PAD_ScanPads();
-				buttons = PAD_ButtonsDown(0);
-				if (buttons & PAD_BUTTON_A) {
-					VIDEO_Configure(&TVNtsc480Prog);
-					break;
-				}
-				if (buttons & PAD_BUTTON_B) {
-					break;
-				}
-			}
-		}
-	}
-	*/
-	
-	
-	#ifdef BENCH
-	long long unsigned int time = 0;
-	int us = 0;
-	#endif
-	
+
 	switch (VIDEO_GetCurrentTvMode()) {
 		case VI_NTSC:
 		case VI_EURGB60:
@@ -213,7 +151,6 @@ int main(int argc, char **argv) {
 			#endif
 		default:
 			resetCursor();
-			setFramebuffer(xfb1);
 			printStr("\n\nUnsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n"
 					 "Program will exit in 5 seconds...");
 			for (int i = 0; i < 300; i++) {
@@ -226,7 +163,6 @@ int main(int argc, char **argv) {
 	setSamplingRateNormal();
 	if (isUnsupportedMode()) { // unsupported mode is probably 240p? no idea
 		resetCursor();
-		setFramebuffer(xfb1);
 		printStr("\n\nUnsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n"
 				 "Program will exit in 5 seconds...");
 		for (int i = 0; i < 300; i++) {
@@ -235,8 +171,19 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 	
+	// register retrace callback function
+	// VIDEO_Flush() clears our custom xy values, so they're set again here
+	cb = VIDEO_SetPostRetraceCallback(retraceCallback);
+	
 	// allocate memory for recording structs
 	initControllerRecStructs();
+	
+	
+	#ifdef BENCH
+	long long unsigned int time = 0;
+	int gxtime = 0;
+	int us = 0;
+	#endif
 	
 	// main loop of the program
 	// exits when menu_runMenu() returns true, or when either power or reset are pressed
@@ -247,6 +194,10 @@ int main(int argc, char **argv) {
 		}
 		#endif
 		
+		if (SYS_ResetButtonDown()) {
+			break;
+		}
+		
 		#ifdef BENCH
 		time = gettime();
 		#endif
@@ -255,46 +206,40 @@ int main(int argc, char **argv) {
 		if (normalExit) {
 			break;
 		}
-
-		// check which framebuffer is next
-		if (xfbSwitch) {
-			VIDEO_ClearFrameBuffer(rmode, xfb1, COLOR_BLACK);
-			//CON_Init(xfb1,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-			currXfb = xfb1;
-		} else {
-			VIDEO_ClearFrameBuffer(rmode, xfb2, COLOR_BLACK);
-			//CON_Init(xfb2,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-			currXfb = xfb2;
-		}
 		
-		setFramebuffer(currXfb);
+		startDraw(rmode);
 		
 		// run menu
 		normalExit = menu_runMenu();
-
-		// change framebuffer for next frame
-		if (xfbSwitch) {
-			VIDEO_SetNextFramebuffer(xfb1);
-		} else {
-			VIDEO_SetNextFramebuffer(xfb2);
-		}
-		xfbSwitch = !xfbSwitch;
-		
 		
 		#ifdef BENCH
 		us = ticks_to_microsecs(gettime() - time);
-		setCursorPos(22, 56);
-		printStrColor(COLOR_WHITE, COLOR_BLACK, "%d", us);
+		setCursorPos(23, 40);
+		printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOGIC: %d | GX: %d", us, gxtime);
 		#endif
 		
-		if (SYS_ResetButtonDown()) {
-			break;
-		}
+		xfbSwitch ^= 1;
+		
+		finishDraw(xfb[xfbSwitch]);
+		
+		#ifdef BENCH
+		gxtime = ticks_to_microsecs(gettime() - time);
+		#endif
+		
+		// change framebuffer for next frame
+		VIDEO_SetNextFramebuffer(xfb[xfbSwitch]);
 
 		// Wait for the next frame
 		VIDEO_Flush();
 		VIDEO_WaitVSync();
 	}
+	
+	// return some of our stuff to normal before exit
+	// not sure if its needed but eh
+	PAD_SetSamplingCallback(NULL);
+	setSamplingRateNormal();
+	setSamplingRate();
+	VIDEO_SetPostRetraceCallback(NULL);
 	
 	// close log
 	#ifdef DEBUGLOG
@@ -303,7 +248,7 @@ int main(int argc, char **argv) {
 	
 	// clear screen and show message if not exiting "normally" (pressing start on main menu)
 	if (!normalExit) {
-		VIDEO_ClearFrameBuffer(rmode, currXfb, COLOR_BLACK);
+		startDraw(rmode);
 		setCursorPos(10, 15);
 		
 		// dumb way to have a different message show, while also avoiding two #if defined().
@@ -319,7 +264,16 @@ int main(int argc, char **argv) {
 		#endif
 		
 		printStr(strPointer);
+		xfbSwitch ^= 1;
+		
+		finishDraw(xfb[xfbSwitch]);
+		VIDEO_SetNextFramebuffer(xfb[xfbSwitch]);
 	}
+	
+	// draw one more frame, since buffer is 1 frame behind
+	startDraw(rmode);
+	xfbSwitch ^= 1;
+	finishDraw(xfb[xfbSwitch]);
 	
 	VIDEO_Flush();
 	// show final frame for at least one second
@@ -330,14 +284,8 @@ int main(int argc, char **argv) {
 	// free memory (probably don't need to do this but eh)
 	freeControllerRecStructs();
 	
-	// return some of our stuff to normal before exit
-	// not sure if its needed but eh
-	setSamplingRateNormal();
-	PAD_SetSamplingCallback(NULL);
-	
 	// avoid distorted graphics on GC (I have no idea if this actually does what I think it does...)
 	// https://github.com/emukidid/swiss-gc: cube/swiss/source/video.c -> unsetVideo()
-	VIDEO_SetPostRetraceCallback(NULL);
 	VIDEO_SetBlack(true);
 	VIDEO_Flush();
 	VIDEO_WaitVSync();

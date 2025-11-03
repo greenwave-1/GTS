@@ -17,9 +17,10 @@ include $(DEVKITPRO)/libogc2/wii_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	GTS_wii
 BUILD		:=	build_wii
-SOURCES		:=	source source/submenu source/file source/images
+SOURCES		:=	source source/submenu source/util source/images
 DATA		:=	data
-INCLUDES	:=  include include/submenu include/file include/images
+TEXTURES	:=  textures
+INCLUDES	:=  include include/submenu include/util include/images
 
 #---------------------------------------------------------------------------------
 # options for code generation
@@ -81,7 +82,8 @@ ifneq ($(BUILD),$(notdir $(CURDIR)))
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
-					$(foreach dir,$(DATA),$(CURDIR)/$(dir))
+					$(foreach dir,$(DATA),$(CURDIR)/$(dir)) \
+					$(foreach dir,$(TEXTURES),$(CURDIR)/$(dir))
 
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
@@ -93,6 +95,8 @@ CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
+SCFFILES	:=	$(foreach dir,$(TEXTURES),$(notdir $(wildcard $(dir)/*.scf)))
+TPLFILES	:=	$(SCFFILES:.scf=.tpl)
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -103,7 +107,7 @@ else
 	export LD	:=	$(CXX)
 endif
 
-export OFILES_BIN	:=	$(addsuffix .o,$(BINFILES))
+export OFILES_BIN	:=	$(addsuffix .o,$(BINFILES)) $(addsuffix .o,$(TPLFILES))
 export OFILES_SOURCES := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(sFILES:.s=.o) $(SFILES:.S=.o)
 export OFILES := $(OFILES_BIN) $(OFILES_SOURCES)
 
@@ -162,6 +166,12 @@ $(OFILES_SOURCES) : $(HFILES)
 	$(bin2o)
 
 -include $(DEPENDS)
+
+#---------------------------------------------------------------------------------
+%.tpl.o	%_tpl.h :	%.tpl
+#---------------------------------------------------------------------------------
+	@echo $(notdir $<)
+	@$(bin2o)
 
 #---------------------------------------------------------------------------------
 endif

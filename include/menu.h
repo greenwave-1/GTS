@@ -22,9 +22,7 @@ enum MENU_MAIN_ENTRY_LIST { ENTRY_CONT_TEST, ENTRY_OSCILLOSCOPE, ENTRY_CONT_OSCI
 // functions for drawing the individual menus
 bool menu_runMenu();
 void menu_mainMenu();
-void menu_controllerTest();
 void menu_fileExport();
-void menu_coordinateViewer();
 void menu_thanksPage();
 
 

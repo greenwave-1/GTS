@@ -4,7 +4,7 @@
 
 // most network stuff in here is pulled from the sockettest example
 
-#include "logging.h"
+#include "util/logging.h"
 
 #include <stdio.h>
 #include <stdint.h>
@@ -16,7 +16,7 @@
 #include <ogc/exi.h>
 #include <ogc/system.h>
 
-#include "file/file.h"
+#include "util/file.h"
 
 static lwp_t socket_thread = (lwp_t) NULL;
 

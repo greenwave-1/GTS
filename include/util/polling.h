@@ -2,7 +2,8 @@
 // Created on 2025/02/21.
 //
 
-// sets custom X/Y controller polling values
+// handles most things related to controllers, including reading origin, setting a custom sampling rate (XY values),
+// and having the shared *down and *held vars
 
 #ifndef GTS_POLLING_H
 #define GTS_POLLING_H

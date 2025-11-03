@@ -2,14 +2,14 @@
 // Created on 2025/02/21.
 //
 
-#include "polling.h"
+#include "util/polling.h"
 
 #include <ogc/video.h>
 #include <ogc/video_types.h>
 #include <ogc/si.h>
 
 #ifdef DEBUGLOG
-#include "logging.h"
+#include "util/logging.h"
 #endif
 
 // rough time in milliseconds where a vsync would occur
