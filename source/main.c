@@ -107,19 +107,45 @@ int main(int argc, char **argv) {
 	#ifdef DEBUGLOG
 	
 	// options are defined in logging.h
-	setupLogging(USBGECKO_B);
+	setupLogging(NETWORKSOCK);
 	
 	if (getLoggingType() == NETWORKSOCK) {
-		printStr("Setting up network...\n");
-		while (!isNetworkConfigured()) {
-			VIDEO_WaitVSync();
-		}
-		
-		printStr("Waiting for connection...\n");
-		printStr(getConfiguredIP());
-		printStr(":43256");
-		
-		while (!isConnectionMade()) {
+		while (true) {
+			// leave once connection is made
+			if (isConnectionMade()) {
+				break;
+			}
+			
+			// exit completely if reset is pressed
+			if (SYS_ResetButtonDown()) {
+				// avoid distorted graphics on GC (I have no idea if this actually does what I think it does...)
+				// https://github.com/emukidid/swiss-gc: cube/swiss/source/video.c -> unsetVideo()
+				VIDEO_SetBlack(true);
+				VIDEO_Flush();
+				VIDEO_WaitVSync();
+				return 0;
+			}
+			
+			resetCursor();
+			startDraw(rmode);
+			
+			switch (getNetworkSetupState()) {
+				case NETLOG_INIT:
+					printStr("Setting up network...\n");
+					break;
+				case NETLOG_CONF_SUCCESS:
+					printStr("Waiting for connection...\n");
+					printStr("%s:43256", getConfiguredIP());
+					break;
+				case NETLOG_CONF_FAIL:
+					printStr("Network config failed! Press reset to exit.");
+					break;
+				default:
+					printStr("Default case in network setup?");
+					break;
+			}
+			
+			finishDraw(xfb[xfbSwitch]);
 			VIDEO_WaitVSync();
 		}
 	}

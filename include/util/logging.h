@@ -20,7 +20,9 @@ void debugLog(char *msg, ...);
 
 void stopLogging();
 
-bool isNetworkConfigured();
+enum LOGGING_NETWORK_STATUS { NETLOG_INIT, NETLOG_CONF_FAIL, NETLOG_CONF_SUCCESS };
+
+enum LOGGING_NETWORK_STATUS getNetworkSetupState();
 bool isConnectionMade();
 
 char* getConfiguredIP();

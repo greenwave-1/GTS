@@ -24,7 +24,8 @@ static enum LOGGING_DEVICE dev = USBGECKO_B;
 
 static bool deviceSet = false;
 
-static bool networkSetupSuccess = false, connectionEstablished = false;
+static enum LOGGING_NETWORK_STATUS networkSetupState = NETLOG_INIT;
+static bool connectionEstablished = false;
 
 static char localip[16] = {0};
 static char gateway[16] = {0};
@@ -37,7 +38,7 @@ static uint32_t clientlen;
 static FILE *logFile = NULL;
 
 static void attemptConnect() {
-	if (networkSetupSuccess) {
+	if (networkSetupState == NETLOG_CONF_SUCCESS) {
 		clientlen = sizeof(client);
 		sock = net_socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
 		if (sock == INVALID_SOCKET) {
@@ -72,8 +73,10 @@ static void attemptConnect() {
 
 static void *setupNetwork(void *args) {
 	if (if_config(localip, netmask, gateway, true) >= 0) {
-		networkSetupSuccess = true;
+		networkSetupState = NETLOG_CONF_SUCCESS;
 		attemptConnect();
+	} else {
+		networkSetupState = NETLOG_CONF_FAIL;
 	}
 	return NULL;
 }
@@ -99,7 +102,7 @@ void setupLogging(enum LOGGING_DEVICE device) {
 			deviceSet = true;
 			break;
 		case NETWORKSOCK:
-			if (!networkSetupSuccess) {
+			if (networkSetupState == NETLOG_INIT) {
 				// called in a thread so that we can print while we wait
 				LWP_CreateThread(&socket_thread, setupNetwork, NULL, NULL, 2048, 50);
 				deviceSet = true;
@@ -121,6 +124,7 @@ void setupLogging(enum LOGGING_DEVICE device) {
 static uint32_t sum = 0;
 
 void debugLog(char *msg, ...) {
+	// TODO: should probably check config state here as well...
 	if (deviceSet) {
 		// ensure we don't send duplicate messages
 		uint32_t temp = 0;
@@ -171,8 +175,8 @@ char* getConfiguredIP() {
 	return localip;
 }
 
-bool isNetworkConfigured() {
-	return networkSetupSuccess;
+enum LOGGING_NETWORK_STATUS getNetworkSetupState() {
+	return networkSetupState;
 }
 
 bool isConnectionMade() {
