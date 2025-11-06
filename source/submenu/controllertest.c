@@ -208,9 +208,9 @@ void menu_controllerTest() {
 			int sliderTopY = sliderBottomY - PAD_TriggerL(0);
 			GX_SetLineWidth(24, GX_TO_ZERO);
 			
-			GXColor sliderColor = GX_COLOR_BLUE;
+			GXColor sliderColor = GX_COLOR_RED;
 			if (*held & PAD_TRIGGER_L) {
-				sliderColor = GX_COLOR_RED;
+				sliderColor = GX_COLOR_BLUE;
 				GX_SetLineWidth(32, GX_TO_ZERO);
 			}
 			
@@ -256,9 +256,9 @@ void menu_controllerTest() {
 			// R
 			sliderTopY = sliderBottomY - PAD_TriggerR(0);
 			
-			sliderColor = GX_COLOR_BLUE;
+			sliderColor = GX_COLOR_RED;
 			if (*held & PAD_TRIGGER_R) {
-				sliderColor = GX_COLOR_RED;
+				sliderColor = GX_COLOR_BLUE;
 				GX_SetLineWidth(32, GX_TO_ZERO);
 			}
 			
