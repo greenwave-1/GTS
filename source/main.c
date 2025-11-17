@@ -58,6 +58,14 @@ void powerButtonCallback() {
 }
 #endif
 
+void clearScreenBeforeExit() {
+	// avoid distorted graphics on GC (I have no idea if this actually does what I think it does...)
+	// https://github.com/emukidid/swiss-gc: cube/swiss/source/video.c -> unsetVideo()
+	VIDEO_SetBlack(true);
+	VIDEO_Flush();
+	VIDEO_WaitForFlush();
+}
+
 int main(int argc, char **argv) {
 	// register power button handler if we're on wii
 	#if defined(HW_RVL)
@@ -105,7 +113,8 @@ int main(int argc, char **argv) {
 	#ifdef DEBUGLOG
 	
 	// options are defined in logging.h
-	setupLogging(NETWORKSOCK);
+	setupLogging(USBGECKO_B);
+	//setupLogging(NETWORKSOCK);
 	
 	if (getLoggingType() == NETWORKSOCK) {
 		while (true) {
@@ -116,11 +125,7 @@ int main(int argc, char **argv) {
 			
 			// exit completely if reset is pressed
 			if (SYS_ResetButtonDown()) {
-				// avoid distorted graphics on GC (I have no idea if this actually does what I think it does...)
-				// https://github.com/emukidid/swiss-gc: cube/swiss/source/video.c -> unsetVideo()
-				VIDEO_SetBlack(true);
-				VIDEO_Flush();
-				VIDEO_WaitVSync();
+				clearScreenBeforeExit();
 				return 0;
 			}
 			
@@ -175,11 +180,25 @@ int main(int argc, char **argv) {
 			#endif
 		default:
 			resetCursor();
-			printStr("\n\nUnsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n"
-					 "Program will exit in 5 seconds...");
-			for (int i = 0; i < 300; i++) {
-				VIDEO_WaitVSync();
-			}
+			setCursorPos(2, 0);
+			
+			startDraw(rmode);
+			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
+			changeLoadedTexmap(TEXMAP_FONT);
+			printStrColor(GX_COLOR_RED, GX_COLOR_WHITE,
+						  "Unsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n"
+						  "Program will exit in 5 seconds...");
+			finishDraw(xfb[xfbSwitch]);
+			
+			// for some reason stuff doesn't draw as expected unless two 'frames' have been drawn, so we draw nothing
+			xfbSwitch ^= 1;
+			startDraw(rmode);
+			finishDraw(xfb[xfbSwitch]);
+			
+			VIDEO_WaitForRetrace(VIDEO_GetRetraceCount() + 300);
+			
+			clearScreenBeforeExit();
+			
 			return 0;
 			break; // unnecessary
 	}
@@ -187,11 +206,24 @@ int main(int argc, char **argv) {
 	setSamplingRateNormal();
 	if (isUnsupportedMode()) { // unsupported mode is probably 240p? no idea
 		resetCursor();
-		printStr("\n\nUnsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n"
-				 "Program will exit in 5 seconds...");
-		for (int i = 0; i < 300; i++) {
-			VIDEO_WaitVSync();
-		}
+		setCursorPos(2, 0);
+		
+		startDraw(rmode);
+		updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
+		changeLoadedTexmap(TEXMAP_FONT);
+		printStrColor(GX_COLOR_RED, GX_COLOR_WHITE,
+					  "Unsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n"
+					  "Program will exit in 5 seconds...");
+		finishDraw(xfb[xfbSwitch]);
+		
+		// for some reason stuff doesn't draw as expected unless two 'frames' have been drawn, so we draw nothing
+		xfbSwitch ^= 1;
+		startDraw(rmode);
+		finishDraw(xfb[xfbSwitch]);
+		
+		VIDEO_WaitForRetrace(VIDEO_GetRetraceCount() + 300);
+		
+		clearScreenBeforeExit();
 		return 0;
 	}
 	
@@ -255,7 +287,7 @@ int main(int argc, char **argv) {
 
 		// Wait for the next frame
 		VIDEO_Flush();
-		VIDEO_WaitVSync();
+		VIDEO_WaitForFlush();
 	}
 	
 	// return some of our stuff to normal before exit
@@ -292,6 +324,8 @@ int main(int argc, char **argv) {
 		
 		finishDraw(xfb[xfbSwitch]);
 		VIDEO_SetNextFramebuffer(xfb[xfbSwitch]);
+		VIDEO_Flush();
+		VIDEO_WaitForFlush();
 	}
 	
 	// draw one more frame, since buffer is 1 frame behind
@@ -299,20 +333,13 @@ int main(int argc, char **argv) {
 	xfbSwitch ^= 1;
 	finishDraw(xfb[xfbSwitch]);
 	
-	VIDEO_Flush();
 	// show final frame for at least one second
-	for (int i = 0; i < 60; i++) {
-		VIDEO_WaitVSync();
-	}
+	VIDEO_WaitForRetrace(VIDEO_GetRetraceCount() + 60);
 	
 	// free memory (probably don't need to do this but eh)
 	freeControllerRecStructs();
 	
-	// avoid distorted graphics on GC (I have no idea if this actually does what I think it does...)
-	// https://github.com/emukidid/swiss-gc: cube/swiss/source/video.c -> unsetVideo()
-	VIDEO_SetBlack(true);
-	VIDEO_Flush();
-	VIDEO_WaitVSync();
+	clearScreenBeforeExit();
 	
 	// issue poweroff if the power button was pressed
 	// done here so that any logging stuff can finish cleanly
