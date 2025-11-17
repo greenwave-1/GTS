@@ -190,7 +190,7 @@ int main(int argc, char **argv) {
 						  "Program will exit in 5 seconds...");
 			finishDraw(xfb[xfbSwitch]);
 			
-			// for some reason stuff doesn't draw as expected unless two 'frames' have been drawn, so we draw nothing
+			// for some reason stuff doesn't draw as expected unless two frames have been drawn, so we 'draw' nothing
 			xfbSwitch ^= 1;
 			startDraw(rmode);
 			finishDraw(xfb[xfbSwitch]);
@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
 					  "Program will exit in 5 seconds...");
 		finishDraw(xfb[xfbSwitch]);
 		
-		// for some reason stuff doesn't draw as expected unless two 'frames' have been drawn, so we draw nothing
+		// for some reason stuff doesn't draw as expected unless two frames have been drawn, so we 'draw' nothing
 		xfbSwitch ^= 1;
 		startDraw(rmode);
 		finishDraw(xfb[xfbSwitch]);
