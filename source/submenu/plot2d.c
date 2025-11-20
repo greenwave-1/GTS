@@ -312,7 +312,7 @@ void menu_plot2d() {
 						        dispData->samples[lastDrawPoint].stickY);
 						printStr("Melee XY: (");
 						// is the value negative?
-						if (dispData->samples[lastDrawPoint].stickX < 0) {
+						if (convertedCoords.stickXNegative) {
 							printStr("-");
 						} else {
 							printStr("0");
@@ -326,7 +326,7 @@ void menu_plot2d() {
 						printStr(",");
 						
 						// is the value negative?
-						if (dispData->samples[lastDrawPoint].stickY < 0) {
+						if (convertedCoords.stickYNegative) {
 							printStr("-");
 						} else {
 							printStr("0");
