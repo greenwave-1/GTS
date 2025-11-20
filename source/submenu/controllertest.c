@@ -571,10 +571,43 @@ void menu_controllerTest() {
 			
 			GX_End();
 			
-			// stick cap
+			// line connecting gate to stick cap
+			updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+			
+			// figure out where stick should go to
 			int stickModX = PAD_StickX(0) / 2;
 			int stickModY = PAD_StickY(0) / 2;
 			
+			GX_SetPointSize(32, GX_TO_ZERO);
+			
+			// dot at the center, since GX_LINES doesn't look great on its own
+			GX_Begin(GX_POINTS, GX_VTXFMT0, 1);
+			
+			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMENSIONS / 2),
+			                LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMENSIONS / 2), -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_End();
+			
+			GX_SetLineWidth(40, GX_TO_ZERO);
+			
+			// actually draw the line
+			GX_Begin(GX_LINES, GX_VTXFMT0, 2);
+			
+			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMENSIONS / 2),
+							LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMENSIONS / 2), -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMENSIONS / 2) + stickModX,
+			                LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMENSIONS / 2) - stickModY, -2);
+			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+			
+			GX_End();
+			
+			GX_SetLineWidth(12, GX_TO_ZERO);
+			
+			// stick cap
+			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
 			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
 			GX_Position3s16(LAYOUT_ASTICK_CAP_POS_X + stickModX, LAYOUT_ASTICK_CAP_POS_Y - stickModY, -2);
@@ -626,11 +659,43 @@ void menu_controllerTest() {
 			
 			GX_End();
 			
+			// line connecting gate to cstick cap
+			updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 			
-			// c-stick cap
+			// figure out where stick should go to
 			int cStickModX = PAD_SubStickX(0) / 2;
 			int cStickModY = PAD_SubStickY(0) / 2;
 			
+			GX_SetPointSize(32, GX_TO_ZERO);
+			
+			// dot at the center, since GX_LINES doesn't look great on its own
+			GX_Begin(GX_POINTS, GX_VTXFMT0, 1);
+			
+			GX_Position3s16(LAYOUT_CSTICK_POS_X + (TEX_NORMAL_DIMENSIONS / 2),
+			                LAYOUT_CSTICK_POS_Y + (TEX_NORMAL_DIMENSIONS / 2), -2);
+			GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
+			
+			GX_End();
+			
+			GX_SetLineWidth(40, GX_TO_ZERO);
+			
+			// actually draw the line
+			GX_Begin(GX_LINES, GX_VTXFMT0, 2);
+			
+			GX_Position3s16(LAYOUT_CSTICK_POS_X + (TEX_NORMAL_DIMENSIONS / 2),
+			                LAYOUT_CSTICK_POS_Y + (TEX_NORMAL_DIMENSIONS / 2), -2);
+			GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
+			
+			GX_Position3s16(LAYOUT_CSTICK_POS_X + (TEX_NORMAL_DIMENSIONS / 2) + cStickModX,
+			                LAYOUT_CSTICK_POS_Y + (TEX_NORMAL_DIMENSIONS / 2) - cStickModY, -2);
+			GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
+			
+			GX_End();
+			
+			GX_SetLineWidth(12, GX_TO_ZERO);
+			
+			// c-stick cap
+			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
 			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
 			GX_Position3s16(LAYOUT_CSTICK_POS_X + cStickModX, LAYOUT_CSTICK_POS_Y - cStickModY - 1, -2);
