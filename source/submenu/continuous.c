@@ -128,8 +128,14 @@ void menu_continuousWaveform() {
 
 			if (data->isRecordingReady) {
 				// draw guidelines based on selected test
-				drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 501,
-				        SCREEN_POS_CENTER_Y + 128, GX_COLOR_WHITE);
+				if (!showCStick) {
+					drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 501,
+					        SCREEN_POS_CENTER_Y + 128, GX_COLOR_WHITE);
+				} else {
+					drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 501,
+					        SCREEN_POS_CENTER_Y + 128, GX_COLOR_YELLOW);
+				}
+				
 				drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, GX_COLOR_GRAY);
 				
 				
