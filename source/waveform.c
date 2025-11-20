@@ -140,7 +140,7 @@ MeleeCoordinates convertStickRawToMelee(ControllerSample sample) {
 	return ret;
 }
 
-void getMeleeCoordinateString(char *retStr, MeleeCoordinates coords, enum MELEE_COORD_STR_AXIS axis) {
+void getMeleeCoordinateString(char *retStr, int bufSize, MeleeCoordinates coords, enum MELEE_COORD_STR_AXIS axis) {
 	uint16_t selectedValue = 0;
 	bool selectedValueNegative = false;
 	
@@ -162,7 +162,7 @@ void getMeleeCoordinateString(char *retStr, MeleeCoordinates coords, enum MELEE_
 			selectedValueNegative = coords.cStickYNegative;
 			break;
 		default:
-			retStr = "Error!";
+			snprintf(retStr, bufSize, "Error!");
 			return;
 			break;
 	}
@@ -175,8 +175,8 @@ void getMeleeCoordinateString(char *retStr, MeleeCoordinates coords, enum MELEE_
 	
 	// is this a 1.0 value?
 	if (selectedValue == 10000) {
-		snprintf(retStr, 9, "%c1.0000", retStrSign);
+		snprintf(retStr, bufSize, "%c1.0000", retStrSign);
 	} else {
-		snprintf(retStr, 9, "%c0.%04d", retStrSign, selectedValue);
+		snprintf(retStr, bufSize, "%c0.%04d", retStrSign, selectedValue);
 	}
 }

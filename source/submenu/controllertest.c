@@ -99,12 +99,12 @@ void menu_controllerTest() {
 			setCursorPos(20, 0);
 			printStr("Melee:  (");
 			
-			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_X);
+			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_X);
 			printStr(meleeCoordString);
 
 			printStr(",");
 			
-			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_Y);
+			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_Y);
 			printStr(meleeCoordString);
 			
 			printStr(")");
@@ -112,12 +112,12 @@ void menu_controllerTest() {
 			setCursorPos(20, 32);
 			printStr("C-Melee:  (");
 			
-			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_CX);
+			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_CX);
 			printStr(meleeCoordString);
 			
 			printStr(",");
 			
-			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_CY);
+			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_CY);
 			printStr(meleeCoordString);
 			
 			printStr(")");

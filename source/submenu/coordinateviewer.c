@@ -430,22 +430,22 @@ void menu_coordView() {
 			// print melee coordinates
 			setCursorPos(10, 0);
 			printStr("Stick X: ");
-			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_X);
+			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_X);
 			printStr(meleeCoordString);
 			
 			setCursorPos(11, 0);
 			printStr("Stick Y: ");
-			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_Y);
+			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_Y);
 			printStr(meleeCoordString);
 			
 			setCursorPos(13, 0);
 			printStr("C-Stick X: ");
-			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_CX);
+			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_CX);
 			printStr(meleeCoordString);
 			
 			setCursorPos(14, 0);
 			printStr("C-Stick Y: ");
-			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_CY);
+			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_CY);
 			printStr(meleeCoordString);
 			
 			setCursorPos(19, 0);

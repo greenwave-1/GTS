@@ -313,12 +313,12 @@ void menu_plot2d() {
 						        dispData->samples[lastDrawPoint].stickY);
 						printStr("Melee XY: (");
 						
-						getMeleeCoordinateString(meleeCoordString, convertedCoords, AXIS_X);
+						getMeleeCoordinateString(meleeCoordString, 10, convertedCoords, AXIS_X);
 						printStr(meleeCoordString);
 						
 						printStr(",");
 						
-						getMeleeCoordinateString(meleeCoordString, convertedCoords, AXIS_Y);
+						getMeleeCoordinateString(meleeCoordString, 10, convertedCoords, AXIS_Y);
 						printStr(meleeCoordString);
 					
 						printStr(")\n\n");

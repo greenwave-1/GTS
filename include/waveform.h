@@ -121,6 +121,6 @@ void flipData();
 MeleeCoordinates convertStickRawToMelee(ControllerSample sample);
 
 enum MELEE_COORD_STR_AXIS { AXIS_X, AXIS_Y, AXIS_CX, AXIS_CY };
-void getMeleeCoordinateString(char* retStr, MeleeCoordinates coords, enum MELEE_COORD_STR_AXIS axis);
+void getMeleeCoordinateString(char* retStr, int bufSize, MeleeCoordinates coords, enum MELEE_COORD_STR_AXIS axis);
 
 #endif //GTS_WAVEFORM_H
