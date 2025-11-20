@@ -189,6 +189,8 @@ static int selectedStickmapSub = 0;
 
 static bool menuLockEnabled = false;
 
+static char meleeCoordString[10];
+
 static void setup() {
 	if (pressed == NULL) {
 		pressed = getButtonsDownPtr();
@@ -428,55 +430,23 @@ void menu_coordView() {
 			// print melee coordinates
 			setCursorPos(10, 0);
 			printStr("Stick X: ");
-			// is the value negative?
-			if (stickRaw.stickX < 0) {
-				printStr("-");
-			}
-			// is this a 1.0 value?
-			if (stickMelee.stickXUnit == 10000) {
-				printStr("1.0\n");
-			} else {
-				printStr("0.%04d\n", stickMelee.stickXUnit);
-			}
+			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_X);
+			printStr(meleeCoordString);
 			
-			// print melee coordinates
+			setCursorPos(11, 0);
 			printStr("Stick Y: ");
-			// is the value negative?
-			if (stickRaw.stickY < 0) {
-				printStr("-");
-			}
-			// is this a 1.0 value?
-			if (stickMelee.stickYUnit == 10000) {
-				printStr("1.0\n");
-			} else {
-				printStr("0.%04d\n", stickMelee.stickYUnit);
-			}
+			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_Y);
+			printStr(meleeCoordString);
 			
-			// print melee coordinates
-			printStr("\nC-Stick X: ");
-			// is the value negative?
-			if (stickRaw.cStickX < 0) {
-				printStr("-");
-			}
-			// is this a 1.0 value?
-			if (stickMelee.cStickXUnit == 10000) {
-				printStr("1.0\n");
-			} else {
-				printStr("0.%04d\n", stickMelee.cStickXUnit);
-			}
+			setCursorPos(13, 0);
+			printStr("C-Stick X: ");
+			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_CX);
+			printStr(meleeCoordString);
 			
-			// print melee coordinates
+			setCursorPos(14, 0);
 			printStr("C-Stick Y: ");
-			// is the value negative?
-			if (stickRaw.cStickY < 0) {
-				printStr("-");
-			}
-			// is this a 1.0 value?
-			if (stickMelee.cStickYUnit == 10000) {
-				printStr("1.0\n");
-			} else {
-				printStr("0.%04d\n", stickMelee.cStickYUnit);
-			}
+			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_CY);
+			printStr(meleeCoordString);
 			
 			setCursorPos(19, 0);
 			printStr("Stickmap: ");

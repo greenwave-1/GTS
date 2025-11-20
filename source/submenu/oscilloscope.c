@@ -633,14 +633,14 @@ void menu_oscilloscope() {
 						}
 						setCursorPos(3, 0);
 						
-						printStr("Sample start: %04u/%04u | Time shown: %04llu/%04llu ms\n", dataScrollOffset, dispData->sampleEnd, drawnTicksUs / 1000, dispData->totalTimeUs / 1000);
+						printStr("Sample start: %4u/%4u | Time shown: %4llu/%4llu ms\n", dataScrollOffset, dispData->sampleEnd, drawnTicksUs / 1000, dispData->totalTimeUs / 1000);
 						
 						// print test data
 						setCursorPos(20, 0);
 						switch (currentTest) {
 							case SNAPBACK:
-								printStr("Min X: %04d | Min Y: %04d   |   ", minX, minY);
-								printStr("Max X: %04d | Max Y: %04d\n", maxX, maxY);
+								printStr("Min X: %4d | Min Y: %4d   |   ", minX, minY);
+								printStr("Max X: %4d | Max Y: %4d\n", maxX, maxY);
 								break;
 							case PIVOT:
 								bool pivotHit80 = false;

@@ -16,6 +16,8 @@
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
 
+static char meleeCoordString[10];
+
 static bool rumbleSecret = false;
 static int rumbleIndex = 0;
 const static int rumbleOffsets[][2] = { {-2, -2}, {-2, 2}, {2, 2}, {2, -2} };
@@ -89,86 +91,52 @@ void menu_controllerTest() {
 			// print raw stick coordinates
 			setCursorPos(19, 0);
 			setCursorDepth(-10);
-			printStr("Raw XY:    (%04d,%04d)", stickRaw.stickX, stickRaw.stickY);
+			printStr("Raw XY:    (%4d,%4d)", stickRaw.stickX, stickRaw.stickY);
 			setCursorPos(19, 32);
-			printStr("C-Raw XY:    (%04d,%04d)", stickRaw.cStickX, stickRaw.cStickY);
+			printStr("C-Raw XY:    (%4d,%4d)", stickRaw.cStickX, stickRaw.cStickY);
 			
 			// print melee coordinates
 			setCursorPos(20, 0);
 			printStr("Melee:  (");
-			// is the value negative?
-			if (stickRaw.stickX < 0) {
-				printStr("-");
-			} else {
-				printStr("0");
-			}
-			// is this a 1.0 value?
-			if (stickMelee.stickXUnit == 10000) {
-				printStr("1.0000");
-			} else {
-				printStr("0.%04d", stickMelee.stickXUnit);
-			}
+			
+			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_X);
+			printStr(meleeCoordString);
+
 			printStr(",");
 			
-			// is the value negative?
-			if (stickRaw.stickY < 0) {
-				printStr("-");
-			} else {
-				printStr("0");
-			}
-			// is this a 1.0 value?
-			if (stickMelee.stickYUnit == 10000) {
-				printStr("1.0000");
-			} else {
-				printStr("0.%04d", stickMelee.stickYUnit);
-			}
+			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_Y);
+			printStr(meleeCoordString);
+			
 			printStr(")");
 			
 			setCursorPos(20, 32);
 			printStr("C-Melee:  (");
-			// is the value negative?
-			if (stickRaw.cStickX < 0) {
-				printStr("-");
-			} else {
-				printStr("0");
-			}
-			// is this a 1.0 value?
-			if (stickMelee.cStickXUnit == 10000) {
-				printStr("1.0000");
-			} else {
-				printStr("0.%04d", stickMelee.cStickXUnit);
-			}
+			
+			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_CX);
+			printStr(meleeCoordString);
+			
 			printStr(",");
 			
-			// is the value negative?
-			if (stickRaw.cStickY < 0) {
-				printStr("-");
-			} else {
-				printStr("0");
-			}
-			// is this a 1.0 value?
-			if (stickMelee.cStickYUnit == 10000) {
-				printStr("1.0000");
-			} else {
-				printStr("0.%04d", stickMelee.cStickYUnit);
-			}
+			getMeleeCoordinateString(meleeCoordString, stickMelee, AXIS_CY);
+			printStr(meleeCoordString);
+			
 			printStr(")");
 			
 			// show origin info if controller is connected
 			if (isControllerConnected(CONT_PORT_1)) {
 				PADStatus origin = getOriginStatus(CONT_PORT_1);
 				setCursorPos(21, 0);
-				printStr("Origin XY: (%04d,%04d)", origin.stickX, origin.stickY);
+				printStr("Origin XY: (%4d,%4d)", origin.stickX, origin.stickY);
 				setCursorPos(21, 32);
-				printStr("C-Origin XY: (%04d,%04d)", origin.substickX, origin.substickY);
+				printStr("C-Origin XY: (%4d,%4d)", origin.substickX, origin.substickY);
 				
 				if (!(*held & PAD_TRIGGER_L)) {
 					setCursorPos(18, 2);
-					printStr("L Origin: %d", origin.triggerL);
+					printStr("L Origin: %3d", origin.triggerL);
 				}
 				if (!(*held & PAD_TRIGGER_R)) {
 					setCursorPos(18, 44);
-					printStr("R Origin: %d", origin.triggerR);
+					printStr("R Origin: %3d", origin.triggerR);
 				}
 				if (rumbleSecret) {
 					setCursorPos(0, 37);
@@ -185,14 +153,14 @@ void menu_controllerTest() {
 			}
 			
 			setCursorPos(17,2);
-			printStr("Analog L: %d", PAD_TriggerL(0));
+			printStr("Analog L: %3d", PAD_TriggerL(0));
 			if (*held & PAD_TRIGGER_L) {
 				setCursorPos(18, 2);
 				printStr("Digital L Pressed");
 			}
 			
 			setCursorPos(17,44);
-			printStr("Analog R: %d", PAD_TriggerR(0));
+			printStr("Analog R: %3d", PAD_TriggerR(0));
 			if (*held & PAD_TRIGGER_R) {
 				setCursorPos(18, 40);
 				printStr("Digital R Pressed");

@@ -4,6 +4,7 @@
 
 #include "waveform.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
@@ -137,4 +138,45 @@ MeleeCoordinates convertStickRawToMelee(ControllerSample sample) {
 	ret.cStickYNegative = (sample.cStickY < 0) ? true : false;
 	
 	return ret;
+}
+
+void getMeleeCoordinateString(char *retStr, MeleeCoordinates coords, enum MELEE_COORD_STR_AXIS axis) {
+	uint16_t selectedValue = 0;
+	bool selectedValueNegative = false;
+	
+	switch (axis) {
+		case AXIS_X:
+			selectedValue = coords.stickXUnit;
+			selectedValueNegative = coords.stickXNegative;
+			break;
+		case AXIS_Y:
+			selectedValue = coords.stickYUnit;
+			selectedValueNegative = coords.stickYNegative;
+			break;
+		case AXIS_CX:
+			selectedValue = coords.cStickXUnit;
+			selectedValueNegative = coords.cStickXNegative;
+			break;
+		case AXIS_CY:
+			selectedValue = coords.cStickYUnit;
+			selectedValueNegative = coords.cStickYNegative;
+			break;
+		default:
+			retStr = "Error!";
+			return;
+			break;
+	}
+	
+	// store sign
+	char retStrSign = ' ';
+	if (selectedValueNegative) {
+		retStrSign = '-';
+	}
+	
+	// is this a 1.0 value?
+	if (selectedValue == 10000) {
+		snprintf(retStr, 9, "%c1.0000", retStrSign);
+	} else {
+		snprintf(retStr, 9, "%c0.%04d", retStrSign, selectedValue);
+	}
 }

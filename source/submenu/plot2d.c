@@ -42,6 +42,7 @@ static bool haveStartPoint = false;
 static bool captureStart = false;
 
 static MeleeCoordinates convertedCoords;
+static char meleeCoordString[10];
 static int map2dStartIndex = 0;
 static int lastDrawPoint = -1;
 
@@ -276,9 +277,9 @@ void menu_plot2d() {
 						convertedCoords = convertStickRawToMelee(dispData->samples[lastDrawPoint]);
 						
 						setCursorPos(5, 0);
-						printStr("Total samples: %04u\n", dispData->sampleEnd);
-						printStr("Start sample: %04u\n", map2dStartIndex + 1);
-						printStr("End sample: %04u\n", lastDrawPoint + 1);
+						printStr("Total samples: %5u\n", dispData->sampleEnd);
+						printStr("Start sample: %6u\n", map2dStartIndex + 1);
+						printStr("End sample: %8u\n", lastDrawPoint + 1);
 						
 						// show button presses of last drawn point
 						setCursorPos(11,0);
@@ -308,35 +309,18 @@ void menu_plot2d() {
 						// print coordinates of last drawn point
 						// raw stick coordinates
 						setCursorPos(14, 0);
-						printStr("Raw XY: (%04d,%04d)\n", dispData->samples[lastDrawPoint].stickX,
+						printStr("Raw XY:   (%4d,%4d)\n", dispData->samples[lastDrawPoint].stickX,
 						        dispData->samples[lastDrawPoint].stickY);
 						printStr("Melee XY: (");
-						// is the value negative?
-						if (convertedCoords.stickXNegative) {
-							printStr("-");
-						} else {
-							printStr("0");
-						}
-						// is this a 1.0 value?
-						if (convertedCoords.stickXUnit == 10000) {
-							printStr("1.0000");
-						} else {
-							printStr("0.%04d", convertedCoords.stickXUnit);
-						}
+						
+						getMeleeCoordinateString(meleeCoordString, convertedCoords, AXIS_X);
+						printStr(meleeCoordString);
+						
 						printStr(",");
 						
-						// is the value negative?
-						if (convertedCoords.stickYNegative) {
-							printStr("-");
-						} else {
-							printStr("0");
-						}
-						// is this a 1.0 value?
-						if (convertedCoords.stickYUnit == 10000) {
-							printStr("1.0000");
-						} else {
-							printStr("0.%04d", convertedCoords.stickYUnit);
-						}
+						getMeleeCoordinateString(meleeCoordString, convertedCoords, AXIS_Y);
+						printStr(meleeCoordString);
+					
 						printStr(")\n\n");
 						
 						updateVtxDesc(VTX_TEX_NOCOLOR, GX_MODULATE);
@@ -470,8 +454,8 @@ void menu_plot2d() {
 						
 						double timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
 						setCursorPos(8, 0);
-						printStr("Total MS: %6.2f\n", timeFromStartMs);
-						printStr("Total frames: %2.2f", timeFromStartMs / FRAME_TIME_MS_F);
+						printStr("Total MS: %10.2f\n", timeFromStartMs);
+						printStr("Total frames:%7.2f", timeFromStartMs / FRAME_TIME_MS_F);
 						
 						// cycle the stickmap shown
 						if (*pressed & PAD_BUTTON_X && !buttonLock) {
