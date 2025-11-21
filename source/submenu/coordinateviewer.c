@@ -189,8 +189,6 @@ static int selectedStickmapSub = 0;
 
 static bool menuLockEnabled = false;
 
-static char meleeCoordString[10];
-
 static void setup() {
 	if (pressed == NULL) {
 		pressed = getButtonsDownPtr();
@@ -429,24 +427,16 @@ void menu_coordView() {
 			
 			// print melee coordinates
 			setCursorPos(10, 0);
-			printStr("Stick X: ");
-			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_X);
-			printStr(meleeCoordString);
+			printStr("Stick X: %s", getMeleeCoordinateString(stickMelee, AXIS_X));
 			
 			setCursorPos(11, 0);
-			printStr("Stick Y: ");
-			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_Y);
-			printStr(meleeCoordString);
+			printStr("Stick Y: %s", getMeleeCoordinateString(stickMelee, AXIS_Y));
 			
 			setCursorPos(13, 0);
-			printStr("C-Stick X: ");
-			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_CX);
-			printStr(meleeCoordString);
+			printStr("C-Stick X: %s", getMeleeCoordinateString(stickMelee, AXIS_CX));
 			
 			setCursorPos(14, 0);
-			printStr("C-Stick Y: ");
-			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_CY);
-			printStr(meleeCoordString);
+			printStr("C-Stick Y: %s", getMeleeCoordinateString(stickMelee, AXIS_CY));
 			
 			setCursorPos(19, 0);
 			printStr("Stickmap: ");

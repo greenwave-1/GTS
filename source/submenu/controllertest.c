@@ -16,8 +16,6 @@
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
 
-static char meleeCoordString[10];
-
 static bool rumbleSecret = false;
 static int rumbleIndex = 0;
 const static int rumbleOffsets[][2] = { {-2, -2}, {-2, 2}, {2, 2}, {2, -2} };
@@ -97,30 +95,10 @@ void menu_controllerTest() {
 			
 			// print melee coordinates
 			setCursorPos(20, 0);
-			printStr("Melee:  (");
-			
-			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_X);
-			printStr(meleeCoordString);
-
-			printStr(",");
-			
-			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_Y);
-			printStr(meleeCoordString);
-			
-			printStr(")");
+			printStr("Melee:  (%s)", getMeleeCoordinateString(stickMelee, AXIS_XY));
 			
 			setCursorPos(20, 32);
-			printStr("C-Melee:  (");
-			
-			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_CX);
-			printStr(meleeCoordString);
-			
-			printStr(",");
-			
-			getMeleeCoordinateString(meleeCoordString, 10, stickMelee, AXIS_CY);
-			printStr(meleeCoordString);
-			
-			printStr(")");
+			printStr("C-Melee:  (%s)", getMeleeCoordinateString(stickMelee, AXIS_CXY));
 			
 			// show origin info if controller is connected
 			if (isControllerConnected(CONT_PORT_1)) {

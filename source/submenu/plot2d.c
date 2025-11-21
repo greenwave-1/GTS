@@ -42,7 +42,6 @@ static bool haveStartPoint = false;
 static bool captureStart = false;
 
 static MeleeCoordinates convertedCoords;
-static char meleeCoordString[10];
 static int map2dStartIndex = 0;
 static int lastDrawPoint = -1;
 
@@ -311,17 +310,7 @@ void menu_plot2d() {
 						setCursorPos(14, 0);
 						printStr("Raw XY:   (%4d,%4d)\n", dispData->samples[lastDrawPoint].stickX,
 						        dispData->samples[lastDrawPoint].stickY);
-						printStr("Melee XY: (");
-						
-						getMeleeCoordinateString(meleeCoordString, 10, convertedCoords, AXIS_X);
-						printStr(meleeCoordString);
-						
-						printStr(",");
-						
-						getMeleeCoordinateString(meleeCoordString, 10, convertedCoords, AXIS_Y);
-						printStr(meleeCoordString);
-					
-						printStr(")\n\n");
+						printStr("Melee XY: (%s)", getMeleeCoordinateString(convertedCoords, AXIS_XY));
 						
 						updateVtxDesc(VTX_TEX_NOCOLOR, GX_MODULATE);
 						changeLoadedTexmap(TEXMAP_STICKMAPS);
@@ -346,6 +335,7 @@ void menu_plot2d() {
 							GX_End();
 						}
 						
+						setCursorPos(16, 0);
 						printStr("Stickmap: ");
 						switch (selectedImage) {
 							case A_WAIT:

@@ -140,43 +140,86 @@ MeleeCoordinates convertStickRawToMelee(ControllerSample sample) {
 	return ret;
 }
 
-void getMeleeCoordinateString(char *retStr, int bufSize, MeleeCoordinates coords, enum MELEE_COORD_STR_AXIS axis) {
-	uint16_t selectedValue = 0;
-	bool selectedValueNegative = false;
+static char meleeCoordString[20];
+char* getMeleeCoordinateString(MeleeCoordinates coords, enum MELEE_COORD_STR_AXIS axis) {
+	uint16_t selectedValue1 = 0, selectedValue2 = 0;
+	bool value1Negative = false, value2Negative = false;
 	
 	switch (axis) {
 		case AXIS_X:
-			selectedValue = coords.stickXUnit;
-			selectedValueNegative = coords.stickXNegative;
+			selectedValue1 = coords.stickXUnit;
+			value1Negative = coords.stickXNegative;
 			break;
 		case AXIS_Y:
-			selectedValue = coords.stickYUnit;
-			selectedValueNegative = coords.stickYNegative;
+			selectedValue1 = coords.stickYUnit;
+			value1Negative = coords.stickYNegative;
 			break;
 		case AXIS_CX:
-			selectedValue = coords.cStickXUnit;
-			selectedValueNegative = coords.cStickXNegative;
+			selectedValue1 = coords.cStickXUnit;
+			value1Negative = coords.cStickXNegative;
 			break;
 		case AXIS_CY:
-			selectedValue = coords.cStickYUnit;
-			selectedValueNegative = coords.cStickYNegative;
+			selectedValue1 = coords.cStickYUnit;
+			value1Negative = coords.cStickYNegative;
+			break;
+		case AXIS_XY:
+			selectedValue1 = coords.stickXUnit;
+			selectedValue2 = coords.stickYUnit;
+			value1Negative = coords.stickXNegative;
+			value2Negative = coords.stickYNegative;
+			break;
+		case AXIS_CXY:
+			selectedValue1 = coords.cStickXUnit;
+			selectedValue2 = coords.cStickYUnit;
+			value1Negative = coords.cStickXNegative;
+			value2Negative = coords.cStickYNegative;
 			break;
 		default:
-			snprintf(retStr, bufSize, "Error!");
-			return;
+			snprintf(meleeCoordString, 16, "Error!");
+			return meleeCoordString;
 			break;
 	}
 	
-	// store sign
-	char retStrSign = ' ';
-	if (selectedValueNegative) {
-		retStrSign = '-';
+	// AXIS_XY or AXIS_CXY, we want both coordinates in one string
+	if (axis >= AXIS_XY) {
+		// store sign
+		char retStrSign1 = ' ', retStrSign2 = ' ';
+		if (value1Negative) {
+			retStrSign1 = '-';
+		}
+		if (value2Negative) {
+			retStrSign2 = '-';
+		}
+		
+		// there are 3 permutations for possible prints, it isn't possible for both to be 1.0
+		// only x is 1.0
+		if (selectedValue1 == 10000) {
+			snprintf(meleeCoordString, 18, "%c1.0000,%c0.%04d", retStrSign1, retStrSign2, selectedValue2);
+		}
+		// only y is 1.0
+		else if (selectedValue2 == 10000) {
+			snprintf(meleeCoordString, 18, "%c0.%04d,%c1.0000", retStrSign1, selectedValue1, retStrSign2);
+		}
+		// neigher are 1.0
+		else {
+			snprintf(meleeCoordString, 18, "%c0.%04d,%c0.%04d", retStrSign1, selectedValue1, retStrSign2, selectedValue2);
+		}
+	}
+	// we only want one value
+	else {
+		// store sign
+		char retStrSign = ' ';
+		if (value1Negative) {
+			retStrSign = '-';
+		}
+		
+		// is this a 1.0 value?
+		if (selectedValue1 == 10000) {
+			snprintf(meleeCoordString, 18, "%c1.0000", retStrSign);
+		} else {
+			snprintf(meleeCoordString, 18, "%c0.%04d", retStrSign, selectedValue1);
+		}
 	}
 	
-	// is this a 1.0 value?
-	if (selectedValue == 10000) {
-		snprintf(retStr, bufSize, "%c1.0000", retStrSign);
-	} else {
-		snprintf(retStr, bufSize, "%c0.%04d", retStrSign, selectedValue);
-	}
+	return meleeCoordString;
 }
