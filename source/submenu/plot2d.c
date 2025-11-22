@@ -18,6 +18,8 @@
 
 // used to make sure diagonals don't count as an input
 const static uint16_t DPAD_MASK = PAD_BUTTON_UP | PAD_BUTTON_DOWN | PAD_BUTTON_LEFT | PAD_BUTTON_RIGHT;
+// these should not affect buttonLock logic
+const static uint16_t PRESS_MASK = PAD_TRIGGER_L | PAD_TRIGGER_R | PAD_BUTTON_X;
 
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
@@ -392,6 +394,9 @@ void menu_plot2d() {
 								break;
 						}
 						
+						setCursorPos(17, 0);
+						printStr("Zone: %s", "TEMP");
+						
 						// draw box around plot area
 						if (!showCStick) {
 							drawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
@@ -702,12 +707,12 @@ void menu_plot2d() {
 	
 	if (buttonLock) {
 		// don't allow button press until a number of frames has passed
-		if (buttonPressCooldown > 0) {
+		if (buttonPressCooldown > 0 && ((*held) & (~PRESS_MASK)) == 0) {
 			buttonPressCooldown--;
-		} else {
-			// allow L and R to be held and not prevent buttonLock from being reset
+		} else if (buttonPressCooldown == 0) {
+			// allow L, R, and X to be held and not prevent buttonLock from being reset
 			// this is needed _only_ because we have a check for a pressed button while another is held
-			if ((*held) == 0 || *held & PAD_TRIGGER_L || *held & PAD_TRIGGER_R) {
+			if ((*held) == 0 || *held & PRESS_MASK) {
 				buttonLock = 0;
 			}
 		}
