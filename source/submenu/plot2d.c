@@ -365,7 +365,7 @@ void menu_plot2d() {
 							GX_End();
 						}
 						
-						setCursorPos(18, 0);
+						setCursorPos(16, 0);
 						printStr("Stickmap: ");
 						switch (selectedImage) {
 							case A_WAIT:
@@ -499,15 +499,16 @@ void menu_plot2d() {
 							        GX_COLOR_WHITE);
 						}
 						
-						double timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
 						setCursorPos(11, 0);
-						printStr("Total MS: %10.2f\n", timeFromStartMs);
-						printStr("Total frames:%7.2f", timeFromStartMs / FRAME_TIME_MS_F);
+						printStr("Total samples: %11u\n", dispData->sampleEnd);
+						printStr("Graph start/end: %4u/%4u", map2dStartIndex + 1, lastDrawPoint + 1);
 						
-						setCursorPos(14, 0);
-						printStr("Total samples: %5u\n", dispData->sampleEnd);
-						printStr("Start sample: %6u\n", map2dStartIndex + 1);
-						printStr("End sample: %8u\n", lastDrawPoint + 1);
+						double timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
+						setCursorPos(13, 0);
+						printStr("Total MS: %16.2f\n", timeFromStartMs);
+						printStr("Total frames:%13.2f", timeFromStartMs / FRAME_TIME_MS_F);
+						
+
 						
 						// cycle the stickmap shown
 						if ((*held & DPAD_MASK) == PAD_BUTTON_UP && !buttonLock) {
