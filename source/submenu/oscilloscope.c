@@ -170,21 +170,42 @@ static void oscilloscopeCallback() {
 						int8_t inputSign = 0;
 						int pivotStartIndex = 0;
 						bool hasCrossedOrigin = false;
-						for (int i = (*temp)->sampleEnd - 1; i >= 0; i--) {
-							if (!crossed64Range) {
-								if ((*temp)->samples[i].stickX >= 64 || (*temp)->samples[i].stickX <= -64) {
-									crossed64Range = true;
-									inputSign = (*temp)->samples[i].stickX;
+						if (!showCStick) {
+							for (int i = (*temp)->sampleEnd - 1; i >= 0; i--) {
+								if (!crossed64Range) {
+									if ((*temp)->samples[i].stickX >= 64 || (*temp)->samples[i].stickX <= -64) {
+										crossed64Range = true;
+										inputSign = (*temp)->samples[i].stickX;
+									}
+								} else if (!hasCrossedOrigin) {
+									if (inputSign * (*temp)->samples[i].stickX < 0) {
+										hasCrossedOrigin = true;
+									}
+								} else {
+									timeFromOriginCross += (*temp)->samples[i].timeDiffUs;
+									if (timeFromOriginCross / 1000 >= 50) {
+										pivotStartIndex = i;
+										break;
+									}
 								}
-							} else if (!hasCrossedOrigin) {
-								if (inputSign * (*temp)->samples[i].stickX < 0) {
-									hasCrossedOrigin = true;
-								}
-							} else {
-								timeFromOriginCross += (*temp)->samples[i].timeDiffUs;
-								if (timeFromOriginCross / 1000 >= 50) {
-									pivotStartIndex = i;
-									break;
+							}
+						} else {
+							for (int i = (*temp)->sampleEnd - 1; i >= 0; i--) {
+								if (!crossed64Range) {
+									if ((*temp)->samples[i].cStickX >= 64 || (*temp)->samples[i].cStickX <= -64) {
+										crossed64Range = true;
+										inputSign = (*temp)->samples[i].cStickX;
+									}
+								} else if (!hasCrossedOrigin) {
+									if (inputSign * (*temp)->samples[i].cStickX < 0) {
+										hasCrossedOrigin = true;
+									}
+								} else {
+									timeFromOriginCross += (*temp)->samples[i].timeDiffUs;
+									if (timeFromOriginCross / 1000 >= 50) {
+										pivotStartIndex = i;
+										break;
+									}
 								}
 							}
 						}
@@ -806,6 +827,9 @@ void menu_oscilloscope() {
 								float dashbackPercent;
 								float ucfPercent;
 
+								// TODO: fix this
+								// not finding start or end might be valid for dashback
+								// ucf check is wrong(?) if moving too fast
 								if (dashbackEndIndex == -1) {
 									dashbackPercent = 0;
 									ucfPercent = 0;
