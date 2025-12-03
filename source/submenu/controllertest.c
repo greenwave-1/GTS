@@ -5,6 +5,7 @@
 #include "submenu/controllertest.h"
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <ogc/pad.h>
 
@@ -27,6 +28,8 @@ const static uint16_t codeInputSequence[] = { PAD_BUTTON_UP, PAD_BUTTON_UP, PAD_
                                                PAD_BUTTON_B, PAD_BUTTON_A, PAD_BUTTON_START };
 static int codeInputSequenceIndex = 0;
 static int codeInputRumbleCounter = 0;
+
+static uint8_t originFlashCounter = 0;
 
 static void controllerTestCheckInput() {
 	uint16_t port4 = PAD_ButtonsDown(3);
@@ -104,9 +107,47 @@ void menu_controllerTest() {
 			if (isControllerConnected(CONT_PORT_1)) {
 				PADStatus origin = getOriginStatus(CONT_PORT_1);
 				setCursorPos(21, 0);
-				printStr("Origin XY: (%4d,%4d)", origin.stickX, origin.stickY);
+				printStr("Origin XY: ");
+				
+				// change text color depending on the origin's value
+				// mainly useful for phobgcc calibration stuffs
+				{
+					int8_t max = abs(origin.stickX) > abs(origin.stickY) ? abs(origin.stickX) : abs(origin.stickY);
+					if (max >= 100) {
+						if (originFlashCounter >= 30) {
+							printStrColor(GX_COLOR_RED, GX_COLOR_WHITE, "(%4d,%4d)", origin.stickX, origin.stickY);
+						} else {
+							printStrColor(GX_COLOR_RED, GX_COLOR_BLACK, "(%4d,%4d)", origin.stickX, origin.stickY);
+						}
+					} else if (max >= 40) {
+						printStrColor(GX_COLOR_ORANGE, GX_COLOR_BLACK, "(%4d,%4d)", origin.stickX, origin.stickY);
+					} else if (max >= 20) {
+						printStrColor(GX_COLOR_YELLOW, GX_COLOR_BLACK, "(%4d,%4d)", origin.stickX, origin.stickY);
+					} else {
+						printStr("(%4d,%4d)", origin.stickX, origin.stickY);
+					}
+				}
 				setCursorPos(21, 32);
-				printStr("C-Origin XY: (%4d,%4d)", origin.substickX, origin.substickY);
+				printStr("C-Origin XY: ");
+				
+				// change text color depending on the origin's value
+				// mainly useful for phobgcc calibration stuffs
+				{
+					int8_t max = abs(origin.substickX) > abs(origin.substickY) ? abs(origin.substickX) : abs(origin.substickY);
+					if (max >= 100) {
+						if (originFlashCounter >= 30) {
+							printStrColor(GX_COLOR_RED, GX_COLOR_WHITE, "(%4d,%4d)", origin.substickX, origin.substickY);
+						} else {
+							printStrColor(GX_COLOR_RED, GX_COLOR_BLACK, "(%4d,%4d)", origin.substickX, origin.substickY);
+						}
+					} else if (max >= 40) {
+						printStrColor(GX_COLOR_ORANGE, GX_COLOR_BLACK, "(%4d,%4d)", origin.substickX, origin.substickY);
+					} else if (max >= 20) {
+						printStrColor(GX_COLOR_YELLOW, GX_COLOR_BLACK, "(%4d,%4d)", origin.substickX, origin.substickY);
+					} else {
+						printStr("(%4d,%4d)", origin.substickX, origin.substickY);
+					}
+				}
 				
 				if (!(*held & PAD_TRIGGER_L)) {
 					setCursorPos(18, 2);
@@ -688,6 +729,9 @@ void menu_controllerTest() {
 
 			break;
 	}
+	
+	originFlashCounter++;
+	originFlashCounter %= 60;
 }
 
 void menu_controllerTestEnd() {
