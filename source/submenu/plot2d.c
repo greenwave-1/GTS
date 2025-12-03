@@ -442,14 +442,13 @@ void menu_plot2d() {
 								if (!showCStick) {
 									GX_Position3s16(COORD_CIRCLE_CENTER_X + dispData->samples[dataIndex].stickX,
 									                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].stickY, -4);
-									if (dispData->samples[dataIndex].buttons != 0) {
-										GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
-									} else {
-										GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-									}
 								} else {
 									GX_Position3s16(COORD_CIRCLE_CENTER_X + dispData->samples[dataIndex].cStickX,
 									                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].cStickY, -4);
+								}
+								if (dispData->samples[dataIndex].buttons != 0) {
+									GX_Color3u8(GX_COLOR_ORANGE.r, GX_COLOR_ORANGE.g, GX_COLOR_ORANGE.b);
+								} else {
 									GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
 								}
 								currFrameInterval++;
@@ -473,14 +472,13 @@ void menu_plot2d() {
 									if (!showCStick) {
 										GX_Position3s16(COORD_CIRCLE_CENTER_X + dispData->samples[dataIndex].stickX,
 										                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].stickY, -4);
-										if (dispData->samples[dataIndex].buttons != 0) {
-											GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
-										} else {
-											GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-										}
 									} else {
 										GX_Position3s16(COORD_CIRCLE_CENTER_X + dispData->samples[dataIndex].cStickX,
 										                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].cStickY, -4);
+									}
+									if (dispData->samples[dataIndex].buttons != 0) {
+										GX_Color3u8(GX_COLOR_ORANGE.r, GX_COLOR_ORANGE.g, GX_COLOR_ORANGE.b);
+									} else {
 										GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
 									}
 									dataIndex++;
