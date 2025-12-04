@@ -22,6 +22,9 @@ static lwp_t socket_thread = (lwp_t) NULL;
 
 static enum LOGGING_DEVICE dev = USBGECKO_B;
 
+static bool loggingPaused = false;
+static bool allowDuplicateMessages = false;
+
 static bool deviceSet = false;
 
 static enum LOGGING_NETWORK_STATUS networkSetupState = NETLOG_INIT;
@@ -125,13 +128,13 @@ static uint32_t sum = 0;
 
 void debugLog(char *msg, ...) {
 	// TODO: should probably check config state here as well...
-	if (deviceSet) {
+	if (deviceSet && !loggingPaused) {
 		// ensure we don't send duplicate messages
 		uint32_t temp = 0;
 		for (int i = 0; i < strlen(msg); i++) {
 			temp += msg[i];
 		}
-		if (temp == sum) {
+		if (temp == sum && !allowDuplicateMessages) {
 			return;
 		}
 		sum = temp;
@@ -169,6 +172,14 @@ void stopLogging() {
 		default:
 			break;
 	}
+}
+
+void pauseLogging(bool state) {
+	loggingPaused = state;
+}
+
+void setAllowDuplicateMessages(bool state) {
+	allowDuplicateMessages = state;
 }
 
 char* getConfiguredIP() {

@@ -20,6 +20,9 @@ void debugLog(char *msg, ...);
 
 void stopLogging();
 
+void pauseLogging(bool state);
+void setAllowDuplicateMessages(bool state);
+
 enum LOGGING_NETWORK_STATUS { NETLOG_INIT, NETLOG_CONF_FAIL, NETLOG_CONF_SUCCESS };
 
 enum LOGGING_NETWORK_STATUS getNetworkSetupState();
