@@ -259,7 +259,7 @@ static void oscilloscopeCallback() {
 				flipData();
 			}
 		}
-			
+		
 		// data capture has not yet occurred
 		else {
 			// check criteria for each test to trigger a recording
@@ -466,52 +466,52 @@ void menu_oscilloscope() {
 						}
 					}
 				case POST_INPUT:
+					// draw guidelines based on selected test
+					if (!showCStick) {
+						drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
+						        SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_WHITE);
+					} else {
+						drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
+						        SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_YELLOW);
+					}
+					drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y,
+							 SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, GX_COLOR_GRAY);
+					// lots of the specific values are taken from:
+					// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
+					switch (currentTest) {
+						case PIVOT:
+							drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y + 64,
+									 SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, GX_COLOR_DARKGREEN);
+							drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 64,
+									  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, GX_COLOR_DARKGREEN);
+							setCursorPos(8, 0);
+							printStr("+64");
+							setCursorPos(15, 0);
+							printStr("-64");
+							break;
+						case DASHBACK:
+							drawLine(SCREEN_TIMEPLOT_START,  SCREEN_POS_CENTER_Y + 64,
+									  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, GX_COLOR_DARKGREEN);
+							drawLine(SCREEN_TIMEPLOT_START,  SCREEN_POS_CENTER_Y - 64,
+									  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, GX_COLOR_DARKGREEN);
+							setCursorPos(8, 0);
+							printStr("+64");
+							setCursorPos(15, 0);
+							printStr("-64");
+						case SNAPBACK:
+							drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y + 23,
+									  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, GX_COLOR_DARKGREEN);
+							drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 23,
+									  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, GX_COLOR_DARKGREEN);
+							setCursorPos(10, 0);
+							printStr("+23");
+							setCursorPos(13, 0);
+							printStr("-23");
+						default:
+							break;
+					}
+					
 					if (dispData->isRecordingReady) {
-						// draw guidelines based on selected test
-						if (!showCStick) {
-							drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
-							        SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_WHITE);
-						} else {
-							drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
-							        SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_YELLOW);
-						}
-						drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y,
-								 SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, GX_COLOR_GRAY);
-						// lots of the specific values are taken from:
-						// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
-						switch (currentTest) {
-							case PIVOT:
-								drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y + 64,
-										 SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, GX_COLOR_DARKGREEN);
-								drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 64,
-										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, GX_COLOR_DARKGREEN);
-								setCursorPos(8, 0);
-								printStr("+64");
-								setCursorPos(15, 0);
-								printStr("-64");
-								break;
-							case DASHBACK:
-								drawLine(SCREEN_TIMEPLOT_START,  SCREEN_POS_CENTER_Y + 64,
-										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 64, GX_COLOR_DARKGREEN);
-								drawLine(SCREEN_TIMEPLOT_START,  SCREEN_POS_CENTER_Y - 64,
-										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 64, GX_COLOR_DARKGREEN);
-								setCursorPos(8, 0);
-								printStr("+64");
-								setCursorPos(15, 0);
-								printStr("-64");
-							case SNAPBACK:
-								drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y + 23,
-										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y + 23, GX_COLOR_DARKGREEN);
-								drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 23,
-										  SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y - 23, GX_COLOR_DARKGREEN);
-								setCursorPos(10, 0);
-								printStr("+23");
-								setCursorPos(13, 0);
-								printStr("-23");
-							default:
-								break;
-						}
-
 						int minX, minY;
 						int maxX, maxY;
 
@@ -645,15 +645,17 @@ void menu_oscilloscope() {
 							}
 						}
 						
+						/*
 						setCursorPos(2, 45);
-						// total time is stored in microseconds, divide by 1000 for milliseconds
 						if (!showCStick) {
 							printStr("Shown: Stick");
 						} else {
 							printStr("Shown: C-Stick");
 						}
+						 */
 						setCursorPos(3, 0);
 						
+						// total time is stored in microseconds, divide by 1000 for milliseconds
 						printStr("Sample start: %4u/%4u | Time shown: %4llu/%4llu ms\n", dataScrollOffset, dispData->sampleEnd, drawnTicksUs / 1000, dispData->totalTimeUs / 1000);
 						
 						// print test data

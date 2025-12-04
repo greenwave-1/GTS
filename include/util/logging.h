@@ -30,8 +30,4 @@ bool isConnectionMade();
 
 char* getConfiguredIP();
 
-//bool setupNetwork();
-
-//bool attemptConnect();
-
 #endif //GTS_LOGGING_H

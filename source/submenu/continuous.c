@@ -111,6 +111,7 @@ void menu_continuousWaveform() {
 		case CONT_POST_SETUP:
 			setCursorPos(2, 0);
 			printStr("A to freeze. Y to toggle.");
+			/*
 			setCursorPos(20, 0);
 			printStr("Current Stick: ");
 			if (!showCStick) {
@@ -118,6 +119,7 @@ void menu_continuousWaveform() {
 			} else {
 				printStr("C-Stick");
 			}
+			 */
 			if (cState == INPUT_LOCK) {
 				freeze = true;
 				setCursorPos(2, 28);
