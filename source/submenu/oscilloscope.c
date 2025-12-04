@@ -797,80 +797,143 @@ void menu_oscilloscope() {
 								// go forward in list
 								int dashbackStartIndex = -1, dashbackEndIndex = -1;
 								uint64_t timeInRange = 0;
+								bool stickInDashRange = false;
+								bool dashIntentionThresholdMet = false;
+								
+								// iterate over the list, find the start and end point where the X axis is in the
+								// slow-turn range [23,63]
+								// we also check if the X axis reaches the dash range (64+)
 								if (!showCStick) {
 									for (int i = 0; i < dispData->sampleEnd; i++) {
-										// is the stick in the range
+										// is the stick in the dash range?
+										if (abs(dispData->samples[i].stickX) >= 65) {
+											// mark that we did cross that threshold
+											stickInDashRange = true;
+										}
+										// is the stick in the slow-turn range
 										if ((abs(dispData->samples[i].stickX) >= 23 &&
 										     abs(dispData->samples[i].stickX) < 64)) {
 											timeInRange += dispData->samples[i].timeDiffUs;
 											if (dashbackStartIndex == -1) {
+												if (stickInDashRange) {
+													break;
+												}
 												dashbackStartIndex = i;
 											}
 										} else if (dashbackStartIndex != -1) {
 											dashbackEndIndex = i - 1;
+											// stick has left the slow-turn range, there's no need to continue
+											// checking the list
 											break;
 										}
 									}
 								} else {
 									for (int i = 0; i < dispData->sampleEnd; i++) {
-										// is the stick in the range
+										// is the stick in the dash range?
+										if (abs(dispData->samples[i].cStickX) >= 65) {
+											// mark that we did cross that threshold
+											stickInDashRange = true;
+										}
+										// is the stick in the slow-turn range
 										if ((abs(dispData->samples[i].cStickX) >= 23 &&
 										     abs(dispData->samples[i].cStickX) < 64)) {
 											timeInRange += dispData->samples[i].timeDiffUs;
 											if (dashbackStartIndex == -1) {
+												if (stickInDashRange) {
+													break;
+												}
 												dashbackStartIndex = i;
 											}
 										} else if (dashbackStartIndex != -1) {
 											dashbackEndIndex = i - 1;
+											// stick has left the slow-turn range, there's no need to continue
+											// checking the list
 											break;
 										}
 									}
 								}
-								float dashbackPercent;
-								float ucfPercent;
-
-								// TODO: fix this
-								// not finding start or end might be valid for dashback
-								// ucf check is wrong(?) if moving too fast
+								
+								float dashbackPercent = 0.0;
+								float ucfPercent = 0.0;
+								
 								if (dashbackEndIndex == -1) {
-									dashbackPercent = 0;
-									ucfPercent = 0;
+									// stick did not get polled in slow-turn range, but did get to dash range,
+									// so this should pass???
+									if (stickInDashRange) {
+										dashbackPercent = 100;
+										ucfPercent = 100;
+									}
+									// stick did not hit dash range, fail
+									else {
+										dashbackPercent = 0.0;
+										ucfPercent = 0.0;
+									}
 								} else {
 									// convert time in microseconds to float time in milliseconds
 									float timeInRangeMs = (timeInRange / 1000.0);
 
+									// vanilla dashback is just the amount of time the stick was in the slow-turn range
+									// over the total time for one frame
+									// (subtracted from 1.0 because we want to show the _success_ rate)
 									dashbackPercent = (1.0 - (timeInRangeMs / FRAME_TIME_MS_F)) * 100;
 
 									// ucf dashback is a little more involved
+									
+									// we iterate over each sample in the slow-turn range, calculate what the next
+									// frame would be based on that sample, and check if it meets the requirements
+									// for the dash-intention check (total units moved across those two frame >75)
 									uint64_t ucfTimeInRange = timeInRange;
 									for (int i = dashbackStartIndex; i <= dashbackEndIndex; i++) {
-										// we're gonna assume that the previous frame polled around the origin, because i cant be bothered
+										// we're gonna assume that the previous frame polled around the origin
 										// it also makes the math easier
+										// TODO: do this properly
 										uint64_t usFromPoll = 0;
 										int nextPollIndex = i;
+										
 										// we need the sample that would occur around 1f after
-										while (usFromPoll < FRAME_TIME_US) {
+										// loop until ~one frame has passed
+										while (usFromPoll < FRAME_TIME_US && nextPollIndex != dispData->sampleEnd) {
 											nextPollIndex++;
 											usFromPoll += dispData->samples[nextPollIndex].timeDiffUs;
 										}
+										
+										// exit if we've hit the end of the list somehow
+										// idk how this would happen except _maybe_ on box
+										if (usFromPoll < FRAME_TIME_US) {
+											break;
+										}
+										
+										// ucf dash intention check
 										// the two frames need to move more than 75 units for UCF to convert it
+										// since we're assuming previous poll was at origin, we only need to check
+										// the second frame's units, since it will be the total:
+										// previous poll: 0 | poll in slow turn range: [23,63] | poll in dash range: 64+
 										if (!showCStick) {
-											if (abs(dispData->samples[i].stickX) +
-											    abs(dispData->samples[nextPollIndex].stickX) > 75) {
+											if (abs(dispData->samples[nextPollIndex].stickX) > 75) {
+												// since we're iterating over each sample in the slow-turn range,
+												// if the dash intention check passes, we subtract its time from
+												// the total time that a slow-turn _could_ occur.
+												// in theory, ucfTimeInRange will only contain the time when
+												// the dash intention check could fail.
 												ucfTimeInRange -= dispData->samples[i].timeDiffUs;
+												dashIntentionThresholdMet = true;
 											}
 										} else {
-											if (abs(dispData->samples[i].cStickX) +
-											    abs(dispData->samples[nextPollIndex].cStickX) > 75) {
+											if (abs(dispData->samples[nextPollIndex].cStickX) > 75) {
 												ucfTimeInRange -= dispData->samples[i].timeDiffUs;
+												dashIntentionThresholdMet = true;
 											}
 										}
 									}
 
 									float ucfTimeInRangeMs = ucfTimeInRange / 1000.0;
+									
+									// this means all of the samples in the dash range passed the intention check,
+									// so we give it 100%
 									if (ucfTimeInRangeMs <= 0) {
 										ucfPercent = 100;
 									} else {
+										// one or more samples didn't pass the intention check, do normal calculation
 										ucfPercent = (1.0 - (ucfTimeInRangeMs / FRAME_TIME_MS_F)) * 100;
 									}
 
@@ -889,7 +952,19 @@ void menu_oscilloscope() {
 										ucfPercent = 0;
 									}
 								}
-								printStr("Vanilla Success: %2.0f%% | UCF Success: %2.0f%%", dashbackPercent, ucfPercent);
+								if (!showCStick) {
+									printStr("Vanilla Success: %2.0f%% | UCF Success: %2.0f%% %d %d %d %d",
+									         dashbackPercent, ucfPercent, dashbackStartIndex, dashbackEndIndex,
+									         dispData->samples[dashbackStartIndex].stickX,
+									         dispData->samples[dashbackEndIndex].stickX);
+								} else {
+									printStr("Vanilla Success: %2.0f%% | UCF Success: %2.0f%% %d %d %d %d",
+									         dashbackPercent, ucfPercent, dashbackStartIndex, dashbackEndIndex,
+									         dispData->samples[dashbackStartIndex].cStickX,
+									         dispData->samples[dashbackEndIndex].cStickX);
+								}
+								setCursorPos(21, 25);
+								printStr("thresht: %d, inDash: %d", dashIntentionThresholdMet, stickInDashRange);
 								break;
 							default:
 								printStr("Error?");
