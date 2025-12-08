@@ -801,7 +801,7 @@ void menu_oscilloscope() {
 								if (!showCStick) {
 									for (int i = 0; i < dispData->sampleEnd; i++) {
 										// is the stick in the dash range?
-										// note that this if is independent from the rest
+										// note that this is independent from the other if
 										if (abs(dispData->samples[i].stickX) >= 65) {
 											// mark that we did cross that threshold
 											stickInDashRange = true;

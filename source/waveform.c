@@ -200,7 +200,7 @@ char* getMeleeCoordinateString(MeleeCoordinates coords, enum MELEE_COORD_STR_AXI
 		else if (selectedValue2 == 10000) {
 			snprintf(meleeCoordString, 18, "%c0.%04d,%c1.0000", retStrSign1, selectedValue1, retStrSign2);
 		}
-		// neigher are 1.0
+		// neither are 1.0
 		else {
 			snprintf(meleeCoordString, 18, "%c0.%04d,%c0.%04d", retStrSign1, selectedValue1, retStrSign2, selectedValue2);
 		}
