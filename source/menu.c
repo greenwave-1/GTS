@@ -115,12 +115,15 @@ bool menu_runMenu() {
 	// in case a future check doesn't want to print the text normally...
 	switch (date) {
 		case DATE_NICE:
-		case DATE_PM:
 		case DATE_CMAS:
+			drawDateSpecial(date);
+			printStrColor(GX_COLOR_NONE, GX_COLOR_WHITE, "GCC Test Suite");
+			break;
+		case DATE_PM:
 			drawDateSpecial(date);
 		case DATE_NONE:
 		default:
-			printStr("GCC Test Suite");
+			printStrColor(GX_COLOR_BLACK, GX_COLOR_WHITE, "GCC Test Suite");
 			break;
 	}
 	

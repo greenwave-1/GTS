@@ -13,6 +13,8 @@
 #include <malloc.h>
 #include <memory.h>
 #include <stdlib.h>
+#include <math.h>
+#include <time.h>
 
 #include <ogc/tpl.h>
 
@@ -190,6 +192,10 @@ void setupGX(GXRModeObj *rmode) {
 	GX_SetVtxAttrFmt(GX_VTXFMT2, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT2, GX_VA_TEX0, GX_TEX_ST, GX_S16, 0);
 	
+	// VTXFMT3, configured for primitive drawing, but with alpha available
+	GX_SetVtxAttrFmt(GX_VTXFMT3, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
+	GX_SetVtxAttrFmt(GX_VTXFMT3, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
+	
 	currentVtxMode = VTX_NONE;
 	
 	// TODO: this is where my understanding of the code goes completely out the window,
@@ -366,6 +372,7 @@ void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
 	GX_End();
 }
 
+static void drawSnowParticles();
 const static int colorList[][3] = {
 		{ 0xe5, 0x00, 0x00 },
 		{ 0xff, 0x8d, 0x00 },
@@ -422,50 +429,134 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 			GX_End();
 			break;
 		case DATE_CMAS:
-			sizeOfQuads = 144 / 3;
-			// 2 quads
-			GX_Begin(GX_QUADS, GX_VTXFMT0, 4 * 3);
+			// call snow code
+			drawSnowParticles();
 			
-			GX_Position3s16(5, 35, -10);
-			GX_Color3u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b);
+			// then obscure them slightly
+			updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+			GX_Begin(GX_QUADS, GX_VTXFMT3, 4);
 			
-			GX_Position3s16(9 + sizeOfQuads, 35, -10);
-			GX_Color3u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b);
-			
-			GX_Position3s16(9 + sizeOfQuads, 58, -10);
-			GX_Color3u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b);
-			
-			GX_Position3s16(5, 58, -10);
-			GX_Color3u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b);
-			
-			
-			GX_Position3s16(9 + sizeOfQuads, 35, -10);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(9 + (sizeOfQuads * 2), 35, -10);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(9 + (sizeOfQuads * 2), 58, -10);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(9 + sizeOfQuads, 58, -10);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			
-			GX_Position3s16(9 + (sizeOfQuads * 2), 35, -10);
-			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
-			
-			GX_Position3s16(9 + 144, 35, -10);
-			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
-			
-			GX_Position3s16(9 + 144, 58, -10);
-			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
-			
-			GX_Position3s16(9 + (sizeOfQuads * 2), 58, -10);
-			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
+			GX_Position3s16(-10, -10, -24);
+			GX_Color4u8(0, 0, 0, 0x40);
+			GX_Position3s16(700, -10, -24);
+			GX_Color4u8(0, 0, 0, 0x40);
+			GX_Position3s16(700, 500, -24);
+			GX_Color4u8(0, 0, 0, 0x40);
+			GX_Position3s16(-10, 500, -24);
+			GX_Color4u8(0, 0, 0, 0x40);
 			
 			GX_End();
+			break;
 		default:
 			break;
 	}
+}
+
+static uint16_t numOfParticles = 10;
+typedef struct Particle {
+	bool active;
+	// x y starting coords
+	int x;
+	int y;
+	int progress;
+	// direction in degrees
+	int direction;
+	// num of frames between movements
+	int speed;
+	// counter for next move
+	int moveCounter;
+} Particle;
+
+static Particle particles[200];
+static int addCounter = 15;
+static bool seeded = false;
+
+static void drawSnowParticles() {
+	// TODO: if using rand() somewhere else, this probably should be behind a function call
+	if (!seeded) {
+		srand(time(NULL));
+		seeded = true;
+		for (int i = 0; i < 200; i++) {
+			particles[i].active = false;
+			particles[i].x = 0;
+			particles[i].y = 0;
+			particles[i].progress = 0;
+			particles[i].direction = 0;
+			particles[i].speed = 0;
+			particles[i].moveCounter = 0;
+		}
+	}
+	
+	GX_SetPointSize(16, GX_TO_ZERO);
+	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+	GX_Begin(GX_POINTS, GX_VTXFMT0, numOfParticles);
+	
+	// iterate over our current number of particles
+	for (int i = 0; i < numOfParticles; i++) {
+		// is the particle ready to be reset?
+		if (particles[i].active == false) {
+			particles[i].active = true;
+			particles[i].progress = 0;
+			// can start at any point at the top of the screen
+			particles[i].x = rand() % 1080 - 600;
+			// this gives us a bit of variance
+			particles[i].y = rand() % 20 - 20;
+			// direction should be between 15 and 75 degrees
+			// 'up' is down-left
+			particles[i].direction = (rand() % 60) + 15;
+			// how many frames should we wait between movements
+			particles[i].speed = rand() % 3 + 1;
+			particles[i].moveCounter = particles[i].speed;
+			GX_Position3s16(-10, -10, -25);
+		} else {
+			particles[i].moveCounter--;
+			if (particles[i].moveCounter == 0) {
+				particles[i].progress += 2;
+				particles[i].moveCounter = particles[i].speed;
+			}
+			
+			// we calculate the next position using radians from the starting x and y by progress units
+			int destX = particles[i].x + particles[i].progress * (cos(particles[i].direction * M_PI / 180.0));
+			int destY = particles[i].y + particles[i].progress * (sin(particles[i].direction * M_PI / 180.0));
+			
+			GX_Position3s16(destX, destY, -25);
+			
+			// change direction randomly
+			if (rand() % 10 == 0) {
+				particles[i].x = destX;
+				particles[i].y = destY;
+				// +- 5 degrees
+				particles[i].direction += (rand() % 10) - 5;
+				// clamp if not going down-left
+				if (particles[i].direction <= 10) {
+					particles[i].direction = 10;
+				}
+				if (particles[i].direction >= 80) {
+					particles[i].direction = 80;
+				}
+				// new starting point, reset this
+				particles[i].progress = 0;
+			}
+			
+			// mark particle as done if outside screen bounds
+			if (destX > 640 || destY > 480) {
+				particles[i].active = false;
+			}
+		}
+		
+		GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+	}
+	
+	// slowly add particles
+	if (numOfParticles < 200) {
+		addCounter--;
+		if (addCounter == 0) {
+			numOfParticles++;
+			addCounter = 15;
+		}
+	}
+	
+	GX_End();
+	
+	GX_SetPointSize(12, GX_TO_ZERO);
 }

@@ -121,21 +121,21 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 	}
 }
 
-// TODO: there's a better way to do this instead of calling handleString twice...
 void printStr(const char* str, ...) {
 	va_list list;
 	va_start(list, str);
 	vsnprintf(strBuffer, 999, str, list);
 	changeLoadedTexmap(TEXMAP_FONT);
-	handleString(strBuffer, false, GX_COLOR_WHITE, GX_COLOR_BLACK);
-	handleString(strBuffer, true, GX_COLOR_WHITE, GX_COLOR_BLACK);
+	handleString(strBuffer, true, GX_COLOR_WHITE, GX_COLOR_NONE);
 	va_end(list);
 }
 
+// TODO: there's a better way to do this instead of calling handleString twice...
 void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* str, ...) {
 	va_list list;
 	va_start(list, str);
 	vsnprintf(strBuffer, 999, str, list);
+	changeLoadedTexmap(TEXMAP_FONT);
 	// only do background if it isn't transparent
 	// we don't actually do transparency on bg stuff, but its useful for this check...
 	if (bg_color.a != 0x00) {
