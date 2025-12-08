@@ -164,6 +164,9 @@ void menu_gateMeasure() {
 					
 					updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 					// draw box around plot area
+					drawSolidBox(SCREEN_POS_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
+					        SCREEN_POS_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
+					        GX_COLOR_BLACK);
 					drawBox(SCREEN_POS_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
 					        SCREEN_POS_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
 					        GX_COLOR_WHITE);

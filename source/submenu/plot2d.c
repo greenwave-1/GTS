@@ -344,6 +344,10 @@ void menu_plot2d() {
 							printStr("R ");
 						}
 						
+						drawSolidBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
+						             COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
+						             GX_COLOR_BLACK);
+						
 						updateVtxDesc(VTX_TEX_NOCOLOR, GX_MODULATE);
 						changeLoadedTexmap(TEXMAP_STICKMAPS);
 						changeStickmapTexture((int) selectedImage);

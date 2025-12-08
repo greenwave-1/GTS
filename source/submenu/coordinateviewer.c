@@ -503,6 +503,18 @@ void menu_coordView() {
 			updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 			
 			// mostly pulled from here: https://gist.github.com/linusthe3rd/803118
+			GX_Begin(GX_TRIANGLEFAN, GX_VTXFMT0, 153);
+			GX_Position3s16(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, -15);
+			GX_Color3u8(GX_COLOR_BLACK.r, GX_COLOR_BLACK.g, GX_COLOR_BLACK.b);
+			for (int i = 0; i < 152; i++) {
+				GX_Position3s16(COORD_CIRCLE_CENTER_X + (160 * cos(i * (2 * M_PI) / 150)),
+				                SCREEN_POS_CENTER_Y + (160 * sin(i * (2 * M_PI) / 150)),
+				                -15);
+				GX_Color3u8(GX_COLOR_BLACK.r, GX_COLOR_BLACK.g, GX_COLOR_BLACK.b);
+			}
+			GX_End();
+			
+			
 			GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 152);
 			for (int i = 0; i < 152; i++) {
 				GX_Position3s16(COORD_CIRCLE_CENTER_X + (160 * cos(i * (2 * M_PI) / 150)),

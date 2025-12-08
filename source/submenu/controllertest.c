@@ -203,41 +203,15 @@ void menu_controllerTest() {
 			
 			updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 			
-			GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+			drawSolidBox(LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y,
+					LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderBottomY, GX_COLOR_BLACK);
 			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, sliderTopY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			drawSolidBox(LAYOUT_ANALOG_SLIDER_POS_X, sliderTopY,
+			             LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderBottomY, sliderColor);
 			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderTopY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
-			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderBottomY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
-			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
-			
-			GX_End();
-			
-			GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 5);
-			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderBottomY, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_End();
-			
+			drawBox(LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y,
+			        LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderBottomY, GX_COLOR_WHITE);
+		
 			GX_SetLineWidth(24, GX_TO_ZERO);
 			
 			// R
@@ -249,40 +223,14 @@ void menu_controllerTest() {
 				GX_SetLineWidth(32, GX_TO_ZERO);
 			}
 			
-			GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+			drawSolidBox(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y,
+			             640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, GX_COLOR_BLACK);
 			
-			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, sliderTopY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
+			drawSolidBox(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, sliderTopY,
+			             640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, sliderColor);
 			
-			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderTopY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
-			
-			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
-			
-			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -3);
-			GX_Color3u8(sliderColor.r, sliderColor.g, sliderColor.b);
-			
-			GX_End();
-			
-			GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 5);
-			
-			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_End();
+			drawBox(640 - 16 - LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y,
+			        640 - LAYOUT_ANALOG_SLIDER_POS_X, sliderBottomY, GX_COLOR_WHITE);
 			
 			GX_SetLineWidth(12, GX_TO_ZERO);
 			

@@ -329,6 +329,8 @@ void menu_plotButton() {
 					//printStr("Capture length: %3dms", (capture400Toggle ? 400 : 200));
 					
 					if (dispData->isRecordingReady) {
+						drawSolidBox(SCREEN_TIMEPLOT_START - 55, SCREEN_TIMEPLOT_Y_TOP - 1,
+						        600, SCREEN_TIMEPLOT_Y_BOTTOM + 1, GX_COLOR_BLACK);
 						drawBox(SCREEN_TIMEPLOT_START - 55, SCREEN_TIMEPLOT_Y_TOP - 1,
 								600, SCREEN_TIMEPLOT_Y_BOTTOM + 1, GX_COLOR_WHITE);
 						

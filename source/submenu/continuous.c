@@ -130,6 +130,8 @@ void menu_continuousWaveform() {
 
 			if (data->isRecordingReady) {
 				// draw guidelines based on selected test
+				drawSolidBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
+						SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_BLACK);
 				if (!showCStick) {
 					drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 501,
 					        SCREEN_POS_CENTER_Y + 128, GX_COLOR_WHITE);
