@@ -24,6 +24,15 @@ const int FRAME_INTERVAL_MS[] = {16, 33, 49, 66, 83, 100,
 static bool unsupportedMode = false;
 static bool firstRun = true;
 static bool readHigh = false;
+
+// polling for gamecube controllers is based on two values (referred to as XY in si.h)
+// X -> how many lines should be rastered before a hardware interrupt occurs to poll the controller
+// Y -> how many total times should the hardware poll the controller (per frame)
+// for interlaced, since the video signal is 15khz, there are ~262.5 lines per frame
+// for progressive, since the video signal is 31khz, there are ~525 lines per frame
+// this is why there are different values depending on the video mode
+// basically, the value of X for progressive should be roughly double the value for interlaced
+// I think this was the cause of SmashScope's 480p polling bug
 static int xLineCountNormal = 0;
 static int xLineCountHigh = 0;
 static int pollsPerFrameNormal = 2;
@@ -59,6 +68,9 @@ void __setStaticXYValues() {
 	firstRun = false;
 }
 
+// indirectly set the XY values
+// values don't actually get set until setSamplingRate() is called
+// from a post-retrace callback in main.c -> retraceCallback()
 void setSamplingRateHigh() {
 	if (firstRun) {
 		__setStaticXYValues();
@@ -75,6 +87,9 @@ void setSamplingRateNormal() {
 	//SI_SetXY(xLineCountNormal, pollsPerFrameNormal);
 }
 
+// actually set the XY values
+// this is called per-frame after a retrace occurs, since VIDEO_Flush() clears our custom XY values
+// (thanks again extrems)
 void setSamplingRate() {
 	if (readHigh) {
 		SI_SetXY(xLineCountHigh, pollsPerFrameHigh);
@@ -87,6 +102,10 @@ bool isUnsupportedMode() {
 	return unsupportedMode;
 }
 
+// button fields
+// defined here so that we don't have to worry about passing pointers between menu.c and other submenus
+// TODO: should these values be updated from here via another function?
+// TODO: a function call in front of it would let us not have to check the current submenu in menu.c
 static uint16_t buttonsDown;
 static uint16_t buttonsHeld;
 
@@ -102,6 +121,7 @@ static PADStatus origin[PAD_CHANMAX];
 
 PADStatus getOriginStatus(enum CONT_PORTS_BITFLAGS port) {
 	PADStatus ret;
+	// simple bounds check
 	if (port >= CONT_PORT_1 && port <= CONT_PORT_4) {
 		ret = origin[port];
 	}
@@ -113,9 +133,13 @@ static uint32_t padsConnected;
 
 void attemptReadOrigin() {
 	padsConnected = PAD_ScanPads();
+	// TODO: we should probably only check this on padsConnected being changed from the previous run
 	PAD_GetOrigin(origin);
 }
 
 bool isControllerConnected(enum CONT_PORTS_BITFLAGS port) {
+	// PAD_ScanPads() returns what controllers are connected
+	// the last four bits indicate if a controller is considered 'connected',
+	// so we shift 0b0001 depending on the port number (0, 1, 2, 3)
 	return ( padsConnected & (1 << port) );
 }

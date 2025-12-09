@@ -116,6 +116,8 @@ int main(int argc, char **argv) {
 	setupLogging(USBGECKO_B);
 	//setupLogging(NETWORKSOCK);
 	
+	// if we're using a socket for logging, we need to prepare it
+	// TODO: should this just be in logging.c outright? if so it needs to have return values for different outcomes
 	if (getLoggingType() == NETWORKSOCK) {
 		while (true) {
 			// leave once connection is made

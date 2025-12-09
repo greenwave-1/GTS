@@ -649,8 +649,13 @@ void menu_thanksPage() {
 			 "bkacjios / m-overlay\n"
 			 "Z. B. Wells");
 	
-	setCursorPos(18,0);
-	printStr("Compiled with: ");
+	setCursorPos(17,0);
+	#ifdef HW_RVL
+	printStr("Hardware: Wii");
+	#elifdef HW_DOL
+	printStr("Hardware: GameCube");
+	#endif
+	printStr("\nCompiled with: ");
 	printStr(_V_STRING);
 	printStr("\nBuild Date: ");
 	printStr(BUILD_DATE);
