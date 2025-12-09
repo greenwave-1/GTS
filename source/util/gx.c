@@ -497,9 +497,10 @@ static void drawSnowParticles() {
 		if (particles[i].active == false) {
 			particles[i].active = true;
 			particles[i].progress = 0;
-			// can start at any point at the top of the screen
-			particles[i].x = rand() % 1080 - 600;
-			// this gives us a bit of variance
+			// can start at any point at the top of the screen, range is (-660, 629)
+			// this should let particles drift in from the left of the screen at roughly the same rate as from the top
+			particles[i].x = rand() % 1280 - 650;
+			// this gives us a bit of variance, (-20, -1)
 			particles[i].y = rand() % 20 - 20;
 			// direction should be between 15 and 75 degrees
 			// 'up' is down-left
@@ -539,7 +540,7 @@ static void drawSnowParticles() {
 			}
 			
 			// mark particle as done if outside screen bounds
-			if (destX > 640 || destY > 480) {
+			if (destX > 650 || destY > 500) {
 				particles[i].active = false;
 			}
 		}
