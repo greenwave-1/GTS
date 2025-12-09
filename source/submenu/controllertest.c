@@ -98,7 +98,7 @@ void menu_controllerTest() {
 			
 			// print melee coordinates
 			setCursorPos(20, 0);
-			printStr("Melee:  (%s)", getMeleeCoordinateString(stickMelee, AXIS_XY));
+			printStr("Melee:  (%s)", getMeleeCoordinateString(stickMelee, AXIS_AXY));
 			
 			setCursorPos(20, 32);
 			printStr("C-Melee:  (%s)", getMeleeCoordinateString(stickMelee, AXIS_CXY));

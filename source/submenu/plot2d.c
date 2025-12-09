@@ -312,7 +312,7 @@ void menu_plot2d() {
 						if (!showCStick) {
 							printStr("%4d,%4d)\n", dispData->samples[lastDrawPoint].stickX,
 							         dispData->samples[lastDrawPoint].stickY);
-							printStr("Melee XY: (%s)", getMeleeCoordinateString(convertedCoords, AXIS_XY));
+							printStr("Melee XY: (%s)", getMeleeCoordinateString(convertedCoords, AXIS_AXY));
 						} else {
 							printStr("%4d,%4d)\n", dispData->samples[lastDrawPoint].cStickX,
 							         dispData->samples[lastDrawPoint].cStickY);

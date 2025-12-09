@@ -146,11 +146,11 @@ char* getMeleeCoordinateString(MeleeCoordinates coords, enum MELEE_COORD_STR_AXI
 	bool value1Negative = false, value2Negative = false;
 	
 	switch (axis) {
-		case AXIS_X:
+		case AXIS_AX:
 			selectedValue1 = coords.stickXUnit;
 			value1Negative = coords.stickXNegative;
 			break;
-		case AXIS_Y:
+		case AXIS_AY:
 			selectedValue1 = coords.stickYUnit;
 			value1Negative = coords.stickYNegative;
 			break;
@@ -162,7 +162,7 @@ char* getMeleeCoordinateString(MeleeCoordinates coords, enum MELEE_COORD_STR_AXI
 			selectedValue1 = coords.cStickYUnit;
 			value1Negative = coords.cStickYNegative;
 			break;
-		case AXIS_XY:
+		case AXIS_AXY:
 			selectedValue1 = coords.stickXUnit;
 			selectedValue2 = coords.stickYUnit;
 			value1Negative = coords.stickXNegative;
@@ -180,8 +180,8 @@ char* getMeleeCoordinateString(MeleeCoordinates coords, enum MELEE_COORD_STR_AXI
 			break;
 	}
 	
-	// AXIS_XY or AXIS_CXY, we want both coordinates in one string
-	if (axis >= AXIS_XY) {
+	// AXIS_AXY or AXIS_CXY, we want both coordinates in one string
+	if (axis >= AXIS_AXY) {
 		// store sign
 		char retStrSign1 = ' ', retStrSign2 = ' ';
 		if (value1Negative) {
