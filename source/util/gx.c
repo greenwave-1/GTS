@@ -48,6 +48,7 @@ static GXTexObj stickmapTexArr[6];
 static GXTexObj pTex;
 
 // keeps track of our current z depth, for drawing helper functions
+// TODO: z depth for specific elements (font, quads, lines, etc) need to be standardized
 static int zDepth = -5;
 static int zPrevDepth = -5;
 

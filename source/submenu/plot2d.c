@@ -492,6 +492,7 @@ void menu_plot2d() {
 						}
 						
 						// highlight last sample with a box
+						setDepth(-3);
 						if (!showCStick) {
 							drawBox((COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].stickX) - 3,
 							        (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) - 3,
@@ -505,6 +506,7 @@ void menu_plot2d() {
 							        (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].cStickY) + 3,
 							        GX_COLOR_WHITE);
 						}
+						restorePrevDepth();
 						
 						setCursorPos(11, 0);
 						printStr("Total samples: %11u\n", dispData->sampleEnd);
