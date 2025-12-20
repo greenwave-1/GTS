@@ -987,15 +987,11 @@ void menu_oscilloscope() {
 									}
 								}
 								if (!showCStick) {
-									printStr("Vanilla Success: %2.0f%% | UCF Success: %2.0f%% %d %d %d %d",
-									         dashbackPercent, ucfPercent, dashbackStartIndex, dashbackEndIndex,
-									         dispData->samples[dashbackStartIndex].stickX,
-									         dispData->samples[dashbackEndIndex].stickX);
+									printStr("Vanilla Success: %2.0f%% | UCF Success: %2.0f%%",
+									         dashbackPercent, ucfPercent);
 								} else {
-									printStr("Vanilla Success: %2.0f%% | UCF Success: %2.0f%% %d %d %d %d",
-									         dashbackPercent, ucfPercent, dashbackStartIndex, dashbackEndIndex,
-									         dispData->samples[dashbackStartIndex].cStickX,
-									         dispData->samples[dashbackEndIndex].cStickX);
+									printStr("Vanilla Success: %2.0f%% | UCF Success: %2.0f%%",
+									         dashbackPercent, ucfPercent);
 								}
 								
 								break;
