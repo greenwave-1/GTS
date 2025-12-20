@@ -314,15 +314,13 @@ void menu_plotButton() {
 					
 					setCursorPos(4,7);
 					if (stickThresholdSelected) {
-						printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "Stick Threshold:");
-						printStr(" %3u", stickThreshold);
+						printStrBox(GX_COLOR_WHITE, "Stick Threshold: %3u", stickThreshold);
 						setCursorPos(4, 32);
 						printStr("Trigger Threshold: %3u", triggerThreshold);
 					} else {
 						printStr("Stick Threshold: %3u", stickThreshold);
 						setCursorPos(4, 32);
-						printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "Trigger Threshold:");
-						printStr(" %3u", triggerThreshold);
+						printStrBox(GX_COLOR_WHITE, "Trigger Threshold: %3u", triggerThreshold);
 					}
 					
 					//setCursorPos(21,38);
@@ -337,7 +335,7 @@ void menu_plotButton() {
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
 							setCursorPos(7 + button, 4);
 							if (button == triggeringInputDisplay) {
-								printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, BUTTON_STR[button]);
+								printStrColor(GX_COLOR_SILVER, GX_COLOR_BLACK, BUTTON_STR[button]);
 							} else {
 								printStr(BUTTON_STR[button]);
 							}
@@ -495,7 +493,7 @@ void menu_plotButton() {
 								}
 								// indicate the initial input with black on white text
 								if (button == triggeringInputDisplay) {
-									printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "%2.2ff", frames);
+									printStrColor(GX_COLOR_SILVER, GX_COLOR_BLACK, "%2.2ff", frames);
 								} else {
 									printStr("%2.2ff", frames);
 								}

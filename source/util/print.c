@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "util/gx.h"
 
@@ -143,6 +144,32 @@ void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* s
 		handleString(strBuffer, false, fg_color, bg_color);
 	}
 	handleString(strBuffer, true, fg_color, bg_color);
+	va_end(list);
+}
+
+// TODO: this will assume that there are no newlines in this string, figure out how to do this properly...
+void printStrBox(const GXColor box_color, const char* str, ...) {
+	va_list list;
+	va_start(list, str);
+	vsnprintf(strBuffer, 999, str, list);
+	changeLoadedTexmap(TEXMAP_FONT);
+	
+	// draw box behind text
+	char *subString = strtok(strBuffer, "\n");
+	int length = strlen(subString);
+	
+	// we don't do anything if we would draw off the screen
+	if (cursorX + PRINT_PADDING_HORIZONTAL + 2 + (length * 10) <= 640 - (PRINT_PADDING_HORIZONTAL * 2)) {
+		setDepth(0);
+		GX_SetLineWidth(8, GX_TO_ZERO);
+		drawBox(cursorX + PRINT_PADDING_HORIZONTAL - 3, cursorY + PRINT_PADDING_VERTICAL - 4,
+		             cursorX + PRINT_PADDING_HORIZONTAL + (length * 10), cursorY + PRINT_PADDING_VERTICAL + 16,
+					 box_color);
+		GX_SetLineWidth(12, GX_TO_ZERO);
+		restorePrevDepth();
+		
+		handleString(subString, true, GX_COLOR_WHITE, GX_COLOR_BLACK);
+	}
 	va_end(list);
 }
 
