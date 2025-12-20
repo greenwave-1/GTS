@@ -29,6 +29,7 @@ void drawString(const uint32_t bg_color,
 
 void printStr(const char* str, ...);
 void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* str, ...);
+void printStrBox(const GXColor box_color, const char* str, ...);
 
 void printEllipse(const int counter, const int interval);
 

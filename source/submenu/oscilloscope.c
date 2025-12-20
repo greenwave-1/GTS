@@ -667,11 +667,11 @@ void menu_oscilloscope() {
 								// if tied, preference will go to X
 								// we highlight X if this is false
 								if (!drawXFirst) {
-									printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "X Min, Max: (%4d,%4d)", minX, maxX);
+									printStrBox(GX_COLOR_WHITE, "X Min, Max: (%4d,%4d)", minX, maxX);
 									printStr("  |  Y Min, Max: (%4d,%4d)", minY, maxY);
 								} else {
 									printStr("X Min, Max: (%4d,%4d)  |  ", minX, maxX);
-									printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "Y Min, Max: (%4d,%4d)", minY, maxY);
+									printStrBox(GX_COLOR_WHITE, "Y Min, Max: (%4d,%4d)", minY, maxY);
 								}
 								break;
 							case PIVOT:
