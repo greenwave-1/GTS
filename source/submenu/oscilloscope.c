@@ -510,9 +510,6 @@ void menu_oscilloscope() {
 					}
 					
 					if (dispData->isRecordingReady) {
-						int minX, minY;
-						int maxX, maxY;
-
 						// show all data if it will fit
 						if (dispData->sampleEnd < 500) {
 							dataScrollOffset = 0;
@@ -520,15 +517,18 @@ void menu_oscilloscope() {
 						} else if (dataScrollOffset > (dispData->sampleEnd) - 500) {
 							dataScrollOffset = dispData->sampleEnd - 501;
 						}
-
-						int prevX = dispData->samples[dataScrollOffset].stickX;
-						int prevY = dispData->samples[dataScrollOffset].stickY;
-
+						
 						// initialize stat values to first point
-						minX = prevX;
-						maxX = prevX;
-						minY = prevY;
-						maxY = prevY;
+						int minX, minY;
+						int maxX, maxY;
+						
+						if (!showCStick) {
+							minX = maxX = dispData->samples[dataScrollOffset].stickX;
+							minY = maxY = dispData->samples[dataScrollOffset].stickY;
+						} else {
+							minX = maxX = dispData->samples[dataScrollOffset].cStickX;
+							minY = maxY = dispData->samples[dataScrollOffset].cStickY;
+						}
 
 						int waveformXPos = 0;
 						uint64_t drawnTicksUs = 0;
@@ -572,13 +572,16 @@ void menu_oscilloscope() {
 						
 						updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 						
-						bool drawX = true;
+						bool drawXFirst = false;
 						
-						int biggestValueX = abs(maxX) >= abs(minX) ? abs(maxX) : abs(minX);
-						int biggestValueY = abs(maxY) >= abs(minY) ? abs(maxY) : abs(minY);
+						int magnitudeX = abs(maxX) >= abs(minX) ? abs(maxX) : abs(minX);
+						int magnitudeY = abs(maxY) >= abs(minY) ? abs(maxY) : abs(minY);
 						
-						if (biggestValueX >= biggestValueY) {
-							drawX = false;
+						// this is slightly unintuitive
+						// this will be false because we draw the axis with the larger magnitude _second_
+						// which lets it show over the other axis
+						if (magnitudeY > magnitudeX) {
+							drawXFirst = true;
 						}
 						
 						for (int line = 0; line < 2; line++) {
@@ -588,7 +591,7 @@ void menu_oscilloscope() {
 							
 							for (int i = dataScrollOffset; i < dataScrollOffset + totalPointsToDraw; i++) {
 								int curr;
-								if (drawX) {
+								if (drawXFirst) {
 									if (!showCStick) {
 										curr = dispData->samples[i].stickX;
 									} else {
@@ -603,7 +606,7 @@ void menu_oscilloscope() {
 								}
 								
 								GX_Position3s16(SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - curr, -2 + line);
-								if (drawX) {
+								if (drawXFirst) {
 									GX_Color3u8(GX_COLOR_RED_X.r, GX_COLOR_RED_X.g, GX_COLOR_RED_X.b);
 								} else {
 									GX_Color3u8(GX_COLOR_BLUE_Y.r, GX_COLOR_BLUE_Y.g, GX_COLOR_BLUE_Y.b);
@@ -613,7 +616,7 @@ void menu_oscilloscope() {
 							
 							GX_End();
 							
-							drawX = !drawX;
+							drawXFirst = !drawXFirst;
 						}
 						
 						// do we have enough data to enable scrolling?
@@ -660,8 +663,16 @@ void menu_oscilloscope() {
 						setCursorPos(20, 0);
 						switch (currentTest) {
 							case SNAPBACK:
-								printStr("Min X: %4d | Min Y: %4d   |   ", minX, minY);
-								printStr("Max X: %4d | Max Y: %4d\n", maxX, maxY);
+								// highlight axis with biggest magnitude
+								// if tied, preference will go to X
+								// we highlight X if this is false
+								if (!drawXFirst) {
+									printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "X Min, Max: (%4d,%4d)", minX, maxX);
+									printStr("  |  Y Min, Max: (%4d,%4d)", minY, maxY);
+								} else {
+									printStr("X Min, Max: (%4d,%4d)  |  ", minX, maxX);
+									printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "Y Min, Max: (%4d,%4d)", minY, maxY);
+								}
 								break;
 							case PIVOT:
 								bool pivotHit80 = false;
