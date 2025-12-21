@@ -399,7 +399,7 @@ void menu_plot2d() {
 						}
 						
 						setCursorPos(17, 0);
-						printStr("Zone: %s", "TEMP");
+						//printStr("Zone: %s", "TEMP");
 						
 						// draw box around plot area
 						if (!showCStick) {
