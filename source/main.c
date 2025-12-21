@@ -7,6 +7,7 @@
 #include "util/gx.h"
 #include "util/polling.h"
 #include "util/print.h"
+#include "util/args.h"
 
 #ifdef DEBUGLOG
 #include "util/logging.h"
@@ -204,6 +205,9 @@ int main(int argc, char **argv) {
 			return 0;
 			break; // unnecessary
 	}
+	
+	// handle args passed to main
+	handleArgs(argc, argv);
 	
 	setSamplingRateNormal();
 	if (isUnsupportedMode()) { // unsupported mode is probably 240p? no idea

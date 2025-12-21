@@ -9,16 +9,6 @@
 
 #include "util/file.h"
 
-static struct tm * getCurrTimeInfo() {
-	time_t currTime;
-	struct tm * timeinfo;
-	
-	time(&currTime);
-	timeinfo = localtime(&currTime);
-	
-	return timeinfo;
-}
-
 // YY-MM-DD_HH-MM-SS format
 char *getDateTimeStr() {
 	// 32 chars max
@@ -36,7 +26,31 @@ char *getDateTimeStr() {
 	return retStr;
 }
 
+#ifndef NO_DATE_CHECK
+
+static struct tm * getCurrTimeInfo() {
+	time_t currTime;
+	struct tm * timeinfo;
+	
+	time(&currTime);
+	timeinfo = localtime(&currTime);
+	
+	return timeinfo;
+}
+
+bool forceDateSet = false;
+enum DATE_CHECK_LIST forcedDate = DATE_NONE;
+
+void forceDate(enum DATE_CHECK_LIST dateToForce) {
+	forceDateSet = true;
+	forcedDate = dateToForce;
+}
+
 enum DATE_CHECK_LIST checkDate() {
+	if (forceDateSet) {
+		return forcedDate;
+	}
+	
 	if (initFilesystem()) {
 		FILE *fileCheck = fopen("/GTS/color.txt", "r");
 		
@@ -66,3 +80,4 @@ enum DATE_CHECK_LIST checkDate() {
 	
 	return DATE_NONE;
 }
+#endif

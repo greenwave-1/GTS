@@ -1,0 +1,61 @@
+//
+// Created on 12/21/25.
+//
+
+#include "util/args.h"
+
+#include <getopt.h>
+#include <strings.h>
+
+#include "util/datetime.h"
+
+static struct option launchFlags[] =
+		{
+				{"force-date", required_argument, 0, 'd'},
+				{ 0, 0, 0, 0 }
+		};
+
+// mostly based on the gnu example for long args:
+// https://www.gnu.org/software/libc/manual/html_node/Getopt-Long-Option-Example.html
+
+// NOTE: wiiload doesn't send the working directory by default when passing args
+// gts isn't doing anything with that so adding another 'arg' between the .dol and the proper
+// arguments works
+void handleArgs(int argc, char **argv) {
+	int optionIndex = 0;
+	int c;
+	
+	// loop until we check all the flags
+	while (true) {
+		c = getopt_long(argc, argv, "d:", launchFlags, &optionIndex);
+		
+		// leave if we've exhausted all of our args
+		if (c == -1) {
+			break;
+		}
+		
+		switch (c) {
+			case 0:
+				break;
+			case 'd':
+				#ifndef NO_DATE_CHECK
+				if (optarg) {
+					if (strcasecmp(optarg, "pm") == 0) {
+						forceDate(DATE_PM);
+					}
+					if (strcasecmp(optarg, "cmas") == 0) {
+						forceDate(DATE_CMAS);
+					}
+					if (strcasecmp(optarg, "nice") == 0) {
+						forceDate(DATE_NICE);
+					}
+				}
+				#endif
+				break;
+			case '?':
+				break;
+			default:
+				break;
+		}
+	}
+}
