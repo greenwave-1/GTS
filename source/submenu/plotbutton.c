@@ -335,7 +335,7 @@ void menu_plotButton() {
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
 							setCursorPos(7 + button, 4);
 							if (button == triggeringInputDisplay) {
-								printStrColor(GX_COLOR_SILVER, GX_COLOR_BLACK, BUTTON_STR[button]);
+								printStrBox(GX_COLOR_WHITE, BUTTON_STR[button]);
 							} else {
 								printStr(BUTTON_STR[button]);
 							}
@@ -493,7 +493,7 @@ void menu_plotButton() {
 								}
 								// indicate the initial input with black on white text
 								if (button == triggeringInputDisplay) {
-									printStrColor(GX_COLOR_SILVER, GX_COLOR_BLACK, "%2.2ff", frames);
+									printStrBox(GX_COLOR_WHITE, "%2.2ff", frames);
 								} else {
 									printStr("%2.2ff", frames);
 								}
