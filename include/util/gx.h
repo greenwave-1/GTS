@@ -82,6 +82,7 @@ void drawLine(int x1, int y1, int x2, int y2, GXColor color);
 
 void drawBox(int x1, int y1, int x2, int y2, GXColor color);
 void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color);
+void drawSolidBoxAlpha(int x1, int y1, int x2, int y2, GXColor color);
 
 #ifndef NO_DATE_CHECK
 void drawDateSpecial(enum DATE_CHECK_LIST date);

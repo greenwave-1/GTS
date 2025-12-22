@@ -25,5 +25,6 @@ void menu_mainMenu();
 void menu_fileExport();
 void menu_thanksPage();
 
+void runMenuVisual(bool showText);
 
 #endif //GTS_MENU_H

@@ -308,24 +308,40 @@ int main(int argc, char **argv) {
 	stopLogging();
 	#endif
 	
-	// clear screen and show message if not exiting "normally" (pressing start on main menu)
+	// dumb way to have a different message show, while also avoiding two #if defined().
+	// if using hard-coded strings, then either there would be repeat code, or you'd need two #if defined()
+	// to create a wii-only if-else
+	char* strPointer = resetMessage;
+	int exitMessageX = 15;
+	
+	#if defined(HW_RVL)
 	if (!normalExit) {
-		startDraw(rmode);
-		setCursorPos(10, 15);
-		
-		// dumb way to have a different message show, while also avoiding two #if defined().
-		// if using hard-coded strings, then either there would be repeat code, or you'd need two #if defined()
-		// to create a wii-only if-else
-		char* strPointer = resetMessage;
-		
-		#if defined(HW_RVL)
 		if (powerButtonPressed) {
-			setCursorPos(10, 12);
+			exitMessageX = 12;
 			strPointer = powerButtonMessage;
 		}
-		#endif
+	}
+	#endif
+	
+	// hold for ~1 second, then fade over 15 frames
+	for (int i = 0; i < 75; i++) {
+		startDraw(rmode);
+		runMenuVisual(normalExit);
 		
-		printStr(strPointer);
+		// display exit message if applicable
+		if (!normalExit) {
+			setCursorPos(10, exitMessageX);
+			printStr(strPointer);
+		}
+		
+		// ~1 second has passed
+		if (i >= 60) {
+			setDepth(0);
+			// draw a black quad in front of everything, with an increasing alpha value
+			// we don't need to actually give this 255, since we blank out the frame at the end anyways
+			drawSolidBoxAlpha(-10, -10, 700, 700, (GXColor) {0, 0, 0, 15 * (i - 60)});
+		}
+		
 		xfbSwitch ^= 1;
 		
 		finishDraw(xfb[xfbSwitch]);
@@ -333,14 +349,6 @@ int main(int argc, char **argv) {
 		VIDEO_Flush();
 		VIDEO_WaitForFlush();
 	}
-	
-	// draw one more frame, since buffer is 1 frame behind
-	startDraw(rmode);
-	xfbSwitch ^= 1;
-	finishDraw(xfb[xfbSwitch]);
-	
-	// show final frame for at least one second
-	VIDEO_WaitForRetrace(VIDEO_GetRetraceCount() + 60);
 	
 	// free memory (probably don't need to do this but eh)
 	freeControllerRecStructs();

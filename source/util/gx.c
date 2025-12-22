@@ -373,6 +373,26 @@ void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
 	GX_End();
 }
 
+void drawSolidBoxAlpha(int x1, int y1, int x2, int y2, GXColor color) {
+	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+	
+	GX_Begin(GX_QUADS, GX_VTXFMT3, 4);
+	
+	GX_Position3s16(x1, y1, zDepth);
+	GX_Color4u8(color.r, color.g, color.b, color.a);
+	
+	GX_Position3s16(x2, y1, zDepth);
+	GX_Color4u8(color.r, color.g, color.b, color.a);
+	
+	GX_Position3s16(x2, y2, zDepth);
+	GX_Color4u8(color.r, color.g, color.b, color.a);
+	
+	GX_Position3s16(x1, y2, zDepth);
+	GX_Color4u8(color.r, color.g, color.b, color.a);
+	
+	GX_End();
+}
+
 #ifndef NO_DATE_CHECK
 static void drawSnowParticles();
 const static int colorList[][3] = {
@@ -435,19 +455,10 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 			drawSnowParticles();
 			
 			// then obscure them slightly
-			updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
-			GX_Begin(GX_QUADS, GX_VTXFMT3, 4);
+			setDepth(-24);
+			drawSolidBoxAlpha(-10, -10, 700, 500, (GXColor) {0, 0, 0, 0x40});
+			restorePrevDepth();
 			
-			GX_Position3s16(-10, -10, -24);
-			GX_Color4u8(0, 0, 0, 0x40);
-			GX_Position3s16(700, -10, -24);
-			GX_Color4u8(0, 0, 0, 0x40);
-			GX_Position3s16(700, 500, -24);
-			GX_Color4u8(0, 0, 0, 0x40);
-			GX_Position3s16(-10, 500, -24);
-			GX_Color4u8(0, 0, 0, 0x40);
-			
-			GX_End();
 			break;
 		default:
 			break;

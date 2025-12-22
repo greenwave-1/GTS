@@ -86,9 +86,13 @@ static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscill
 
 static bool displayInstructions = false;
 
+static bool mainMenuDraw = false;
+
 static int exportReturnCode = -1;
 
 static uint8_t thanksPageCounter = 0;
+
+static void menu_mainMenuDraw();
 
 // the "main" for the menus
 // other menu functions are called from here
@@ -344,6 +348,58 @@ bool menu_runMenu() {
 	return false;
 }
 
+// this is completely unnecessary, but it looks nice
+// this just draws the main menu as it would when exiting, no logic or anything
+// this allows for the effect of the menu 'fading out' when combined with drawing a quad in front of everything
+void runMenuVisual(bool showText) {
+	if (showText) {
+		resetCursor();
+		#ifndef NO_DATE_CHECK
+		// in case a future check doesn't want to print the text normally...
+		switch (date) {
+			case DATE_NICE:
+			case DATE_CMAS:
+				drawDateSpecial(date);
+				printStrColor(GX_COLOR_NONE, GX_COLOR_WHITE, "GCC Test Suite");
+				break;
+			case DATE_PM:
+				drawDateSpecial(date);
+			case DATE_NONE:
+			default:
+				printStrColor(GX_COLOR_BLACK, GX_COLOR_WHITE, "GCC Test Suite");
+				break;
+		}
+		#else
+		printStr("GCC Test Suite");
+		#endif
+		
+		if (mainMenuDraw) {
+			menu_mainMenuDraw();
+		}
+		
+		for (int i = 0; i < MENUITEMS_LEN; i++) {
+			setCursorPos(2 + i, 4);
+			printStr(menuItems[i]);
+		}
+		
+		int col = 55 - (sizeof(VERSION_NUMBER));
+		if (col > 25) {
+			setCursorPos(22, col);
+			printStr("Ver: ");
+			printStr(VERSION_NUMBER);
+		}
+		
+		setCursorPos(22, 0);
+		printStr("Exiting...");
+		
+	} else {
+		// draw bg if present
+		if (date == DATE_CMAS) {
+			drawDateSpecial(date);
+		}
+	}
+}
+
 static int colSelection = 0;
 static const int colNum = 5;
 static const int colHeight = 24;
@@ -458,8 +514,6 @@ static void menu_mainMenuDraw() {
 		colSelection %= 3;
 	}
 }
-
-static bool mainMenuDraw = false;
 
 void menu_mainMenu() {
 	stickYPrevPos = stickYPos;
