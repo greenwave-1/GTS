@@ -162,8 +162,8 @@ void printStrBox(const GXColor box_color, const char* str, ...) {
 	if (cursorX + PRINT_PADDING_HORIZONTAL + 2 + (length * 10) <= 640 - (PRINT_PADDING_HORIZONTAL * 2)) {
 		setDepth(0);
 		GX_SetLineWidth(8, GX_TO_ZERO);
-		drawBox(cursorX + PRINT_PADDING_HORIZONTAL - 3, cursorY + PRINT_PADDING_VERTICAL - 4,
-		             cursorX + PRINT_PADDING_HORIZONTAL + (length * 10), cursorY + PRINT_PADDING_VERTICAL + 16,
+		drawBox(cursorX + PRINT_PADDING_HORIZONTAL - 5, cursorY + PRINT_PADDING_VERTICAL - 4,
+		             cursorX + PRINT_PADDING_HORIZONTAL + (length * 10) + 2, cursorY + PRINT_PADDING_VERTICAL + 16,
 					 box_color);
 		GX_SetLineWidth(12, GX_TO_ZERO);
 		restorePrevDepth();
