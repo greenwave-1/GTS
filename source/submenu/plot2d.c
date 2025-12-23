@@ -18,13 +18,9 @@
 
 // used to make sure diagonals don't count as an input
 const static uint16_t DPAD_MASK = PAD_BUTTON_UP | PAD_BUTTON_DOWN | PAD_BUTTON_LEFT | PAD_BUTTON_RIGHT;
-// these should not affect buttonLock logic
-const static uint16_t PRESS_MASK = PAD_TRIGGER_L | PAD_TRIGGER_R | PAD_BUTTON_X;
 
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
-static bool buttonLock = false;
-static uint8_t buttonPressCooldown = 0;
 static uint8_t captureStartFrameCooldown = 0;
 
 static enum PLOT_2D_MENU_STATE menuState = PLOT_SETUP;
@@ -54,6 +50,7 @@ static bool showCStick = false;
 
 static bool autoCapture = false;
 static int autoCaptureCounter = 0;
+static bool autoCaptureStartReleased = true;
 
 // enum for what image to draw in 2d plot
 static enum IMAGE selectedImage = NO_IMAGE;
@@ -62,32 +59,14 @@ static enum IMAGE selectedImageCopy = NO_IMAGE;
 static sampling_callback cb;
 static uint64_t prevSampleCallbackTick = 0;
 static uint64_t sampleCallbackTick = 0;
-static uint64_t pressedTimer = 0;
 static uint8_t ellipseCounter = 0;
-static bool pressLocked = false;
 
 static void plot2dSamplingCallback() {
 	// time from last call of this function calculation
 	prevSampleCallbackTick = sampleCallbackTick;
 	sampleCallbackTick = gettime();
 	
-	PAD_ScanPads();
-	
-	// keep buttons in a "pressed" state long enough for code to see it
-	// TODO: I don't like this implementation
-	if (!pressLocked) {
-		*pressed = PAD_ButtonsDown(0);
-		if ((*pressed) != 0) {
-			pressLocked = true;
-			pressedTimer = gettime();
-		}
-	} else {
-		if (ticks_to_millisecs(gettime() - pressedTimer) > 32) {
-			pressLocked = false;
-		}
-	}
-	
-	*held = PAD_ButtonsHeld(0);
+	readController(false);
 	
 	prevPosX = currPosX;
 	prevPosY = currPosY;
@@ -219,15 +198,14 @@ static void setup() {
 	}
 	plotState = PLOT_DISPLAY;
 	
+	autoCaptureStartReleased = true;
+	
 	// check if existing recording is valid for this menu
 	if (!(RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_2DPLOT_FLAG)) {
 		clearRecordingArray(*data);
 	}
 	
-	// prevent pressing for a short time upon entering menu
-	buttonLock = true;
 	showCStick = false;
-	buttonPressCooldown = 5;
 }
 
 static void displayInstructions() {
@@ -247,12 +225,8 @@ static void displayInstructions() {
 	setCursorPos(21, 0);
 	printStr("Press Z to close instructions.");
 	
-	if (!buttonLock) {
-		if (*held & PAD_TRIGGER_Z) {
-			menuState = PLOT_POST_SETUP;
-			buttonLock = true;
-			buttonPressCooldown = 5;
-		}
+	if (*pressed & PAD_TRIGGER_Z) {
+		menuState = PLOT_POST_SETUP;
 	}
 }
 
@@ -520,7 +494,7 @@ void menu_plot2d() {
 
 						
 						// cycle the stickmap shown
-						if ((*held & DPAD_MASK) == PAD_BUTTON_UP && !buttonLock) {
+						if ((*pressed & DPAD_MASK) == PAD_BUTTON_UP) {
 							selectedImage++;
 							if (!showCStick) {
 								selectedImage %= IMAGE_LEN;
@@ -528,9 +502,7 @@ void menu_plot2d() {
 								// only first 3 options are valid for c-stick
 								selectedImage %= 3;
 							}
-							buttonLock = true;
-							buttonPressCooldown = 5;
-						} else if ((*held & DPAD_MASK) == PAD_BUTTON_DOWN && !buttonLock) {
+						} else if ((*pressed & DPAD_MASK) == PAD_BUTTON_DOWN) {
 							selectedImage--;
 							if (selectedImage == -1) {
 								if (!showCStick) {
@@ -539,15 +511,13 @@ void menu_plot2d() {
 									selectedImage = 2;
 								}
 							}
-							buttonLock = true;
-							buttonPressCooldown = 5;
 						}
 						
 						// holding L makes only individual presses work
 						if (*held & PAD_TRIGGER_L) {
-							if (*held & PAD_BUTTON_LEFT && !buttonLock) {
+							if (*pressed & PAD_BUTTON_LEFT) {
 								// x button moves the starting point
-								if (*held & PAD_BUTTON_X) {
+								if (*pressed & PAD_BUTTON_X) {
 									// bounds check
 									if (map2dStartIndex - 1 >= 0) {
 										map2dStartIndex--;
@@ -558,11 +528,9 @@ void menu_plot2d() {
 										lastDrawPoint--;
 									}
 								}
-								buttonLock = true;
-								buttonPressCooldown = 5;
-							} else if (*held & PAD_BUTTON_RIGHT && !buttonLock) {
+							} else if (*pressed & PAD_BUTTON_RIGHT) {
 								// starting point
-								if (*held & PAD_BUTTON_X) {
+								if (*pressed & PAD_BUTTON_X) {
 									if (map2dStartIndex + 1 <= lastDrawPoint) {
 										map2dStartIndex++;
 									}
@@ -571,10 +539,8 @@ void menu_plot2d() {
 										lastDrawPoint++;
 									}
 								}
-								buttonLock = true;
-								buttonPressCooldown = 5;
 							}
-							// holding R moves points faster
+						// holding R moves points faster
 						} else if (*held & PAD_TRIGGER_R) {
 							if (*held & PAD_BUTTON_LEFT) {
 								// starting point
@@ -644,35 +610,26 @@ void menu_plot2d() {
 						}
 					}
 					
-					if (!buttonLock) {
-						if (*held & PAD_TRIGGER_Z && !autoCapture) {
-							menuState = PLOT_INSTRUCTIONS;
-							buttonLock = true;
-							buttonPressCooldown = 5;
-						} else if (*held & PAD_BUTTON_Y && plotState != PLOT_INPUT) {
-							// cycle between analog and c-stick
-							showCStick = !showCStick;
-							
-							// store and swap stickmaps
-							enum IMAGE temp = selectedImageCopy;
-							selectedImageCopy = selectedImage;
-							selectedImage = temp;
-							
-							buttonLock = true;
-							buttonPressCooldown = 5;
-						}
+					if (*pressed & PAD_TRIGGER_Z && !autoCapture) {
+						menuState = PLOT_INSTRUCTIONS;
+					} else if (*pressed & PAD_BUTTON_Y && plotState != PLOT_INPUT) {
+						// cycle between analog and c-stick
+						showCStick = !showCStick;
+						
+						// store and swap stickmaps
+						enum IMAGE temp = selectedImageCopy;
+						selectedImageCopy = selectedImage;
+						selectedImage = temp;
 					}
 					
-					if ((*held & PAD_BUTTON_A && !buttonLock && !autoCapture) || captureStart) {
+					if ((*pressed & PAD_BUTTON_A && !autoCapture) || captureStart) {
 						plotState = PLOT_INPUT;
 						(*temp)->isRecordingReady = false;
-						buttonLock = true;
-						buttonPressCooldown = 5;
 					}
 					
 					// toggle auto-capture
 					setCursorPos(21, 0);
-					if (*held == PAD_BUTTON_START && !buttonLock && !captureStart) {
+					if (*held == PAD_BUTTON_START && !captureStart && autoCaptureStartReleased) {
 						if (autoCapture) {
 							printStr("Disabling ");
 						} else {
@@ -685,13 +642,17 @@ void menu_plot2d() {
 							autoCapture = !autoCapture;
 							captureStart = false;
 							haveStartPoint = false;
-							buttonLock = true;
-							buttonPressCooldown = 5;
 							autoCaptureCounter = 0;
+							autoCaptureStartReleased = false;
 						}
 					} else {
 						printStr("Hold start to toggle Auto-Trigger.");
 						autoCaptureCounter = 0;
+						if (!autoCaptureStartReleased) {
+							if ((*held & PAD_BUTTON_START) == 0) {
+								autoCaptureStartReleased = true;
+							}
+						}
 					}
 					
 					if (captureStartFrameCooldown != 0) {
@@ -707,19 +668,6 @@ void menu_plot2d() {
 		default:
 			printStr("how did we get here? menuState");
 			break;
-	}
-	
-	if (buttonLock) {
-		// don't allow button press until a number of frames has passed
-		if (buttonPressCooldown > 0 && ((*held) & (~PRESS_MASK)) == 0) {
-			buttonPressCooldown--;
-		} else if (buttonPressCooldown == 0) {
-			// allow L, R, and X to be held and not prevent buttonLock from being reset
-			// this is needed _only_ because we have a check for a pressed button while another is held
-			if ((*held) == 0 || *held & PRESS_MASK) {
-				buttonLock = 0;
-			}
-		}
 	}
 }
 

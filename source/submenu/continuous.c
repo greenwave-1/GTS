@@ -25,17 +25,14 @@ static int dataIndex = 0;
 
 static int waveformScaleFactor = 6;
 static int dataScrollOffset = 0;
-static bool pressLocked = false;
 static bool freeze = false;
 static bool showCStick = false;
 
-static bool buttonLock = false;
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
 
 static uint64_t prevSampleCallbackTick = 0;
 static uint64_t sampleCallbackTick = 0;
-static uint64_t pressedTimer = 0;
 static uint64_t frameCounter = 0;
 
 static sampling_callback cb;
@@ -48,23 +45,7 @@ static void contSamplingCallback() {
 		prevSampleCallbackTick = sampleCallbackTick;
 	}
 	
-	PAD_ScanPads();
-	
-	// keep buttons in a "pressed" state long enough for code to see it
-	// TODO: I don't like this implementation
-	if (!pressLocked) {
-		*pressed = PAD_ButtonsDown(0);
-		if ((*pressed) != 0) {
-			pressLocked = true;
-			pressedTimer = gettime();
-		}
-	} else {
-		if (ticks_to_millisecs(gettime() - pressedTimer) > 32) {
-			pressLocked = false;
-		}
-	}
-	
-	*held = PAD_ButtonsHeld(0);
+	readController(false);
 	
 	if (!freeze) {
 		data->samples[dataIndex].stickX = PAD_StickX(0);
@@ -264,49 +245,37 @@ void menu_continuousWaveform() {
 				
 				GX_End();
 				
-				if (!buttonLock){
-					if (*pressed & PAD_BUTTON_A && !buttonLock) {
-						if (cState == INPUT_LOCK) {
-							cState = INPUT;
-							waveformScaleFactor = 6;
-							dataScrollOffset = 0;
-						} else {
-							cState = INPUT_LOCK;
-						}
-						buttonLock = true;
+				if (*pressed & PAD_BUTTON_A) {
+					if (cState == INPUT_LOCK) {
+						cState = INPUT;
+						waveformScaleFactor = 6;
+						dataScrollOffset = 0;
+					} else {
+						cState = INPUT_LOCK;
 					}
-					if (*pressed & PAD_BUTTON_Y && !buttonLock) {
-						showCStick = !showCStick;
-						buttonLock = true;
+				} else if (*pressed & PAD_BUTTON_Y) {
+					showCStick = !showCStick;
+				} else if (*pressed & PAD_BUTTON_UP && cState == INPUT_LOCK) {
+					waveformScaleFactor--;
+					if (waveformScaleFactor < 1) {
+						waveformScaleFactor = 1;
 					}
-					if (*pressed & PAD_BUTTON_UP && !buttonLock && cState == INPUT_LOCK) {
-						waveformScaleFactor--;
-						if (waveformScaleFactor < 1) {
-							waveformScaleFactor = 1;
-						}
-						buttonLock = true;
-					}
-					if (*pressed & PAD_BUTTON_DOWN && !buttonLock && cState == INPUT_LOCK) {
-						waveformScaleFactor++;
-						if (waveformScaleFactor > 6) {
-							waveformScaleFactor = 6;
-						}
-						buttonLock = true;
-					}
-					
-					// bounds checks happen above, since they need to be adjusted depending on scale factor anyways
-					if (*held & PAD_BUTTON_LEFT && cState == INPUT_LOCK) {
-						dataScrollOffset += 25;
-					} else if (*held & PAD_BUTTON_RIGHT && cState == INPUT_LOCK) {
-						dataScrollOffset -= 25;
+				} else if (*pressed & PAD_BUTTON_DOWN && cState == INPUT_LOCK) {
+					waveformScaleFactor++;
+					if (waveformScaleFactor > 6) {
+						waveformScaleFactor = 6;
 					}
 				}
+				
+				// bounds checks happen above, since they need to be adjusted depending on scale factor anyways
+				if (*held & PAD_BUTTON_LEFT && cState == INPUT_LOCK) {
+					dataScrollOffset += 25;
+				} else if (*held & PAD_BUTTON_RIGHT && cState == INPUT_LOCK) {
+					dataScrollOffset -= 25;
+				}
+				
 			}
 			break;
-	}
-	
-	if ((*held) == 0 && buttonLock) {
-		buttonLock = false;
 	}
 }
 

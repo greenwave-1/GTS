@@ -26,8 +26,6 @@ const static int TRIGGER_SAMPLES = 500;
 
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
-static bool buttonLock = false;
-static uint8_t buttonPressCooldown = 0;
 static uint8_t captureStartFrameCooldown = 0;
 
 static enum TRIG_MENU_STATE menuState = TRIG_SETUP;
@@ -51,32 +49,14 @@ static bool startedCapture = false;
 static sampling_callback cb;
 static uint64_t prevSampleCallbackTick = 0;
 static uint64_t sampleCallbackTick = 0;
-static uint64_t pressedTimer = 0;
 static uint8_t ellipseCounter = 0;
-static bool pressLocked = false;
 
 void triggerSamplingCallback() {
 	// time from last call of this function calculation
 	prevSampleCallbackTick = sampleCallbackTick;
 	sampleCallbackTick = gettime();
 	
-	PAD_ScanPads();
-	
-	// keep buttons in a "pressed" state long enough for code to see it
-	// TODO: I don't like this implementation
-	if (!pressLocked) {
-		*pressed = PAD_ButtonsDown(0);
-		if ((*pressed) != 0) {
-			pressLocked = true;
-			pressedTimer = gettime();
-		}
-	} else {
-		if (ticks_to_millisecs(gettime() - pressedTimer) > 32) {
-			pressLocked = false;
-		}
-	}
-	
-	*held = PAD_ButtonsHeld(0);
+	readController(false);
 	
 	// detection logic
 	if (trigState != TRIG_DISPLAY_LOCK && captureStartFrameCooldown == 0) {
@@ -184,10 +164,6 @@ static void setup() {
 		trigState = TRIG_INPUT;
 	}
 	menuState = TRIG_POST_SETUP;
-	
-	// prevent pressing for a short time upon entering menu
-	buttonLock = true;
-	buttonPressCooldown = 5;
 }
 
 static void displayInstructions() {
@@ -204,12 +180,8 @@ static void displayInstructions() {
 	setCursorPos(21, 0);
 	printStr("Press Z to close instructions.");
 	
-	if (!buttonLock) {
-		if (*pressed & PAD_TRIGGER_Z) {
-			menuState = TRIG_POST_SETUP;
-			buttonLock = true;
-			buttonPressCooldown = 5;
-		}
+	if (*pressed & PAD_TRIGGER_Z) {
+		menuState = TRIG_POST_SETUP;
 	}
 }
 
@@ -400,27 +372,19 @@ void menu_triggerOscilloscope() {
 						
 						setCursorPos(20, 0);
 						printStr("Digital PS: %5.1f%% | ADT PS: %5.1f%% | No PS: %5.1f%%", psDigital, psADT, psNone);
-						
-						if (!buttonLock) {
-							if (*pressed & PAD_BUTTON_A) {
-								if (trigState == TRIG_DISPLAY) {
-									trigState = TRIG_DISPLAY_LOCK;
-								} else {
-									trigState = TRIG_DISPLAY;
-								}
-								buttonLock = true;
-								buttonPressCooldown = 5;
+
+						if (*pressed & PAD_BUTTON_A) {
+							if (trigState == TRIG_DISPLAY) {
+								trigState = TRIG_DISPLAY_LOCK;
+							} else {
+								trigState = TRIG_DISPLAY;
 							}
 						}
 					} else {
 						trigState = TRIG_INPUT;
 					}
-					if (!buttonLock) {
-						if (*pressed & PAD_TRIGGER_Z) {
-							menuState = TRIG_INSTRUCTIONS;
-							buttonLock = true;
-							buttonPressCooldown = 5;
-						}
+					if (*pressed & PAD_TRIGGER_Z) {
+						menuState = TRIG_INSTRUCTIONS;
 					}
 					if (captureStartFrameCooldown != 0 && PAD_TriggerL(0) < 43 && PAD_TriggerR(0) < 43) {
 						captureStartFrameCooldown--;
@@ -437,19 +401,6 @@ void menu_triggerOscilloscope() {
 		default:
 			printStr("menuState default case! how did we get here?");
 			break;
-	}
-	
-	if (buttonLock) {
-		// don't allow button press until a number of frames has passed
-		if (buttonPressCooldown > 0) {
-			buttonPressCooldown--;
-		} else {
-			// allow L and R to be held and not prevent buttonLock from being reset
-			// this is needed _only_ because we have a check for a pressed button while another is held
-			if ((*held) == 0 || *held & PAD_TRIGGER_L || *held & PAD_TRIGGER_R) {
-				buttonLock = 0;
-			}
-		}
 	}
 }
 

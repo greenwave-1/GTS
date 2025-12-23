@@ -18,16 +18,12 @@ static enum GATE_STATE state = GATE_INIT;
 
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
-static bool buttonLock = false;
-static uint8_t buttonPressCooldown = 0;
 static uint8_t yPressFrameCounter = 0;
 static bool yHeldAfterReset = false;
 
 static sampling_callback cb;
 static uint64_t prevSampleCallbackTick = 0;
 static uint64_t sampleCallbackTick = 0;
-static uint64_t pressedTimer = 0;
-static bool pressLocked = false;
 
 typedef struct GateMinMax {
 	bool init;
@@ -44,23 +40,7 @@ void gateSamplingCallback() {
 	prevSampleCallbackTick = sampleCallbackTick;
 	sampleCallbackTick = gettime();
 	
-	PAD_ScanPads();
-	
-	// keep buttons in a "pressed" state long enough for code to see it
-	// TODO: I don't like this implementation
-	if (!pressLocked) {
-		*pressed = PAD_ButtonsDown(0);
-		if ((*pressed) != 0) {
-			pressLocked = true;
-			pressedTimer = gettime();
-		}
-	} else {
-		if (ticks_to_millisecs(gettime() - pressedTimer) > 32) {
-			pressLocked = false;
-		}
-	}
-	
-	*held = PAD_ButtonsHeld(0);
+	readController(false);
 	
 	if (menuState == GATE_POST_SETUP && state == GATE_POST_INIT) {
 		int currX = PAD_StickX(0), currY = PAD_StickY(0);
@@ -112,12 +92,8 @@ static void displayInstructions() {
 	setCursorPos(21, 0);
 	printStr("Press Z to close instructions.");
 	
-	if (!buttonLock) {
-		if (*pressed & PAD_TRIGGER_Z) {
-			menuState = GATE_POST_SETUP;
-			buttonLock = true;
-			buttonPressCooldown = 5;
-		}
+	if (*pressed & PAD_TRIGGER_Z) {
+		menuState = GATE_POST_SETUP;
 	}
 }
 
@@ -207,18 +183,12 @@ void menu_gateMeasure() {
 					GX_End();
 					
 					
-					if (!buttonLock) {
-						if (*pressed & PAD_TRIGGER_Z) {
-							menuState = GATE_INSTRUCTIONS;
-							buttonLock = true;
-							buttonPressCooldown = 5;
-						}
-						if (*pressed & PAD_BUTTON_X) {
-							showC = !showC;
-							buttonLock = true;
-							buttonPressCooldown = 5;
-						}
+					if (*pressed & PAD_TRIGGER_Z) {
+						menuState = GATE_INSTRUCTIONS;
+					} else if (*pressed & PAD_BUTTON_X) {
+						showC = !showC;
 					}
+					
 					if (*held & PAD_BUTTON_Y) {
 						if (!yHeldAfterReset) {
 							yPressFrameCounter++;
@@ -237,19 +207,6 @@ void menu_gateMeasure() {
 		case GATE_INSTRUCTIONS:
 			displayInstructions();
 			break;
-	}
-	
-	if (buttonLock) {
-		// don't allow button press until a number of frames has passed
-		if (buttonPressCooldown > 0) {
-			buttonPressCooldown--;
-		} else {
-			// allow L and R to be held and not prevent buttonLock from being reset
-			// this is needed _only_ because we have a check for a pressed button while another is held
-			if ((*held) == 0) {
-				buttonLock = 0;
-			}
-		}
 	}
 }
 

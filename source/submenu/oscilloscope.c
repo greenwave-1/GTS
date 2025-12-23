@@ -48,7 +48,6 @@ static uint8_t stickCooldown = 0;
 static int8_t snapbackStartPosX = 0, snapbackStartPosY = 0;
 static int8_t snapbackPrevPosX = 0, snapbackPrevPosY = 0;
 static bool snapbackCrossed64 = false;
-static bool pressLocked = false;
 static bool stickMove = false;
 static bool showCStick = false;
 static bool display = false;
@@ -58,7 +57,6 @@ static bool pivotYAxisTriggered = false;
 static bool dashbackYAxisTriggered = false;
 
 static uint8_t ellipseCounter = 0;
-static uint64_t pressedTimer = 0;
 static uint64_t prevSampleCallbackTick = 0;
 static uint64_t sampleCallbackTick = 0;
 static uint64_t timeStickInOrigin = 0;
@@ -66,8 +64,6 @@ static uint64_t timeStoppedMoving = 0;
 
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
-static bool buttonLock = false;
-static uint8_t buttonPressCooldown = 0;
 
 static sampling_callback cb;
 static void oscilloscopeCallback() {
@@ -78,24 +74,8 @@ static void oscilloscopeCallback() {
 		prevSampleCallbackTick = sampleCallbackTick;
 	}
 	
-	PAD_ScanPads();
-	
-	// keep buttons in a "pressed" state long enough for code to see it
-	// TODO: I don't like this implementation
-	if (!pressLocked) {
-		*pressed = PAD_ButtonsDown(0);
-		if ((*pressed) != 0) {
-			pressLocked = true;
-			pressedTimer = gettime();
-		}
-	} else {
-		if (ticks_to_millisecs(gettime() - pressedTimer) > 32) {
-			pressLocked = false;
-		}
-	}
-	
-	*held = PAD_ButtonsHeld(0);
-	
+	readController(false);
+
 	// record current data
 	curr.stickX = PAD_StickX(0);
 	curr.stickY = PAD_StickY(0);
@@ -495,12 +475,8 @@ static void displayInstructions() {
 	setCursorPos(21, 0);
 	printStr("Press Z to close instructions.");
 	
-	if (!buttonLock) {
-		if (*pressed & PAD_TRIGGER_Z) {
-			state = OSC_POST_SETUP;
-			buttonLock = true;
-			buttonPressCooldown = 5;
-		}
+	if (*pressed & PAD_TRIGGER_Z) {
+		state = OSC_POST_SETUP;
 	}
 }
 
@@ -526,10 +502,6 @@ static void setup() {
 		clearRecordingArray(*data);
 		oState = PRE_INPUT;
 	}
-	
-	// prevent pressing for a short time upon entering menu
-	buttonLock = true;
-	buttonPressCooldown = 5;
 }
 
 // function called from outside
@@ -1336,36 +1308,25 @@ void menu_oscilloscope() {
 					break;
 			}
 			
-			if (!buttonLock) {
-				if (*pressed & PAD_BUTTON_A && !buttonLock && oState != PRE_INPUT) {
-					if (oState == POST_INPUT_LOCK && stickCooldown == 0) {
-						oState = POST_INPUT;
-					} else {
-						oState = POST_INPUT_LOCK;
-					}
-					buttonLock = true;
-					buttonPressCooldown = 5;
+			
+			if (*pressed & PAD_BUTTON_A && oState != PRE_INPUT) {
+				if (oState == POST_INPUT_LOCK && stickCooldown == 0) {
+					oState = POST_INPUT;
+				} else {
+					oState = POST_INPUT_LOCK;
 				}
-				if (*pressed & PAD_BUTTON_X && !buttonLock && !stickMove) {
-					currentTest++;
-					// check if we overrun our test length
-					if (currentTest == OSCILLOSCOPE_TEST_LEN) {
-						currentTest = SNAPBACK;
-					}
-					buttonLock = true;
-					buttonPressCooldown = 5;
+			} else if (*pressed & PAD_BUTTON_X && !stickMove) {
+				currentTest++;
+				// check if we overrun our test length
+				if (currentTest == OSCILLOSCOPE_TEST_LEN) {
+					currentTest = SNAPBACK;
 				}
-				if (*pressed & PAD_TRIGGER_Z && !buttonLock) {
-					state = OSC_INSTRUCTIONS;
-					buttonLock = true;
-					buttonPressCooldown = 5;
-				}
-				if (*pressed & PAD_BUTTON_Y && !buttonLock && !stickMove) {
-					showCStick = !showCStick;
-					buttonLock = true;
-					buttonPressCooldown = 5;
-				}
+			} else if (*pressed & PAD_TRIGGER_Z) {
+				state = OSC_INSTRUCTIONS;
+			} else if (*pressed & PAD_BUTTON_Y && !stickMove) {
+				showCStick = !showCStick;
 			}
+			
 			// adjust scaling factor
 			//} else if (pressed & PAD_BUTTON_Y) {
 			//	waveformScaleFactor++;
@@ -1379,16 +1340,6 @@ void menu_oscilloscope() {
 		default:
 			printStr("How did we get here?");
 			break;
-	}
-	if (buttonLock) {
-		// don't allow button press until a number of frames has passed
-		if (buttonPressCooldown > 0) {
-			buttonPressCooldown--;
-		} else {
-			if ((*held) == 0) {
-				buttonLock = 0;
-			}
-		}
 	}
 }
 

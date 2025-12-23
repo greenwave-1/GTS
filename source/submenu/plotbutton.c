@@ -31,8 +31,6 @@ const static uint16_t BUTTON_MASKS[13] = { PAD_BUTTON_A, PAD_BUTTON_B, PAD_BUTTO
 
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
-static bool buttonLock = false;
-static uint8_t buttonPressCooldown = 0;
 
 static uint8_t stickThreshold = 23;
 static uint8_t triggerThreshold = 255;
@@ -58,6 +56,7 @@ static ControllerRec **data = NULL, **temp = NULL;
 static uint8_t triggerLAnalog = 0, triggerRAnalog = 0;
 static bool captureStart = false;
 static bool captureButtonsReleased = false;
+static bool autoCaptureStartReleased = true;
 static bool autoCapture = false;
 static uint8_t autoCaptureCounter = 0;
 static int totalCaptureTime = 200000;
@@ -65,9 +64,7 @@ static int totalCaptureTime = 200000;
 static sampling_callback cb;
 static uint64_t prevSampleCallbackTick = 0;
 static uint64_t sampleCallbackTick = 0;
-static uint64_t pressedTimer = 0;
 static uint8_t ellipseCounter = 0;
-static bool pressLocked = false;
 
 typedef struct ButtonPressedTime {
 	uint64_t timeHeld;
@@ -79,23 +76,7 @@ static void plotButtonSamplingCallback() {
 	prevSampleCallbackTick = sampleCallbackTick;
 	sampleCallbackTick = gettime();
 	
-	PAD_ScanPads();
-	
-	// keep buttons in a "pressed" state long enough for code to see it
-	// TODO: I don't like this implementation
-	if (!pressLocked) {
-		*pressed = PAD_ButtonsDown(0);
-		if ((*pressed) != 0) {
-			pressLocked = true;
-			pressedTimer = gettime();
-		}
-	} else {
-		if (ticks_to_millisecs(gettime() - pressedTimer) > 32) {
-			pressLocked = false;
-		}
-	}
-	
-	*held = PAD_ButtonsHeld(0);
+	readController(false);
 	
 	if (state == BUTTON_INPUT || autoCapture) {
 		// wait for buttons to be released before allowing a capture
@@ -233,15 +214,13 @@ static void setup() {
 	}
 	menuState = BUTTON_POST_SETUP;
 	state = BUTTON_DISPLAY;
+	
+	autoCaptureStartReleased = true;
 
 	// check if existing recording is valid for this menu
 	if (!(RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_BUTTONTIME_FLAG)) {
 		clearRecordingArray(*data);
 	}
-	
-	// prevent pressing for a short time upon entering menu
-	buttonLock = true;
-	buttonPressCooldown = 5;
 }
 
 static void displayInstructions() {
@@ -264,12 +243,8 @@ static void displayInstructions() {
 	setCursorPos(21, 0);
 	printStr("Press Z to close instructions.");
 	
-	if (!buttonLock) {
-		if (*pressed & PAD_TRIGGER_Z) {
-			menuState = BUTTON_POST_SETUP;
-			buttonLock = true;
-			buttonPressCooldown = 5;
-		}
+	if (*pressed & PAD_TRIGGER_Z) {
+		menuState = BUTTON_POST_SETUP;
 	}
 }
 
@@ -502,33 +477,26 @@ void menu_plotButton() {
 					}
 					
 					// single presses
-					if (!buttonLock) {
-						// disable certain buttons a capture is occurring
-						if (!autoCapture && state != BUTTON_INPUT) {
-							if (*pressed & PAD_BUTTON_A) {
-								state = BUTTON_INPUT;
-								buttonLock = true;
-								buttonPressCooldown = 5;
-							} else if (*pressed & PAD_TRIGGER_Z) {
-								menuState = BUTTON_INSTRUCTIONS;
-								buttonLock = true;
-								buttonPressCooldown = 5;
-							} /* else if (*pressed & PAD_BUTTON_Y) {
-								capture400Toggle = !capture400Toggle;
-								buttonLock = true;
-								buttonPressCooldown = 5;
-							}*/
-						}
-						if (*pressed & PAD_BUTTON_RIGHT) {
-							stickThresholdSelected = false;
+					// disable certain buttons if a capture is occurring
+					if (!autoCapture && state != BUTTON_INPUT) {
+						if (*pressed & PAD_BUTTON_A) {
+							state = BUTTON_INPUT;
+						} else if (*pressed & PAD_TRIGGER_Z) {
+							menuState = BUTTON_INSTRUCTIONS;
+						} /* else if (*pressed & PAD_BUTTON_Y) {
+							capture400Toggle = !capture400Toggle;
 							buttonLock = true;
 							buttonPressCooldown = 5;
-						} else if (*pressed & PAD_BUTTON_LEFT) {
-							stickThresholdSelected = true;
-							buttonLock = true;
-							buttonPressCooldown = 5;
-						}
+						}*/
 					}
+					
+					// change which threshold is being adjusted
+					if (*pressed & PAD_BUTTON_RIGHT) {
+						stickThresholdSelected = false;
+					} else if (*pressed & PAD_BUTTON_LEFT) {
+						stickThresholdSelected = true;
+					}
+					
 					
 					// changing the thresholds
 					if (*held & PAD_TRIGGER_R && !autoCapture) {
@@ -587,7 +555,7 @@ void menu_plotButton() {
 					
 					// toggle auto-capture
 					setCursorPos(21, 0);
-					if (*held == PAD_BUTTON_START && !buttonLock && !captureStart) {
+					if (*held == PAD_BUTTON_START && !captureStart && autoCaptureStartReleased) {
 						if (autoCapture) {
 							printStr("Disabling ");
 						} else {
@@ -604,13 +572,17 @@ void menu_plotButton() {
 								state = BUTTON_DISPLAY;
 							}
 							captureButtonsReleased = false;
-							buttonLock = true;
-							buttonPressCooldown = 5;
+							autoCaptureStartReleased = false;
 							autoCaptureCounter = 0;
 						}
 					} else {
 						printStr("Hold start to toggle Auto-Trigger.");
 						autoCaptureCounter = 0;
+						if (!autoCaptureStartReleased) {
+							if ((*held & PAD_BUTTON_START) == 0) {
+								autoCaptureStartReleased = true;
+							}
+						}
 					}
 					break;
 
@@ -618,19 +590,6 @@ void menu_plotButton() {
 					printStr("button plot default case?");
 					break;
 			}
-	}
-	
-	if (buttonLock) {
-		// don't allow button press until a number of frames has passed
-		if (buttonPressCooldown > 0) {
-			buttonPressCooldown--;
-		} else {
-			// allow L and R to be held and not prevent buttonLock from being reset
-			// this is needed _only_ because we have a check for a pressed button while another is held
-			if ((*held) == 0 || *held & PAD_TRIGGER_L || *held & PAD_TRIGGER_R) {
-				buttonLock = 0;
-			}
-		}
 	}
 }
 

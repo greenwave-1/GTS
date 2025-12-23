@@ -68,6 +68,12 @@ void __setStaticXYValues() {
 	firstRun = false;
 }
 
+// external polling functions pass us any button presses during that frame
+static uint16_t buttonsDownDuringFrame = 0;
+
+// we need to store the previous state so that we can debounce
+static uint16_t previousFramePressed = 0;
+
 // indirectly set the XY values
 // values don't actually get set until setSamplingRate() is called
 // from a post-retrace callback in main.c -> retraceCallback()
@@ -76,7 +82,9 @@ void setSamplingRateHigh() {
 		__setStaticXYValues();
 	}
 	readHigh = true;
-	//SI_SetXY(xLineCountHigh, pollsPerFrameHigh);
+	// consider all buttons pressed when first switching
+	// this prevents a button from being 'pressed' for two consecutive frames
+	previousFramePressed = 0xffff;
 }
 
 void setSamplingRateNormal() {
@@ -84,7 +92,6 @@ void setSamplingRateNormal() {
 		__setStaticXYValues();
 	}
 	readHigh = false;
-	//SI_SetXY(xLineCountNormal, pollsPerFrameNormal);
 }
 
 // actually set the XY values
@@ -104,8 +111,6 @@ bool isUnsupportedMode() {
 
 // button fields
 // defined here so that we don't have to worry about passing pointers between menu.c and other submenus
-// TODO: should these values be updated from here via another function?
-// TODO: a function call in front of it would let us not have to check the current submenu in menu.c
 static uint16_t buttonsDown;
 static uint16_t buttonsHeld;
 
@@ -129,12 +134,44 @@ PADStatus getOriginStatus(enum CONT_PORTS_BITFLAGS port) {
 	return ret;
 }
 
-static uint32_t padsConnected;
+static uint32_t padsConnected = 0;
 
-void attemptReadOrigin() {
-	padsConnected = PAD_ScanPads();
-	// TODO: we should probably only check this on padsConnected being changed from the previous run
-	PAD_GetOrigin(origin);
+void readController(bool isNewFrame) {
+	uint32_t newPads = PAD_ScanPads();
+	
+	// only update values if there's a difference in what we have stored
+	if (newPads != padsConnected) {
+		padsConnected = newPads;
+		// we only need to update origin when a controller state changes
+		// TODO: does this handle 0x42 repoll command?
+		PAD_GetOrigin(origin);
+	}
+	
+	buttonsHeld = PAD_ButtonsHeld(0);
+	
+	// handle 'pressed' buttons
+	if (isNewFrame) {
+		if (!readHigh) {
+			// update normally
+			buttonsDown = PAD_ButtonsDown(0);
+		}
+		// function is being called multiple times per frame, so we need to do this logic ourselves
+		else {
+			// libogc2/libogc/pad.c PAD_ScanPads()
+			// we specifically want 'presses' that occurred on this frame but not on the last frame,
+			// ~previousFramePressed gives us buttons that weren't 'pressed' last frame
+			// buttonsDownDuringFrame is any button that was pressed at _any_ point between calls of readController()
+			buttonsDown = buttonsDownDuringFrame & (~previousFramePressed);
+			previousFramePressed = buttonsDownDuringFrame;
+		}
+		// clear it for next run
+		buttonsDownDuringFrame = 0;
+	} else {
+		// store held buttons for use in determining 'pressed'
+		// this does nothing if readHigh is false
+		buttonsDownDuringFrame |= buttonsHeld;
+	}
+	
 }
 
 bool isControllerConnected(enum CONT_PORTS_BITFLAGS port) {

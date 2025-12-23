@@ -108,9 +108,11 @@ bool menu_runMenu() {
 	}
 
 	resetCursor();
-	// read inputs get origin status
-	// calls PAD_ScanPads() and PAD_GetOrigin()
-	attemptReadOrigin();
+	
+	// read controller 1
+	// normally this function will update *pressed and *held
+	// when running at
+	readController(true);
 	
 	#ifndef NO_DATE_CHECK
 	if (!dateChecked) {
@@ -173,17 +175,6 @@ bool menu_runMenu() {
 		exportReturnCode = -1;
 	}
 	setCursorPos(2, 0);
-	
-	// check for any buttons pressed/held
-	// don't update if we are on a menu with its own callback
-	// TODO: eventually I'd like each menu entry to be in its own file, would that affect this?
-	// TODO: This is getting messy, there's probably a better way to do this...
-	if (currentMenu != WAVEFORM && currentMenu != CONTINUOUS_WAVEFORM &&
-			currentMenu != PLOT_2D && currentMenu != TRIGGER_WAVEFORM &&
-			currentMenu != GATE_MEASURE && currentMenu != PLOT_BUTTON) {
-		*pressed = PAD_ButtonsDown(0);
-		*held = PAD_ButtonsHeld(0);
-	}
 
 	// determine what menu we are in
 	switch (currentMenu) {
