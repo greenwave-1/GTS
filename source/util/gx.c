@@ -21,6 +21,9 @@
 #include "textures.h"
 #include "textures_tpl.h"
 
+GXColor GXColorAlpha(GXColor color, uint8_t alpha) {
+	return (GXColor) { color.r, color.g, color.b, alpha };
+}
 
 // default fifo size, specific number from provided gx examples
 #define DEFAULT_FIFO_SIZE (256 * 1024)
@@ -455,8 +458,9 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 			drawSnowParticles();
 			
 			// then obscure them slightly
+			// 0x40 -> 64 / 255, ~25% opacity
 			setDepth(-24);
-			drawSolidBoxAlpha(-10, -10, 700, 500, (GXColor) {0, 0, 0, 0x40});
+			drawSolidBoxAlpha(-10, -10, 700, 500, GXColorAlpha(GX_COLOR_BLACK, 0x40));
 			restorePrevDepth();
 			
 			break;

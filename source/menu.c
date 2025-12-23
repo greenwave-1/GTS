@@ -382,13 +382,6 @@ void runMenuVisual(bool showText) {
 			printStr(menuItems[i]);
 		}
 		
-		int col = 55 - (sizeof(VERSION_NUMBER));
-		if (col > 25) {
-			setCursorPos(22, col);
-			printStr("Ver: ");
-			printStr(VERSION_NUMBER);
-		}
-		
 		setCursorPos(22, 0);
 		printStr("Exiting...");
 		

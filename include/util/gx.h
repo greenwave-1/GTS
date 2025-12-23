@@ -14,6 +14,8 @@
 #include <ogc/gx.h>
 #include <ogc/tpl.h>
 
+#include <stdint.h>
+
 #include "util/datetime.h"
 
 // center of screen, 640x480
@@ -46,6 +48,9 @@
 #define GX_COLOR_RED_X (GXColor) {0xFF, 0x20, 0x00, 0xFF}
 #define GX_COLOR_BLUE_Y (GXColor) {0x00, 0x6A, 0xFF, 0xFF}
 #define GX_COLOR_ORANGE (GXColor) {0xFF, 0xA5, 0x00, 0xFF}
+
+// returns the given color with the specified alpha
+GXColor GXColorAlpha(GXColor color, uint8_t alpha);
 
 // enum to keep track of the vertex description state
 // this _should_ prevent adding unnecessary config commands? idk
