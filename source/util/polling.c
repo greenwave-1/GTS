@@ -157,7 +157,7 @@ void readController(bool updatePressed) {
 	buttonsHeld = PAD_ButtonsHeld(0);
 	
 	// handle 'pressed' buttons
-	if (isNewFrame) {
+	if (updatePressed) {
 		if (!readHigh) {
 			// update normally
 			buttonsDown = PAD_ButtonsDown(0);
