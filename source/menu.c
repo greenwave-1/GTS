@@ -109,9 +109,13 @@ bool menu_runMenu() {
 
 	resetCursor();
 	
-	// read controller 1
-	// normally this function will update *pressed and *held
-	// when running at
+	// read inputs and origin status
+	// calls ScanPads(), updates *pressed and *held, and checks for origin when a controller is connected/disconnected
+	// normally this function will update *pressed and *held via ButtonsDown() and ButtonsHeld()
+	// if polling is being handled by another function, 'pressed' buttons for this frame are set manually
+	// tl;dr each call of ScanPads() will update what buttons are considered pressed/down,
+	// in some menus, we call ScanPads() multiple times per-frame, meaning ButtonsDown() is basically useless.
+	// in this case, we handle setting 'pressed' buttons manually
 	readController(true);
 	
 	#ifndef NO_DATE_CHECK

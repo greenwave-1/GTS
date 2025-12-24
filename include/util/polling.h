@@ -35,7 +35,7 @@ uint16_t* getButtonsHeldPtr();
 
 PADStatus getOriginStatus(enum CONT_PORTS_BITFLAGS port);
 
-void readController(bool isNewFrame);
+void readController(bool updatePressed);
 bool isControllerConnected(enum CONT_PORTS_BITFLAGS port);
 
 #endif //GTS_POLLING_H

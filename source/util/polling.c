@@ -136,7 +136,14 @@ PADStatus getOriginStatus(enum CONT_PORTS_BITFLAGS port) {
 
 static uint32_t padsConnected = 0;
 
-void readController(bool isNewFrame) {
+// read controller
+// updates buttonsPressed, buttonsHeld, which controllers are connected, and origin information
+// the bool determines if we should attempt to update buttonsPressed
+// the only circumstance where false should be passed is when calling this function multiple times per frame
+// tl;dr each call of ScanPads() will update what buttons are considered pressed/down,
+// in some menus, we call ScanPads() multiple times per-frame, meaning ButtonsDown() is basically useless.
+// in this case, we handle setting 'pressed' buttons manually
+void readController(bool updatePressed) {
 	uint32_t newPads = PAD_ScanPads();
 	
 	// only update values if there's a difference in what we have stored
