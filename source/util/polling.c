@@ -144,16 +144,12 @@ static uint32_t padsConnected = 0;
 // in some menus, we call ScanPads() multiple times per-frame, meaning ButtonsDown() is basically useless.
 // in this case, we handle setting 'pressed' buttons manually
 void readController(bool updatePressed) {
-	uint32_t newPads = PAD_ScanPads();
+	// update controller state and get which controllers are connected
+	padsConnected = PAD_ScanPads();
+	// get origin info
+	PAD_GetOrigin(origin);
 	
-	// only update values if there's a difference in what we have stored
-	if (newPads != padsConnected) {
-		padsConnected = newPads;
-		// we only need to update origin when a controller state changes
-		// TODO: does this handle 0x42 repoll command?
-		PAD_GetOrigin(origin);
-	}
-	
+	// always update held buttons
 	buttonsHeld = PAD_ButtonsHeld(0);
 	
 	// handle 'pressed' buttons
@@ -164,7 +160,7 @@ void readController(bool updatePressed) {
 		}
 		// function is being called multiple times per frame, so we need to do this logic ourselves
 		else {
-			// libogc2/libogc/pad.c PAD_ScanPads()
+			// libogc2/libogc/pad.c -> PAD_ScanPads()
 			// we specifically want 'presses' that occurred on this frame but not on the last frame,
 			// ~previousFramePressed gives us buttons that weren't 'pressed' last frame
 			// buttonsDownDuringFrame is any button that was pressed at _any_ point between calls of readController()
