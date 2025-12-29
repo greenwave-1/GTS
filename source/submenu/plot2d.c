@@ -210,14 +210,15 @@ static void setup() {
 
 static void displayInstructions() {
 	setCursorPos(2, 0);
-	printStr("Press A to prepare a recording. Recording will start with\n"
-			 "any button press, or the stick moving.\n\n"
-			 "Press X to cycle the stickmap background. Use DPAD left/right\n"
-			 "to change what the last point drawn is. Information on the\n"
-			 "last chosen point is shown on the left.\n\n"
+	printStr("Press A to prepare a recording. Recording will start when\n"
+			 "any button is pressed, or when the stick moves.\n\n"
+			 "Use DPAD up/down to change stickmap background. Use DPAD\n"
+			 "left/right to change the graph\'s end point. Information on\n"
+			 "the last drawn point is shown on the left.\n\n"
 			 "Hold R to go faster, or L to move one point at a time.\n\n"
-			 "Hold Y to move the \"starting sample\" with the same controls as\n"
-			 "above. Info for the selected range is shown on the left.\n\n"
+			 "Hold X to move the \"starting sample\" with the same controls\n"
+			 "as above. Info for the selected range is shown on the left.\n\n"
+			 "Press Y to toggle which stick is captured.\n\n"
 	         "Hold Start to toggle Auto-Trigger. Enabling this removes\n"
 	         "the need to press A, but disables the instruction menu (Z),\n"
 			 "and only allows the stick to start a recording.\n");
@@ -276,12 +277,23 @@ void menu_plot2d() {
 						printStr("C-Stick");
 					}
 					
+					// draw box around plot area
+					if (!showCStick) {
+						drawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
+						        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
+						        GX_COLOR_WHITE);
+					} else {
+						drawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
+						        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
+						        GX_COLOR_YELLOW);
+					}
+					
 					if (dispData->isRecordingReady) {
 						convertedCoords = convertStickRawToMelee(dispData->samples[lastDrawPoint]);
 						
 						// print coordinates of last drawn point
 						// raw stick coordinates
-						setCursorPos(5, 0);
+						setCursorPos(11, 0);
 						printStr("Raw XY:   (");
 						if (!showCStick) {
 							printStr("%4d,%4d)\n", dispData->samples[lastDrawPoint].stickX,
@@ -294,7 +306,7 @@ void menu_plot2d() {
 						}
 						
 						// show button presses of last drawn point
-						setCursorPos(8, 0);
+						setCursorPos(14, 0);
 						printStr("Buttons Pressed:\n");
 						if (dispData->samples[lastDrawPoint].buttons & PAD_BUTTON_A) {
 							printStr("A ");
@@ -318,9 +330,11 @@ void menu_plot2d() {
 							printStr("R ");
 						}
 						
+						setDepth(-10);
 						drawSolidBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
 						             COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
 						             GX_COLOR_BLACK);
+						restorePrevDepth();
 						
 						updateVtxDesc(VTX_TEX_NOCOLOR, GX_MODULATE);
 						changeLoadedTexmap(TEXMAP_STICKMAPS);
@@ -330,22 +344,22 @@ void menu_plot2d() {
 						if (selectedImage != NO_IMAGE) {
 							GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
 							
-							GX_Position3s16(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128, -5);
+							GX_Position3s16(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128, -8);
 							GX_TexCoord2s16(0, 0);
 							
-							GX_Position3s16(COORD_CIRCLE_CENTER_X + 127, SCREEN_POS_CENTER_Y - 128, -5);
+							GX_Position3s16(COORD_CIRCLE_CENTER_X + 127, SCREEN_POS_CENTER_Y - 128, -8);
 							GX_TexCoord2s16(255, 0);
 							
-							GX_Position3s16(COORD_CIRCLE_CENTER_X + 127, SCREEN_POS_CENTER_Y + 127, -5);
+							GX_Position3s16(COORD_CIRCLE_CENTER_X + 127, SCREEN_POS_CENTER_Y + 127, -8);
 							GX_TexCoord2s16(255, 255);
 							
-							GX_Position3s16(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y + 127, -5);
+							GX_Position3s16(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y + 127, -8);
 							GX_TexCoord2s16(0, 255);
 							
 							GX_End();
 						}
 						
-						setCursorPos(16, 0);
+						setCursorPos(17, 0);
 						printStr("Stickmap: ");
 						switch (selectedImage) {
 							case A_WAIT:
@@ -374,18 +388,6 @@ void menu_plot2d() {
 						
 						setCursorPos(17, 0);
 						//printStr("Zone: %s", "TEMP");
-						
-						// draw box around plot area
-						if (!showCStick) {
-							drawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
-							        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
-							        GX_COLOR_WHITE);
-						} else {
-							drawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
-							        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
-							        GX_COLOR_YELLOW);
-						}
-						
 						
 						// we need to calculate vertices ahead of time
 						
@@ -482,19 +484,18 @@ void menu_plot2d() {
 						}
 						restorePrevDepth();
 						
-						setCursorPos(11, 0);
+						setCursorPos(6, 0);
 						printStr("Total samples: %11u\n", dispData->sampleEnd);
-						printStr("Graph start/end: %4u/%4u", map2dStartIndex + 1, lastDrawPoint + 1);
+						printStr("Graph start/end: %4u/%4u\n", map2dStartIndex + 1, lastDrawPoint + 1);
 						
 						double timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
-						setCursorPos(13, 0);
 						printStr("Total MS: %16.2f\n", timeFromStartMs);
 						printStr("Total frames:%13.2f", timeFromStartMs / FRAME_TIME_MS_F);
 						
-
 						
 						// cycle the stickmap shown
-						if ((*pressed & DPAD_MASK) == PAD_BUTTON_UP) {
+						// we want up/down to be pressed, but no other dpad direction held
+						if ((*pressed & DPAD_MASK) == PAD_BUTTON_UP && ((*held & DPAD_MASK) ^ PAD_BUTTON_UP) == 0) {
 							selectedImage++;
 							if (!showCStick) {
 								selectedImage %= IMAGE_LEN;
@@ -502,7 +503,7 @@ void menu_plot2d() {
 								// only first 3 options are valid for c-stick
 								selectedImage %= 3;
 							}
-						} else if ((*pressed & DPAD_MASK) == PAD_BUTTON_DOWN) {
+						} else if ((*pressed & DPAD_MASK) == PAD_BUTTON_DOWN && ((*held & DPAD_MASK) ^ PAD_BUTTON_DOWN) == 0) {
 							selectedImage--;
 							if (selectedImage == -1) {
 								if (!showCStick) {
@@ -517,7 +518,7 @@ void menu_plot2d() {
 						if (*held & PAD_TRIGGER_L) {
 							if (*pressed & PAD_BUTTON_LEFT) {
 								// x button moves the starting point
-								if (*pressed & PAD_BUTTON_X) {
+								if (*held & PAD_BUTTON_X) {
 									// bounds check
 									if (map2dStartIndex - 1 >= 0) {
 										map2dStartIndex--;
@@ -530,7 +531,7 @@ void menu_plot2d() {
 								}
 							} else if (*pressed & PAD_BUTTON_RIGHT) {
 								// starting point
-								if (*pressed & PAD_BUTTON_X) {
+								if (*held & PAD_BUTTON_X) {
 									if (map2dStartIndex + 1 <= lastDrawPoint) {
 										map2dStartIndex++;
 									}
