@@ -93,8 +93,7 @@ static void displayInstructions() {
 			 "- Points may appear inside the gate, close to the origin\n\n"
 			 "Neither of these are an issue, and can be ignored.\n\n"
 			 "Press X to toggle which stick is being visualized.\n"
-			 "Hold Y to reset the current visualization.\n"
-			 "Visualization will also reset after returning to Main Menu.");
+			 "Hold Y to reset the current visualization.");
 	
 	setCursorPos(21, 0);
 	printStr("Press Z to close instructions.");
