@@ -687,6 +687,10 @@ void menu_fileExport() {
 	}
 }
 
+void menu_setCurrentMenu(enum CURRENT_MENU menu) {
+	currentMenu = menu;
+}
+
 // self-explanatory
 void menu_thanksPage() {
 	printStr("Thanks to:\n"

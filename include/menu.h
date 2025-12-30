@@ -25,6 +25,8 @@ void menu_mainMenu();
 void menu_fileExport();
 void menu_thanksPage();
 
+void menu_setCurrentMenu(enum CURRENT_MENU menu);
+
 void runMenuVisual(bool showText);
 
 #endif //GTS_MENU_H
