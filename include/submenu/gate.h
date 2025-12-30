@@ -16,4 +16,6 @@ enum GATE_STATE { GATE_INIT, GATE_POST_INIT };
 void menu_gateMeasure();
 void menu_gateMeasureEnd();
 
+void menu_gateMeasureResetData();
+
 #endif //GTS_GATE_H

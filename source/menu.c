@@ -147,6 +147,7 @@ bool menu_runMenu() {
 		setCursorPos(0, 38);
 		printStr("Controller Disconnected!");
 		(*data)->isRecordingReady = false;
+		menu_gateMeasureResetData();
 	}
 	
 	// TODO: is there a better way to have an indicator but also have more screen space?
