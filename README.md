@@ -52,7 +52,7 @@ and that Dolphin support is considered secondary to real hardware.
   - [Follow the instructions for your device from here](https://devkitpro.org/wiki/devkitPro_pacman)
 - Install libogc2
   - [Add the extremscorner repo](https://github.com/extremscorner/pacman-packages#readme)
-  - Ensure that the extremscorner repo is **above** the normal devkitpro repo in pacman.conf
+  - Ensure that the extremscorner repo is **above** `[dkp-libs]` repo in pacman.conf
 - Run ```sudo (dkp-)pacman -S libogc2 libogc2-libdvm-git```
   - The ```(dkp-)``` is for systems that don't normally have pacman. On those systems, any command should use
 ```dkp-pacman```
