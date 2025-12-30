@@ -17,7 +17,7 @@
 #include "util/gx.h"
 #include "util/polling.h"
 
-const static uint8_t STICK_MOVEMENT_THRESHOLD = 5;
+const static uint8_t STICK_MOVEMENT_THRESHOLD = 15;
 const static uint8_t STICK_ORIGIN_TIME_THRESHOLD_MS = 50;
 const static uint8_t STICK_MOVEMENT_TIME_THRESHOLD_MS = 25;
 const static uint8_t MEASURE_COOLDOWN_FRAMES = 5;
@@ -356,8 +356,8 @@ static void oscilloscopeCallback() {
 							snapbackStartPosY = selectedStickY;
 						}
 						// has the current value moved beyond STICK_MOVEMENT_THRESHOLD from snapbackStartPos
-						else if (abs(selectedStickX) + (STICK_MOVEMENT_THRESHOLD * 2) <= abs(snapbackStartPosX) ||
-								abs(selectedStickY) + (STICK_MOVEMENT_THRESHOLD * 2) <= abs(snapbackStartPosY)) {
+						else if (abs(selectedStickX) + STICK_MOVEMENT_THRESHOLD <= abs(snapbackStartPosX) ||
+								abs(selectedStickY) + STICK_MOVEMENT_THRESHOLD <= abs(snapbackStartPosY)) {
 							stickMove = true;
 						}
 						
