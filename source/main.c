@@ -86,8 +86,8 @@ int main(int argc, char **argv) {
 
 	rmode = VIDEO_GetPreferredMode(NULL);
 
-	xfb[0] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
-	xfb[1] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
+	xfb[0] = SYS_AllocateFramebuffer(rmode);
+	xfb[1] = SYS_AllocateFramebuffer(rmode);
 	
 	VIDEO_ClearFrameBuffer(rmode, xfb[0], COLOR_BLACK);
 	VIDEO_ClearFrameBuffer(rmode, xfb[1], COLOR_BLACK);
