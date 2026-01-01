@@ -133,6 +133,8 @@ void printStr(const char* str, ...) {
 }
 
 // TODO: there's a better way to do this instead of calling handleString twice...
+// TODO: for some reason this breaks drawing if immediately followed by drawing using VTX_TEX_NOCOLOR, why?
+// specifically, coordinateviewer.c for the circle breaks in that situation if it uses VTX_TEX_NOCOLOR...
 void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* str, ...) {
 	va_list list;
 	va_start(list, str);
