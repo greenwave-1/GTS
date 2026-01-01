@@ -27,7 +27,8 @@
 #define TEXMAP_FONT GX_TEXMAP0
 #define TEXMAP_CONTROLLER GX_TEXMAP1
 #define TEXMAP_STICKMAPS GX_TEXMAP2
-#define TEXMAP_P GX_TEXMAP3
+#define TEXMAP_STICKOUTLINE GX_TEXMAP3
+#define TEXMAP_P GX_TEXMAP4
 
 // normal colors
 // mostly based on ogc/color.h

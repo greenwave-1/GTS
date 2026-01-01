@@ -48,6 +48,7 @@ static TPLFile tpl;
 static GXTexObj fontTex;
 static GXTexObj controllerTex;
 static GXTexObj stickmapTexArr[6];
+static GXTexObj stickOutlineTex;
 static GXTexObj pTex;
 
 // keeps track of our current z depth, for drawing helper functions
@@ -119,6 +120,9 @@ void getCurrentTexmapDims(int *width, int *height) {
 			break;
 		case TEXMAP_P:
 			selection = &pTex;
+			break;
+		case TEXMAP_STICKOUTLINE:
+			selection = &stickOutlineTex;
 			break;
 		case TEXMAP_STICKMAPS:
 			// all of these are the same, so any will do
@@ -240,12 +244,17 @@ void setupGX(GXRModeObj *rmode) {
 	// we don't actually load all the stickmaps into the texmap slots, there aren't enough
 	// we'll switch what stickmap is in the texmap slot on when its needed
 	TPL_GetTexture(&tpl, deadzone, &stickmapTexArr[0]);
-	GX_LoadTexObj(&(stickmapTexArr[0]), TEXMAP_STICKMAPS);
 	TPL_GetTexture(&tpl, await, &stickmapTexArr[1]);
 	TPL_GetTexture(&tpl, movewait, &stickmapTexArr[2]);
 	TPL_GetTexture(&tpl, crouch, &stickmapTexArr[3]);
 	TPL_GetTexture(&tpl, ledgel, &stickmapTexArr[4]);
 	TPL_GetTexture(&tpl, ledger, &stickmapTexArr[5]);
+	// load first one by default, because why not?
+	GX_LoadTexObj(&(stickmapTexArr[0]), TEXMAP_STICKMAPS);
+	
+	// stick outline for coordinate viewer
+	TPL_GetTexture(&tpl, outline, &stickOutlineTex);
+	GX_LoadTexObj(&stickOutlineTex, TEXMAP_STICKOUTLINE);
 	
 	TPL_GetTexture(&tpl, p, &pTex);
 	GX_LoadTexObj(&pTex, TEXMAP_P);

@@ -499,29 +499,30 @@ void menu_coordView() {
 			}
 			xfbCoordCY += SCREEN_POS_CENTER_Y;
 			
-			// draw stickbox bounds
-			updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+			changeLoadedTexmap(TEXMAP_STICKOUTLINE);
+			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
 			
-			// mostly pulled from here: https://gist.github.com/linusthe3rd/803118
-			GX_Begin(GX_TRIANGLEFAN, GX_VTXFMT0, 153);
-			GX_Position3s16(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, -15);
-			GX_Color3u8(GX_COLOR_BLACK.r, GX_COLOR_BLACK.g, GX_COLOR_BLACK.b);
-			for (int i = 0; i < 152; i++) {
-				GX_Position3s16(COORD_CIRCLE_CENTER_X + (160 * cos(i * (2 * M_PI) / 150)),
-				                SCREEN_POS_CENTER_Y + (160 * sin(i * (2 * M_PI) / 150)),
-				                -15);
-				GX_Color3u8(GX_COLOR_BLACK.r, GX_COLOR_BLACK.g, GX_COLOR_BLACK.b);
-			}
-			GX_End();
+			int width, height;
+			getCurrentTexmapDims(&width, &height);
 			
+			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 			
-			GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 152);
-			for (int i = 0; i < 152; i++) {
-				GX_Position3s16(COORD_CIRCLE_CENTER_X + (160 * cos(i * (2 * M_PI) / 150)),
-				                SCREEN_POS_CENTER_Y + (160 * sin(i * (2 * M_PI) / 150)),
-				                -15);
-				GX_Color3u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b);
-			}
+			GX_Position3s16(COORD_CIRCLE_CENTER_X - 164, SCREEN_POS_CENTER_Y - 164, -15);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(0, 0);
+			
+			GX_Position3s16(COORD_CIRCLE_CENTER_X + 164, SCREEN_POS_CENTER_Y - 164, -15);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(width, 0);
+			
+			GX_Position3s16(COORD_CIRCLE_CENTER_X + 164, SCREEN_POS_CENTER_Y + 164, -15);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(width, height);
+			
+			GX_Position3s16(COORD_CIRCLE_CENTER_X - 164, SCREEN_POS_CENTER_Y + 164, -15);
+			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
+			GX_TexCoord2s16(0, height);
+			
 			GX_End();
 			
 			drawStickmapOverlay(selectedStickmap, selectedStickmapSub);
