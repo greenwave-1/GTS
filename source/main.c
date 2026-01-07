@@ -120,6 +120,7 @@ int main(int argc, char **argv) {
 	// if we're using a socket for logging, we need to prepare it
 	// TODO: should this just be in logging.c outright? if so it needs to have return values for different outcomes
 	if (getLoggingType() == NETWORKSOCK) {
+		int netSetupEllipseCounter = 0;
 		while (true) {
 			// leave once connection is made
 			if (isConnectionMade()) {
@@ -137,11 +138,13 @@ int main(int argc, char **argv) {
 			
 			switch (getNetworkSetupState()) {
 				case NETLOG_INIT:
-					printStr("Setting up network...\n");
+					printStr("Setting up network.");
+					printEllipse(netSetupEllipseCounter, 20);
 					break;
 				case NETLOG_CONF_SUCCESS:
-					printStr("Waiting for connection...\n");
-					printStr("%s:43256", getConfiguredIP());
+					printStr("Waiting for connection.");
+					printEllipse(netSetupEllipseCounter, 20);
+					printStr("\n%s:43256", getConfiguredIP());
 					break;
 				case NETLOG_CONF_FAIL:
 					printStr("Network config failed! Press reset to exit.");
@@ -149,6 +152,10 @@ int main(int argc, char **argv) {
 				default:
 					printStr("Default case in network setup?");
 					break;
+			}
+			netSetupEllipseCounter++;
+			if (netSetupEllipseCounter == 60) {
+				netSetupEllipseCounter = 0;
 			}
 			
 			finishDraw(xfb[xfbSwitch]);

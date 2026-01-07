@@ -32,6 +32,8 @@ void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* s
 void printStrBox(const GXColor box_color, const char* str, ...);
 
 void printEllipse(const int counter, const int interval);
+void printSpinningLine();
+void printSpinningLineInterval(const int waitInterval);
 
 void resetCursor();
 void setCursorPos(int row, int col);

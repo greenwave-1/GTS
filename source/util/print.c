@@ -183,6 +183,28 @@ void printEllipse(const int counter, const int interval) {
 	}
 }
 
+static char lineSpinArr[] = { '/', '-', '\\', '|' };
+static int lineSpinArrIndex = 0;
+static int currInterval = 15, intervalCounter = 15;
+
+void printSpinningLine() {
+	printSpinningLineInterval(15);
+}
+
+void printSpinningLineInterval(const int waitInterval) {
+	if (currInterval != waitInterval) {
+		currInterval = intervalCounter = waitInterval;
+		lineSpinArrIndex = 0;
+	}
+	printStr("%c", lineSpinArr[lineSpinArrIndex]);
+	intervalCounter--;
+	if (intervalCounter == 0) {
+		lineSpinArrIndex++;
+		lineSpinArrIndex %= 4;
+		intervalCounter = currInterval;
+	}
+}
+
 void resetCursor() {
 	setCursorPos(0,0);
 	cursorZ = -4;
