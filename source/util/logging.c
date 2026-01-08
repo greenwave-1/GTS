@@ -107,7 +107,7 @@ void setupLogging(enum LOGGING_DEVICE device) {
 		case NETWORKSOCK:
 			if (networkSetupState == NETLOG_INIT) {
 				// called in a thread so that we can print while we wait
-				LWP_CreateThread(&socket_thread, setupNetwork, NULL, NULL, 2048, 50);
+				LWP_CreateThread(&socket_thread, setupNetwork, NULL, NULL, 2048, LWP_PRIO_NORMAL);
 				deviceSet = true;
 			}
 			break;
