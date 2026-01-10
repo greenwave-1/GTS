@@ -134,7 +134,7 @@ int main(int argc, char **argv) {
 			}
 			
 			resetCursor();
-			startDraw(rmode);
+			startDraw();
 			
 			switch (getNetworkSetupState()) {
 				case NETLOG_INIT:
@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
 			resetCursor();
 			setCursorPos(2, 0);
 			
-			startDraw(rmode);
+			startDraw();
 			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
 			changeLoadedTexmap(TEXMAP_FONT);
 			printStrColor(GX_COLOR_RED, GX_COLOR_WHITE,
@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
 			
 			// for some reason stuff doesn't draw as expected unless two frames have been drawn, so we 'draw' nothing
 			xfbSwitch ^= 1;
-			startDraw(rmode);
+			startDraw();
 			finishDraw(xfb[xfbSwitch]);
 			
 			VIDEO_WaitForRetrace(VIDEO_GetRetraceCount() + 300);
@@ -221,7 +221,7 @@ int main(int argc, char **argv) {
 		resetCursor();
 		setCursorPos(2, 0);
 		
-		startDraw(rmode);
+		startDraw();
 		updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
 		changeLoadedTexmap(TEXMAP_FONT);
 		printStrColor(GX_COLOR_RED, GX_COLOR_WHITE,
@@ -231,7 +231,7 @@ int main(int argc, char **argv) {
 		
 		// for some reason stuff doesn't draw as expected unless two frames have been drawn, so we 'draw' nothing
 		xfbSwitch ^= 1;
-		startDraw(rmode);
+		startDraw();
 		finishDraw(xfb[xfbSwitch]);
 		
 		VIDEO_WaitForRetrace(VIDEO_GetRetraceCount() + 300);
@@ -276,7 +276,7 @@ int main(int argc, char **argv) {
 			break;
 		}
 		
-		startDraw(rmode);
+		startDraw();
 		
 		// run menu
 		normalExit = menu_runMenu();
@@ -332,7 +332,7 @@ int main(int argc, char **argv) {
 	
 	// hold for ~1 second, then fade over 15 frames
 	for (int i = 0; i < 75; i++) {
-		startDraw(rmode);
+		startDraw();
 		runMenuVisual(normalExit);
 		
 		// display exit message if applicable

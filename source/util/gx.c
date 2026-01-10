@@ -39,6 +39,10 @@ static void *gp_fifo = nullptr;
 // (basically for debugging)
 //static GXFifoObj *gxFifoObj = nullptr;
 
+// rmode pointer
+// passed in setupGX()
+static GXRModeObj *rmodePtr = NULL;
+
 // matrix math stuff
 static Mtx view, model, modelview;
 static Mtx44 projectionMatrix;
@@ -159,23 +163,26 @@ void setupGX(GXRModeObj *rmode) {
 	//gxFifoObj = GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
 	//GX_InitFifoLimits(gxFifoObj, DEFAULT_FIFO_SIZE - GX_FIFO_HIWATERMARK, DEFAULT_FIFO_SIZE / 2);
 	
+	// set this for future use, so we don't have to continue to pass it
+	rmodePtr = rmode;
+	
 	// setup gx to clear background on each new frame
 	GXColor background = {0,0,0,0xff};
 	//GXColor background = {0xff, 0xff, 0xff, 0xff};
 	GX_SetCopyClear(background, GX_MAX_Z24);
 	
 	// other gx setup stuff
-	GX_SetViewport(0, 0, rmode->fbWidth, rmode->efbHeight,0,1);
-	float yscale = GX_GetYScaleFactor(rmode->efbHeight, rmode->xfbHeight);
+	GX_SetViewport(0, 0, rmodePtr->fbWidth, rmodePtr->efbHeight,0,1);
+	float yscale = GX_GetYScaleFactor(rmodePtr->efbHeight, rmodePtr->xfbHeight);
 	uint32_t xfbHeight = GX_SetDispCopyYScale(yscale);
-	GX_SetScissor(0, 0, rmode->fbWidth, rmode->efbHeight);
-	GX_SetDispCopySrc(0,0,rmode->fbWidth,rmode->efbHeight);
-	GX_SetDispCopyDst(rmode->fbWidth, xfbHeight);
+	GX_SetScissor(0, 0, rmodePtr->fbWidth, rmodePtr->efbHeight);
+	GX_SetDispCopySrc(0,0,rmodePtr->fbWidth,rmodePtr->efbHeight);
+	GX_SetDispCopyDst(rmodePtr->fbWidth, xfbHeight);
 	GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
 	
 	GX_SetCopyFilter(GX_FALSE, NULL, GX_FALSE, NULL);
-	//GX_SetCopyFilter(rmode->aa, rmode->sample_pattern, GX_TRUE, rmode->vfilter);
-	GX_SetFieldMode(rmode->field_rendering,((rmode->viHeight==2*rmode->xfbHeight)?GX_ENABLE:GX_DISABLE));
+	//GX_SetCopyFilter(rmodePtr->aa, rmodePtr->sample_pattern, GX_TRUE, rmodePtr->vfilter);
+	GX_SetFieldMode(rmodePtr->field_rendering,((rmodePtr->viHeight==2*rmodePtr->xfbHeight)?GX_ENABLE:GX_DISABLE));
 	
 	GX_SetCullMode(GX_CULL_NONE);
 	
@@ -272,13 +279,26 @@ void setupGX(GXRModeObj *rmode) {
 	
 	// setup projection matrix
 	// orthographic projection, z distance doesn't affect apparent size
-	guOrtho(projectionMatrix, 0, rmode->viHeight, 0, rmode->viWidth, 0.1f, 300.0f);
+	guOrtho(projectionMatrix, 0, rmodePtr->viHeight, 0, rmodePtr->viWidth, 0.1f, 300.0f);
 	
 	// perspecive matrix, z distance affects apparent size
-	//guPerspective(projectionMatrix, 45, (float) rmode->viWidth / rmode->viHeight, 0.1f, 300.0f);
+	//guPerspective(projectionMatrix, 45, (float) rmodePtr->viWidth / rmodePtr->viHeight, 0.1f, 300.0f);
 	
 	GX_LoadProjectionMtx(projectionMatrix, GX_ORTHOGRAPHIC);
-	
+}
+
+// we use this to mabe a "subwindow" for a scrolling text box
+// see startScrollingPrint() and endScrollingPrint() in print.c
+void setTextScrollingScissorBox(int top, int bottom) {
+	GX_SetScissor(0, 0, 640, bottom - top);
+	GX_SetScissorBoxOffset(0, -1 * top);
+	drawBox(0, 0, 640, bottom - top, GX_COLOR_WHITE);
+}
+
+// return scissor box to normal, mainly used after setTextScrollingScissorBox()
+void restoreNormalScissorBox() {
+	GX_SetScissor(0, 0, rmodePtr->fbWidth, rmodePtr->efbHeight);
+	GX_SetScissorBoxOffset(0, 0);
 }
 
 /*
@@ -288,8 +308,8 @@ uint8_t getFifoVal() {
 */
 
 // start and end of draw
-void startDraw(GXRModeObj *rmode) {
-	GX_SetViewport(0, 0, rmode->fbWidth, rmode->efbHeight, 0, 1);
+void startDraw() {
+	GX_SetViewport(0, 0, rmodePtr->fbWidth, rmodePtr->efbHeight, 0, 1);
 	
 	guMtxIdentity(model);
 	guMtxTransApply(model, model, 0.0f, 0.0f, -1.0f);

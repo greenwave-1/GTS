@@ -72,11 +72,14 @@ void changeStickmapTexture(int image);
 // basic initialization stuff
 void setupGX(GXRModeObj *rmode);
 
+void setTextScrollingScissorBox(int top, int bottom);
+void restoreNormalScissorBox();
+
 // debugging stuff
 //uint8_t getFifoVal();
 
 // start and end of draw
-void startDraw(GXRModeObj *rmode);
+void startDraw();
 void finishDraw(void *xfb);
 
 void setScreenOffset(int x, int y);

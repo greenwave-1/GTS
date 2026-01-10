@@ -13,6 +13,8 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include <ogc/pad.h>
+
 #include "util/gx.h"
 
 // buffer for variable arg strings
@@ -173,6 +175,87 @@ void printStrBox(const GXColor box_color, const char* str, ...) {
 		handleString(subString, true, GX_COLOR_WHITE, GX_COLOR_BLACK);
 	}
 	va_end(list);
+}
+
+static int tempX = 0, tempY = 0;
+static int scrollingOffset = 0;
+static int scrollModifier = 0;
+static int scrollBottomBound = 0;
+
+static int scrollTop = 0, scrollBottom = 480;
+
+void resetScrollingPrint() {
+	scrollingOffset = 0;
+	scrollBottomBound = 0;
+	scrollTop = 0;
+	scrollBottom = 480;
+}
+
+void startScrollingPrint(int top, int bottom) {
+	// set bounds
+	scrollTop = top;
+	scrollBottom = bottom;
+	// we restore the old xy after scrolling print is done
+	tempX = cursorX;
+	tempY = cursorY;
+	
+	// get stick position as a modifier
+	scrollModifier = PAD_StickY(0) / 16;
+
+	// apply offset
+	scrollingOffset -= scrollModifier;
+	
+	// hard limit scrolling
+	// 0 is the soft top bound, we allow a 20 unit shift before stopping it completely
+	if (scrollingOffset > 20) {
+		scrollingOffset = 20;
+	}
+	// bottom soft bound is determined by what text was printed, and has the same 20 unit shift allowed
+	if (scrollingOffset < scrollBottomBound - 20) {
+		scrollingOffset = scrollBottomBound - 20;
+	}
+	
+	// bring the offset back to either bound if necessary
+	// again, top bound is always 0
+	if (scrollingOffset > 5) {
+		scrollingOffset -= 2;
+	} else if (scrollingOffset > 0) {
+		scrollingOffset--;
+	} else if (scrollingOffset < scrollBottomBound - 5) {
+		scrollingOffset += 2;
+	} else if (scrollingOffset < scrollBottomBound) {
+		scrollingOffset++;
+	}
+	
+	// move cursor to top left of screen, subtract vertical padding so we actually start printing at y=~0
+	setCursorXY(0, scrollingOffset - PRINT_PADDING_VERTICAL + 5);
+	setTextScrollingScissorBox(top, bottom);
+}
+
+void endScrollingPrint() {
+	// there are two cases we need to handle:
+	// - text is short enough that scrolling isn't necessary
+	//   in this case, we only allow [-20,20]
+	// - text is long enough that scrolling is necessary
+	//   we need to determine the bottom bound
+	
+	int textHeight = (cursorY + PRINT_PADDING_VERTICAL) - scrollingOffset;
+	
+	// text didn't make it to the bottom, first case
+	if (textHeight <= (scrollBottom - scrollTop)) {
+		// set bounds
+		scrollBottomBound = 0;
+	}
+	// drawn text is bigger than the allotted space, we need to calculate bottom bound
+	else {
+		// scrolling up is a negative offset, so we subtract the calculated value from zero
+		// subtract window height from actual text height, +20 for the text's actual height
+		scrollBottomBound = 0 - (textHeight - (scrollBottom - scrollTop) + 20);
+	}
+	
+	// set everything back to normal
+	restoreNormalScissorBox();
+	setCursorXY(tempX, tempY);
 }
 
 void printEllipse(const int counter, const int interval) {
