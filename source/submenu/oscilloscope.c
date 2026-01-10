@@ -412,7 +412,7 @@ static void oscilloscopeCallback() {
 							}
 							loopPrependCount++;
 						}
-						for (int i = 0; i < loopPrependCount; i++ ) {
+						for (int i = 0; i < loopPrependCount; i++) {
 							(*temp)->samples[(*temp)->sampleEnd] = startingLoop[(loopStartIndex + i) % 200];
 							if ((*temp)->sampleEnd == 0) {
 								(*temp)->samples[0].timeDiffUs = 0;
