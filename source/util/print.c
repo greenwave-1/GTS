@@ -203,7 +203,7 @@ void startScrollingPrint(int top, int bottom) {
 	scrollModifier = PAD_StickY(0) / 16;
 
 	// apply offset
-	scrollingOffset -= scrollModifier;
+	scrollingOffset += scrollModifier;
 	
 	// hard limit scrolling
 	// 0 is the soft top bound, we allow a 20 unit shift before stopping it completely
