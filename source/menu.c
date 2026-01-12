@@ -88,6 +88,8 @@ static bool displayInstructions = false;
 
 static bool mainMenuDraw = false;
 
+static bool attemptedFilesystemInit = false;
+static bool filesystemInitResult = false;
 static int exportReturnCode = -1;
 
 static uint8_t thanksPageCounter = 0;
@@ -108,6 +110,11 @@ bool menu_runMenu() {
 	}
 
 	resetCursor();
+	
+	if (!attemptedFilesystemInit) {
+		filesystemInitResult = initFilesystem();
+		attemptedFilesystemInit = true;
+	}
 	
 	// read inputs and origin status
 	// calls ScanPads(), updates *pressed and *held, and checks for origin when a controller is connected/disconnected
@@ -573,7 +580,12 @@ void menu_mainMenu() {
 		} else {
 			setCursorPos(2 + i, 4);
 		}
-		printStr(menuItems[i]);
+		// disable export button if filesystem mount failed or no data ready
+		if (i == ENTRY_DATA_EXPORT && (!filesystemInitResult || !(*data)->isRecordingReady)) {
+			printStrColor(GX_COLOR_NONE, GX_COLOR_GRAY, menuItems[i]);
+		} else {
+			printStr(menuItems[i]);
+		}
 	}
 
 	// does the user move the cursor?
@@ -583,10 +595,18 @@ void menu_mainMenu() {
 		} else {
 			mainMenuCursorPos = MENUITEMS_LEN - 1;
 		}
+		// disable export button if filesystem mount failed or no data ready
+		if (mainMenuCursorPos == ENTRY_DATA_EXPORT && (!filesystemInitResult || !(*data)->isRecordingReady)) {
+			mainMenuCursorPos--;
+		}
 	} else if (*pressed & PAD_BUTTON_DOWN || (down && movable)) {
 		if (mainMenuCursorPos < MENUITEMS_LEN - 1) {
 			mainMenuCursorPos++;
 		} else {
+			mainMenuCursorPos = 0;
+		}
+		// disable export button if filesystem mount failed or no data ready
+		if (mainMenuCursorPos == ENTRY_DATA_EXPORT && (!filesystemInitResult || !(*data)->isRecordingReady)) {
 			mainMenuCursorPos = 0;
 		}
 	}
