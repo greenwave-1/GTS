@@ -118,9 +118,12 @@ void clearRecordingArray(ControllerRec *recording);
 // allows menus to get a double pointer and not have to change them in each menu
 void flipData();
 
+enum CONTROLLER_STICK_AXIS { AXIS_AX, AXIS_AY, AXIS_CX, AXIS_CY, AXIS_AXY, AXIS_CXY };
+
+int8_t getControllerSampleAxisValue(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis);
+void getControllerSampleAxisPair(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis, int8_t* retX, int8_t* retY);
 MeleeCoordinates convertStickRawToMelee(ControllerSample sample);
 
-enum MELEE_COORD_STR_AXIS { AXIS_AX, AXIS_AY, AXIS_CX, AXIS_CY, AXIS_AXY, AXIS_CXY };
-char* getMeleeCoordinateString(MeleeCoordinates coords, enum MELEE_COORD_STR_AXIS axis);
+char* getMeleeCoordinateString(MeleeCoordinates coords, enum CONTROLLER_STICK_AXIS axis);
 
 #endif //GTS_WAVEFORM_H

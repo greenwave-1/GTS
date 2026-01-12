@@ -140,8 +140,46 @@ MeleeCoordinates convertStickRawToMelee(ControllerSample sample) {
 	return ret;
 }
 
+// simple helper function to avoid stupid if-else nonsense in polling functions
+int8_t getControllerSampleAxisValue(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis) {
+	switch (axis) {
+		case AXIS_AX:
+			return sample.stickX;
+		case AXIS_AY:
+			return sample.stickY;
+		case AXIS_CX:
+			return sample.cStickX;
+		case AXIS_CY:
+			return sample.cStickY;
+		case AXIS_AXY:
+		case AXIS_CXY:
+		default:
+			return 0;
+	}
+}
+
+// same as above, but return a given axis pair instead of a single value
+void getControllerSampleAxisPair(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis, int8_t *retX, int8_t *retY) {
+	switch (axis) {
+		case AXIS_AXY:
+			*retX = sample.stickX;
+			*retY = sample.stickY;
+			break;
+		case AXIS_CXY:
+			*retX = sample.cStickX;
+			*retY = sample.cStickY;
+			break;
+		case AXIS_AX:
+		case AXIS_AY:
+		case AXIS_CX:
+		case AXIS_CY:
+		default:
+			break;
+	}
+}
+
 static char meleeCoordString[20];
-char* getMeleeCoordinateString(MeleeCoordinates coords, enum MELEE_COORD_STR_AXIS axis) {
+char* getMeleeCoordinateString(MeleeCoordinates coords, enum CONTROLLER_STICK_AXIS axis) {
 	uint16_t selectedValue1 = 0, selectedValue2 = 0;
 	bool value1Negative = false, value2Negative = false;
 	

@@ -18,7 +18,6 @@
 #include "util/polling.h"
 
 const static uint8_t STICK_MOVEMENT_THRESHOLD = 15;
-const static uint8_t STICK_ORIGIN_TIME_THRESHOLD_MS = 50;
 const static uint8_t STICK_MOVEMENT_TIME_THRESHOLD_MS = 25;
 const static uint8_t MEASURE_COOLDOWN_FRAMES = 5;
 
@@ -45,22 +44,17 @@ static ControllerSample startingLoop[200];
 static int startingLoopIndex = 0;
 
 static uint8_t stickCooldown = 0;
+static bool stickReturnedToOrigin = true;
 static int8_t snapbackStartPosX = 0, snapbackStartPosY = 0;
-static int8_t snapbackPrevPosX = 0, snapbackPrevPosY = 0;
 static bool snapbackCrossed64 = false;
-static bool stickMove = false;
-static bool showCStick = false;
-static bool display = false;
-
-// used to store what axis triggered the input
-static bool pivotYAxisTriggered = false;
-static bool dashbackYAxisTriggered = false;
+static bool recordingInProgress = false;
+static enum CONTROLLER_STICK_AXIS displayedAxis = AXIS_AXY;
+static enum CONTROLLER_STICK_AXIS triggeringAxis = AXIS_AX;
 
 static uint8_t ellipseCounter = 0;
 static uint64_t prevSampleCallbackTick = 0;
 static uint64_t sampleCallbackTick = 0;
 static uint64_t timeStickInOrigin = 0;
-static uint64_t timeStoppedMoving = 0;
 
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
@@ -90,248 +84,140 @@ static void oscilloscopeCallback() {
 		startingLoopIndex = 0;
 	}
 	
-	int8_t selectedStickX, selectedStickY;
-	if (showCStick) {
-		selectedStickX = curr.cStickX;
-		selectedStickY = curr.cStickY;
-	} else {
-		selectedStickX = curr.stickX;
-		selectedStickY = curr.stickY;
-	}
+	int8_t selectedStickX = 0, selectedStickY = 0;
+	getControllerSampleAxisPair(curr, displayedAxis, &selectedStickX, &selectedStickY);
 	
 	// are we ready to check for stick inputs?
 	if (oState != POST_INPUT_LOCK) {
 		// data capture is currently happening
-		if (stickMove) {
+		if (recordingInProgress) {
 			// capture recorded sample
 			(*temp)->samples[(*temp)->sampleEnd] = curr;
 			(*temp)->totalTimeUs += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 			(*temp)->sampleEnd++;
 			
-			// handle specific logic for each test
-			switch (currentTest) {
-				// TODO: change this to have a buffer of a minimum amount of time, to make final graph look better
-				case SNAPBACK:
-					// are we close to the origin?
-					if ((abs(selectedStickX) < STICK_MOVEMENT_THRESHOLD) && (abs(selectedStickY) < STICK_MOVEMENT_THRESHOLD)) {
-						timeStoppedMoving += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
-					} else {
-						timeStoppedMoving = 0;
-					}
-					
-					snapbackPrevPosX = selectedStickX;
-					snapbackPrevPosY = selectedStickY;
-					
-					// have we either run out of data, or has the stick stopped moving for long enough?
-					if ((*temp)->sampleEnd == REC_SAMPLE_MAX || ((timeStoppedMoving / 1000)) >= STICK_MOVEMENT_TIME_THRESHOLD_MS) {
-						// are we stopped near the origin?
-						if ((abs(selectedStickX) < STICK_MOVEMENT_THRESHOLD) && (abs(selectedStickY) < STICK_MOVEMENT_THRESHOLD)) {
-							(*temp)->isRecordingReady = true;
-						} else {
-							// go back in the loop, we're holding a position somewhere outside origin
-							// this will also reset if we're out of datapoints? not sure how this'll work
-							(*temp)->sampleEnd = 0;
-							stickMove = false;
-							snapbackStartPosX = selectedStickX;
-							snapbackStartPosY = selectedStickY;
-							snapbackCrossed64 = false;
-							oState = POST_INPUT;
-						}
-					}
-					break;
-				
-				case PIVOT:
-					// are we close to the origin?
-					if ((abs(selectedStickX) < STICK_MOVEMENT_THRESHOLD) && (abs(selectedStickY) < STICK_MOVEMENT_THRESHOLD)) {
-						timeStickInOrigin += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
-					} else {
-						timeStickInOrigin = 0;
-					}
-					
-					// have we met conditions to end recording?
-					if ((*temp)->sampleEnd == REC_SAMPLE_MAX || (timeStickInOrigin / 1000) >= STICK_ORIGIN_TIME_THRESHOLD_MS) {
-						// determine what axis we should use, based on which axis reached the highest magnitude
-						int xMax = 0, yMax = 0;
-						for (int i = 0; i < (*temp)->sampleEnd - 1; i++) {
-							if (!showCStick) {
-								if (abs((*temp)->samples[i].stickX) > xMax) {
-									xMax = abs((*temp)->samples[i].stickX);
-								}
-								if (abs((*temp)->samples[i].stickY) > yMax) {
-									yMax = abs((*temp)->samples[i].stickY);
-								}
-							} else {
-								if (abs( (*temp)->samples[i].cStickX ) > xMax) {
-									xMax = abs( (*temp)->samples[i].cStickX );
-								}
-								if (abs( (*temp)->samples[i].cStickY ) > yMax) {
-									yMax = abs( (*temp)->samples[i].cStickY );
-								}
-							}
-						}
-						
-						// we give preference to the X axis in a tie
-						if (xMax >= yMax) {
-							pivotYAxisTriggered = false;
-						} else {
-							pivotYAxisTriggered = true;
-						}
-						
-						// this will truncate the recording to just the pivot input
-						uint64_t timeFromOriginCross = 0;
-						bool crossed64Range = false;
-						int8_t inputSign = 0;
-						int pivotStartIndex = 0;
-						bool hasCrossedOrigin = false;
-						if (!pivotYAxisTriggered) {
-							if (!showCStick) {
-								for (int i = (*temp)->sampleEnd - 1; i >= 0; i--) {
-									if (!crossed64Range) {
-										if ((*temp)->samples[i].stickX >= 64 || (*temp)->samples[i].stickX <= -64) {
-											crossed64Range = true;
-											inputSign = (*temp)->samples[i].stickX;
-										}
-									} else if (!hasCrossedOrigin) {
-										if (inputSign * (*temp)->samples[i].stickX < 0) {
-											hasCrossedOrigin = true;
-										}
-									} else {
-										timeFromOriginCross += (*temp)->samples[i].timeDiffUs;
-										if (timeFromOriginCross / 1000 >= 50) {
-											pivotStartIndex = i;
-											break;
-										}
-									}
-								}
-							} else {
-								for (int i = (*temp)->sampleEnd - 1; i >= 0; i--) {
-									if (!crossed64Range) {
-										if ((*temp)->samples[i].cStickX >= 64 || (*temp)->samples[i].cStickX <= -64) {
-											crossed64Range = true;
-											inputSign = (*temp)->samples[i].cStickX;
-										}
-									} else if (!hasCrossedOrigin) {
-										if (inputSign * (*temp)->samples[i].cStickX < 0) {
-											hasCrossedOrigin = true;
-										}
-									} else {
-										timeFromOriginCross += (*temp)->samples[i].timeDiffUs;
-										if (timeFromOriginCross / 1000 >= 50) {
-											pivotStartIndex = i;
-											break;
-										}
-									}
-								}
-							}
-						} else {
-							if (!showCStick) {
-								for (int i = (*temp)->sampleEnd - 1; i >= 0; i--) {
-									if (!crossed64Range) {
-										if ((*temp)->samples[i].stickY >= 64 || (*temp)->samples[i].stickY <= -64) {
-											crossed64Range = true;
-											inputSign = (*temp)->samples[i].stickY;
-										}
-									} else if (!hasCrossedOrigin) {
-										if (inputSign * (*temp)->samples[i].stickY < 0) {
-											hasCrossedOrigin = true;
-										}
-									} else {
-										timeFromOriginCross += (*temp)->samples[i].timeDiffUs;
-										if (timeFromOriginCross / 1000 >= 50) {
-											pivotStartIndex = i;
-											break;
-										}
-									}
-								}
-							} else {
-								for (int i = (*temp)->sampleEnd - 1; i >= 0; i--) {
-									if (!crossed64Range) {
-										if ((*temp)->samples[i].cStickY >= 64 || (*temp)->samples[i].cStickY <= -64) {
-											crossed64Range = true;
-											inputSign = (*temp)->samples[i].cStickY;
-										}
-									} else if (!hasCrossedOrigin) {
-										if (inputSign * (*temp)->samples[i].cStickY < 0) {
-											hasCrossedOrigin = true;
-										}
-									} else {
-										timeFromOriginCross += (*temp)->samples[i].timeDiffUs;
-										if (timeFromOriginCross / 1000 >= 50) {
-											pivotStartIndex = i;
-											break;
-										}
-									}
-								}
-							}
-						}
-						
-						(*temp)->totalTimeUs = 0;
-						
-						// TODO: this is wasteful for a polling function, find a way to either specify a different
-						// TODO: starting point, or do this outside of the function
-						// rewrite data with new starting index
-						for (int i = 0; i < (*temp)->sampleEnd - 1 - pivotStartIndex; i++) {
-							(*temp)->samples[i].stickX = (*temp)->samples[i + pivotStartIndex].stickX;
-							(*temp)->samples[i].stickY = (*temp)->samples[i + pivotStartIndex].stickY;
-							(*temp)->samples[i].cStickX = (*temp)->samples[i + pivotStartIndex].cStickX;
-							(*temp)->samples[i].cStickY = (*temp)->samples[i + pivotStartIndex].cStickY;
-							(*temp)->samples[i].timeDiffUs = (*temp)->samples[i + pivotStartIndex].timeDiffUs;
-							(*temp)->totalTimeUs += (*temp)->samples[i + pivotStartIndex].timeDiffUs;
-						}
-						(*temp)->totalTimeUs -= (*temp)->samples[0].timeDiffUs;
-						(*temp)->samples[0].timeDiffUs = 0;
-						(*temp)->sampleEnd = (*temp)->sampleEnd - pivotStartIndex - 1;
-						
-						(*temp)->isRecordingReady = true;
-					}
-					break;
-				
-				case DASHBACK:
-				default:
-					// are we close to the origin?
-					if ((abs(selectedStickX) < STICK_MOVEMENT_THRESHOLD) && (abs(selectedStickY) < STICK_MOVEMENT_THRESHOLD)) {
-						timeStickInOrigin += (ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick));
-					} else {
-						timeStickInOrigin = 0;
-					}
-					
-					if ((*temp)->sampleEnd == REC_SAMPLE_MAX || (timeStickInOrigin / 1000) >= STICK_ORIGIN_TIME_THRESHOLD_MS) {
-						if (currentTest == DASHBACK) {
-							// determine what axis we should use, based on which axis reached the highest magnitude
-							int xMax = 0, yMax = 0;
-							for (int i = 0; i < (*temp)->sampleEnd - 1; i++) {
-								if (!showCStick) {
-									if (abs((*temp)->samples[i].stickX) > xMax) {
-										xMax = abs((*temp)->samples[i].stickX);
-									}
-									if (abs((*temp)->samples[i].stickY) > yMax) {
-										yMax = abs((*temp)->samples[i].stickY);
-									}
-								} else {
-									if (abs( (*temp)->samples[i].cStickX ) > xMax) {
-										xMax = abs( (*temp)->samples[i].cStickX );
-									}
-									if (abs( (*temp)->samples[i].cStickY ) > yMax) {
-										yMax = abs( (*temp)->samples[i].cStickY );
-									}
-								}
-							}
-							
-							if (xMax >= yMax) {
-								dashbackYAxisTriggered = false;
-							} else {
-								dashbackYAxisTriggered = true;
-							}
-						}
-						(*temp)->isRecordingReady = true;
-					}
-					break;
+			
+			// a lot of logic is shared between tests, so specific code is checked for with if()
+			// are we close to the origin?
+			if ((abs(selectedStickX) < STICK_MOVEMENT_THRESHOLD) && (abs(selectedStickY) < STICK_MOVEMENT_THRESHOLD)) {
+				timeStickInOrigin += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
+				stickReturnedToOrigin = true;
+			} else {
+				stickReturnedToOrigin = false;
+				timeStickInOrigin = 0;
 			}
 			
-			// data is marked ready, prep it to show
+			// dashback has a different max
+			int currTestMaxSamples = REC_SAMPLE_MAX;
+			if (currentTest == DASHBACK) {
+				currTestMaxSamples = 500;
+			}
+			
+			// have we either run out of data, or has the stick stopped moving for long enough?
+			if ((*temp)->sampleEnd == currTestMaxSamples || ((timeStickInOrigin / 1000)) >= STICK_MOVEMENT_TIME_THRESHOLD_MS) {
+				// snapback has a fallback condition that resets the current recording
+				if (currentTest == SNAPBACK) {
+					// are we stopped near the origin?
+					if ((abs(selectedStickX) < STICK_MOVEMENT_THRESHOLD) &&
+					    (abs(selectedStickY) < STICK_MOVEMENT_THRESHOLD)) {
+						(*temp)->isRecordingReady = true;
+					} else {
+						// go back in the loop, we're holding a position somewhere outside origin
+						// this will also reset if we're out of datapoints? not sure how this'll work
+						(*temp)->sampleEnd = 0;
+						recordingInProgress = false;
+						snapbackStartPosX = selectedStickX;
+						snapbackStartPosY = selectedStickY;
+						snapbackCrossed64 = false;
+						oState = POST_INPUT;
+					}
+				}
+				// everyone else...
+				else {
+					(*temp)->isRecordingReady = true;
+				}
+			}
+			
+			// data is marked ready, there are a couple more things we need to do before allowing it to be shown...
 			if ((*temp)->isRecordingReady) {
-				stickMove = false;
-				display = true;
+				// determine the intended axis, based on which axis reached the highest magnitude
+				int8_t xMax = 0, yMax = 0;
+				int8_t currX = 0, currY = 0;
+				for (int i = 0; i < (*temp)->sampleEnd - 1; i++) {
+					getControllerSampleAxisPair((*temp)->samples[i], displayedAxis, &currX, &currY);
+					if (abs(currX) > xMax) {
+						xMax = currX;
+					}
+					if (abs(currY) > yMax) {
+						yMax = currY;
+					}
+				}
+				
+				// we give preference to the X axis in a tie
+				// this looks a bit complicated, but saves a _bunch_ of if/else checks after this
+				if (xMax >= yMax) {
+					if (displayedAxis == AXIS_AXY) {
+						triggeringAxis = AXIS_AX;
+					} else {
+						triggeringAxis = AXIS_CX;
+					}
+				} else {
+					if (displayedAxis == AXIS_AXY) {
+						triggeringAxis = AXIS_AY;
+					} else {
+						triggeringAxis = AXIS_CY;
+					}
+				}
+				
+				// pivot requires rewriting the recording...
+				if (currentTest == PIVOT) {
+					// this will truncate the recording to just the pivot input, after finding it
+					uint64_t timeFromOriginCross = 0;
+					bool crossed64Range = false;
+					int8_t inputSign = 0;
+					int pivotStartIndex = 0;
+					bool hasCrossedOrigin = false;
+					
+					// read from back of list
+					for (int i = (*temp)->sampleEnd - 1; i >= 0; i--) {
+						int curr = getControllerSampleAxisValue((*temp)->samples[i], triggeringAxis);
+						if (!crossed64Range) {
+							if (curr >= 64 || curr <= -64) {
+								crossed64Range = true;
+								inputSign = curr;
+							}
+						} else if (!hasCrossedOrigin) {
+							if (inputSign * curr < 0) {
+								hasCrossedOrigin = true;
+							}
+						} else {
+							timeFromOriginCross += (*temp)->samples[i].timeDiffUs;
+							if (timeFromOriginCross / 1000 >= 50) {
+								pivotStartIndex = i;
+								break;
+							}
+						}
+					}
+					
+					(*temp)->totalTimeUs = 0;
+					
+					// TODO: this is wasteful for a polling function, find a way to either specify a different
+					// TODO: starting point, or do this outside of the function
+					// rewrite data with new starting indexdrawXFirst
+					for (int i = 0; i < (*temp)->sampleEnd - 1 - pivotStartIndex; i++) {
+						(*temp)->samples[i].stickX = (*temp)->samples[i + pivotStartIndex].stickX;
+						(*temp)->samples[i].stickY = (*temp)->samples[i + pivotStartIndex].stickY;
+						(*temp)->samples[i].cStickX = (*temp)->samples[i + pivotStartIndex].cStickX;
+						(*temp)->samples[i].cStickY = (*temp)->samples[i + pivotStartIndex].cStickY;
+						(*temp)->samples[i].timeDiffUs = (*temp)->samples[i + pivotStartIndex].timeDiffUs;
+						(*temp)->totalTimeUs += (*temp)->samples[i + pivotStartIndex].timeDiffUs;
+					}
+					(*temp)->totalTimeUs -= (*temp)->samples[0].timeDiffUs;
+					(*temp)->samples[0].timeDiffUs = 0;
+					(*temp)->sampleEnd = (*temp)->sampleEnd - pivotStartIndex - 1;
+				}
+				
+				recordingInProgress = false;
 				oState = POST_INPUT_LOCK;
 				stickCooldown = MEASURE_COOLDOWN_FRAMES;
 				snapbackStartPosX = 0;
@@ -358,7 +244,7 @@ static void oscilloscopeCallback() {
 						// has the current value moved beyond STICK_MOVEMENT_THRESHOLD from snapbackStartPos
 						else if (abs(selectedStickX) + STICK_MOVEMENT_THRESHOLD <= abs(snapbackStartPosX) ||
 								abs(selectedStickY) + STICK_MOVEMENT_THRESHOLD <= abs(snapbackStartPosY)) {
-							stickMove = true;
+							recordingInProgress = true;
 						}
 						
 					}
@@ -376,12 +262,13 @@ static void oscilloscopeCallback() {
 				default:
 					// we're waiting for the stick to leave center
 					if ((abs(selectedStickX) > STICK_MOVEMENT_THRESHOLD) || (abs(selectedStickY) > STICK_MOVEMENT_THRESHOLD)) {
-						stickMove = true;
+						recordingInProgress = true;
 					}
 					break;
 			}
 			
-			if (stickMove) {
+			// did we meet a condition to start recording?
+			if (recordingInProgress) {
 				// assign first value
 				clearRecordingArray(*temp);
 				(*temp)->sampleEnd = 0;
@@ -435,6 +322,13 @@ static void oscilloscopeCallback() {
 				(*temp)->dataExported = false;
 				oState = PRE_INPUT;
 			}
+		}
+	}
+	// stick hasn't returned to origin
+	else if (!stickReturnedToOrigin) {
+		if ((abs(selectedStickX) < STICK_MOVEMENT_THRESHOLD) &&
+		    (abs(selectedStickY) < STICK_MOVEMENT_THRESHOLD)) {
+			stickReturnedToOrigin = true;
 		}
 	}
 }
@@ -528,7 +422,9 @@ void menu_oscilloscope() {
 					if (oState == POST_INPUT_LOCK) {
 						// dont allow new input until cooldown elapses
 						if (stickCooldown != 0) {
-							stickCooldown--;
+							if (stickReturnedToOrigin) {
+								stickCooldown--;
+							}
 							if (stickCooldown == 0) {
 								oState = POST_INPUT;
 							}
@@ -541,7 +437,7 @@ void menu_oscilloscope() {
 					// draw guidelines based on selected test
 					drawSolidBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
 					             SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_BLACK);
-					if (!showCStick) {
+					if (displayedAxis == AXIS_AXY) {
 						drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
 						        SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_WHITE);
 					} else {
@@ -595,16 +491,12 @@ void menu_oscilloscope() {
 						}
 						
 						// initialize stat values to first point
-						int minX, minY;
-						int maxX, maxY;
+						int8_t minX, minY;
+						int8_t maxX, maxY;
 						
-						if (!showCStick) {
-							minX = maxX = dispData->samples[dataScrollOffset].stickX;
-							minY = maxY = dispData->samples[dataScrollOffset].stickY;
-						} else {
-							minX = maxX = dispData->samples[dataScrollOffset].cStickX;
-							minY = maxY = dispData->samples[dataScrollOffset].cStickY;
-						}
+						getControllerSampleAxisPair(dispData->samples[dataScrollOffset], displayedAxis, &minX, &minY);
+						maxX = minX;
+						maxY = minY;
 
 						int waveformXPos = 0;
 						uint64_t drawnTicksUs = 0;
@@ -618,14 +510,8 @@ void menu_oscilloscope() {
 								break;
 							}
 							
-							int currY, currX;
-							if (!showCStick) {
-								currX = dispData->samples[i].stickX;
-								currY = dispData->samples[i].stickY;
-							} else {
-								currX = dispData->samples[i].cStickX;
-								currY = dispData->samples[i].cStickY;
-							}
+							int8_t currX, currY;
+							getControllerSampleAxisPair(dispData->samples[i], displayedAxis, &currX, &currY);
 							
 							if (minX > currX) {
 								minX = currX;
@@ -656,6 +542,7 @@ void menu_oscilloscope() {
 						// this is slightly unintuitive
 						// this will be false because we draw the axis with the larger magnitude _second_
 						// which lets it show over the other axis
+						// Also, we don't use triggeringAxis here since the magnitude is screen-local
 						if (magnitudeY > magnitudeX) {
 							drawXFirst = true;
 						}
@@ -666,25 +553,14 @@ void menu_oscilloscope() {
 							GX_Begin(GX_LINESTRIP, GX_VTXFMT0, totalPointsToDraw);
 							
 							for (int i = dataScrollOffset; i < dataScrollOffset + totalPointsToDraw; i++) {
-								int curr;
-								if (drawXFirst) {
-									if (!showCStick) {
-										curr = dispData->samples[i].stickX;
-									} else {
-										curr = dispData->samples[i].cStickX;
-									}
-								} else {
-									if (!showCStick) {
-										curr = dispData->samples[i].stickY;
-									} else {
-										curr = dispData->samples[i].cStickY;
-									}
-								}
+								int8_t currX, currY;
+								getControllerSampleAxisPair(dispData->samples[i], displayedAxis, &currX, &currY);
 								
-								GX_Position3s16(SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - curr, -2 + line);
 								if (drawXFirst) {
+									GX_Position3s16(SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currX, -2 + line);
 									GX_Color3u8(GX_COLOR_RED_X.r, GX_COLOR_RED_X.g, GX_COLOR_RED_X.b);
 								} else {
+									GX_Position3s16(SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currY, -2 + line);
 									GX_Color3u8(GX_COLOR_BLUE_Y.r, GX_COLOR_BLUE_Y.g, GX_COLOR_BLUE_Y.b);
 								}
 								waveformXPos += waveformScaleFactor;
@@ -737,6 +613,26 @@ void menu_oscilloscope() {
 						
 						// print test data
 						setCursorPos(20, 0);
+						
+						// some test logic always uses the 'triggeringAxis',
+						// so data would be wrong if we showed it when the other axis is shown
+						enum CONTROLLER_STICK_AXIS workingAxis = triggeringAxis;
+						if (displayedAxis == AXIS_AXY) {
+							if (triggeringAxis == AXIS_CX) {
+								// default value is fine
+							}
+							if (triggeringAxis == AXIS_CY) {
+								workingAxis = AXIS_AY;
+							}
+						} else if (displayedAxis == AXIS_CXY) {
+							if (triggeringAxis == AXIS_AX) {
+								workingAxis = AXIS_CX;
+							}
+							if (triggeringAxis == AXIS_AY) {
+								workingAxis = AXIS_CY;
+							}
+						}
+						
 						switch (currentTest) {
 							case SNAPBACK:
 								// highlight axis with biggest magnitude
@@ -758,200 +654,56 @@ void menu_oscilloscope() {
 								int pivotStartIndex = -1, pivotEndIndex = -1;
 								int pivotStartSign = 0;
 								// start from the back of the list
-								if (!pivotYAxisTriggered) {
-									if (!showCStick) {
-										for (int i = dispData->sampleEnd - 1; i >= 0; i--) {
-											// check x coordinate for +-64 (dash threshold)
-											if ((abs(dispData->samples[i].stickX) >= 64) && !leftPivotRange) {
-												if (pivotEndIndex == -1) {
-													pivotEndIndex = i;
-												}
-												// pivot input must hit 80 on both sides
-												if (abs(dispData->samples[i].stickX) >= 80) {
-													pivotHit80 = true;
-												}
-												// check if we didn't poll between the dash thresholds
-												// (dolphin w/ bad pode)?
-												if (pivotEndIndex != -1 && !leftPivotRange &&
-														(dispData->samples[i].stickX * dispData->samples[pivotEndIndex].stickX < 0)) {
-													leftPivotRange = true;
-													pivotStartIndex = i;
-												}
-											}
-											
-											// are we outside the pivot range and have already logged data of being in range
-											if (pivotEndIndex != -1 && abs(dispData->samples[i].stickX) < 64) {
-												leftPivotRange = true;
-												if (pivotStartIndex == -1) {
-													// need the "previous" poll since this one is out of the range
-													pivotStartIndex = i + 1;
-												}
-												if (prevLeftPivotRange || !pivotHit80) {
-													break;
-												}
-											}
-											
-											// look for the initial input
-											if (abs(dispData->samples[i].stickX) >= 64 && leftPivotRange) {
-												// used to ensure starting input is from the opposite side
-												if (pivotStartSign == 0) {
-													pivotStartSign = dispData->samples[i].stickX;
-												}
-												prevLeftPivotRange = true;
-												if (abs(dispData->samples[i].stickX) >= 80) {
-													prevPivotHit80 = true;
-													break;
-												}
-											}
+								for (int i = dispData->sampleEnd - 1; i >= 0; i--) {
+									int8_t curr = getControllerSampleAxisValue(dispData->samples[i], workingAxis);
+									// check current coordinate for +-64 (dash threshold)
+									if ((abs(curr) >= 64) && !leftPivotRange) {
+										if (pivotEndIndex == -1) {
+											pivotEndIndex = i;
 										}
-									} else {
-										for (int i = dispData->sampleEnd - 1; i >= 0; i--) {
-											// check x coordinate for +-64 (dash threshold)
-											if ((abs(dispData->samples[i].cStickX) >= 64) && !leftPivotRange) {
-												if (pivotEndIndex == -1) {
-													pivotEndIndex = i;
-												}
-												// pivot input must hit 80 on both sides
-												if (abs(dispData->samples[i].cStickX) >= 80) {
-													pivotHit80 = true;
-												}
-												// check if we didn't poll between the dash thresholds
-												// (dolphin w/ bad pode)?
-												if (pivotEndIndex != -1 && !leftPivotRange &&
-												    (dispData->samples[i].cStickX * dispData->samples[pivotEndIndex].cStickX < 0)) {
-													leftPivotRange = true;
-													pivotStartIndex = i;
-												}
-											}
-											
-											// are we outside the pivot range and have already logged data of being in range
-											if (pivotEndIndex != -1 && abs(dispData->samples[i].cStickX) < 64) {
-												leftPivotRange = true;
-												if (pivotStartIndex == -1) {
-													// need the "previous" poll since this one is out of the range
-													pivotStartIndex = i + 1;
-												}
-												if (prevLeftPivotRange || !pivotHit80) {
-													break;
-												}
-											}
-											
-											// look for the initial input
-											if (abs(dispData->samples[i].cStickX) >= 64 && leftPivotRange) {
-												// used to ensure starting input is from the opposite side
-												if (pivotStartSign == 0) {
-													pivotStartSign = dispData->samples[i].cStickX;
-												}
-												prevLeftPivotRange = true;
-												if (abs(dispData->samples[i].cStickX) >= 80) {
-													prevPivotHit80 = true;
-													break;
-												}
-											}
+										// pivot input must hit 80 on both sides
+										if (abs(curr) >= 80) {
+											pivotHit80 = true;
+										}
+										// check if we didn't poll between the dash thresholds
+										// (dolphin w/ bad pode)?
+										if (pivotEndIndex != -1 && !leftPivotRange &&
+										    (curr * getControllerSampleAxisValue(dispData->samples[pivotEndIndex], workingAxis) < 0)) {
+											leftPivotRange = true;
+											pivotStartIndex = i;
 										}
 									}
-								} else {
-									if (!showCStick) {
-										for (int i = dispData->sampleEnd - 1; i >= 0; i--) {
-											// check x coordinate for +-64 (dash threshold)
-											if ((abs(dispData->samples[i].stickY) >= 64) && !leftPivotRange) {
-												if (pivotEndIndex == -1) {
-													pivotEndIndex = i;
-												}
-												// pivot input must hit 80 on both sides
-												if (abs(dispData->samples[i].stickY) >= 80) {
-													pivotHit80 = true;
-												}
-												// check if we didn't poll between the dash thresholds
-												// (dolphin w/ bad pode)?
-												if (pivotEndIndex != -1 && !leftPivotRange &&
-												    (dispData->samples[i].stickY * dispData->samples[pivotEndIndex].stickY < 0)) {
-													leftPivotRange = true;
-													pivotStartIndex = i;
-												}
-											}
-											
-											// are we outside the pivot range and have already logged data of being in range
-											if (pivotEndIndex != -1 && abs(dispData->samples[i].stickY) < 64) {
-												leftPivotRange = true;
-												if (pivotStartIndex == -1) {
-													// need the "previous" poll since this one is out of the range
-													pivotStartIndex = i + 1;
-												}
-												if (prevLeftPivotRange || !pivotHit80) {
-													break;
-												}
-											}
-											
-											// look for the initial input
-											if (abs(dispData->samples[i].stickY) >= 64 && leftPivotRange) {
-												// used to ensure starting input is from the opposite side
-												if (pivotStartSign == 0) {
-													pivotStartSign = dispData->samples[i].stickY;
-												}
-												prevLeftPivotRange = true;
-												if (abs(dispData->samples[i].stickY) >= 80) {
-													prevPivotHit80 = true;
-													break;
-												}
-											}
+									
+									// are we outside the pivot range and have already logged data of being in range
+									if (pivotEndIndex != -1 && abs(curr) < 64) {
+										leftPivotRange = true;
+										if (pivotStartIndex == -1) {
+											// need the "previous" poll since this one is out of the range
+											pivotStartIndex = i + 1;
 										}
-									} else {
-										for (int i = dispData->sampleEnd - 1; i >= 0; i--) {
-											// check x coordinate for +-64 (dash threshold)
-											if ((abs(dispData->samples[i].cStickY) >= 64) && !leftPivotRange) {
-												if (pivotEndIndex == -1) {
-													pivotEndIndex = i;
-												}
-												// pivot input must hit 80 on both sides
-												if (abs(dispData->samples[i].cStickY) >= 80) {
-													pivotHit80 = true;
-												}
-												// check if we didn't poll between the dash thresholds
-												// (dolphin w/ bad pode)?
-												if (pivotEndIndex != -1 && !leftPivotRange &&
-												    (dispData->samples[i].cStickY * dispData->samples[pivotEndIndex].cStickY < 0)) {
-													leftPivotRange = true;
-													pivotStartIndex = i;
-												}
-											}
-											
-											// are we outside the pivot range and have already logged data of being in range
-											if (pivotEndIndex != -1 && abs(dispData->samples[i].cStickY) < 64) {
-												leftPivotRange = true;
-												if (pivotStartIndex == -1) {
-													// need the "previous" poll since this one is out of the range
-													pivotStartIndex = i + 1;
-												}
-												if (prevLeftPivotRange || !pivotHit80) {
-													break;
-												}
-											}
-											
-											// look for the initial input
-											if (abs(dispData->samples[i].cStickY) >= 64 && leftPivotRange) {
-												// used to ensure starting input is from the opposite side
-												if (pivotStartSign == 0) {
-													pivotStartSign = dispData->samples[i].cStickY;
-												}
-												prevLeftPivotRange = true;
-												if (abs(dispData->samples[i].cStickY) >= 80) {
-													prevPivotHit80 = true;
-													break;
-												}
-											}
+										if (prevLeftPivotRange || !pivotHit80) {
+											break;
+										}
+									}
+									
+									// look for the initial input
+									if (abs(curr) >= 64 && leftPivotRange) {
+										// used to ensure starting input is from the opposite side
+										if (pivotStartSign == 0) {
+											pivotStartSign = curr;
+										}
+										prevLeftPivotRange = true;
+										if (abs(curr) >= 80) {
+											prevPivotHit80 = true;
+											break;
 										}
 									}
 								}
 								
 								// phobvision doc says both sides need to hit 80 to succeed
 								// multiplication is to ensure signs are correct
-								int8_t pivotLastValue = 0;
-								if (!pivotYAxisTriggered) {
-									pivotLastValue = showCStick ? dispData->samples[pivotEndIndex].cStickX : dispData->samples[pivotEndIndex].stickX;
-								} else {
-									pivotLastValue = showCStick ? dispData->samples[pivotEndIndex].cStickY : dispData->samples[pivotEndIndex].stickY;
-								}
+								int8_t pivotLastValue = getControllerSampleAxisValue(dispData->samples[pivotEndIndex], workingAxis);
+
 								if (prevPivotHit80 && pivotHit80 && (pivotLastValue * pivotStartSign < 0)) {
 									float noTurnPercent = 0;
 									float pivotPercent = 0;
@@ -1001,117 +753,31 @@ void menu_oscilloscope() {
 								// iterate over the list, find the start and end point where the X axis is in the
 								// slow-turn range [23,63]
 								// we also check if the X axis reaches the dash range (64+)
-								if (!dashbackYAxisTriggered) {
-									if (!showCStick) {
-										for (int i = 0; i < dispData->sampleEnd; i++) {
-											// is the stick in the dash range?
-											// note that this is independent from the other if
-											if (abs(dispData->samples[i].stickX) >= 65) {
-												// mark that we did cross that threshold
-												stickInDashRange = true;
-												// did we miss the slow-turn range?
-												if (dashbackStartIndex == -1) {
-													break;
-												}
-											}
-											
-											// is the stick in the slow-turn range
-											if ((abs(dispData->samples[i].stickX) >= 23 &&
-											     abs(dispData->samples[i].stickX) < 64)) {
-												timeInRange += dispData->samples[i].timeDiffUs;
-												// set this as the first sample that is in slow-turn range
-												if (dashbackStartIndex == -1) {
-													dashbackStartIndex = i;
-												}
-											} else if (dashbackStartIndex != -1) {
-												dashbackEndIndex = i - 1;
-												// stick has left the slow-turn range, there's no need to continue
-												// checking the list
-												break;
-											}
-										}
-									} else {
-										for (int i = 0; i < dispData->sampleEnd; i++) {
-											// is the stick in the dash range?
-											if (abs(dispData->samples[i].cStickX) >= 65) {
-												// mark that we did cross that threshold
-												stickInDashRange = true;
-												// did we miss the slow-turn range?
-												if (dashbackStartIndex == -1) {
-													break;
-												}
-											}
-											// is the stick in the slow-turn range
-											if ((abs(dispData->samples[i].cStickX) >= 23 &&
-											     abs(dispData->samples[i].cStickX) < 64)) {
-												timeInRange += dispData->samples[i].timeDiffUs;
-												// set this as the first sample that is in slow-turn range
-												if (dashbackStartIndex == -1) {
-													dashbackStartIndex = i;
-												}
-											} else if (dashbackStartIndex != -1) {
-												dashbackEndIndex = i - 1;
-												// stick has left the slow-turn range, there's no need to continue
-												// checking the list
-												break;
-											}
+								for (int i = 0; i < dispData->sampleEnd; i++) {
+									int8_t curr = getControllerSampleAxisValue(dispData->samples[i], workingAxis);
+									// is the stick in the dash range?
+									// note that this is independent from the other if
+									if (abs(curr) >= 65) {
+										// mark that we did cross that threshold
+										stickInDashRange = true;
+										// did we miss the slow-turn range?
+										if (dashbackStartIndex == -1) {
+											break;
 										}
 									}
-								} else {
-									if (!showCStick) {
-										for (int i = 0; i < dispData->sampleEnd; i++) {
-											// is the stick in the dash range?
-											// note that this is independent from the other if
-											if (abs(dispData->samples[i].stickY) >= 65) {
-												// mark that we did cross that threshold
-												stickInDashRange = true;
-												// did we miss the slow-turn range?
-												if (dashbackStartIndex == -1) {
-													break;
-												}
-											}
-											
-											// is the stick in the slow-turn range
-											if ((abs(dispData->samples[i].stickY) >= 23 &&
-											     abs(dispData->samples[i].stickY) < 64)) {
-												timeInRange += dispData->samples[i].timeDiffUs;
-												// set this as the first sample that is in slow-turn range
-												if (dashbackStartIndex == -1) {
-													dashbackStartIndex = i;
-												}
-											} else if (dashbackStartIndex != -1) {
-												dashbackEndIndex = i - 1;
-												// stick has left the slow-turn range, there's no need to continue
-												// checking the list
-												break;
-											}
+									
+									// is the stick in the slow-turn range
+									if ((abs(curr) >= 23 && abs(curr) < 64)) {
+										timeInRange += dispData->samples[i].timeDiffUs;
+										// set this as the first sample that is in slow-turn range
+										if (dashbackStartIndex == -1) {
+											dashbackStartIndex = i;
 										}
-									} else {
-										for (int i = 0; i < dispData->sampleEnd; i++) {
-											// is the stick in the dash range?
-											if (abs(dispData->samples[i].cStickY) >= 65) {
-												// mark that we did cross that threshold
-												stickInDashRange = true;
-												// did we miss the slow-turn range?
-												if (dashbackStartIndex == -1) {
-													break;
-												}
-											}
-											// is the stick in the slow-turn range
-											if ((abs(dispData->samples[i].cStickY) >= 23 &&
-											     abs(dispData->samples[i].cStickY) < 64)) {
-												timeInRange += dispData->samples[i].timeDiffUs;
-												// set this as the first sample that is in slow-turn range
-												if (dashbackStartIndex == -1) {
-													dashbackStartIndex = i;
-												}
-											} else if (dashbackStartIndex != -1) {
-												dashbackEndIndex = i - 1;
-												// stick has left the slow-turn range, there's no need to continue
-												// checking the list
-												break;
-											}
-										}
+									} else if (dashbackStartIndex != -1) {
+										dashbackEndIndex = i - 1;
+										// stick has left the slow-turn range, there's no need to continue
+										// checking the list
+										break;
 									}
 								}
 								
@@ -1186,49 +852,18 @@ void menu_oscilloscope() {
 										
 										// first case: we need to actually find the total units moved
 										if (prevPollIndex >= 0) {
-											if (!dashbackYAxisTriggered) {
-												if (!showCStick) {
-													dashIntentionCount = abs(dispData->samples[prevPollIndex].stickX -
-													                         dispData->samples[i].stickX);
-													dashIntentionCount += abs(dispData->samples[i].stickX -
-													                          dispData->samples[nextPollIndex].stickX);
-												} else {
-													dashIntentionCount = abs(dispData->samples[prevPollIndex].cStickX -
-													                         dispData->samples[i].cStickX);
-													dashIntentionCount += abs(dispData->samples[i].cStickX -
-													                          dispData->samples[nextPollIndex].cStickX);
-												}
-											} else {
-												if (!showCStick) {
-													dashIntentionCount = abs(dispData->samples[prevPollIndex].stickY -
-													                         dispData->samples[i].stickY);
-													dashIntentionCount += abs(dispData->samples[i].stickY -
-													                          dispData->samples[nextPollIndex].stickY);
-												} else {
-													dashIntentionCount = abs(dispData->samples[prevPollIndex].cStickY -
-													                         dispData->samples[i].cStickY);
-													dashIntentionCount += abs(dispData->samples[i].cStickY -
-													                          dispData->samples[nextPollIndex].cStickY);
-												}
-											}
+											dashIntentionCount = abs(
+													getControllerSampleAxisValue(dispData->samples[prevPollIndex], workingAxis) -
+													getControllerSampleAxisValue(dispData->samples[i], workingAxis) );
 											
+											dashIntentionCount += abs(
+													getControllerSampleAxisValue(dispData->samples[i], workingAxis) -
+													getControllerSampleAxisValue(dispData->samples[nextPollIndex], workingAxis) );
 										}
 										// second case: we assume previous poll is at origin (0,0), and just use
 										// the value in nextPollIndex
 										else {
-											if (!dashbackYAxisTriggered) {
-												if (!showCStick) {
-													dashIntentionCount = abs(dispData->samples[nextPollIndex].stickX);
-												} else {
-													dashIntentionCount = abs(dispData->samples[nextPollIndex].cStickX);
-												}
-											} else {
-												if (!showCStick) {
-													dashIntentionCount = abs(dispData->samples[nextPollIndex].stickY);
-												} else {
-													dashIntentionCount = abs(dispData->samples[nextPollIndex].cStickY);
-												}
-											}
+											dashIntentionCount = abs(getControllerSampleAxisValue(dispData->samples[nextPollIndex], workingAxis));
 										}
 										
 										// did the stick move enough units to trigger the dash intention check?
@@ -1268,14 +903,9 @@ void menu_oscilloscope() {
 										ucfPercent = 0;
 									}
 								}
-								if (!showCStick) {
-									printStr("Vanilla Success: %2.0f%% | UCF Success: %2.0f%%",
-									         dashbackPercent, ucfPercent);
-								} else {
-									printStr("Vanilla Success: %2.0f%% | UCF Success: %2.0f%%",
-									         dashbackPercent, ucfPercent);
-								}
 								
+								printStr("Vanilla Success: %2.0f%% | UCF Success: %2.0f%%",
+								         dashbackPercent, ucfPercent);
 								break;
 							default:
 								printStr("Error?");
@@ -1315,7 +945,7 @@ void menu_oscilloscope() {
 				} else {
 					oState = POST_INPUT_LOCK;
 				}
-			} else if (*pressed & PAD_BUTTON_X && !stickMove) {
+			} else if (*pressed & PAD_BUTTON_X && !recordingInProgress) {
 				currentTest++;
 				// check if we overrun our test length
 				if (currentTest == OSCILLOSCOPE_TEST_LEN) {
@@ -1323,8 +953,12 @@ void menu_oscilloscope() {
 				}
 			} else if (*pressed & PAD_TRIGGER_Z) {
 				state = OSC_INSTRUCTIONS;
-			} else if (*pressed & PAD_BUTTON_Y && !stickMove) {
-				showCStick = !showCStick;
+			} else if (*pressed & PAD_BUTTON_Y && !recordingInProgress) {
+				if (displayedAxis == AXIS_AXY) {
+					displayedAxis = AXIS_CXY;
+				} else {
+					displayedAxis = AXIS_AXY;
+				}
 			}
 			
 			// adjust scaling factor
@@ -1349,8 +983,9 @@ void menu_oscilloscopeEnd() {
 	pressed = NULL;
 	held = NULL;
 	state = OSC_SETUP;
+	stickReturnedToOrigin = true;
 	if (!(*temp)->isRecordingReady) {
 		(*temp)->sampleEnd = 0;
-		stickMove = false;
+		recordingInProgress = false;
 	}
 }
