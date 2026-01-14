@@ -237,8 +237,10 @@ static void oscilloscopeCallback() {
 					// we're waiting for the stick's 'falling' action
 					if (snapbackCrossed64) {
 						// current value is greater, adjust our top threshold
-						if (abs(selectedStickX) > abs(snapbackStartPosX) || abs(selectedStickY) > abs(snapbackStartPosY)) {
+						if (abs(selectedStickX) > abs(snapbackStartPosX)) {
 							snapbackStartPosX = selectedStickX;
+						}
+						if (abs(selectedStickY) > abs(snapbackStartPosY)) {
 							snapbackStartPosY = selectedStickY;
 						}
 						// has the current value moved beyond STICK_MOVEMENT_THRESHOLD from snapbackStartPos
@@ -276,6 +278,8 @@ static void oscilloscopeCallback() {
 				int currentIndex = 0;
 				
 				// if pivot or dashback, prepend data
+				// this seems to increase execution time to around ~100 microseconds
+				// probably not a problem still...
 				switch (currentTest) {
 					case SNAPBACK:
 					case DASHBACK:
