@@ -9,6 +9,7 @@
 
 // generic filesystem utils
 bool initFilesystem();
+void deinitFilesystem();
 FILE *openFile(char *filename, char *modes);
 
 int exportData();

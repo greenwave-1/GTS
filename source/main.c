@@ -8,6 +8,7 @@
 #include "util/polling.h"
 #include "util/print.h"
 #include "util/args.h"
+#include "util/file.h"
 
 #ifdef DEBUGLOG
 #include "util/logging.h"
@@ -314,6 +315,9 @@ int main(int argc, char **argv) {
 	#ifdef DEBUGLOG
 	stopLogging();
 	#endif
+	
+	// close filesystem if necessary
+	deinitFilesystem();
 	
 	// dumb way to have a different message show, while also avoiding two #if defined().
 	// if using hard-coded strings, then either there would be repeat code, or you'd need two #if defined()

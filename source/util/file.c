@@ -28,6 +28,13 @@ bool initFilesystem() {
 	return initSuccess;
 }
 
+// deinit fs if necessary
+void deinitFilesystem() {
+	if (initSuccess) {
+		fatDeinit();
+	}
+}
+
 FILE *openFile(char *filename, char *modes) {
 	if (!initFilesystem()) {
 		return NULL;
