@@ -502,6 +502,12 @@ static void menu_mainMenuDraw() {
 }
 
 void menu_mainMenu() {
+	bool disableDataExport = (!filesystemInitResult || !(*data)->isRecordingReady);
+	// reset cursor if data export option gets disabled while on that entry
+	if (disableDataExport && mainMenuCursorPos == ENTRY_DATA_EXPORT) {
+		mainMenuCursorPos = ENTRY_CONT_TEST;
+	}
+	
 	stickYPrevPos = stickYPos;
 	stickYPos = PAD_StickY(0);
 	int stickDiff = abs(stickYPos - stickYPrevPos);
@@ -571,7 +577,7 @@ void menu_mainMenu() {
 			setCursorPos(2 + i, 4);
 		}
 		// disable export button if filesystem mount failed or no data ready
-		if (i == ENTRY_DATA_EXPORT && (!filesystemInitResult || !(*data)->isRecordingReady)) {
+		if (i == ENTRY_DATA_EXPORT && disableDataExport) {
 			printStrColor(GX_COLOR_NONE, GX_COLOR_GRAY, menuItems[i]);
 		} else {
 			printStr(menuItems[i]);
@@ -586,7 +592,7 @@ void menu_mainMenu() {
 			mainMenuCursorPos = MENUITEMS_LEN - 1;
 		}
 		// disable export button if filesystem mount failed or no data ready
-		if (mainMenuCursorPos == ENTRY_DATA_EXPORT && (!filesystemInitResult || !(*data)->isRecordingReady)) {
+		if (mainMenuCursorPos == ENTRY_DATA_EXPORT && disableDataExport) {
 			mainMenuCursorPos--;
 		}
 	} else if (*pressed & PAD_BUTTON_DOWN || (down && movable)) {
@@ -596,7 +602,7 @@ void menu_mainMenu() {
 			mainMenuCursorPos = 0;
 		}
 		// disable export button if filesystem mount failed or no data ready
-		if (mainMenuCursorPos == ENTRY_DATA_EXPORT && (!filesystemInitResult || !(*data)->isRecordingReady)) {
+		if (mainMenuCursorPos == ENTRY_DATA_EXPORT && disableDataExport) {
 			mainMenuCursorPos = 0;
 		}
 	}
