@@ -416,28 +416,12 @@ static const uint8_t colSet[][10] = {
 static void menu_mainMenuDraw() {
 	const int startX = 400, startY = 80;
 	
-	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
-	
 	// texture
 	if (colSelection == 0) {
 		// background quad
-		GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
-		
-		GX_Position3s16(startX - 3, startY - 6, -2);
-		GX_Color3u8(0xff, 0xff, 0xff);
-		
-		GX_Position3s16(startX + 203, startY - 6, -2);
-		GX_Color3u8(0xff, 0xff, 0xff);
-		
-		GX_Position3s16(startX + 203, startY + 126, -2);
-		GX_Color3u8(0xff, 0xff, 0xff);
-		
-		GX_Position3s16(startX - 3, startY + 126, -2);
-		GX_Color3u8(0xff, 0xff, 0xff);
-		
-		GX_End();
-		
-		updateVtxDesc(VTX_TEX_NOCOLOR, GX_MODULATE);
+		drawSolidBox(startX - 3, startY - 6, startX + 203, startY + 126, GX_COLOR_WHITE);
+
+		updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
 		changeLoadedTexmap(TEXMAP_P);
 		
 		int width, height;
@@ -445,24 +429,30 @@ static void menu_mainMenuDraw() {
 		
 		int heightOffset = (height - 120) / 2;
 		
-		GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
+		GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
 		
 		GX_Position3s16(startX, startY - heightOffset, -1);
+		GX_Color4u8(0xff, 0xff, 0xff, 0xff);
 		GX_TexCoord2s16(0, 0);
 		
 		GX_Position3s16(startX + width, startY - heightOffset, -1);
+		GX_Color4u8(0xff, 0xff, 0xff, 0xff);
 		GX_TexCoord2s16(width, 0);
 		
 		GX_Position3s16(startX + width, (startY - heightOffset) + height, -1);
+		GX_Color4u8(0xff, 0xff, 0xff, 0xff);
 		GX_TexCoord2s16(width, height);
 		
 		GX_Position3s16(startX, (startY - heightOffset) + height, -1);
+		GX_Color4u8(0xff, 0xff, 0xff, 0xff);
 		GX_TexCoord2s16(0, height);
 		
 		GX_End();
 	}
 	// raw quads
 	else {
+		updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+		
 		// background quad
 		GX_Begin(GX_QUADS, GX_VTXFMT0, 24);
 		

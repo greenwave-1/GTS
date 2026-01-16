@@ -204,6 +204,7 @@ void setupGX(GXRModeObj *rmode) {
 	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_TEX0, GX_TEX_ST, GX_S16, 0);
 	
 	// VTXFMT2, configured to display texture, no modification of color directly
+	// TODO: for some reason this configuration will pull the last drawn color and i have _no idea_ why
 	GX_SetVtxAttrFmt(GX_VTXFMT2, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT2, GX_VA_TEX0, GX_TEX_ST, GX_S16, 0);
 	
