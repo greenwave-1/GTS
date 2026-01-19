@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
 			setCursorPos(2, 0);
 			
 			startDraw();
-			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
+			updateVtxDesc(VTX_TEXTURES, GX_MODULATE);
 			changeLoadedTexmap(TEXMAP_FONT);
 			printStrColor(GX_COLOR_RED, GX_COLOR_WHITE,
 						  "Unsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n"
@@ -223,7 +223,7 @@ int main(int argc, char **argv) {
 		setCursorPos(2, 0);
 		
 		startDraw();
-		updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
+		updateVtxDesc(VTX_TEXTURES, GX_MODULATE);
 		changeLoadedTexmap(TEXMAP_FONT);
 		printStrColor(GX_COLOR_RED, GX_COLOR_WHITE,
 					  "Unsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n"

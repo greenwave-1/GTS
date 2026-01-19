@@ -429,7 +429,7 @@ static void menu_mainMenuDraw() {
 		updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 		
 		// background quad
-		GX_Begin(GX_QUADS, GX_VTXFMT0, 24);
+		GX_Begin(GX_QUADS, VTXFMT_PRIMITIVES_RGB, 24);
 		
 		GX_Position3s16(startX - 2, startY - 2, -2);
 		GX_Color3u8(0xff, 0xff, 0xff);

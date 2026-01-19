@@ -30,6 +30,11 @@ static int cursorY = 0;
 static int cursorZ = -4;
 static int cursorPrevZ = -4;
 
+static void advanceCursorLine() {
+	cursorX = 0;
+	cursorY += 15 + LINE_SPACING;
+}
+
 // this is almost directly adapted from the provided romfont example, but modified for our specific fontsheet,
 // as well as support for background colors
 static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bgColor) {
@@ -135,6 +140,36 @@ void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* s
 	va_end(list);
 }
 
+/*
+void printStrButton(struct INSTRUCTION_ENTRY list[]) {
+	int index = 0;
+	struct INSTRUCTION_ENTRY currEntry = list[0];
+	
+	while (currEntry.text != NULL || currEntry.texture != NULL || currEntry.button != FONT_NONE) {
+		if (currEntry.text != NULL) {
+			printStr(currEntry.text);
+			//printStrColor(GX_COLOR_GRAY, GX_COLOR_WHITE, currEntry.text);
+		} else if (currEntry.button != FONT_NONE) {
+			drawFontButton(currEntry.button);
+		} else {
+			
+			int texwidth = 0, texheight = 0;
+			getCurrentTexmapDims(&texwidth, &texheight);
+			
+			// advance to new line if we're printing full-size
+			// this _technically_ is more repeat code than necessary, but it makes it much clearer for what's happening
+			if (!currEntry.printInline) {
+				advanceCursorLine();
+				drawTextureFull(cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL, GX_COLOR_WHITE);
+				cursorY += texheight;
+				cursorX = 0;
+			}
+		}
+		index++;
+		currEntry = list[index];
+	}
+}*/
+
 // TODO: this will assume that there are no newlines in this string, figure out how to do this properly...
 void printStrBox(const GXColor box_color, const char* str, ...) {
 	va_list list;
@@ -159,6 +194,21 @@ void printStrBox(const GXColor box_color, const char* str, ...) {
 		handleString(subString, true, GX_COLOR_WHITE, GX_COLOR_BLACK);
 	}
 	va_end(list);
+}
+
+void drawFontButton(enum FONT_BUTTON_LIST button) {
+	cursorX += 4;
+	if (cursorX + 18 > 640 - (PRINT_PADDING_HORIZONTAL * 2)) {
+		advanceCursorLine();
+	}
+	
+	int texX1 = 18 * (button % 8);
+	int texY1 = 18 * (button / 8);
+	changeLoadedTexmap(TEXMAP_FONT_BUTTON);
+	drawSubTexture(cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL - 2,
+	               cursorX + PRINT_PADDING_HORIZONTAL + 18, cursorY + PRINT_PADDING_VERTICAL + 16,
+	               texX1, texY1, texX1 + 18, texY1 + 18, GX_COLOR_WHITE);
+	cursorX += 24;
 }
 
 static int tempX = 0, tempY = 0;
@@ -248,7 +298,7 @@ void endScrollingPrint() {
 		updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 		//drawLine(10, scrollTop, 630, scrollTop, GX_COLOR_SILVER);
 		
-		GX_Begin(GX_TRIANGLES, GX_VTXFMT0, 3);
+		GX_Begin(GX_TRIANGLES, VTXFMT_PRIMITIVES_RGB, 3);
 		
 		GX_Position3s16(310, scrollTop - 4, -2);
 		GX_Color3u8(255, 255, 255);
@@ -266,7 +316,7 @@ void endScrollingPrint() {
 		
 		//drawLine(10, scrollBottom + 2, 630, scrollBottom, GX_COLOR_SILVER);
 		
-		GX_Begin(GX_TRIANGLES, GX_VTXFMT0, 3);
+		GX_Begin(GX_TRIANGLES, VTXFMT_PRIMITIVES_RGB, 3);
 		
 		GX_Position3s16(310, scrollBottom + 4, -2);
 		GX_Color3u8(255, 255, 255);

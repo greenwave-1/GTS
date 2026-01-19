@@ -23,6 +23,19 @@
 // number of pixels between given columns
 #define LINE_SPACING 2
 
+// enum for a given button picture when printing
+enum FONT_BUTTON_LIST {
+	FONT_A, FONT_B, FONT_X, FONT_Y, FONT_START, FONT_L, FONT_R, FONT_Z,
+	FONT_DPAD, FONT_DPAD_UP, FONT_DPAD_LEFT, FONT_DPAD_DOWN, FONT_DPAD_RIGHT, FONT_STICK_A, FONT_STICK_C, FONT_NONE = -1 };
+
+/*
+// struct for custom printing, used in instruction pages
+typedef struct INSTRUCTION_ENTRY {
+	char *text;
+	GXTexObj *texture;
+	enum FONT_BUTTON_LIST button; // should get truncated to an enum
+} INSTRUCTION_ENTRY;*/
+
 void drawString(const uint32_t bg_color,
 				const uint32_t fg_color,
                 const char string[]);
@@ -30,6 +43,10 @@ void drawString(const uint32_t bg_color,
 void printStr(const char* str, ...);
 void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* str, ...);
 void printStrBox(const GXColor box_color, const char* str, ...);
+
+void drawFontButton(enum FONT_BUTTON_LIST button);
+
+//void printStrButton(struct INSTRUCTION_ENTRY list[]);
 
 void resetScrollingPrint();
 void startScrollingPrint(int top, int bottom);

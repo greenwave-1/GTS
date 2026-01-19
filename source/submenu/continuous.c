@@ -169,7 +169,7 @@ void menu_continuousWaveform() {
 				
 				GX_SetLineWidth(12, GX_TO_ZERO);
 				
-				GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 500);
+				GX_Begin(GX_LINESTRIP, VTXFMT_PRIMITIVES_RGB, 500);
 				
 				// y first
 				for (int i = 0; i < 500; i++) {
@@ -208,7 +208,7 @@ void menu_continuousWaveform() {
 				// frame intervals
 				
 				GX_SetLineWidth(12, GX_TO_ZERO);
-				GX_Begin(GX_LINES, GX_VTXFMT0, frameIntervalCount * 2);
+				GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_RGB, frameIntervalCount * 2);
 				
 				for (int i = 0; i < frameIntervalCount; i++) {
 					GX_Position3s16(SCREEN_TIMEPLOT_START + frameIntervals[i], (SCREEN_POS_CENTER_Y - 127), -5);
@@ -224,7 +224,7 @@ void menu_continuousWaveform() {
 				
 				waveformXPos = 1;
 				// then x
-				GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 500);
+				GX_Begin(GX_LINESTRIP, VTXFMT_PRIMITIVES_RGB, 500);
 				
 				for (int i = 0; i < 500; i++) {
 					int curr;

@@ -266,7 +266,7 @@ void menu_triggerOscilloscope() {
 						// draw frame intervals
 						updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 						
-						GX_Begin(GX_LINES, GX_VTXFMT0, (frameIntervalIndex * 2));
+						GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_RGB, (frameIntervalIndex * 2));
 						for (int i = 0; i < frameIntervalIndex; i++) {
 							GX_Position3s16(SCREEN_TIMEPLOT_START + frameIntervalList[i], (SCREEN_POS_CENTER_Y - 127), -5);
 							GX_Color3u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b);
@@ -277,7 +277,7 @@ void menu_triggerOscilloscope() {
 						GX_End();
 						
 						// draw digital presses
-						GX_Begin(GX_POINTS, GX_VTXFMT0, digitalPressInterval);
+						GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_RGB, digitalPressInterval);
 						for (int i = 0; i < digitalPressInterval; i++) {
 							GX_Position3s16(SCREEN_TIMEPLOT_START + digitalPressList[i], (SCREEN_POS_CENTER_Y + 28), -4);
 							GX_Color3u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b);
@@ -285,7 +285,7 @@ void menu_triggerOscilloscope() {
 						GX_End();
 						
 						// draw analog data
-						GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 500);
+						GX_Begin(GX_LINESTRIP, VTXFMT_PRIMITIVES_RGB, 500);
 						for (int i = 0; i < 500; i++) {
 							switch (displaySelection) {
 								case TRIGGER_L:

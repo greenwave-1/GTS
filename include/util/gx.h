@@ -23,12 +23,20 @@
 #define SCREEN_POS_CENTER_Y 240
 #define COORD_CIRCLE_CENTER_X 450
 
+// for readability/convenience
 #define TEXMAP_NONE GX_TEXMAP_NULL
 #define TEXMAP_FONT GX_TEXMAP0
-#define TEXMAP_CONTROLLER GX_TEXMAP1
-#define TEXMAP_STICKMAPS GX_TEXMAP2
-#define TEXMAP_STICKOUTLINE GX_TEXMAP3
-#define TEXMAP_P GX_TEXMAP4
+#define TEXMAP_FONT_BUTTON GX_TEXMAP1
+#define TEXMAP_CONTROLLER GX_TEXMAP2
+#define TEXMAP_STICKMAPS GX_TEXMAP3
+#define TEXMAP_STICKOUTLINE GX_TEXMAP4
+#define TEXMAP_P GX_TEXMAP5
+
+// same as above
+#define VTXFMT_PRIMITIVES_RGB GX_VTXFMT0
+#define VTXFMT_PRIMITIVES_RGBA GX_VTXFMT1
+#define VTXFMT_TEXTURES_INT GX_VTXFMT2
+#define VTXFMT_TEXTURES_FLOAT GX_VTXFMT3
 
 // normal colors
 // mostly based on ogc/color.h
@@ -55,7 +63,7 @@ GXColor GXColorAlpha(GXColor color, uint8_t alpha);
 
 // enum to keep track of the vertex description state
 // this _should_ prevent adding unnecessary config commands? idk
-enum CURRENT_VTX_MODE { VTX_NONE, VTX_PRIMITIVES, VTX_TEX_NOCOLOR, VTX_TEX_COLOR };
+enum CURRENT_VTX_MODE { VTX_NONE, VTX_PRIMITIVES, VTX_TEXTURES };
 
 // change vertex descriptions to one of the above, specifying the tev combiner op if necessary
 void updateVtxDesc(enum CURRENT_VTX_MODE mode, int tevOp);

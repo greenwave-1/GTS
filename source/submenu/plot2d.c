@@ -288,6 +288,12 @@ void menu_plot2d() {
 						        GX_COLOR_YELLOW);
 					}
 					
+					setDepth(-10);
+					drawSolidBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
+					             COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
+					             GX_COLOR_BLACK);
+					restorePrevDepth();
+					
 					if (dispData->isRecordingReady) {
 						convertedCoords = convertStickRawToMelee(dispData->samples[lastDrawPoint]);
 						
@@ -330,33 +336,15 @@ void menu_plot2d() {
 							printStr("R ");
 						}
 						
-						setDepth(-10);
-						drawSolidBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
-						             COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
-						             GX_COLOR_BLACK);
-						restorePrevDepth();
-						
-						updateVtxDesc(VTX_TEX_NOCOLOR, GX_MODULATE);
+						updateVtxDesc(VTX_TEXTURES, GX_MODULATE);
 						changeLoadedTexmap(TEXMAP_STICKMAPS);
 						changeStickmapTexture((int) selectedImage);
 						
 						// draw image
 						if (selectedImage != NO_IMAGE) {
-							GX_Begin(GX_QUADS, GX_VTXFMT2, 4);
-							
-							GX_Position3s16(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128, -8);
-							GX_TexCoord2s16(0, 0);
-							
-							GX_Position3s16(COORD_CIRCLE_CENTER_X + 127, SCREEN_POS_CENTER_Y - 128, -8);
-							GX_TexCoord2s16(255, 0);
-							
-							GX_Position3s16(COORD_CIRCLE_CENTER_X + 127, SCREEN_POS_CENTER_Y + 127, -8);
-							GX_TexCoord2s16(255, 255);
-							
-							GX_Position3s16(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y + 127, -8);
-							GX_TexCoord2s16(0, 255);
-							
-							GX_End();
+							setDepth(-8);
+							drawTextureFull(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128, GX_COLOR_WHITE);
+							restorePrevDepth();
 						}
 						
 						setCursorPos(17, 0);
@@ -418,7 +406,7 @@ void menu_plot2d() {
 							// is our current datapoint a frame interval?
 							if (dataIndex == frameIntervalList[currFrameInterval]) {
 								GX_SetPointSize(32, GX_TO_ZERO);
-								GX_Begin(GX_POINTS, GX_VTXFMT0, 1);
+								GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_RGB, 1);
 								if (!showCStick) {
 									GX_Position3s16(COORD_CIRCLE_CENTER_X + dispData->samples[dataIndex].stickX,
 									                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].stickY, -4);
@@ -445,7 +433,7 @@ void menu_plot2d() {
 									pointsToDraw = lastDrawPoint - dataIndex + 1;
 								}
 								
-								GX_Begin(GX_POINTS, GX_VTXFMT0, pointsToDraw);
+								GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_RGB, pointsToDraw);
 								
 								int endPoint = dataIndex + pointsToDraw;
 								while (dataIndex < endPoint) {

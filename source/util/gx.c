@@ -50,6 +50,7 @@ static Mtx44 projectionMatrix;
 // tpl object and texture objects
 static TPLFile tpl;
 static GXTexObj fontTex;
+static GXTexObj fontButtonTex;
 static GXTexObj controllerTex;
 static GXTexObj stickmapTexArr[6];
 static GXTexObj stickOutlineTex;
@@ -65,39 +66,27 @@ void updateVtxDesc(enum CURRENT_VTX_MODE mode, int tevOp) {
 	// only run if we are drawing something different
 	if (mode != currentVtxMode) {
 		// we always provide direct data for position
+		// probably not needed...
 		GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
 		
 		switch (mode) {
 			case VTX_PRIMITIVES:
-				GX_SetVtxDesc(GX_VA_CLR0, GX_DIRECT);
 				GX_SetVtxDesc(GX_VA_TEX0, GX_DISABLE);
-				
 				GX_SetTevOp(GX_TEVSTAGE0, tevOp);
-				
 				break;
-			case VTX_TEX_NOCOLOR:
-				GX_SetVtxDesc(GX_VA_CLR0, GX_DISABLE);
+			case VTX_TEXTURES:
 				GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
-				
 				GX_SetTevOp(GX_TEVSTAGE0, tevOp);
-				
-				break;
-			case VTX_TEX_COLOR:
-				GX_SetVtxDesc(GX_VA_CLR0, GX_DIRECT);
-				GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
-
-				GX_SetTevOp(GX_TEVSTAGE0, tevOp);
-				
 				break;
 			case VTX_NONE:
 			default:
+				// error case?
 				break;
 		}
+		
+		GX_SetTevDirect(GX_TEVSTAGE0);
+		currentVtxMode = mode;
 	}
-	
-	GX_SetTevDirect(GX_TEVSTAGE0);
-	
-	currentVtxMode = mode;
 }
 
 // change the texture used for tev op
@@ -127,6 +116,9 @@ void getCurrentTexmapDims(int *width, int *height) {
 			break;
 		case TEXMAP_STICKOUTLINE:
 			selection = &stickOutlineTex;
+			break;
+		case TEXMAP_FONT_BUTTON:
+			selection = &fontButtonTex;
 			break;
 		case TEXMAP_STICKMAPS:
 			// all of these are the same, so any will do
@@ -195,22 +187,21 @@ void setupGX(GXRModeObj *rmode) {
 	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
 	
 	// VTXFMT0, configured for primitive drawing
-	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
-	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGB, GX_RGB8, 0);
+	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_RGB, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
+	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_RGB, GX_VA_CLR0, GX_CLR_RGB, GX_RGB8, 0);
 	
-	// VTXFMT1, configured for display textures, while also modifying colors
-	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
-	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
-	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_TEX0, GX_TEX_ST, GX_S16, 0);
+	// VTXFMT1, configured for primitive drawing, but with alpha available
+	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_RGBA, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
+	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_RGBA, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
 	
-	// VTXFMT2, configured to display texture, no modification of color directly
-	// TODO: for some reason this configuration will pull the last drawn color and i have _no idea_ why
-	GX_SetVtxAttrFmt(GX_VTXFMT2, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
-	GX_SetVtxAttrFmt(GX_VTXFMT2, GX_VA_TEX0, GX_TEX_ST, GX_S16, 0);
+	// VTXFMT2, configured for textures, integer screenspace coordinates
+	GX_SetVtxAttrFmt(VTXFMT_TEXTURES_INT, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
+	GX_SetVtxAttrFmt(VTXFMT_TEXTURES_INT, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
+	GX_SetVtxAttrFmt(VTXFMT_TEXTURES_INT, GX_VA_TEX0, GX_TEX_ST, GX_S16, 0);
 	
-	// VTXFMT3, configured for primitive drawing, but with alpha available
-	GX_SetVtxAttrFmt(GX_VTXFMT3, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
-	GX_SetVtxAttrFmt(GX_VTXFMT3, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
+	// VTXFMT3, configured for textures, float screenspace coordinates
+	GX_SetVtxAttrFmt(VTXFMT_TEXTURES_FLOAT, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
+	GX_SetVtxAttrFmt(VTXFMT_TEXTURES_FLOAT, GX_VA_CLR0, GX_CLR_RGB, GX_RGB8, 0);
 	
 	currentVtxMode = VTX_NONE;
 	
@@ -263,6 +254,9 @@ void setupGX(GXRModeObj *rmode) {
 	// stick outline for coordinate viewer
 	TPL_GetTexture(&tpl, outline, &stickOutlineTex);
 	GX_LoadTexObj(&stickOutlineTex, TEXMAP_STICKOUTLINE);
+	
+	TPL_GetTexture(&tpl, font_button, &fontButtonTex);
+	GX_LoadTexObj(&fontButtonTex, TEXMAP_FONT_BUTTON);
 	
 	TPL_GetTexture(&tpl, p, &pTex);
 	GX_LoadTexObj(&pTex, TEXMAP_P);
@@ -352,7 +346,7 @@ void restorePrevDepth() {
 void drawLine(int x1, int y1, int x2, int y2, GXColor color) {
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	
-	GX_Begin(GX_LINES, GX_VTXFMT0, 2);
+	GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_RGB, 2);
 	
 	GX_Position3s16(x1, y1, zDepth);
 	GX_Color3u8(color.r, color.g, color.b);
@@ -366,7 +360,7 @@ void drawLine(int x1, int y1, int x2, int y2, GXColor color) {
 void drawBox(int x1, int y1, int x2, int y2, GXColor color) {
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	
-	GX_Begin(GX_LINESTRIP, GX_VTXFMT0, 5);
+	GX_Begin(GX_LINESTRIP, VTXFMT_PRIMITIVES_RGB, 5);
 	
 	GX_Position3s16(x1, y1, zDepth);
 	GX_Color3u8(color.r, color.g, color.b);
@@ -389,7 +383,7 @@ void drawBox(int x1, int y1, int x2, int y2, GXColor color) {
 void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	
-	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+	GX_Begin(GX_QUADS, VTXFMT_PRIMITIVES_RGB, 4);
 	
 	GX_Position3s16(x1, y1, zDepth);
 	GX_Color3u8(color.r, color.g, color.b);
@@ -409,7 +403,7 @@ void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
 void drawSolidBoxAlpha(int x1, int y1, int x2, int y2, GXColor color) {
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	
-	GX_Begin(GX_QUADS, GX_VTXFMT3, 4);
+	GX_Begin(GX_QUADS, VTXFMT_PRIMITIVES_RGBA, 4);
 	
 	GX_Position3s16(x1, y1, zDepth);
 	GX_Color4u8(color.r, color.g, color.b, color.a);
@@ -434,14 +428,14 @@ void drawTextureFull(int x1, int y1, GXColor color) {
 }
 
 void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color) {
-	updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
+	updateVtxDesc(VTX_TEXTURES, GX_MODULATE);
 
 	// we could pass the width and height as parameters, but imo that makes the function call look worse
 	// some calls want to keep aspect ratio tho, and they would need to calculate x2 and y2 from that anyways...
 	int width = 0, height = 0;
 	getCurrentTexmapDims(&width, &height);
 	
-	GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+	GX_Begin(GX_QUADS, VTXFMT_TEXTURES_INT, 4);
 	
 	GX_Position3s16(x1, y1, zDepth);
 	GX_Color4u8(color.r, color.g, color.b, color.a);
@@ -464,9 +458,9 @@ void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color) {
 
 // a bit ugly, probably a better way to do this...
 void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, int ty2, GXColor color) {
-	updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
+	updateVtxDesc(VTX_TEXTURES, GX_MODULATE);
 
-	GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+	GX_Begin(GX_QUADS, VTXFMT_TEXTURES_INT, 4);
 	
 	GX_Position3s16(x1, y1, zDepth);
 	GX_Color4u8(color.r, color.g, color.b, color.a);
@@ -510,7 +504,7 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 	switch (date) {
 		case DATE_NICE:
 			// 1 quad
-			GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+			GX_Begin(GX_QUADS, VTXFMT_PRIMITIVES_RGB, 4);
 			GX_Position3s16(5, 35, -10);
 			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
 			
@@ -528,7 +522,7 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 		case DATE_PM:
 			// 6 quads total across 144 pixels
 			sizeOfQuads = 144 / 6;
-			GX_Begin(GX_QUADS, GX_VTXFMT0, 4 * 6);
+			GX_Begin(GX_QUADS, VTXFMT_PRIMITIVES_RGB, 4 * 6);
 			for (int i = 0; i < 6; i++) {
 				GX_Position3s16(5 + (sizeOfQuads * i), 35, -10);
 				GX_Color3u8(colorList[i][0], colorList[i][1], colorList[i][2]);
@@ -597,7 +591,7 @@ static void drawSnowParticles() {
 	
 	GX_SetPointSize(16, GX_TO_ZERO);
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
-	GX_Begin(GX_POINTS, GX_VTXFMT0, numOfParticles);
+	GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_RGB, numOfParticles);
 	
 	// iterate over our current number of particles
 	for (int i = 0; i < numOfParticles; i++) {

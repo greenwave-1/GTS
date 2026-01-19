@@ -224,7 +224,7 @@ static void drawStickmapOverlay(enum STICKMAP_LIST stickmap, int which) {
 			}
 			
 			if (drawSafe) {
-				GX_Begin(GX_POINTS, GX_VTXFMT0, STICKMAP_FF_WD_COORD_SAFE_LEN * 8);
+				GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_RGB, STICKMAP_FF_WD_COORD_SAFE_LEN * 8);
 				for (int i = 0; i < STICKMAP_FF_WD_COORD_SAFE_LEN; i++) {
 					GX_Position3s16(toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][0]) + COORD_CIRCLE_CENTER_X,
 					                toStickmap(STICKMAP_FF_WD_COORD_SAFE[i][1]) + SCREEN_POS_CENTER_Y, -9);
@@ -261,7 +261,7 @@ static void drawStickmapOverlay(enum STICKMAP_LIST stickmap, int which) {
 				GX_End();
 			}
 			if (drawUnsafe) {
-				GX_Begin(GX_POINTS, GX_VTXFMT0, STICKMAP_FF_WD_COORD_UNSAFE_LEN * 8);
+				GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_RGB, STICKMAP_FF_WD_COORD_UNSAFE_LEN * 8);
 				for (int i = 0; i < STICKMAP_FF_WD_COORD_UNSAFE_LEN; i++) {
 					GX_Position3s16(toStickmap(STICKMAP_FF_WD_COORD_UNSAFE[i][0]) + COORD_CIRCLE_CENTER_X,
 					                    toStickmap(STICKMAP_FF_WD_COORD_UNSAFE[i][1]) + SCREEN_POS_CENTER_Y, -8);
@@ -321,7 +321,7 @@ static void drawStickmapOverlay(enum STICKMAP_LIST stickmap, int which) {
 			}
 			
 			if (drawUCFUpper) {
-				GX_Begin(GX_POINTS, GX_VTXFMT0, STICKMAP_SHIELDDROP_COORD_UCF_UPPER_LEN * 2);
+				GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_RGB, STICKMAP_SHIELDDROP_COORD_UCF_UPPER_LEN * 2);
 				for (int i = 0; i < STICKMAP_SHIELDDROP_COORD_UCF_UPPER_LEN; i++) {
 					GX_Position3s16(toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_UPPER[i][0]) + COORD_CIRCLE_CENTER_X,
 					                    toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_UPPER[i][1]) + SCREEN_POS_CENTER_Y, -10);
@@ -334,7 +334,7 @@ static void drawStickmapOverlay(enum STICKMAP_LIST stickmap, int which) {
 				GX_End();
 			}
 			if (drawUCFLower) {
-				GX_Begin(GX_POINTS, GX_VTXFMT0, STICKMAP_SHIELDDROP_COORD_UCF_LOWER_LEN * 2);
+				GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_RGB, STICKMAP_SHIELDDROP_COORD_UCF_LOWER_LEN * 2);
 				for (int i = 0; i < STICKMAP_SHIELDDROP_COORD_UCF_LOWER_LEN; i++) {
 					GX_Position3s16(toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_LOWER[i][0]) + COORD_CIRCLE_CENTER_X,
 					                    toStickmap(STICKMAP_SHIELDDROP_COORD_UCF_LOWER[i][1]) + SCREEN_POS_CENTER_Y, -9);
@@ -347,7 +347,7 @@ static void drawStickmapOverlay(enum STICKMAP_LIST stickmap, int which) {
 				GX_End();
 			}
 			if (drawVanilla) {
-				GX_Begin(GX_LINES, GX_VTXFMT0, STICKMAP_SHIELDDROP_COORD_VANILLA_LEN * 2);
+				GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_RGB, STICKMAP_SHIELDDROP_COORD_VANILLA_LEN * 2);
 				for (int i = 0; i < STICKMAP_SHIELDDROP_COORD_VANILLA_LEN; i++) {
 					
 					GX_Position3s16(COORD_CIRCLE_CENTER_X - toStickmap(STICKMAP_SHIELDDROP_COORD_VANILLA[i][0]) - 1,

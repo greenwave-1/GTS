@@ -554,7 +554,7 @@ void menu_oscilloscope() {
 						for (int line = 0; line < 2; line++) {
 							waveformXPos = 0;
 							
-							GX_Begin(GX_LINESTRIP, GX_VTXFMT0, totalPointsToDraw);
+							GX_Begin(GX_LINESTRIP, VTXFMT_PRIMITIVES_RGB, totalPointsToDraw);
 							
 							for (int i = dataScrollOffset; i < dataScrollOffset + totalPointsToDraw; i++) {
 								int8_t currX, currY;
