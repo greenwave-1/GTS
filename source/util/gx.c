@@ -426,6 +426,67 @@ void drawSolidBoxAlpha(int x1, int y1, int x2, int y2, GXColor color) {
 	GX_End();
 }
 
+void drawTextureFull(int x1, int y1, GXColor color) {
+	int width = 0, height = 0;
+	getCurrentTexmapDims(&width, &height);
+	
+	drawTextureFullScaled(x1, y1, x1 + width, y1 + height, color);
+}
+
+void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color) {
+	updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
+
+	// we could pass the width and height as parameters, but imo that makes the function call look worse
+	// some calls want to keep aspect ratio tho, and they would need to calculate x2 and y2 from that anyways...
+	int width = 0, height = 0;
+	getCurrentTexmapDims(&width, &height);
+	
+	GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+	
+	GX_Position3s16(x1, y1, zDepth);
+	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_TexCoord2s16(0, 0);
+	
+	GX_Position3s16(x2, y1, zDepth);
+	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_TexCoord2s16(width, 0);
+	
+	GX_Position3s16(x2, y2, zDepth);
+	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_TexCoord2s16(width, height);
+	
+	GX_Position3s16(x1, y2, zDepth);
+	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_TexCoord2s16(0, height);
+	
+	GX_End();
+}
+
+// a bit ugly, probably a better way to do this...
+void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, int ty2, GXColor color) {
+	updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
+
+	GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+	
+	GX_Position3s16(x1, y1, zDepth);
+	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_TexCoord2s16(tx1, ty1);
+	
+	GX_Position3s16(x2, y1, zDepth);
+	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_TexCoord2s16(tx2, ty1);
+	
+	GX_Position3s16(x2, y2, zDepth);
+	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_TexCoord2s16(tx2, ty2);
+	
+	GX_Position3s16(x1, y2, zDepth);
+	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_TexCoord2s16(tx1, ty2);
+	
+	GX_End();
+}
+
 #ifndef NO_DATE_CHECK
 static void drawSnowParticles();
 const static int colorList[][3] = {

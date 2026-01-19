@@ -93,6 +93,13 @@ void drawBox(int x1, int y1, int x2, int y2, GXColor color);
 void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color);
 void drawSolidBoxAlpha(int x1, int y1, int x2, int y2, GXColor color);
 
+// draw all of a given texture
+void drawTextureFull(int x1, int y1, GXColor color);
+void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color);
+
+// draw part of a given texture
+void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, int ty2, GXColor color);
+
 #ifndef NO_DATE_CHECK
 void drawDateSpecial(enum DATE_CHECK_LIST date);
 #endif

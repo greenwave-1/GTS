@@ -201,8 +201,6 @@ void menu_controllerTest() {
 				GX_SetLineWidth(32, GX_TO_ZERO);
 			}
 			
-			updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
-			
 			drawSolidBox(LAYOUT_ANALOG_SLIDER_POS_X, LAYOUT_ANALOG_SLIDER_POS_Y,
 					LAYOUT_ANALOG_SLIDER_POS_X + 16, sliderBottomY, GX_COLOR_BLACK);
 			
@@ -234,9 +232,8 @@ void menu_controllerTest() {
 			
 			GX_SetLineWidth(12, GX_TO_ZERO);
 			
-			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
-			
 			changeLoadedTexmap(TEXMAP_CONTROLLER);
+			setDepth(-4);
 			
 			// buttons
 			// A
@@ -244,155 +241,56 @@ void menu_controllerTest() {
 			if (*held & PAD_BUTTON_A) {
 				texOffsetX += TEX_NORMAL_DIMENSIONS;
 			}
-			
-			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
-			
-			GX_Position3s16(LAYOUT_A_POS_X, LAYOUT_A_POS_Y, -4);
-			GX_Color4u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b, GX_COLOR_GREEN.a);
-			GX_TexCoord2s16(texOffsetX, TEX_A_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_A_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_A_POS_Y, -4);
-			GX_Color4u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b, GX_COLOR_GREEN.a);
-			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_A_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_A_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_A_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-			GX_Color4u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b, GX_COLOR_GREEN.a);
-			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
-			                TEX_A_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_Position3s16(LAYOUT_A_POS_X,
-			                LAYOUT_A_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-			GX_Color4u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b, GX_COLOR_GREEN.a);
-			GX_TexCoord2s16(texOffsetX,
-			                TEX_A_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_End();
-			
+			drawSubTexture(LAYOUT_A_POS_X, LAYOUT_A_POS_Y,
+						   LAYOUT_A_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_A_POS_Y + TEX_NORMAL_DIMENSIONS,
+						   texOffsetX, TEX_A_OFFSET_Y,
+						   texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_A_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+						   GX_COLOR_GREEN);
+
 			// B
 			texOffsetX = TEX_B_OFFSET_X;
 			if (*held & PAD_BUTTON_B) {
 				texOffsetX += TEX_NORMAL_DIMENSIONS;
 			}
-			
-			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
-			
-			GX_Position3s16(LAYOUT_B_POS_X, LAYOUT_B_POS_Y, -4);
-			GX_Color4u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b, GX_COLOR_RED.a);
-			GX_TexCoord2s16(texOffsetX, TEX_B_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_B_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_B_POS_Y, -4);
-			GX_Color4u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b, GX_COLOR_RED.a);
-			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_B_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_B_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_B_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-			GX_Color4u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b, GX_COLOR_RED.a);
-			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
-			                TEX_B_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_Position3s16(LAYOUT_B_POS_X,
-			                LAYOUT_B_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-			GX_Color4u8(GX_COLOR_RED.r, GX_COLOR_RED.g, GX_COLOR_RED.b, GX_COLOR_RED.a);
-			GX_TexCoord2s16(texOffsetX,
-			                TEX_B_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_End();
+			drawSubTexture(LAYOUT_B_POS_X, LAYOUT_B_POS_Y,
+						   LAYOUT_B_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_B_POS_Y + TEX_NORMAL_DIMENSIONS,
+			               texOffsetX, TEX_B_OFFSET_Y,
+						   texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_B_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+			               GX_COLOR_RED);
 			
 			// X
 			texOffsetX = TEX_X_OFFSET_X;
 			if (*held & PAD_BUTTON_X) {
 				texOffsetX += TEX_NORMAL_DIMENSIONS;
 			}
-			
-			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
-			
-			GX_Position3s16(LAYOUT_X_POS_X, LAYOUT_X_POS_Y, -4);
-			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
-			GX_TexCoord2s16(texOffsetX, TEX_X_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_X_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_X_POS_Y, -4);
-			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
-			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_X_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_X_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_X_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
-			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
-			                TEX_X_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_Position3s16(LAYOUT_X_POS_X,
-			                LAYOUT_X_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
-			GX_TexCoord2s16(texOffsetX,
-			                TEX_X_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_End();
+			drawSubTexture(LAYOUT_X_POS_X, LAYOUT_X_POS_Y,
+						   LAYOUT_X_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_X_POS_Y + TEX_NORMAL_DIMENSIONS,
+			               texOffsetX, TEX_X_OFFSET_Y,
+						   texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_X_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+			               GX_COLOR_SILVER);
 			
 			// Y
 			texOffsetX = TEX_Y_OFFSET_X;
 			if (*held & PAD_BUTTON_Y) {
 				texOffsetX += TEX_NORMAL_DIMENSIONS;
 			}
-			
-			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
-			
-			GX_Position3s16(LAYOUT_Y_POS_X, LAYOUT_Y_POS_Y, -4);
-			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
-			GX_TexCoord2s16(texOffsetX, TEX_Y_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_Y_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_Y_POS_Y, -4);
-			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
-			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_Y_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_Y_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_Y_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
-			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
-			                TEX_Y_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_Position3s16(LAYOUT_Y_POS_X,
-			                LAYOUT_Y_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-			GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
-			GX_TexCoord2s16(texOffsetX,
-			                TEX_Y_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_End();
+			drawSubTexture(LAYOUT_Y_POS_X, LAYOUT_Y_POS_Y,
+						   LAYOUT_Y_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_Y_POS_Y + TEX_NORMAL_DIMENSIONS,
+			               texOffsetX, TEX_Y_OFFSET_Y,
+						   texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_Y_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+			               GX_COLOR_SILVER);
 			
 			// Z
 			texOffsetX = TEX_Z_OFFSET_X;
 			if (*held & PAD_TRIGGER_Z) {
 				texOffsetX += TEX_NORMAL_DIMENSIONS;
 			}
-			
-			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
-			
-			GX_Position3s16(LAYOUT_Z_POS_X, LAYOUT_Z_POS_Y, -4);
-			GX_Color4u8(0x93, 0x70, 0xDB, 0xFF);
-			GX_TexCoord2s16(texOffsetX, TEX_Z_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_Z_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_Z_POS_Y, -4);
-			GX_Color4u8(0x93, 0x70, 0xDB, 0xFF);
-			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_Z_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_Z_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_Z_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-			GX_Color4u8(0x93, 0x70, 0xDB, 0xFF);
-			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
-			                TEX_Z_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_Position3s16(LAYOUT_Z_POS_X,
-			                LAYOUT_Z_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-			GX_Color4u8(0x93, 0x70, 0xDB, 0xFF);
-			GX_TexCoord2s16(texOffsetX,
-			                TEX_Z_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_End();
+			drawSubTexture(LAYOUT_Z_POS_X, LAYOUT_Z_POS_Y,
+						   LAYOUT_Z_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_Z_POS_Y + TEX_NORMAL_DIMENSIONS,
+			               texOffsetX, TEX_Z_OFFSET_Y,
+						   texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_Z_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+			               (GXColor) { 0x93, 0x70, 0xDB, 0xFF });
+
 			
 			// d-pad
 			int dpadPressedIndex = 1;
@@ -422,31 +320,11 @@ void menu_controllerTest() {
 					color = GX_COLOR_WHITE;
 				}
 				texOffsetX = dpadPressedOffsets[i];
-				
-				GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
-				
-				GX_Position3s16(LAYOUT_DPAD_POS_X, LAYOUT_DPAD_POS_Y, -4);
-				GX_Color4u8(color.r, color.g, color.b, color.a);
-				GX_TexCoord2s16(texOffsetX, TEX_DPAD_OFFSET_Y);
-				
-				GX_Position3s16(LAYOUT_DPAD_POS_X + TEX_NORMAL_DIMENSIONS,
-				                LAYOUT_DPAD_POS_Y, -4);
-				GX_Color4u8(color.r, color.g, color.b, color.a);
-				GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_DPAD_OFFSET_Y);
-				
-				GX_Position3s16(LAYOUT_DPAD_POS_X + TEX_NORMAL_DIMENSIONS,
-				                LAYOUT_DPAD_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-				GX_Color4u8(color.r, color.g, color.b, color.a);
-				GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
-				                TEX_DPAD_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-				
-				GX_Position3s16(LAYOUT_DPAD_POS_X,
-				                LAYOUT_DPAD_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-				GX_Color4u8(color.r, color.g, color.b, color.a);
-				GX_TexCoord2s16(texOffsetX,
-				                TEX_DPAD_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-				
-				GX_End();
+				drawSubTexture(LAYOUT_DPAD_POS_X, LAYOUT_DPAD_POS_Y,
+							   LAYOUT_DPAD_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_DPAD_POS_Y + TEX_NORMAL_DIMENSIONS,
+				               texOffsetX, TEX_DPAD_OFFSET_Y,
+							   texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_DPAD_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+				               color);
 			}
 			
 			// Start
@@ -454,207 +332,102 @@ void menu_controllerTest() {
 			if (*held & PAD_BUTTON_START) {
 				texOffsetX += TEX_NORMAL_DIMENSIONS;
 			}
-			
-			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
-			
-			GX_Position3s16(LAYOUT_START_POS_X, LAYOUT_START_POS_Y, -4);
-			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
-			GX_TexCoord2s16(texOffsetX, TEX_START_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_START_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_START_POS_Y, -4);
-			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
-			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_START_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_START_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_START_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
-			GX_TexCoord2s16(texOffsetX + TEX_NORMAL_DIMENSIONS,
-			                TEX_START_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_Position3s16(LAYOUT_START_POS_X,
-			                LAYOUT_START_POS_Y + TEX_NORMAL_DIMENSIONS, -4);
-			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
-			GX_TexCoord2s16(texOffsetX,
-			                TEX_START_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_End();
+			drawSubTexture(LAYOUT_START_POS_X, LAYOUT_START_POS_Y,
+						   LAYOUT_START_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_START_POS_Y + TEX_NORMAL_DIMENSIONS,
+			               texOffsetX, TEX_START_OFFSET_Y,
+						   texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_START_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+			               GX_COLOR_WHITE);
 			
 			// stick gate
-			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
-			
-			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X, LAYOUT_ASTICK_GATE_POS_Y, -2);
-			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
-			GX_TexCoord2s16(TEX_ASTICK_GATE_OFFSET_X, TEX_ASTICK_GATE_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X + TEX_ASTICK_GATE_DIMENSIONS,
-			                LAYOUT_ASTICK_GATE_POS_Y, -2);
-			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
-			GX_TexCoord2s16(TEX_ASTICK_GATE_OFFSET_X + TEX_ASTICK_GATE_DIMENSIONS, TEX_ASTICK_GATE_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X + TEX_ASTICK_GATE_DIMENSIONS,
-			                LAYOUT_ASTICK_GATE_POS_Y + TEX_ASTICK_GATE_DIMENSIONS, -2);
-			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
-			GX_TexCoord2s16(TEX_ASTICK_GATE_OFFSET_X + TEX_ASTICK_GATE_DIMENSIONS,
-			                TEX_ASTICK_GATE_OFFSET_Y + TEX_ASTICK_GATE_DIMENSIONS);
-			
-			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X,
-			                LAYOUT_ASTICK_GATE_POS_Y + TEX_ASTICK_GATE_DIMENSIONS, -2);
-			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
-			GX_TexCoord2s16(TEX_ASTICK_GATE_OFFSET_X,
-			                TEX_ASTICK_GATE_OFFSET_Y + TEX_ASTICK_GATE_DIMENSIONS);
-			
-			GX_End();
+			restorePrevDepth();
+			setDepth(-2);
+			drawSubTexture(LAYOUT_ASTICK_GATE_POS_X, LAYOUT_ASTICK_GATE_POS_Y,
+						   LAYOUT_ASTICK_GATE_POS_X + TEX_ASTICK_GATE_DIMENSIONS,
+						   LAYOUT_ASTICK_GATE_POS_Y + TEX_ASTICK_GATE_DIMENSIONS,
+						   TEX_ASTICK_GATE_OFFSET_X, TEX_ASTICK_GATE_OFFSET_Y,
+						   TEX_ASTICK_GATE_OFFSET_X + TEX_ASTICK_GATE_DIMENSIONS,
+						   TEX_ASTICK_GATE_OFFSET_Y + TEX_ASTICK_GATE_DIMENSIONS,
+						   GX_COLOR_GRAY);
 			
 			// line connecting gate to stick cap
-			updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+			// first draw circle in center, since GX_LINES doesn't look great on its own...
+			// we're using the "pressed start button" as the circle
+			drawSubTexture(LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMENSIONS / 2) - 12,
+			               LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMENSIONS / 2) - 12,
+			               LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMENSIONS / 2) + 12,
+			               LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMENSIONS / 2) + 12,
+			               TEX_START_OFFSET_X + TEX_NORMAL_DIMENSIONS, TEX_START_OFFSET_Y,
+			               TEX_START_OFFSET_X + (TEX_NORMAL_DIMENSIONS * 2), TEX_START_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+			               GX_COLOR_WHITE);
 			
 			// figure out where stick should go to
 			int stickModX = PAD_StickX(0) / 2;
 			int stickModY = PAD_StickY(0) / 2;
 			
-			GX_SetPointSize(32, GX_TO_ZERO);
-			
-			// dot at the center, since GX_LINES doesn't look great on its own
-			GX_Begin(GX_POINTS, GX_VTXFMT0, 1);
-			
-			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMENSIONS / 2),
-			                LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMENSIONS / 2), -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_End();
-			
 			GX_SetLineWidth(40, GX_TO_ZERO);
 			
 			// actually draw the line
-			GX_Begin(GX_LINES, GX_VTXFMT0, 2);
-			
-			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMENSIONS / 2),
-							LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMENSIONS / 2), -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_Position3s16(LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMENSIONS / 2) + stickModX,
-			                LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMENSIONS / 2) - stickModY, -2);
-			GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-			
-			GX_End();
+			drawLine(LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMENSIONS / 2),
+			         LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMENSIONS / 2),
+			         LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMENSIONS / 2) + stickModX,
+			         LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMENSIONS / 2) - stickModY,
+					 GX_COLOR_WHITE);
 			
 			GX_SetLineWidth(12, GX_TO_ZERO);
 			
 			// stick cap
-			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
-			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
-			
-			GX_Position3s16(LAYOUT_ASTICK_CAP_POS_X + stickModX, LAYOUT_ASTICK_CAP_POS_Y - stickModY, -2);
-			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
-			GX_TexCoord2s16(TEX_ASTICK_CAP_OFFSET_X, TEX_ASTICK_CAP_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_ASTICK_CAP_POS_X + TEX_NORMAL_DIMENSIONS + stickModX,
-			                LAYOUT_ASTICK_CAP_POS_Y - stickModY, -2);
-			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
-			GX_TexCoord2s16(TEX_ASTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS, TEX_ASTICK_CAP_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_ASTICK_CAP_POS_X + TEX_NORMAL_DIMENSIONS + stickModX,
-			                LAYOUT_ASTICK_CAP_POS_Y + TEX_NORMAL_DIMENSIONS - stickModY, -2);
-			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
-			GX_TexCoord2s16(TEX_ASTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS,
-			                TEX_ASTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_Position3s16(LAYOUT_ASTICK_CAP_POS_X + stickModX,
-			                LAYOUT_ASTICK_CAP_POS_Y + TEX_NORMAL_DIMENSIONS - stickModY, -2);
-			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
-			GX_TexCoord2s16(TEX_ASTICK_CAP_OFFSET_X,
-			                TEX_ASTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_End();
+			drawSubTexture(LAYOUT_ASTICK_CAP_POS_X + stickModX, LAYOUT_ASTICK_CAP_POS_Y - stickModY,
+			               LAYOUT_ASTICK_CAP_POS_X + TEX_NORMAL_DIMENSIONS + stickModX,
+			               LAYOUT_ASTICK_CAP_POS_Y + TEX_NORMAL_DIMENSIONS - stickModY,
+			               TEX_ASTICK_CAP_OFFSET_X, TEX_ASTICK_CAP_OFFSET_Y,
+			               TEX_ASTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS,
+			               TEX_ASTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+						   GX_COLOR_WHITE);
 			
 			// c-stick gate
-			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
-			
-			GX_Position3s16(LAYOUT_CSTICK_POS_X, LAYOUT_CSTICK_POS_Y, -2);
-			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
-			GX_TexCoord2s16(TEX_CSTICK_GATE_OFFSET_X, TEX_CSTICK_GATE_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_CSTICK_POS_Y, -2);
-			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
-			GX_TexCoord2s16(TEX_CSTICK_GATE_OFFSET_X + TEX_NORMAL_DIMENSIONS, TEX_CSTICK_GATE_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS,
-			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS, -2);
-			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
-			GX_TexCoord2s16(TEX_CSTICK_GATE_OFFSET_X + TEX_NORMAL_DIMENSIONS,
-			                TEX_CSTICK_GATE_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_Position3s16(LAYOUT_CSTICK_POS_X,
-			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS, -2);
-			GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
-			GX_TexCoord2s16(TEX_CSTICK_GATE_OFFSET_X,
-			                TEX_CSTICK_GATE_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_End();
+			drawSubTexture(LAYOUT_CSTICK_POS_X, LAYOUT_CSTICK_POS_Y,
+			               LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS,
+			               TEX_CSTICK_GATE_OFFSET_X, TEX_CSTICK_GATE_OFFSET_Y,
+			               TEX_CSTICK_GATE_OFFSET_X + TEX_NORMAL_DIMENSIONS,
+			               TEX_CSTICK_GATE_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+						   GX_COLOR_GRAY);
 			
 			// line connecting gate to cstick cap
-			updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+			// first draw circle in center, since GX_LINES doesn't look great on its own...
+			// we're using the "pressed start button" as the circle
+			drawSubTexture(LAYOUT_CSTICK_POS_X + (TEX_NORMAL_DIMENSIONS / 2) - 12,
+			               LAYOUT_CSTICK_POS_Y + (TEX_NORMAL_DIMENSIONS / 2) - 12,
+			               LAYOUT_CSTICK_POS_X + (TEX_NORMAL_DIMENSIONS / 2) + 12,
+			               LAYOUT_CSTICK_POS_Y + (TEX_NORMAL_DIMENSIONS / 2) + 12,
+			               TEX_START_OFFSET_X + TEX_NORMAL_DIMENSIONS, TEX_START_OFFSET_Y,
+			               TEX_START_OFFSET_X + (TEX_NORMAL_DIMENSIONS * 2), TEX_START_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+			               GX_COLOR_YELLOW);
 			
 			// figure out where stick should go to
 			int cStickModX = PAD_SubStickX(0) / 2;
 			int cStickModY = PAD_SubStickY(0) / 2;
 			
-			GX_SetPointSize(32, GX_TO_ZERO);
-			
-			// dot at the center, since GX_LINES doesn't look great on its own
-			GX_Begin(GX_POINTS, GX_VTXFMT0, 1);
-			
-			GX_Position3s16(LAYOUT_CSTICK_POS_X + (TEX_NORMAL_DIMENSIONS / 2),
-			                LAYOUT_CSTICK_POS_Y + (TEX_NORMAL_DIMENSIONS / 2), -2);
-			GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
-			
-			GX_End();
-			
 			GX_SetLineWidth(40, GX_TO_ZERO);
 			
 			// actually draw the line
-			GX_Begin(GX_LINES, GX_VTXFMT0, 2);
-			
-			GX_Position3s16(LAYOUT_CSTICK_POS_X + (TEX_NORMAL_DIMENSIONS / 2),
-			                LAYOUT_CSTICK_POS_Y + (TEX_NORMAL_DIMENSIONS / 2), -2);
-			GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
-			
-			GX_Position3s16(LAYOUT_CSTICK_POS_X + (TEX_NORMAL_DIMENSIONS / 2) + cStickModX,
-			                LAYOUT_CSTICK_POS_Y + (TEX_NORMAL_DIMENSIONS / 2) - cStickModY, -2);
-			GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
-			
-			GX_End();
+			drawLine(LAYOUT_CSTICK_POS_X + (TEX_NORMAL_DIMENSIONS / 2),
+			         LAYOUT_CSTICK_POS_Y + (TEX_NORMAL_DIMENSIONS / 2),
+			         LAYOUT_CSTICK_POS_X + (TEX_NORMAL_DIMENSIONS / 2) + cStickModX,
+			         LAYOUT_CSTICK_POS_Y + (TEX_NORMAL_DIMENSIONS / 2) - cStickModY,
+					 GX_COLOR_YELLOW);
 			
 			GX_SetLineWidth(12, GX_TO_ZERO);
 			
 			// c-stick cap
-			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
-			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+			drawSubTexture(LAYOUT_CSTICK_POS_X + cStickModX, LAYOUT_CSTICK_POS_Y - cStickModY - 1,
+			               LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS + cStickModX,
+			               LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS - cStickModY - 1,
+			               TEX_CSTICK_CAP_OFFSET_X, TEX_CSTICK_CAP_OFFSET_Y,
+			               TEX_CSTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS,
+			               TEX_CSTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+						   GX_COLOR_YELLOW);
 			
-			GX_Position3s16(LAYOUT_CSTICK_POS_X + cStickModX, LAYOUT_CSTICK_POS_Y - cStickModY - 1, -2);
-			GX_Color4u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b, GX_COLOR_YELLOW.a);
-			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X, TEX_CSTICK_CAP_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS + cStickModX,
-			                LAYOUT_CSTICK_POS_Y - cStickModY - 1, -2);
-			GX_Color4u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b, GX_COLOR_YELLOW.a);
-			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS, TEX_CSTICK_CAP_OFFSET_Y);
-			
-			GX_Position3s16(LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS + cStickModX,
-			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS - cStickModY - 1, -2);
-			GX_Color4u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b, GX_COLOR_YELLOW.a);
-			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS,
-			                TEX_CSTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_Position3s16(LAYOUT_CSTICK_POS_X + cStickModX,
-			                LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS - cStickModY - 1, -2);
-			GX_Color4u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b, GX_COLOR_YELLOW.a);
-			GX_TexCoord2s16(TEX_CSTICK_CAP_OFFSET_X,
-			                TEX_CSTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS);
-			
-			GX_End();
+			restorePrevDepth();
 			
 			controllerTestCheckInput();
 			

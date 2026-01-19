@@ -399,7 +399,7 @@ void runMenuVisual(bool showText) {
 static int colSelection = 0;
 static const int colNum = 5;
 static const int colHeight = 24;
-static const uint8_t colSet[][10] = {
+static const uint8_t colSet[][3] = {
 		{ 0x5b, 0xce, 0xfa },
 		{ 0xf5, 0xa9, 0xb8 },
 		{ 0xff, 0xff, 0xff },
@@ -419,35 +419,10 @@ static void menu_mainMenuDraw() {
 	// texture
 	if (colSelection == 0) {
 		// background quad
-		drawSolidBox(startX - 3, startY - 6, startX + 203, startY + 126, GX_COLOR_WHITE);
-
-		updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
+		//drawSolidBox(startX - 3, startY - 6, startX + 203, startY + 126, GX_COLOR_WHITE);
+		// actual texture
 		changeLoadedTexmap(TEXMAP_P);
-		
-		int width, height;
-		getCurrentTexmapDims(&width, &height);
-		
-		int heightOffset = (height - 120) / 2;
-		
-		GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
-		
-		GX_Position3s16(startX, startY - heightOffset, -1);
-		GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-		GX_TexCoord2s16(0, 0);
-		
-		GX_Position3s16(startX + width, startY - heightOffset, -1);
-		GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-		GX_TexCoord2s16(width, 0);
-		
-		GX_Position3s16(startX + width, (startY - heightOffset) + height, -1);
-		GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-		GX_TexCoord2s16(width, height);
-		
-		GX_Position3s16(startX, (startY - heightOffset) + height, -1);
-		GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-		GX_TexCoord2s16(0, height);
-		
-		GX_End();
+		drawTextureFull(startX, startY, GX_COLOR_WHITE);
 	}
 	// raw quads
 	else {
@@ -468,6 +443,7 @@ static void menu_mainMenuDraw() {
 		GX_Position3s16(startX - 2, startY + 122, -2);
 		GX_Color3u8(0xff, 0xff, 0xff);
 		
+		// colSelection = 0 can't reach here, so this is fine...
 		int indexStart = (colSelection - 1) * 5;
 		
 		for (int i = 0; i < colNum; i++) {

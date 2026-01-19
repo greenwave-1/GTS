@@ -500,30 +500,11 @@ void menu_coordView() {
 			xfbCoordCY += SCREEN_POS_CENTER_Y;
 			
 			changeLoadedTexmap(TEXMAP_STICKOUTLINE);
-			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
-			
-			int width, height;
-			getCurrentTexmapDims(&width, &height);
-			
-			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
-			
-			GX_Position3s16(COORD_CIRCLE_CENTER_X - 164, SCREEN_POS_CENTER_Y - 164, -15);
-			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
-			GX_TexCoord2s16(0, 0);
-			
-			GX_Position3s16(COORD_CIRCLE_CENTER_X + 164, SCREEN_POS_CENTER_Y - 164, -15);
-			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
-			GX_TexCoord2s16(width, 0);
-			
-			GX_Position3s16(COORD_CIRCLE_CENTER_X + 164, SCREEN_POS_CENTER_Y + 164, -15);
-			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
-			GX_TexCoord2s16(width, height);
-			
-			GX_Position3s16(COORD_CIRCLE_CENTER_X - 164, SCREEN_POS_CENTER_Y + 164, -15);
-			GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
-			GX_TexCoord2s16(0, height);
-			
-			GX_End();
+			setDepth(-15);
+			drawTextureFullScaled(COORD_CIRCLE_CENTER_X - 164, SCREEN_POS_CENTER_Y - 164,
+			                      COORD_CIRCLE_CENTER_X + 164, SCREEN_POS_CENTER_Y + 164,
+			                      GX_COLOR_WHITE);
+			restorePrevDepth();
 			
 			drawStickmapOverlay(selectedStickmap, selectedStickmapSub);
 			

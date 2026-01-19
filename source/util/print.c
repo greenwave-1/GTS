@@ -87,27 +87,11 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 			int texturePosY2 = texturePosY1 + 15;
 			
 			// draw the char
-			updateVtxDesc(VTX_TEX_COLOR, GX_MODULATE);
-			
-			GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
-			
-			GX_Position3s16(quadX1, quadY1, cursorZ);
-			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
-			GX_TexCoord2s16(texturePosX1, texturePosY1);
-			
-			GX_Position3s16(quadX2, quadY1, cursorZ);
-			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
-			GX_TexCoord2s16(texturePosX2, texturePosY1);
-			
-			GX_Position3s16(quadX2, quadY2, cursorZ);
-			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
-			GX_TexCoord2s16(texturePosX2, texturePosY2);
-			
-			GX_Position3s16(quadX1, quadY2, cursorZ);
-			GX_Color4u8(fgColor.r, fgColor.g, fgColor.b, fgColor.a);
-			GX_TexCoord2s16(texturePosX1, texturePosY2);
-			
-			GX_End();
+			setDepth(cursorZ);
+			drawSubTexture(quadX1, quadY1, quadX2, quadY2,
+						   texturePosX1, texturePosY1, texturePosX2, texturePosY2,
+						   fgColor);
+			restorePrevDepth();
 		}
 		
 		// advance cursor
