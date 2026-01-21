@@ -53,10 +53,12 @@ and that Dolphin support is considered secondary to real hardware.
 - Install libogc2
   - [Add the extremscorner repo](https://github.com/extremscorner/pacman-packages#readme)
   - Ensure that the extremscorner repo is **above** the `[dkp-libs]` repo in pacman.conf
-- Run ```sudo (dkp-)pacman -S libogc2 libogc2-libdvm-git```
+- Run ```sudo (dkp-)pacman -S gamecube-dev wii-dev libogc2-libdvm-git```
   - The ```(dkp-)``` is for systems that don't normally have pacman. On those systems, any command should use
 ```dkp-pacman```
   - Systems that normally use pacman should run ```pacman```
+  - `gamecube-dev` and `wii-dev` are meta packages that install most necessary libraries and tools.
+Accept the defaults when prompted. 
 - Run ```make``` in the root of the project
 - A numbered release can be made with ```make release <version string>```, or using the bash script to also make
 a distributable zip file for wii
