@@ -9,12 +9,14 @@
 #include <math.h>
 
 // bitwise or'd flags that specify what recordings are valid for a given menu
-const uint8_t RECORDING_TYPE_VALID_MENUS[] = { 0,
-											   REC_OSCILLOSCOPE_FLAG | REC_2DPLOT_FLAG,
-											   REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG,
-											   REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG,
-											   REC_OSCILLOSCOPE_FLAG | REC_2DPLOT_FLAG,
-											   REC_2DPLOT_FLAG | REC_BUTTONTIME_FLAG };
+// note that the order is important, same order as enum RECORDING_TYPE
+const uint8_t RECORDING_TYPE_VALID_MENUS[] = { 0, // REC_CLEAR, null entry
+											   REC_OSCILLOSCOPE_FLAG | REC_2DPLOT_FLAG, // normal oscilloscope
+											   0, // continuous oscilloscope
+											   REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG, // trigger L
+											   REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG, // trigger R
+											   REC_OSCILLOSCOPE_FLAG | REC_2DPLOT_FLAG, // 2d plot
+											   REC_2DPLOT_FLAG | REC_BUTTONTIME_FLAG }; // buttonplot
 
 
 static bool init = false;
