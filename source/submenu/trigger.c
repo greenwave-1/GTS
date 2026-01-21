@@ -21,7 +21,6 @@
 #include "util/polling.h"
 #include "util/print.h"
 
-const static uint8_t SCREEN_TIMEPLOT_START = 70;
 const static int TRIGGER_SAMPLES = 500;
 
 static uint16_t *pressed = NULL;
@@ -30,8 +29,6 @@ static uint8_t captureStartFrameCooldown = 0;
 
 static enum TRIG_MENU_STATE menuState = TRIG_SETUP;
 static enum TRIG_STATE trigState = TRIG_INPUT;
-static enum TRIG_CAPTURE_SELECTION captureSelection = TRIGGER_NONE;
-static enum TRIG_CAPTURE_SELECTION displaySelection = TRIGGER_NONE;
 
 // structs for storing controller data
 // data: used for display once marked ready
@@ -76,16 +73,9 @@ void triggerSamplingCallback() {
 				trigState = TRIG_DISPLAY;
 				startedCapture = false;
 				(*temp)->isRecordingReady = true;
-				if (captureSelection == TRIGGER_L) {
-					(*temp)->recordingType = REC_TRIGGER_L;
-				} else {
-					(*temp)->recordingType = REC_TRIGGER_R;
-				}
-				
-				displaySelection = captureSelection;
-				captureSelection = TRIGGER_NONE;
 				flipData();
 				captureStartFrameCooldown = 5;
+				clearRecordingArray(*temp);
 			}
 		} else {
 			// continuously capture data
@@ -96,12 +86,11 @@ void triggerSamplingCallback() {
 			}
 			// check for analog value above 42, or for any digital trigger
 			if (curr.triggerL >= 43 || curr.buttons & PAD_TRIGGER_L) {
-				captureSelection = TRIGGER_L;
+				(*temp)->recordingType = REC_TRIGGER_L;
 			} else if (curr.triggerR >= 43 || curr.buttons & PAD_TRIGGER_R) {
-				captureSelection = TRIGGER_R;
+				(*temp)->recordingType = REC_TRIGGER_R;
 			}
-			if (captureSelection != TRIGGER_NONE) {
-				clearRecordingArray(*temp);
+			if ((*temp)->recordingType != REC_CLEAR) {
 				(*temp)->sampleEnd = 0;
 				// prepend ~25 ms of data to the recording
 				int loopStartIndex = startingLoopIndex - 1;
@@ -164,6 +153,7 @@ static void setup() {
 		trigState = TRIG_INPUT;
 	}
 	menuState = TRIG_POST_SETUP;
+	resetDrawGraph();
 }
 
 static void displayInstructions() {
@@ -224,98 +214,11 @@ void menu_triggerOscilloscope() {
 						drawLine(SCREEN_TIMEPLOT_START, (SCREEN_POS_CENTER_Y + 85),
 								  SCREEN_TIMEPLOT_START + 500, (SCREEN_POS_CENTER_Y + 85), GX_COLOR_GRAY);
 						
-						uint8_t curr = 0;
-						
-						uint16_t selectionMask;
-						
-						if (displaySelection == TRIGGER_L) {
-							selectionMask = PAD_TRIGGER_L;
-						} else if (displaySelection == TRIGGER_R) {
-							selectionMask = PAD_TRIGGER_R;
-						} else {
-							printStr("Data ready but selection is not valid.");
-							break;
-						}
-						
-						uint64_t totalTime = 0;
-						
-						// we need to calculate the total number of vertices ahead of time,
-						// frame interval and digital press will be an unknown amount
-						int frameIntervalIndex = 0;
-						int frameIntervalList[500];
-						int digitalPressInterval = 0;
-						int digitalPressList[500];
-						
-						// cycle through data and determine frame intervals and digital presses
-						for (int i = 0; i < 500; i++) {
-							// frame intervals
-							totalTime += dispData->samples[i].timeDiffUs;
-							if (totalTime >= FRAME_TIME_US) {
-								frameIntervalList[frameIntervalIndex] = i;
-								frameIntervalIndex++;
-								totalTime = 0;
-							}
-							
-							// digital presses
-							if (dispData->samples[i].buttons & selectionMask) {
-								digitalPressList[digitalPressInterval] = i;
-								digitalPressInterval++;
-							}
-						}
-						
-						// draw frame intervals
-						updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
-						
-						GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_RGB, (frameIntervalIndex * 2));
-						for (int i = 0; i < frameIntervalIndex; i++) {
-							GX_Position3s16(SCREEN_TIMEPLOT_START + frameIntervalList[i], (SCREEN_POS_CENTER_Y - 127), -5);
-							GX_Color3u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b);
-							
-							GX_Position3s16(SCREEN_TIMEPLOT_START + frameIntervalList[i], (SCREEN_POS_CENTER_Y - 112), -5);
-							GX_Color3u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b);
-						}
-						GX_End();
-						
-						// draw digital presses
-						GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_RGB, digitalPressInterval);
-						for (int i = 0; i < digitalPressInterval; i++) {
-							GX_Position3s16(SCREEN_TIMEPLOT_START + digitalPressList[i], (SCREEN_POS_CENTER_Y + 28), -4);
-							GX_Color3u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b);
-						}
-						GX_End();
-						
-						// draw analog data
-						GX_Begin(GX_LINESTRIP, VTXFMT_PRIMITIVES_RGB, 500);
-						for (int i = 0; i < 500; i++) {
-							switch (displaySelection) {
-								case TRIGGER_L:
-									curr = dispData->samples[i].triggerL;
-									break;
-								case TRIGGER_R:
-									curr = dispData->samples[i].triggerR;
-									break;
-								default:
-									curr = 0;
-									break;
-							}
-							
-							GX_Position3s16(SCREEN_TIMEPLOT_START + i, (SCREEN_POS_CENTER_Y + 128) - curr, -3);
-							GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
-						}
-						GX_End();
+						setDepth(-2);
+						drawGraph(dispData, GRAPH_TRIGGER, trigState == TRIG_DISPLAY_LOCK);
+						restorePrevDepth();
 						
 						setCursorPos(3, 27);
-						switch (displaySelection) {
-							case TRIGGER_L:
-								printStr("L Trigger");
-								break;
-							case TRIGGER_R:
-								printStr("R Trigger");
-								break;
-							default:
-								printStr("Capture selection invalid");
-								break;
-						}
 						
 						// calculate projectile powershield percentages
 						// mostly based on phobvision code:
@@ -323,8 +226,9 @@ void menu_triggerOscilloscope() {
 						float psDigital = 0.0, psADT = 0.0, psNone = 0.0;
 						uint64_t timeInAnalogRangeUs = 0;
 						int sampleDigitalBegin = -1;
-						switch (displaySelection) {
-							case TRIGGER_L:
+						switch (dispData->recordingType) {
+							case REC_TRIGGER_L:
+								printStr("L Trigger");
 								for (int i = 0; i < dispData->sampleEnd; i++) {
 									if (dispData->samples[i].buttons & PAD_TRIGGER_L) {
 										sampleDigitalBegin = i;
@@ -335,7 +239,8 @@ void menu_triggerOscilloscope() {
 									}
 								}
 								break;
-							case TRIGGER_R:
+							case REC_TRIGGER_R:
+								printStr("R Trigger");
 								for (int i = 0; i < dispData->sampleEnd; i++) {
 									if (dispData->samples[i].buttons & PAD_TRIGGER_R) {
 										sampleDigitalBegin = i;

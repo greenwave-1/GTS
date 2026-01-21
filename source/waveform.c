@@ -158,6 +158,36 @@ int8_t getControllerSampleAxisValue(ControllerSample sample, enum CONTROLLER_STI
 	}
 }
 
+int8_t getControllerSampleXValue(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis) {
+	switch (axis) {
+		case AXIS_AXY:
+			return sample.stickX;
+		case AXIS_CXY:
+			return sample.cStickX;
+		case AXIS_AX:
+		case AXIS_AY:
+		case AXIS_CX:
+		case AXIS_CY:
+		default:
+			return 0;
+	}
+}
+
+int8_t getControllerSampleYValue(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis) {
+	switch (axis) {
+		case AXIS_AXY:
+			return sample.stickY;
+		case AXIS_CXY:
+			return sample.cStickY;
+		case AXIS_AX:
+		case AXIS_AY:
+		case AXIS_CX:
+		case AXIS_CY:
+		default:
+			return 0;
+	}
+}
+
 // same as above, but return a given axis pair instead of a single value
 void getControllerSampleAxisPair(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis, int8_t *retX, int8_t *retY) {
 	switch (axis) {

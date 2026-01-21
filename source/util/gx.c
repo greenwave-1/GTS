@@ -17,6 +17,9 @@
 #include <time.h>
 
 #include <ogc/tpl.h>
+#include <ogc/pad.h>
+
+#include "util/polling.h"
 
 #include "textures.h"
 #include "textures_tpl.h"
@@ -194,14 +197,15 @@ void setupGX(GXRModeObj *rmode) {
 	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_RGBA, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
 	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_RGBA, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
 	
-	// VTXFMT2, configured for textures, integer screenspace coordinates
-	GX_SetVtxAttrFmt(VTXFMT_TEXTURES_INT, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
-	GX_SetVtxAttrFmt(VTXFMT_TEXTURES_INT, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
-	GX_SetVtxAttrFmt(VTXFMT_TEXTURES_INT, GX_VA_TEX0, GX_TEX_ST, GX_S16, 0);
+	// VTXFMT2, configured for primitive drawing, float screenspace coordinates
+	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_FLOAT, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
+	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_FLOAT, GX_VA_CLR0, GX_CLR_RGB, GX_RGB8, 0);
 	
-	// VTXFMT3, configured for textures, float screenspace coordinates
-	GX_SetVtxAttrFmt(VTXFMT_TEXTURES_FLOAT, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
-	GX_SetVtxAttrFmt(VTXFMT_TEXTURES_FLOAT, GX_VA_CLR0, GX_CLR_RGB, GX_RGB8, 0);
+	// VTXFMT3, configured for textures
+	GX_SetVtxAttrFmt(VTXFMT_TEXTURES, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
+	GX_SetVtxAttrFmt(VTXFMT_TEXTURES, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
+	GX_SetVtxAttrFmt(VTXFMT_TEXTURES, GX_VA_TEX0, GX_TEX_ST, GX_S16, 0);
+
 	
 	currentVtxMode = VTX_NONE;
 	
@@ -420,6 +424,472 @@ void drawSolidBoxAlpha(int x1, int y1, int x2, int y2, GXColor color) {
 	GX_End();
 }
 
+void drawTri(int x1, int y1, int x2, int y2, int x3, int y3, GXColor color) {
+	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+	
+	GX_Begin(GX_TRIANGLES, VTXFMT_PRIMITIVES_RGB, 3);
+	
+	GX_Position3s16(x1, y1, zDepth);
+	GX_Color3u8(color.r, color.g, color.b);
+	
+	GX_Position3s16(x2, y2, zDepth);
+	GX_Color3u8(color.r, color.g, color.b);
+	
+	GX_Position3s16(x3, y3, zDepth);
+	GX_Color3u8(color.r, color.g, color.b);
+	
+	GX_End();
+}
+
+// controls the start point of what we draw (offset from index 0)
+static int graphScrollOffset = 0;
+// how many points to draw
+// also controls scale
+static int graphVisibleDatapoints = -1;
+// our maximum number of allowed datapoints
+static int graphMaxVisibleDatapoints = -1;
+// what number we consider our zero index
+// mainly used for continuous oscilloscope
+static int graphZeroIndexOffset = 0;
+
+// should be called in a setup() function
+void resetDrawGraph() {
+	graphScrollOffset = 0;
+	graphVisibleDatapoints = -1;
+	graphMaxVisibleDatapoints = -1;
+	graphZeroIndexOffset = 0;
+}
+
+// for everything other than GRAPH_TRIGGER
+// what axis do we draw?
+static enum CONTROLLER_STICK_AXIS drawnAxis = AXIS_AXY;
+void setDrawGraphStickAxis(enum CONTROLLER_STICK_AXIS axis) {
+	drawnAxis = axis;
+}
+
+void setDrawGraphOffset(int offset) {
+	graphZeroIndexOffset = offset;
+}
+
+// stat values that menus retrieve
+static uint64_t graphTimeUsecs = 0;
+static bool yMagnitudeIsGreater = false;
+static int graphXMin = 0, graphYMin = 0;
+static int graphXMax = 0, graphYMax = 0;
+
+void getGraphStats(uint64_t *uSecs, int8_t *minX, int8_t *minY, int8_t *maxX, int8_t *maxY, bool *yMag) {
+	*uSecs = graphTimeUsecs;
+	*minX = graphXMin;
+	*minY = graphYMin;
+	*maxX = graphXMax;
+	*maxY = graphYMax;
+	*yMag = yMagnitudeIsGreater;
+}
+
+void getGraphDisplayedInfo(int *scrollOffset, int *visibleSamples) {
+	*scrollOffset = graphScrollOffset;
+	*visibleSamples = graphVisibleDatapoints;
+}
+
+// actually draw the graph
+void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
+	// initialize data if needed
+	if (graphVisibleDatapoints == -1) {
+		switch (type) {
+			case GRAPH_STICK_FULL:
+				graphVisibleDatapoints = graphMaxVisibleDatapoints = REC_SAMPLE_MAX;
+				break;
+			case GRAPH_STICK:
+			case GRAPH_TRIGGER:
+				graphVisibleDatapoints = graphMaxVisibleDatapoints = WAVEFORM_DISPLAY_WIDTH;
+				graphZeroIndexOffset = 0;
+				break;
+		}
+	}
+	
+	// allow pan/zoom if the image is considered "frozen"
+	if (isFrozen) {
+		uint16_t *held = getButtonsHeldPtr();
+		int datapointModifier = 0;
+		if (abs(PAD_SubStickY(0)) >= 23) {
+			datapointModifier = PAD_SubStickY(0) / 12;
+			// datapointModifier needs to be even to make zooming work properly...
+			if (datapointModifier < 0 && abs(datapointModifier) % 2 == 1) {
+				datapointModifier--;
+			}
+			if (datapointModifier > 0 && datapointModifier % 2 == 1) {
+				datapointModifier++;
+			}
+		}
+		
+		int scrollModifier = 0;
+		// scrolling needs to change rate based on visible number of samples
+		if (abs(PAD_SubStickX(0)) >= 23) {
+			scrollModifier = ((graphVisibleDatapoints / 250) + 1) * (PAD_SubStickX(0) / 25);
+		}
+		
+		if (*held & PAD_TRIGGER_L) {
+			datapointModifier /= 8;
+			// datapointModifier needs to be even to make zooming work properly...
+			if (datapointModifier < 0 && abs(datapointModifier) % 2 == 1) {
+				datapointModifier--;
+			}
+			if (datapointModifier > 0 && datapointModifier % 2 == 1) {
+				datapointModifier++;
+			}
+			
+			if (PAD_SubStickX(0) >= 23) {
+				scrollModifier = 1;
+			} else if (PAD_SubStickX(0) <= -23) {
+				scrollModifier = -1;
+			}
+			
+			// ugly
+			if (type == GRAPH_STICK_FULL) {
+				scrollModifier *= -1;
+			}
+			
+			if (abs(scrollModifier) > 0) {
+				graphScrollOffset += scrollModifier;
+			}
+			if (abs(datapointModifier) > 0) {
+				graphVisibleDatapoints -= datapointModifier;
+				if (graphVisibleDatapoints > 25) {
+					graphScrollOffset += (datapointModifier / 2);
+				}
+			}
+		} else {
+			if (*held & PAD_TRIGGER_R) {
+				datapointModifier *= 2;
+				scrollModifier *= 2;
+			}
+			if (datapointModifier) {
+				graphVisibleDatapoints -= datapointModifier;
+				if (graphVisibleDatapoints > 25) {
+					graphScrollOffset += (datapointModifier / 2);
+				}
+			}
+			if (scrollModifier) {
+				graphScrollOffset += scrollModifier;
+			}
+		}
+	} else {
+		graphScrollOffset = 0;
+		graphVisibleDatapoints = graphMaxVisibleDatapoints;
+	}
+	
+	// bounds check
+	if (graphVisibleDatapoints < 25) {
+		graphVisibleDatapoints = 25;
+	}
+	if (graphVisibleDatapoints > graphMaxVisibleDatapoints) {
+		graphVisibleDatapoints = graphMaxVisibleDatapoints;
+	}
+	
+	if (type == GRAPH_STICK_FULL) {
+		// cap continuous to max visible, always
+		if (graphScrollOffset > graphMaxVisibleDatapoints - graphVisibleDatapoints) {
+			graphScrollOffset = graphMaxVisibleDatapoints - graphVisibleDatapoints;
+		}
+	} else {
+		// cap everything else to the bounds of the recording
+		if (graphScrollOffset > data->sampleEnd - graphVisibleDatapoints) {
+			graphScrollOffset = data->sampleEnd - graphVisibleDatapoints;
+		}
+	}
+	
+	if (graphScrollOffset < 0) {
+		graphScrollOffset = 0;
+	}
+	
+	// for any stick graphing, we start at the center of the screen
+	int yPosModifier = SCREEN_POS_CENTER_Y;
+	
+	// for trigger graphing, we start at the bottom of the screen
+	// window is 256 pixels high, so +128 to move to bottom
+	if (type == GRAPH_TRIGGER) {
+		yPosModifier += 128;
+	}
+	
+	// calculate how many points we're going to draw
+	// we also get miscellaneous information here, such as min/max, digital press for trigger, and frame intervals
+	int frameIntervalIndex = 0;
+	float frameIntervalList[500];
+	uint64_t timeFromLastInterval = 0;
+	int digitalPressInterval = 0;
+	float digitalPressList[500];
+	bool digitalPressOccurring = false;
+	graphXMin = graphYMin = 0;
+	graphXMax = graphYMax = 0;
+	yMagnitudeIsGreater = false;
+	graphTimeUsecs = 0;
+	
+	// for GRAPH_TRIGGER, we need to update timeFromLastInterval to match what it would be at the first point to draw
+	if (type == GRAPH_TRIGGER && graphScrollOffset != 0) {
+		for (int i = 0; i < graphScrollOffset; i++) {
+			timeFromLastInterval += data->samples[i].timeDiffUs;
+			if (timeFromLastInterval >= FRAME_TIME_US) {
+				// just reset it, we don't actually need to know what the previous frame intervals were...
+				timeFromLastInterval = 0;
+			}
+		}
+	}
+	
+	// calculate units per shown sample
+	float waveformScreenUnitPer = WAVEFORM_DISPLAY_WIDTH / (graphVisibleDatapoints - 1);
+	
+	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
+	
+	int linesToDraw = 1;
+	
+	// both stick graphs draw two lines
+	if (data->recordingType != REC_TRIGGER_L && data->recordingType != REC_TRIGGER_R) {
+		linesToDraw = 2;
+	}
+	
+	// either 1 or -1, depending on where the next axis needs to be drawn
+	int lineModifier = 0;
+	
+	// line = 0 -> draw X axis OR draw trigger
+	// calculate stat values while drawing (frame intervals, min/max, digital presses)
+	// use those values to determine if Y should be drawn above or below
+	// line = 1 -> draw Y axis at zDepth + lineModifier OR leave loop because trigger
+	for (int line = 0; line < linesToDraw; line++) {
+		// set color of line based on what we're drawing
+		GXColor lineColor = (line == 0) ? GX_COLOR_RED_X : GX_COLOR_BLUE_Y;
+		if (type == GRAPH_TRIGGER) {
+			lineColor = GX_COLOR_WHITE;
+		}
+		
+		GX_Begin(GX_LINESTRIP, VTXFMT_PRIMITIVES_FLOAT, graphVisibleDatapoints);
+		
+		for (int i = 0; i < graphVisibleDatapoints; i++) {
+			int dataIndex = i + graphScrollOffset;
+			
+			// window x position based on how many points we've drawn
+			float windowXPos = SCREEN_TIMEPLOT_START + (waveformScreenUnitPer * (i));
+		
+			int currSampleValue = 0;
+			// for trigger digital press detection
+			uint16_t currSampleTriggerMask = 0;
+			// get our value for graphing
+			switch (type) {
+				case GRAPH_STICK_FULL:
+					// offset index by the base offset provided, mod to ensure we're in range
+					dataIndex = (dataIndex + graphZeroIndexOffset) % graphMaxVisibleDatapoints;
+					
+					// gray out line that isn't recorded yet
+					if (i > graphZeroIndexOffset && data->sampleEnd != graphMaxVisibleDatapoints) {
+						lineColor = GX_COLOR_GRAY;
+					} else
+					// fall through to the next if
+				case GRAPH_STICK:
+					// are we looking at data that exists?
+					if (dataIndex < data->sampleEnd) {
+						// get x or y
+						currSampleValue = line == 0 ?
+						                  getControllerSampleXValue(data->samples[dataIndex], drawnAxis) :
+						                  getControllerSampleYValue(data->samples[dataIndex], drawnAxis);
+						lineColor = (line == 0) ? GX_COLOR_RED_X : GX_COLOR_BLUE_Y;
+					} else {
+						// we're beyond the list, draw at 0 with gray
+						lineColor = GX_COLOR_GRAY;
+					}
+					break;
+				case GRAPH_TRIGGER:
+					// either trigger L or R
+					if (data->recordingType == REC_TRIGGER_L) {
+						currSampleValue = data->samples[dataIndex].triggerL;
+						currSampleTriggerMask = PAD_TRIGGER_L;
+					} else {
+						currSampleValue = data->samples[dataIndex].triggerR;
+						currSampleTriggerMask = PAD_TRIGGER_R;
+					}
+					break;
+			}
+			
+			// calculate stat values
+			// this only needs to happen during the first run of the outside for loop
+			if (line == 0) {
+				switch (type) {
+					// stick wants total time, and min/max
+					case GRAPH_STICK:
+						// get both x and y at once
+						int8_t currX, currY;
+						getControllerSampleAxisPair(data->samples[dataIndex], drawnAxis, &currX, &currY);
+						
+						// update min/max
+						if (graphXMin > currX) {
+							graphXMin = currX;
+						}
+						if (graphXMax < currX) {
+							graphXMax = currX;
+						}
+						if (graphYMin > currY) {
+							graphYMin = currY;
+						}
+						if (graphYMax < currY) {
+							graphYMax = currY;
+						}
+						
+						// set initial stat values if this is the first datapoint
+						if (i == 0) {
+							graphXMin = graphXMax = currX;
+							graphYMin = graphYMax = currY;
+						}
+						// we don't want to add the time from the first datapoint, we start counting _from_ there
+						else {
+							// adding time from drawn points, to show how long the current view is
+							graphTimeUsecs += data->samples[dataIndex].timeDiffUs;
+						}
+						break;
+					// stick_full just needs frame intervals
+					// this is different from every other frame interval calculation
+					case GRAPH_STICK_FULL:
+						// timeDiffUs is abused here to indicate frame intervals, 0 is not a frame interval, 1 is
+						if (data->samples[dataIndex].timeDiffUs == 1) {
+							// we only populate the list if we are partially zoomed in
+							// also make sure we don't overrun our array...
+							if (graphVisibleDatapoints <= 1500 && frameIntervalIndex < 500) {
+								// store where the current value is being drawn
+								// easier to do this than having to recalculate...
+								frameIntervalList[frameIntervalIndex] = windowXPos;
+								frameIntervalIndex++;
+							}
+						}
+						break;
+					// triggers want frame intervals and digital presses
+					case GRAPH_TRIGGER:
+						// more traditional way of calculating frame intervals
+						// timeFromLastInterval is updated with data from before drawing,
+						// to ensure that frame intervals are consistent across a single recording
+						timeFromLastInterval += data->samples[dataIndex].timeDiffUs;
+						if (timeFromLastInterval >= FRAME_TIME_US) {
+							frameIntervalList[frameIntervalIndex] = windowXPos;
+							frameIntervalIndex++;
+							timeFromLastInterval = 0;
+						}
+						
+						// digital presses
+						// this is done a bit differently than you'd expect
+						// we store the start and end windowXPos of a continuous segment of digital press
+						// digitalPressInterval is updated when the end point is found, or when we're out of data
+						if (data->samples[dataIndex].buttons & currSampleTriggerMask) {
+							// we mark start point
+							if (!digitalPressOccurring) {
+								digitalPressList[digitalPressInterval] = windowXPos;
+								if (i == 0) {
+									// if this is the first datapoint, start line from start of plot...
+									//digitalPressList[digitalPressInterval] = SCREEN_TIMEPLOT_START;
+								}
+								digitalPressOccurring = true;
+							}
+							// we're at the end of the list, mark this as the end point
+							else if (i == graphVisibleDatapoints - 1) {
+								digitalPressList[digitalPressInterval + 1] = windowXPos;
+								digitalPressInterval += 2;
+								digitalPressOccurring = false;
+							}
+						}
+						// we encountered no digital press while looking for the endpoint...
+						else if (digitalPressOccurring) {
+							// mark this as the end point
+							digitalPressList[digitalPressInterval + 1] = windowXPos;
+							digitalPressInterval += 2;
+							digitalPressOccurring = false;
+						}
+						break;
+				}
+			}
+			
+			// actually draw the vertex
+			GX_Position3f32(windowXPos, yPosModifier - currSampleValue, zDepth + lineModifier);
+			GX_Color3u8(lineColor.r, lineColor.g, lineColor.b);
+		}
+		
+		GX_End();
+		
+		// finalize stats based on results
+		if (line == 0) {
+			switch (type) {
+				// determine if Y should be drawn above or below
+				case GRAPH_STICK:
+					int magnitudeX = abs(graphXMax) >= abs(graphXMin) ? abs(graphXMax) : abs(graphXMin);
+					int magnitudeY = abs(graphYMax) >= abs(graphYMin) ? abs(graphYMax) : abs(graphYMin);
+					
+					// this is slightly unintuitive
+					// this will be false because we draw the axis with the larger magnitude _second_
+					// which lets it show over the other axis
+					// Also, we don't use triggeringAxis here since the magnitude is screen-local
+					if (magnitudeY > magnitudeX) {
+						lineModifier = 1;
+						yMagnitudeIsGreater = true;
+						break;
+					}
+					// fail case matches with what STICK_FULL does, so don't break if above check fails
+				// stick_full just needs frame intervals
+				// this is different from every other frame interval calculation
+				case GRAPH_STICK_FULL:
+					// we always draw Y axis below in continuous oscilloscope
+					lineModifier = -1;
+					break;
+				case GRAPH_TRIGGER:
+					// nothing to really do here...
+				default:
+					break;
+			}
+		}
+	}
+	
+	// draw frame intervals
+	switch (type) {
+		case GRAPH_TRIGGER:
+			// draw digital presses
+			GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_RGB, digitalPressInterval);
+			for (int i = 0; i < digitalPressInterval; i++) {
+				GX_Position3s16(digitalPressList[i], (SCREEN_POS_CENTER_Y + 28), zDepth - 2);
+				GX_Color3u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b);
+			}
+			GX_End();
+		case GRAPH_STICK_FULL:
+			// draw frame intervals
+			// *2 since each line has two vertices
+			GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_RGB, frameIntervalIndex * 2);
+			for (int i = 0; i < frameIntervalIndex; i++) {
+				GX_Position3s16(frameIntervalList[i], (SCREEN_POS_CENTER_Y - 127), zDepth - 2);
+				GX_Color3u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b);
+				
+				GX_Position3s16(frameIntervalList[i], (SCREEN_POS_CENTER_Y - 112), zDepth - 2);
+				GX_Color3u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b);
+			}
+			GX_End();
+			break;
+		case GRAPH_STICK:
+			break;
+	}
+	
+	
+	// scroll indicators
+	// zeroIndexOffset will be 0 for every menu other than continuous,
+	// so the logic is basically if (graphScrollOffset > 0) {}
+	if (graphScrollOffset + graphZeroIndexOffset > graphZeroIndexOffset) {
+		drawTri(SCREEN_TIMEPLOT_START - 20, SCREEN_POS_CENTER_Y,
+		        SCREEN_TIMEPLOT_START - 10, SCREEN_POS_CENTER_Y + 15,
+		        SCREEN_TIMEPLOT_START - 10, SCREEN_POS_CENTER_Y - 15,
+		        GX_COLOR_WHITE);
+	}
+	// TODO: there's a better way to do this than two distinct checks...
+	// first check: is our last drawn point not the end point?
+	// second check: is our last drawn point below 3000? (only for continuous)
+	if (graphScrollOffset + graphVisibleDatapoints < data->sampleEnd ||
+			(type == GRAPH_STICK_FULL && graphScrollOffset + graphVisibleDatapoints < graphMaxVisibleDatapoints)) {
+		drawTri(SCREEN_TIMEPLOT_START + 520, SCREEN_POS_CENTER_Y,
+		        SCREEN_TIMEPLOT_START + 510, SCREEN_POS_CENTER_Y + 15,
+		        SCREEN_TIMEPLOT_START + 510, SCREEN_POS_CENTER_Y - 15,
+		        GX_COLOR_WHITE);
+	}
+}
+
 void drawTextureFull(int x1, int y1, GXColor color) {
 	int width = 0, height = 0;
 	getCurrentTexmapDims(&width, &height);
@@ -435,7 +905,7 @@ void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color) {
 	int width = 0, height = 0;
 	getCurrentTexmapDims(&width, &height);
 	
-	GX_Begin(GX_QUADS, VTXFMT_TEXTURES_INT, 4);
+	GX_Begin(GX_QUADS, VTXFMT_TEXTURES, 4);
 	
 	GX_Position3s16(x1, y1, zDepth);
 	GX_Color4u8(color.r, color.g, color.b, color.a);
@@ -460,7 +930,7 @@ void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color) {
 void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, int ty2, GXColor color) {
 	updateVtxDesc(VTX_TEXTURES, GX_MODULATE);
 
-	GX_Begin(GX_QUADS, VTXFMT_TEXTURES_INT, 4);
+	GX_Begin(GX_QUADS, VTXFMT_TEXTURES, 4);
 	
 	GX_Position3s16(x1, y1, zDepth);
 	GX_Color4u8(color.r, color.g, color.b, color.a);

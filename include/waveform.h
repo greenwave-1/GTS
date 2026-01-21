@@ -55,7 +55,9 @@ typedef struct MeleeCoordinates {
 #define REC_SAMPLE_MAX 3000
 
 // the type of recording created
-enum RECORDING_TYPE { REC_CLEAR, REC_OSCILLOSCOPE, REC_TRIGGER_L, REC_TRIGGER_R, REC_2DPLOT, REC_BUTTONTIME };
+enum RECORDING_TYPE { REC_CLEAR, REC_OSCILLOSCOPE, REC_OSCILLOSCOPE_CONTINUOUS,
+		REC_TRIGGER_L, REC_TRIGGER_R,
+		REC_2DPLOT, REC_BUTTONTIME };
 
 #define REC_CLEAR_FLAG 0
 #define REC_OSCILLOSCOPE_FLAG 1
@@ -121,6 +123,8 @@ void flipData();
 enum CONTROLLER_STICK_AXIS { AXIS_AX, AXIS_AY, AXIS_CX, AXIS_CY, AXIS_AXY, AXIS_CXY };
 
 int8_t getControllerSampleAxisValue(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis);
+int8_t getControllerSampleXValue(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis);
+int8_t getControllerSampleYValue(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis);
 void getControllerSampleAxisPair(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis, int8_t* retX, int8_t* retY);
 MeleeCoordinates convertStickRawToMelee(ControllerSample sample);
 

@@ -17,11 +17,15 @@
 #include <stdint.h>
 
 #include "util/datetime.h"
+#include "waveform.h"
 
 // center of screen, 640x480
+// TODO: probably should get these from rmode, just in case...
 #define SCREEN_POS_CENTER_X 320
 #define SCREEN_POS_CENTER_Y 240
 #define COORD_CIRCLE_CENTER_X 450
+#define SCREEN_TIMEPLOT_START 70
+
 
 // for readability/convenience
 #define TEXMAP_NONE GX_TEXMAP_NULL
@@ -35,8 +39,8 @@
 // same as above
 #define VTXFMT_PRIMITIVES_RGB GX_VTXFMT0
 #define VTXFMT_PRIMITIVES_RGBA GX_VTXFMT1
-#define VTXFMT_TEXTURES_INT GX_VTXFMT2
-#define VTXFMT_TEXTURES_FLOAT GX_VTXFMT3
+#define VTXFMT_PRIMITIVES_FLOAT GX_VTXFMT2
+#define VTXFMT_TEXTURES GX_VTXFMT3
 
 // normal colors
 // mostly based on ogc/color.h
@@ -57,6 +61,9 @@
 #define GX_COLOR_RED_X (GXColor) {0xFF, 0x20, 0x00, 0xFF}
 #define GX_COLOR_BLUE_Y (GXColor) {0x00, 0x6A, 0xFF, 0xFF}
 #define GX_COLOR_ORANGE (GXColor) {0xFF, 0xA5, 0x00, 0xFF}
+
+// window width for graphing...
+#define WAVEFORM_DISPLAY_WIDTH 500.0
 
 // returns the given color with the specified alpha
 GXColor GXColorAlpha(GXColor color, uint8_t alpha);
@@ -100,6 +107,16 @@ void drawLine(int x1, int y1, int x2, int y2, GXColor color);
 void drawBox(int x1, int y1, int x2, int y2, GXColor color);
 void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color);
 void drawSolidBoxAlpha(int x1, int y1, int x2, int y2, GXColor color);
+
+void drawTri(int x1, int y1, int x2, int y2, int x3, int y3, GXColor color);
+
+enum GRAPH_TYPE { GRAPH_STICK, GRAPH_STICK_FULL, GRAPH_TRIGGER };
+void resetDrawGraph();
+void setDrawGraphStickAxis(enum CONTROLLER_STICK_AXIS axis);
+void setDrawGraphOffset(int offset);
+void getGraphDisplayedInfo(int *scrollOffset, int *visibleSamples);
+void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen);
+void getGraphStats(uint64_t *uSecs, int8_t *minX, int8_t *minY, int8_t *maxX, int8_t *maxY, bool *yMag);
 
 // draw all of a given texture
 void drawTextureFull(int x1, int y1, GXColor color);

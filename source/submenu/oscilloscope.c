@@ -21,8 +21,6 @@ const static uint8_t STICK_MOVEMENT_THRESHOLD = 15;
 const static uint8_t STICK_MOVEMENT_TIME_THRESHOLD_MS = 25;
 const static uint8_t MEASURE_COOLDOWN_FRAMES = 5;
 
-const static uint8_t SCREEN_TIMEPLOT_START = 70;
-
 static enum OSC_MENU_STATE state = OSC_SETUP;
 static enum OSC_STATE oState = PRE_INPUT;
 
@@ -32,8 +30,6 @@ static enum OSC_STATE oState = PRE_INPUT;
 // structs are flipped silently by calling flipData() from waveform.h, so we don't have to change anything here
 static ControllerRec **data = NULL, **temp = NULL;
 static enum OSCILLOSCOPE_TEST currentTest = SNAPBACK;
-static int waveformScaleFactor = 1;
-static int dataScrollOffset = 0;
 
 // stores current captured data
 static ControllerSample curr;
@@ -203,7 +199,7 @@ static void oscilloscopeCallback() {
 					
 					// TODO: this is wasteful for a polling function, find a way to either specify a different
 					// TODO: starting point, or do this outside of the function
-					// rewrite data with new starting indexdrawXFirst
+					// rewrite data with new starting index
 					for (int i = 0; i < (*temp)->sampleEnd - 1 - pivotStartIndex; i++) {
 						(*temp)->samples[i].stickX = (*temp)->samples[i + pivotStartIndex].stickX;
 						(*temp)->samples[i].stickY = (*temp)->samples[i + pivotStartIndex].stickY;
@@ -400,6 +396,7 @@ static void setup() {
 		clearRecordingArray(*data);
 		oState = PRE_INPUT;
 	}
+	resetDrawGraph();
 }
 
 // function called from outside
@@ -411,6 +408,7 @@ void menu_oscilloscope() {
 		case OSC_POST_SETUP:
 			// we're getting the address of the object itself here, not the address of the pointer,
 			// which means we will always point to the same object, regardless of a flip
+			// this prevents a situation where the pointer is 'flipped' while we're attempting to draw from it
 			ControllerRec *dispData = *data;
 			
 			switch (oState) {
@@ -450,6 +448,7 @@ void menu_oscilloscope() {
 					}
 					drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y,
 							 SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, GX_COLOR_GRAY);
+					
 					// lots of the specific values are taken from:
 					// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
 					switch (currentTest) {
@@ -486,134 +485,32 @@ void menu_oscilloscope() {
 					}
 					
 					if (dispData->isRecordingReady) {
-						// show all data if it will fit
-						if (dispData->sampleEnd < 500) {
-							dataScrollOffset = 0;
-						// move screen to end of data input if it was further from the last capture
-						} else if (dataScrollOffset > (dispData->sampleEnd) - 500) {
-							dataScrollOffset = dispData->sampleEnd - 501;
-						}
+						setDrawGraphStickAxis(displayedAxis);
+						setDepth(-2);
+						drawGraph(dispData, GRAPH_STICK, oState == POST_INPUT_LOCK);
+						restorePrevDepth();
 						
-						// initialize stat values to first point
+						// get stat values
 						int8_t minX, minY;
 						int8_t maxX, maxY;
-						
-						getControllerSampleAxisPair(dispData->samples[dataScrollOffset], displayedAxis, &minX, &minY);
-						maxX = minX;
-						maxY = minY;
-
-						int waveformXPos = 0;
 						uint64_t drawnTicksUs = 0;
+						bool yIsBiggerMagnitude = false;
+						getGraphStats(&drawnTicksUs, &minX, &minY, &maxX, &maxY, &yIsBiggerMagnitude);
 						
-						int totalPointsToDraw = 0;
+						int visibleDatapoints, dataScrollOffset;
+						getGraphDisplayedInfo(&dataScrollOffset, &visibleDatapoints);
 						
-						// calculate how many points we're going to draw
-						// we also get min and max values here
-						for (int i = 0; i < 500; i++) {
-							if (dataScrollOffset + i == dispData->sampleEnd) {
-								break;
-							}
-							
-							int8_t currX, currY;
-							getControllerSampleAxisPair(dispData->samples[i], displayedAxis, &currX, &currY);
-							
-							if (minX > currX) {
-								minX = currX;
-							}
-							if (maxX < currX) {
-								maxX = currX;
-							}
-							if (minY > currY) {
-								minY = currY;
-							}
-							if (maxY < currY) {
-								maxY = currY;
-							}
-							
-							// adding time from drawn points, to show how long the current view is
-							drawnTicksUs += dispData->samples[i].timeDiffUs;
-							
-							totalPointsToDraw++;
-						}
-						
-						updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
-						
-						bool drawXFirst = false;
-						
-						int magnitudeX = abs(maxX) >= abs(minX) ? abs(maxX) : abs(minX);
-						int magnitudeY = abs(maxY) >= abs(minY) ? abs(maxY) : abs(minY);
-						
-						// this is slightly unintuitive
-						// this will be false because we draw the axis with the larger magnitude _second_
-						// which lets it show over the other axis
-						// Also, we don't use triggeringAxis here since the magnitude is screen-local
-						if (magnitudeY > magnitudeX) {
-							drawXFirst = true;
-						}
-						
-						for (int line = 0; line < 2; line++) {
-							waveformXPos = 0;
-							
-							GX_Begin(GX_LINESTRIP, VTXFMT_PRIMITIVES_RGB, totalPointsToDraw);
-							
-							for (int i = dataScrollOffset; i < dataScrollOffset + totalPointsToDraw; i++) {
-								int8_t currX, currY;
-								getControllerSampleAxisPair(dispData->samples[i], displayedAxis, &currX, &currY);
-								
-								if (drawXFirst) {
-									GX_Position3s16(SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currX, -2 + line);
-									GX_Color3u8(GX_COLOR_RED_X.r, GX_COLOR_RED_X.g, GX_COLOR_RED_X.b);
-								} else {
-									GX_Position3s16(SCREEN_TIMEPLOT_START + waveformXPos, SCREEN_POS_CENTER_Y - currY, -2 + line);
-									GX_Color3u8(GX_COLOR_BLUE_Y.r, GX_COLOR_BLUE_Y.g, GX_COLOR_BLUE_Y.b);
-								}
-								waveformXPos += waveformScaleFactor;
-							}
-							
-							GX_End();
-							
-							drawXFirst = !drawXFirst;
-						}
-						
-						// do we have enough data to enable scrolling?
-						// TODO: enable scrolling when scaled
-						if (dispData->sampleEnd >= 500 ) {
-							// does the user want to scroll the waveform?
-							if (*held & PAD_BUTTON_RIGHT) {
-								if (*held & PAD_TRIGGER_R) {
-									if (dataScrollOffset + 510 < dispData->sampleEnd) {
-										dataScrollOffset += 10;
-									}
-								} else {
-									if (dataScrollOffset + 501 < dispData->sampleEnd) {
-										dataScrollOffset++;
-									}
-								}
-							} else if (*held & PAD_BUTTON_LEFT) {
-								if (*held & PAD_TRIGGER_R) {
-									if (dataScrollOffset - 10 >= 0) {
-										dataScrollOffset -= 10;
-									}
-								} else {
-									if (dataScrollOffset - 1 >= 0) {
-										dataScrollOffset--;
-									}
-								}
-							}
-						}
-						
-						/*
-						setCursorPos(2, 45);
-						if (!showCStick) {
-							printStr("Shown: Stick");
-						} else {
-							printStr("Shown: C-Stick");
-						}
-						 */
 						setCursorPos(3, 0);
 						
+						int actualDatapoints = dataScrollOffset + visibleDatapoints;
+						if (actualDatapoints > dispData->sampleEnd) {
+							actualDatapoints = dispData->sampleEnd;
+						}
+						
 						// total time is stored in microseconds, divide by 1000 for milliseconds
-						printStr("Sample start: %4u/%4u | Time shown: %4llu/%4llu ms\n", dataScrollOffset, dispData->sampleEnd, drawnTicksUs / 1000, dispData->totalTimeUs / 1000);
+						printStr("%4u Samples, (%4u/%4u) | Time: %4llu/%4llu ms\n",
+								 dispData->sampleEnd, dataScrollOffset, actualDatapoints,
+								 drawnTicksUs / 1000, dispData->totalTimeUs / 1000);
 						
 						// print test data
 						setCursorPos(20, 0);
@@ -623,7 +520,7 @@ void menu_oscilloscope() {
 						enum CONTROLLER_STICK_AXIS workingAxis = triggeringAxis;
 						if (displayedAxis == AXIS_AXY) {
 							if (triggeringAxis == AXIS_CX) {
-								// default value is fine
+								workingAxis = AXIS_AX;
 							}
 							if (triggeringAxis == AXIS_CY) {
 								workingAxis = AXIS_AY;
@@ -641,13 +538,12 @@ void menu_oscilloscope() {
 							case SNAPBACK:
 								// highlight axis with biggest magnitude
 								// if tied, preference will go to X
-								// we highlight X if this is false
-								if (!drawXFirst) {
-									printStrBox(GX_COLOR_WHITE, "X Min, Max: (%4d,%4d)", minX, maxX);
-									printStr("  |  Y Min, Max: (%4d,%4d)", minY, maxY);
-								} else {
+								if (yIsBiggerMagnitude) {
 									printStr("X Min, Max: (%4d,%4d)  |  ", minX, maxX);
 									printStrBox(GX_COLOR_WHITE, "Y Min, Max: (%4d,%4d)", minY, maxY);
+								} else {
+									printStrBox(GX_COLOR_WHITE, "X Min, Max: (%4d,%4d)", minX, maxX);
+									printStr("  |  Y Min, Max: (%4d,%4d)", minY, maxY);
 								}
 								break;
 							case PIVOT:
@@ -942,7 +838,8 @@ void menu_oscilloscope() {
 					break;
 			}
 			
-			
+			// check for inputs
+			// pan and zoom are handled by drawGraph()
 			if (*pressed & PAD_BUTTON_A && oState != PRE_INPUT) {
 				if (oState == POST_INPUT_LOCK && stickCooldown == 0) {
 					oState = POST_INPUT;
@@ -964,13 +861,6 @@ void menu_oscilloscope() {
 					displayedAxis = AXIS_AXY;
 				}
 			}
-			
-			// adjust scaling factor
-			//} else if (pressed & PAD_BUTTON_Y) {
-			//	waveformScaleFactor++;
-			//	if (waveformScaleFactor > 5) {
-			//		waveformScaleFactor = 1;
-			//	}
 			break;
 		case OSC_INSTRUCTIONS:
 			displayInstructions();
