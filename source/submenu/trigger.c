@@ -205,17 +205,21 @@ void menu_triggerOscilloscope() {
 						printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
 					}
 				case TRIG_DISPLAY:
+					// bounding box
+					setDepth(-10);
+					drawSolidBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
+					             SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_BLACK);
+					restorePrevDepth();
+					setDepth(0);
+					drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
+					        SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_WHITE);
+					restorePrevDepth();
+					
+					// line at 43, start of melee analog shield range
+					drawLine(SCREEN_TIMEPLOT_START, (SCREEN_POS_CENTER_Y + 85),
+					         SCREEN_TIMEPLOT_START + 500, (SCREEN_POS_CENTER_Y + 85), GX_COLOR_GRAY);
+					
 					if (dispData->isRecordingReady) {
-						// bounding box
-						drawSolidBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
-						             SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_BLACK);
-						drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
-								SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_WHITE);
-						
-						// line at 43, start of melee analog shield range
-						drawLine(SCREEN_TIMEPLOT_START, (SCREEN_POS_CENTER_Y + 85),
-								  SCREEN_TIMEPLOT_START + 500, (SCREEN_POS_CENTER_Y + 85), GX_COLOR_GRAY);
-						
 						setDepth(-2);
 						drawGraph(dispData, GRAPH_TRIGGER, trigState == TRIG_DISPLAY_LOCK);
 						restorePrevDepth();

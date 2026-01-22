@@ -437,8 +437,18 @@ void menu_oscilloscope() {
 					}
 				case POST_INPUT:
 					// draw guidelines based on selected test
+					// blank background
+					setDepth(-10);
 					drawSolidBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
 					             SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_BLACK);
+					restorePrevDepth();
+					setDepth(-9);
+					// center line
+					drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y,
+					         SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, GX_COLOR_GRAY);
+					restorePrevDepth();
+					// bounding box
+					setDepth(0);
 					if (displayedAxis == AXIS_AXY) {
 						drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
 						        SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_WHITE);
@@ -446,9 +456,9 @@ void menu_oscilloscope() {
 						drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
 						        SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_YELLOW);
 					}
-					drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y,
-							 SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, GX_COLOR_GRAY);
+					restorePrevDepth();
 					
+					setDepth(-8);
 					// lots of the specific values are taken from:
 					// https://github.com/PhobGCC/PhobGCC-doc/blob/main/For_Users/Phobvision_Guide_Latest.md
 					switch (currentTest) {
@@ -483,6 +493,7 @@ void menu_oscilloscope() {
 						default:
 							break;
 					}
+					restorePrevDepth();
 					
 					if (dispData->isRecordingReady) {
 						setDrawGraphStickAxis(displayedAxis);

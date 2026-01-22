@@ -101,8 +101,10 @@ void menu_continuousWaveform() {
 			
 			if (data->isRecordingReady) {
 				// draw guidelines based on selected test
+				setDepth(-10);
 				drawSolidBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
 				             SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_BLACK);
+				restorePrevDepth();
 				setDepth(0);
 				if (selectedAxis == AXIS_AXY) {
 					drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 501,
