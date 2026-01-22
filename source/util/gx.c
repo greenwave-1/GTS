@@ -863,6 +863,38 @@ void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 			break;
 	}
 	
+	// scrollbar if we are zoomed in
+	// continuous is a special case where we want the scrollbar to _always_ scale based on the whole image,
+	// in every other case, we just use sampleEnd, since thats where the data ends...
+	// WIP
+	/*
+	float divisor = (type == GRAPH_STICK_FULL) ? graphMaxVisibleDatapoints : data->sampleEnd;
+	
+	int sliderStart = ((graphScrollOffset / divisor) * WAVEFORM_DISPLAY_WIDTH);
+
+	if (sliderStart < 0) {
+		sliderStart = 0;
+	}
+	int sliderEnd = (((graphScrollOffset + graphVisibleDatapoints) / divisor) * WAVEFORM_DISPLAY_WIDTH);
+
+	if (sliderEnd > WAVEFORM_DISPLAY_WIDTH) {
+		sliderEnd = WAVEFORM_DISPLAY_WIDTH;
+	}
+	
+	if (sliderStart > 0 || sliderEnd < WAVEFORM_DISPLAY_WIDTH) {
+		// scroll bar at the top
+		drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 140,
+		         SCREEN_TIMEPLOT_START + WAVEFORM_DISPLAY_WIDTH, SCREEN_POS_CENTER_Y - 140,
+		         GX_COLOR_GRAY);
+		// slider on scroll bar
+		GX_SetLineWidth(24, GX_TO_ZERO);
+		
+		drawLine(SCREEN_TIMEPLOT_START + sliderStart, SCREEN_POS_CENTER_Y - 140,
+		         SCREEN_TIMEPLOT_START + sliderEnd, SCREEN_POS_CENTER_Y - 140,
+		         GX_COLOR_SILVER);
+		GX_SetLineWidth(12, GX_TO_ZERO);
+	}
+	 */
 	
 	// scroll indicators
 	// zeroIndexOffset will be 0 for every menu other than continuous,
