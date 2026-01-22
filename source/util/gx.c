@@ -544,11 +544,6 @@ void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 				scrollModifier = -1;
 			}
 			
-			// ugly
-			if (type == GRAPH_STICK_FULL) {
-				scrollModifier *= -1;
-			}
-			
 			if (abs(scrollModifier) > 0) {
 				graphScrollOffset += scrollModifier;
 			}
