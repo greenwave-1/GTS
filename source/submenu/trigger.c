@@ -150,8 +150,10 @@ static void setup() {
 	// check if existing recording is valid for this menu
 	if (!(RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & (REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG))) {
 		clearRecordingArray(*data);
+		flipData();
 		trigState = TRIG_INPUT;
 	}
+	
 	menuState = TRIG_POST_SETUP;
 	resetDrawGraph();
 }
