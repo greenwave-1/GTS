@@ -288,11 +288,10 @@ void menu_plot2d() {
 						        GX_COLOR_YELLOW);
 					}
 					
-					setDepth(-10);
+					setDepthForDrawCall(-10);
 					drawSolidBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
 					             COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
 					             GX_COLOR_BLACK);
-					restorePrevDepth();
 					
 					if (dispData->isRecordingReady) {
 						convertedCoords = convertStickRawToMelee(dispData->samples[lastDrawPoint]);
@@ -342,9 +341,8 @@ void menu_plot2d() {
 						
 						// draw image
 						if (selectedImage != NO_IMAGE) {
-							setDepth(-8);
+							setDepthForDrawCall(-8);
 							drawTextureFull(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128, GX_COLOR_WHITE);
-							restorePrevDepth();
 						}
 						
 						setCursorPos(17, 0);
@@ -456,7 +454,7 @@ void menu_plot2d() {
 						}
 						
 						// highlight last sample with a box
-						setDepth(-3);
+						setDepthForDrawCall(-3);
 						if (!showCStick) {
 							drawBox((COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].stickX) - 3,
 							        (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) - 3,
@@ -470,7 +468,6 @@ void menu_plot2d() {
 							        (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].cStickY) + 3,
 							        GX_COLOR_WHITE);
 						}
-						restorePrevDepth();
 						
 						setCursorPos(6, 0);
 						printStr("Total samples: %11u\n", dispData->sampleEnd);

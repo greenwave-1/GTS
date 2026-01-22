@@ -24,6 +24,8 @@
 #include "textures.h"
 #include "textures_tpl.h"
 
+#define GX_DEFAULT_Z_DEPTH -5
+
 GXColor GXColorAlpha(GXColor color, uint8_t alpha) {
 	return (GXColor) { color.r, color.g, color.b, alpha };
 }
@@ -61,8 +63,12 @@ static GXTexObj pTex;
 
 // keeps track of our current z depth, for drawing helper functions
 // TODO: z depth for specific elements (font, quads, lines, etc) need to be standardized
-static int zDepth = -5;
-static int zPrevDepth = -5;
+static int zDepth = GX_DEFAULT_Z_DEPTH;
+static int zPrevDepth = GX_DEFAULT_Z_DEPTH;
+// set by setDepthForDrawCall(), used at the end of any draw functions to see if we should auto-restore the old z value
+static bool resetZDepthAfter = false;
+// if this is true, don't allow resetting. some functions call more draw calls, which would cause problems...
+static bool lockResetZDepth = false;
 
 // change vertex descriptions to one of the above, specifying the tev combiner op if necessary
 void updateVtxDesc(enum CURRENT_VTX_MODE mode, int tevOp) {
@@ -288,13 +294,14 @@ void setupGX(GXRModeObj *rmode) {
 
 // we use this to mabe a "subwindow" for a scrolling text box
 // see startScrollingPrint() and endScrollingPrint() in print.c
-void setTextScrollingScissorBox(int top, int bottom) {
+// TODO: extend this to allow setting width
+void setSubwindowScissorBox(int top, int bottom) {
 	drawBox(5, top, 635, bottom, GX_COLOR_WHITE);
 	GX_SetScissor(0, 0, 640, bottom - top);
 	GX_SetScissorBoxOffset(0, -1 * top);
 }
 
-// return scissor box to normal, mainly used after setTextScrollingScissorBox()
+// return scissor box to normal, mainly used after setSubwindowScissorBox()
 void restoreNormalScissorBox() {
 	GX_SetScissor(0, 0, rmodePtr->fbWidth, rmodePtr->efbHeight);
 	GX_SetScissorBoxOffset(0, 0);
@@ -318,7 +325,7 @@ void startDraw() {
 	
 	GX_SetLineWidth(12, GX_TO_ZERO);
 	GX_SetPointSize(12, GX_TO_ZERO);
-	zDepth = -5;
+	resetDepth();
 }
 
 static int offsetX = 0, offsetY = 0;
@@ -343,8 +350,28 @@ void setDepth(int z) {
 	zDepth = z;
 }
 
+void setDepthForDrawCall(int z) {
+	// dont allow a further setDepth
+	if (!resetZDepthAfter) {
+		setDepth(z);
+		resetZDepthAfter = true;
+	}
+}
+
 void restorePrevDepth() {
 	zDepth = zPrevDepth;
+}
+
+static void restorePrevDepthFromDrawCall() {
+	if (!lockResetZDepth) {
+		restorePrevDepth();
+		resetZDepthAfter = false;
+	}
+}
+
+void resetDepth() {
+	zDepth = zPrevDepth = GX_DEFAULT_Z_DEPTH;
+	lockResetZDepth = resetZDepthAfter = false;
 }
 
 void drawLine(int x1, int y1, int x2, int y2, GXColor color) {
@@ -359,6 +386,10 @@ void drawLine(int x1, int y1, int x2, int y2, GXColor color) {
 	GX_Color3u8(color.r, color.g, color.b);
 	
 	GX_End();
+	
+	if (resetZDepthAfter) {
+		restorePrevDepthFromDrawCall();
+	}
 }
 
 void drawBox(int x1, int y1, int x2, int y2, GXColor color) {
@@ -382,6 +413,10 @@ void drawBox(int x1, int y1, int x2, int y2, GXColor color) {
 	GX_Color3u8(color.r, color.g, color.b);
 	
 	GX_End();
+	
+	if (resetZDepthAfter) {
+		restorePrevDepthFromDrawCall();
+	}
 }
 
 void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
@@ -402,6 +437,10 @@ void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
 	GX_Color3u8(color.r, color.g, color.b);
 	
 	GX_End();
+	
+	if (resetZDepthAfter) {
+		restorePrevDepthFromDrawCall();
+	}
 }
 
 void drawSolidBoxAlpha(int x1, int y1, int x2, int y2, GXColor color) {
@@ -422,6 +461,10 @@ void drawSolidBoxAlpha(int x1, int y1, int x2, int y2, GXColor color) {
 	GX_Color4u8(color.r, color.g, color.b, color.a);
 	
 	GX_End();
+	
+	if (resetZDepthAfter) {
+		restorePrevDepthFromDrawCall();
+	}
 }
 
 void drawTri(int x1, int y1, int x2, int y2, int x3, int y3, GXColor color) {
@@ -439,6 +482,10 @@ void drawTri(int x1, int y1, int x2, int y2, int x3, int y3, GXColor color) {
 	GX_Color3u8(color.r, color.g, color.b);
 	
 	GX_End();
+	
+	if (resetZDepthAfter) {
+		restorePrevDepthFromDrawCall();
+	}
 }
 
 // controls the start point of what we draw (offset from index 0)
@@ -467,7 +514,7 @@ void setDrawGraphStickAxis(enum CONTROLLER_STICK_AXIS axis) {
 	drawnAxis = axis;
 }
 
-void setDrawGraphOffset(int offset) {
+void setDrawGraphIndexOffset(int offset) {
 	graphZeroIndexOffset = offset;
 }
 
@@ -493,6 +540,11 @@ void getGraphDisplayedInfo(int *scrollOffset, int *visibleSamples) {
 
 // actually draw the graph
 void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
+	// since we do a bunch of draw calls here, its easier just to store this ourselves...
+	int initialZValue = zPrevDepth;
+	// don't allow further draw() calls to attempt to reset the zdepth
+	lockResetZDepth = true;
+	
 	// initialize data if needed
 	if (graphVisibleDatapoints == -1) {
 		switch (type) {
@@ -842,7 +894,7 @@ void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 			// draw digital presses
 			GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_RGB, digitalPressInterval);
 			for (int i = 0; i < digitalPressInterval; i++) {
-				GX_Position3s16(digitalPressList[i], (SCREEN_POS_CENTER_Y + 28), zDepth - 2);
+				GX_Position3s16(digitalPressList[i], (SCREEN_POS_CENTER_Y + 28), zDepth + lineModifier - 2);
 				GX_Color3u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b);
 			}
 			GX_End();
@@ -851,10 +903,10 @@ void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 			// *2 since each line has two vertices
 			GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_RGB, frameIntervalIndex * 2);
 			for (int i = 0; i < frameIntervalIndex; i++) {
-				GX_Position3s16(frameIntervalList[i], (SCREEN_POS_CENTER_Y - 127), zDepth - 2);
+				GX_Position3s16(frameIntervalList[i], (SCREEN_POS_CENTER_Y - 127), zDepth + lineModifier - 2);
 				GX_Color3u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b);
 				
-				GX_Position3s16(frameIntervalList[i], (SCREEN_POS_CENTER_Y - 112), zDepth - 2);
+				GX_Position3s16(frameIntervalList[i], (SCREEN_POS_CENTER_Y - 112), zDepth + lineModifier - 2);
 				GX_Color3u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b);
 			}
 			GX_End();
@@ -881,14 +933,16 @@ void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 	}
 	
 	if (sliderStart > 0 || sliderEnd < WAVEFORM_DISPLAY_WIDTH) {
+		// TODO: this is hardcoded, find a better way to do this...
+		//  probably need to move bounding box call into gx.h, possibly inside this function
 		setDepth(0);
 		// scroll bar at the top
 		drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 128,
 		         SCREEN_TIMEPLOT_START + WAVEFORM_DISPLAY_WIDTH, SCREEN_POS_CENTER_Y - 128,
 		         GX_COLOR_GRAY);
+		
 		// slider on scroll bar
 		//GX_SetLineWidth(24, GX_TO_ZERO);
-		
 		drawLine(SCREEN_TIMEPLOT_START + sliderStart, SCREEN_POS_CENTER_Y - 128,
 		         SCREEN_TIMEPLOT_START + sliderEnd, SCREEN_POS_CENTER_Y - 128,
 		         GX_COLOR_WHITE);
@@ -929,6 +983,11 @@ void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 		restorePrevDepth();
 		 */
 	}
+	
+	if (resetZDepthAfter) {
+		zDepth = zPrevDepth = initialZValue;
+		resetZDepthAfter = false;
+	}
 }
 
 void drawTextureFull(int x1, int y1, GXColor color) {
@@ -936,6 +995,7 @@ void drawTextureFull(int x1, int y1, GXColor color) {
 	getCurrentTexmapDims(&width, &height);
 	
 	drawTextureFullScaled(x1, y1, x1 + width, y1 + height, color);
+	// z depth reset check is done in drawTextureFullScaled()
 }
 
 void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color) {
@@ -965,6 +1025,10 @@ void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color) {
 	GX_TexCoord2s16(0, height);
 	
 	GX_End();
+	
+	if (resetZDepthAfter) {
+		restorePrevDepthFromDrawCall();
+	}
 }
 
 // a bit ugly, probably a better way to do this...
@@ -990,6 +1054,11 @@ void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, i
 	GX_TexCoord2s16(tx1, ty2);
 	
 	GX_End();
+	
+	lockResetZDepth = false;
+	if (resetZDepthAfter) {
+		restorePrevDepthFromDrawCall();
+	}
 }
 
 #ifndef NO_DATE_CHECK
@@ -1010,10 +1079,15 @@ const static int colorList[][3] = {
 		
 };
 void drawDateSpecial(enum DATE_CHECK_LIST date) {
+	// since we could do a bunch of draw calls here, its easier just to store this ourselves...
+	int initialZValue = zPrevDepth;
+	lockResetZDepth = true;
+	
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	int sizeOfQuads = 144;
 	switch (date) {
 		case DATE_NICE:
+			/*
 			// 1 quad
 			GX_Begin(GX_QUADS, VTXFMT_PRIMITIVES_RGB, 4);
 			GX_Position3s16(5, 35, -10);
@@ -1029,29 +1103,24 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
 			
 			GX_End();
+			 */
 			break;
 		case DATE_PM:
 			// 6 quads total across 144 pixels
 			sizeOfQuads = 144 / 6;
-			GX_Begin(GX_QUADS, VTXFMT_PRIMITIVES_RGB, 4 * 6);
+			setDepth(-10);
 			for (int i = 0; i < 6; i++) {
-				GX_Position3s16(5 + (sizeOfQuads * i), 35, -10);
-				GX_Color3u8(colorList[i][0], colorList[i][1], colorList[i][2]);
-				
-				GX_Position3s16(9 + (sizeOfQuads * (i + 1)), 35, -10);
-				GX_Color3u8(colorList[i][0], colorList[i][1], colorList[i][2]);
-				
-				GX_Position3s16(9 + (sizeOfQuads * (i + 1)), 58, -10);
-				GX_Color3u8(colorList[i][0], colorList[i][1], colorList[i][2]);
-				
-				GX_Position3s16(5 + (sizeOfQuads * i), 58, -10);
-				GX_Color3u8(colorList[i][0], colorList[i][1], colorList[i][2]);
+				drawSolidBoxAlpha(5 + (sizeOfQuads * i), 35,
+				                  9 + (sizeOfQuads * (i + 1)), 58,
+				                  (GXColor) {colorList[i][0], colorList[i][1], colorList[i][2], 0xFF} );
 			}
-			GX_End();
+			restorePrevDepth();
 			break;
 		case DATE_CMAS:
 			// call snow code
+			setDepth(-25);
 			drawSnowParticles();
+			restorePrevDepth();
 			
 			// then obscure them slightly
 			// 0x40 -> 64 / 255, ~25% opacity
@@ -1062,6 +1131,12 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 			break;
 		default:
 			break;
+	}
+	
+	lockResetZDepth = false;
+	if (resetZDepthAfter) {
+		zDepth = zPrevDepth = initialZValue;
+		resetZDepthAfter = false;
 	}
 }
 
@@ -1121,7 +1196,7 @@ static void drawSnowParticles() {
 			// how many frames should we wait between movements
 			particles[i].speed = rand() % 3 + 1;
 			particles[i].moveCounter = particles[i].speed;
-			GX_Position3s16(-10, -10, -25);
+			GX_Position3s16(-10, -10, zDepth);
 		} else {
 			particles[i].moveCounter--;
 			if (particles[i].moveCounter == 0) {
@@ -1133,7 +1208,7 @@ static void drawSnowParticles() {
 			int destX = particles[i].x + particles[i].progress * (cos(particles[i].direction * M_PI / 180.0));
 			int destY = particles[i].y + particles[i].progress * (sin(particles[i].direction * M_PI / 180.0));
 			
-			GX_Position3s16(destX, destY, -25);
+			GX_Position3s16(destX, destY, zDepth);
 			
 			// change direction randomly
 			if (rand() % 10 == 0) {
@@ -1173,5 +1248,10 @@ static void drawSnowParticles() {
 	GX_End();
 	
 	GX_SetPointSize(12, GX_TO_ZERO);
+	
+	// this is technically useless, since it gets called from a function that doesn't allow restoring
+	if (resetZDepthAfter) {
+		restorePrevDepthFromDrawCall();
+	}
 }
 #endif

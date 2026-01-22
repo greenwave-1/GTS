@@ -37,6 +37,7 @@ static void advanceCursorLine() {
 
 // this is almost directly adapted from the provided romfont example, but modified for our specific fontsheet,
 // as well as support for background colors
+// TODO: this might not respect a call to setDepthForDrawCall(), investigate...
 static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bgColor) {
 	// pointer for iterating over string
 	const char* curr = str;
@@ -66,10 +67,8 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 		if (cursorX + 10 > 640 - (PRINT_PADDING_HORIZONTAL * 2) || *curr == '\n') {
 			// draw our background color, if applicable
 			if (!draw) {
-				setDepth(cursorZ - 1);
 				drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 2,
 			       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 15, bgColor);
-				restorePrevDepth();
 			}
 			cursorY += 15 + LINE_SPACING;
 			cursorX = 0;
@@ -92,21 +91,17 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 			int texturePosY2 = texturePosY1 + 15;
 			
 			// draw the char
-			setDepth(cursorZ);
 			drawSubTexture(quadX1, quadY1, quadX2, quadY2,
 						   texturePosX1, texturePosY1, texturePosX2, texturePosY2,
 						   fgColor);
-			restorePrevDepth();
 		}
 		
 		// advance cursor
 		cursorX += 10;
 	}
 	if (workingX != cursorX && !draw) {
-		setDepth(cursorZ - 1);
 		drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 2,
 		       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 15, bgColor);
-		restorePrevDepth();
 	}
 	if (!draw) {
 		cursorX = startingX;
@@ -119,8 +114,10 @@ void printStr(const char* str, ...) {
 	va_start(list, str);
 	vsnprintf(strBuffer, 999, str, list);
 	changeLoadedTexmap(TEXMAP_FONT);
+	setDepth(cursorZ);
 	handleString(strBuffer, true, GX_COLOR_WHITE, GX_COLOR_NONE);
 	va_end(list);
+	restorePrevDepth();
 }
 
 // TODO: there's a better way to do this instead of calling handleString twice...
@@ -131,6 +128,7 @@ void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* s
 	va_start(list, str);
 	vsnprintf(strBuffer, 999, str, list);
 	changeLoadedTexmap(TEXMAP_FONT);
+	setDepth(cursorZ);
 	// only do background if it isn't transparent
 	// we don't actually do transparency on bg stuff, but its useful for this check...
 	if (bg_color.a != 0x00) {
@@ -138,6 +136,7 @@ void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* s
 	}
 	handleString(strBuffer, true, fg_color, bg_color);
 	va_end(list);
+	restorePrevDepth();
 }
 
 /*
@@ -171,6 +170,7 @@ void printStrButton(struct INSTRUCTION_ENTRY list[]) {
 }*/
 
 // TODO: this will assume that there are no newlines in this string, figure out how to do this properly...
+// TODO: this might not respect a call to setDepthForDrawCall(), investigate...
 void printStrBox(const GXColor box_color, const char* str, ...) {
 	va_list list;
 	va_start(list, str);
@@ -183,16 +183,17 @@ void printStrBox(const GXColor box_color, const char* str, ...) {
 	
 	// we don't do anything if we would draw off the screen
 	if (cursorX + PRINT_PADDING_HORIZONTAL + 2 + (length * 10) <= 640 - (PRINT_PADDING_HORIZONTAL * 2)) {
-		setDepth(0);
+		setDepth(cursorZ);
 		GX_SetLineWidth(8, GX_TO_ZERO);
 		drawBox(cursorX + PRINT_PADDING_HORIZONTAL - 5, cursorY + PRINT_PADDING_VERTICAL - 4,
 		             cursorX + PRINT_PADDING_HORIZONTAL + (length * 10) + 2, cursorY + PRINT_PADDING_VERTICAL + 16,
 					 box_color);
 		GX_SetLineWidth(12, GX_TO_ZERO);
-		restorePrevDepth();
 		
 		handleString(subString, true, GX_COLOR_WHITE, GX_COLOR_BLACK);
+		restorePrevDepth();
 	}
+	
 	va_end(list);
 }
 
@@ -263,7 +264,7 @@ void startScrollingPrint(int top, int bottom) {
 	
 	// move cursor to top left of screen, subtract vertical padding so we actually start printing at y=~0
 	setCursorXY(0, scrollingOffset - PRINT_PADDING_VERTICAL + 5);
-	setTextScrollingScissorBox(top, bottom);
+	setSubwindowScissorBox(top, bottom);
 }
 
 void endScrollingPrint() {

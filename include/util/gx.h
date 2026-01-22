@@ -79,6 +79,7 @@ void updateVtxDesc(enum CURRENT_VTX_MODE mode, int tevOp);
 // (this changes what texture will be drawn on a primitive)
 void changeLoadedTexmap(int newTexmap);
 
+// self-explanatory
 void getCurrentTexmapDims(int *width, int *height);
 
 // update what stickmap texture is loaded into TEXMAP_STICKMAPS
@@ -87,7 +88,12 @@ void changeStickmapTexture(int image);
 // basic initialization stuff
 void setupGX(GXRModeObj *rmode);
 
-void setTextScrollingScissorBox(int top, int bottom);
+// we use this to mabe a "subwindow" for a scrolling text box
+// see startScrollingPrint() and endScrollingPrint() in print.c
+// screen coordinates will be shifted to match the scissorbox
+// TODO: extend this to allow setting width
+void setSubwindowScissorBox(int top, int bottom);
+// return scissor box to normal, mainly used after setSubwindowScissorBox()
 void restoreNormalScissorBox();
 
 // debugging stuff
@@ -97,11 +103,26 @@ void restoreNormalScissorBox();
 void startDraw();
 void finishDraw(void *xfb);
 
+// this will shift the screen by the specified units by calling GX_SetScissorBoxOffset() during finishDraw()
 void setScreenOffset(int x, int y);
 
-// basic drawing functions
+// sets the zDepth for draw() calls going forward
+// will not reset until the beginning of a new frame, or when done manually with either
+// restorePrevDepth() or resetDepth();
 void setDepth(int z);
+// sets the zDepth for a single draw() call
+// TODO: this might not be respected by any printStr(), printStrColor(), or printStrBox() calls, investigate...
+void setDepthForDrawCall(int z);
+// sets zDepth to whatever value it was before the last call to setDepth()
+// note that is setDepth() is called twice or more without running this function,
+// the initial zDepth values are lost
+// EX: zDepth = -5 -> setDepth(-8) -> setDepth(-10)
+// restorePrevDepth() will set zDepth to -8, not -5
 void restorePrevDepth();
+// sets zDepth to its default value, as defined by GX_DEFAULT_Z_DEPTH in gx.c
+void resetDepth();
+
+// basic drawing functions
 void drawLine(int x1, int y1, int x2, int y2, GXColor color);
 
 void drawBox(int x1, int y1, int x2, int y2, GXColor color);
@@ -111,15 +132,26 @@ void drawSolidBoxAlpha(int x1, int y1, int x2, int y2, GXColor color);
 void drawTri(int x1, int y1, int x2, int y2, int x3, int y3, GXColor color);
 
 enum GRAPH_TYPE { GRAPH_STICK, GRAPH_STICK_FULL, GRAPH_TRIGGER };
+// called before drawing a new _type_ of graph
+// ie: the setup() function of a given submenu
 void resetDrawGraph();
+// AXIS_AXY or AXIS_CXY, only applies to GRAPH_STICK and GRAPH_STICK_FULL
 void setDrawGraphStickAxis(enum CONTROLLER_STICK_AXIS axis);
-void setDrawGraphOffset(int offset);
-void getGraphDisplayedInfo(int *scrollOffset, int *visibleSamples);
+// sets a 'zero index offset', basically shifts the graph by the specified offset. used for GRAPH_STICK_FULL
+void setDrawGraphIndexOffset(int offset);
+// draw the graph
+// uses 4 z layers, either n-2 -> n+1 or n-1 -> n+2, as well as z=0 (todo, needs to be fixed)
 void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen);
+// get the scrollOffset and number of samples visible
+// scaling is handled in drawGraph(), so to get information about the graph, this is needed
+void getGraphDisplayedInfo(int *scrollOffset, int *visibleSamples);
+// get random statistics about a given drawn graph
+// scaling is handled in drawGraph(), so to get information about the graph, this is needed
 void getGraphStats(uint64_t *uSecs, int8_t *minX, int8_t *minY, int8_t *maxX, int8_t *maxY, bool *yMag);
 
-// draw all of a given texture
+// draws full texture without scaling it (texture size to screen space used is 1:1)
 void drawTextureFull(int x1, int y1, GXColor color);
+// draws full texture, scaled to fit the specified bounds
 void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color);
 
 // draw part of a given texture

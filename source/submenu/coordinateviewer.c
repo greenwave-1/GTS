@@ -500,11 +500,10 @@ void menu_coordView() {
 			xfbCoordCY += SCREEN_POS_CENTER_Y;
 			
 			changeLoadedTexmap(TEXMAP_STICKOUTLINE);
-			setDepth(-15);
+			setDepthForDrawCall(-15);
 			drawTextureFullScaled(COORD_CIRCLE_CENTER_X - 164, SCREEN_POS_CENTER_Y - 164,
 			                      COORD_CIRCLE_CENTER_X + 164, SCREEN_POS_CENTER_Y + 164,
 			                      GX_COLOR_WHITE);
-			restorePrevDepth();
 			
 			drawStickmapOverlay(selectedStickmap, selectedStickmapSub);
 			

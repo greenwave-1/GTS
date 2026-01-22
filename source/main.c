@@ -347,7 +347,7 @@ int main(int argc, char **argv) {
 		
 		// ~1 second has passed
 		if (i >= 60) {
-			setDepth(0);
+			setDepthForDrawCall(0);
 			// draw a black quad in front of everything, with an increasing alpha value
 			// we don't need to actually give this 255, since we blank out the frame at the end anyways
 			drawSolidBoxAlpha(-10, -10, 700, 700, GXColorAlpha(GX_COLOR_BLACK, 15 * (i - 60)));

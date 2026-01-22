@@ -206,23 +206,20 @@ void menu_triggerOscilloscope() {
 					}
 				case TRIG_DISPLAY:
 					// bounding box
-					setDepth(-10);
+					setDepthForDrawCall(-10);
 					drawSolidBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
 					             SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_BLACK);
-					restorePrevDepth();
-					setDepth(0);
+					setDepthForDrawCall(0);
 					drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
 					        SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_WHITE);
-					restorePrevDepth();
-					
+					setDepthForDrawCall(-8);
 					// line at 43, start of melee analog shield range
 					drawLine(SCREEN_TIMEPLOT_START, (SCREEN_POS_CENTER_Y + 85),
 					         SCREEN_TIMEPLOT_START + 500, (SCREEN_POS_CENTER_Y + 85), GX_COLOR_GRAY);
 					
 					if (dispData->isRecordingReady) {
-						setDepth(-2);
+						setDepthForDrawCall(-2);
 						drawGraph(dispData, GRAPH_TRIGGER, trigState == TRIG_DISPLAY_LOCK);
-						restorePrevDepth();
 						
 						setCursorPos(3, 27);
 						

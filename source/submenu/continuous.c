@@ -101,11 +101,10 @@ void menu_continuousWaveform() {
 			
 			if (data->isRecordingReady) {
 				// draw guidelines based on selected test
-				setDepth(-10);
+				setDepthForDrawCall(-10);
 				drawSolidBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
 				             SCREEN_TIMEPLOT_START + 501, SCREEN_POS_CENTER_Y + 128, GX_COLOR_BLACK);
-				restorePrevDepth();
-				setDepth(0);
+				setDepthForDrawCall(0);
 				if (selectedAxis == AXIS_AXY) {
 					drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 501,
 					        SCREEN_POS_CENTER_Y + 128, GX_COLOR_WHITE);
@@ -113,8 +112,7 @@ void menu_continuousWaveform() {
 					drawBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128, SCREEN_TIMEPLOT_START + 501,
 					        SCREEN_POS_CENTER_Y + 128, GX_COLOR_YELLOW);
 				}
-				restorePrevDepth();
-				
+				setDepthForDrawCall(-8);
 				drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, GX_COLOR_GRAY);
 				
 				setDrawGraphStickAxis(selectedAxis);
@@ -122,10 +120,9 @@ void menu_continuousWaveform() {
 				// equivalent to dataIndex + 3000 - 1
 				// +3000 because index needs to be positive for modulus to work properly,
 				// minus 1 because dataIndex is the _next_ index to be written to
-				setDrawGraphOffset(dataIndex + 2999);
-				setDepth(-2);
+				setDrawGraphIndexOffset(dataIndex + 2999);
+				setDepthForDrawCall(-2);
 				drawGraph(data, GRAPH_STICK_FULL, cState == INPUT_LOCK);
-				restorePrevDepth();
 				
 				int dataScrollOffset = 0, visibleDatapoints = 0;
 				getGraphDisplayedInfo(&dataScrollOffset, &visibleDatapoints);
