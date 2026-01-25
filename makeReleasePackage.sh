@@ -12,14 +12,14 @@ fi
 #FILENAME=`basename "$PWD"`
 DATE=`date -I`
 
-make release version=$1
+make VERSION=$1
 
 mkdir -p release/wii/apps/GTS
 cp wii-homebrew-channel-data/meta.xml release/wii/apps/GTS/
 cp wii-homebrew-channel-data/icon.png release/wii/apps/GTS/
 
-mv GTS_wii.dol release/wii/apps/GTS/boot.dol
-mv GTS_gc.dol release/GTS_GC.dol
+mv GTS_WII.dol release/wii/apps/GTS/boot.dol
+mv GTS_GC.dol release/GTS_GC.dol
 
 sed -i 's/VERSION/'$1'/g' release/wii/apps/GTS/meta.xml
 sed -i 's/DATE/'$DATE'/g' release/wii/apps/GTS/meta.xml

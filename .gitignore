@@ -1,8 +1,12 @@
 # don't push build stuffs
 *.dol
 *.elf
+build/
 build_gc/
 build_wii/
-.idea/
 release/
 *.zip
+
+# don't push any ide data
+.idea/
+.vscode/

@@ -13,7 +13,7 @@ For issues/bug reports, try to provide:
 
 For pull requests, try to adhere to the following:
 
-- Maintain current code style
+- Maintain current code style (I know it's a mess but there's a general-ish style present)
 - Commits should be focused on a specific change, with a corresponding message
 - Commits should not be overly large
 - Code should be readable and commented
@@ -21,5 +21,7 @@ For pull requests, try to adhere to the following:
 - Changes should not produce any compiler warnings
 - Changes should be implemented in C, not C++
 - Changes will be licensed under GNU GPLv3
-- Code changes should not rely on a specific version of either 
-libogc2 or any utilities from the DevkitPro or Extremscorner repos
+- Changes should not rely on: 
+  - Specific versions of libogc2 or any utilities from the DevkitPro or Extremscorner repos
+  - Tools/libraries not present in either the DevkitPro or Extremscorner repos
+- Conversely, changes should target the latest version libogc2
