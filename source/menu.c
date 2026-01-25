@@ -37,15 +37,15 @@ static enum DATE_CHECK_LIST date;
 #include "submenu/coordinateviewer.h"
 
 #ifndef VERSION_NUMBER
-#define VERSION_NUMBER "NOVERS_DEV"
+#define VERSION_NUMBER BUILD_DATE
 #endif
 
 #ifndef COMMIT_ID
-#define COMMIT_ID "BAD_ID"
+#define COMMIT_ID "NO_COMMIT_ID"
 #endif
 
 #ifndef BUILD_DATE
-#define BUILD_DATE "NO_DATE"
+#define BUILD_DATE "NO_BUILD_DATE"
 #endif
 
 #define MENUITEMS_LEN 9

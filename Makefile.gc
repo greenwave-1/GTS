@@ -47,8 +47,6 @@ CFLAGS += -DBUILD_DATE=\"$(BUILD_DATE)\"
 
 ifdef version
 	CFLAGS += -DVERSION_NUMBER=\"$(version)\"
-else
-	CFLAGS += -DVERSION_NUMBER=\"$(BUILD_DATE)\ DEV\"
 endif
 
 CFLAGS += -DCOMMIT_ID=\"`git log --format=format:%h | head -n 1`\"

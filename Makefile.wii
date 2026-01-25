@@ -47,8 +47,6 @@ CFLAGS += -DBUILD_DATE=\"$(BUILD_DATE)\"
 
 ifdef version
 	CFLAGS += -DVERSION_NUMBER=\"$(version)\"
-else
-	CFLAGS += -DVERSION_NUMBER=\"$(BUILD_DATE)\ DEV\"
 endif
 
 CFLAGS += -DCOMMIT_ID=\"`git log --format=format:%h | head -n 1`\"
@@ -60,10 +58,10 @@ LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:=	-lfat -lwiiuse -lbte -logc -lm
+LIBS	:=	-lfat -logc -lm
 
 ifeq ($(DEBUG), 2)
-	LIBS	:=	-lfat -lwiiuse -lbte -ldb -logc -lm
+	LIBS	:=	-lfat -ldb -logc -lm
 endif
 
 #---------------------------------------------------------------------------------
@@ -116,7 +114,7 @@ export HFILES := $(addsuffix .h,$(subst .,_,$(BINFILES)))
 #---------------------------------------------------------------------------------
 # build a list of include paths
 #---------------------------------------------------------------------------------
-export INCLUDE	:=	$(foreach dir,$(INCLUDES), -iquote $(CURDIR)/$(dir)) \
+export INCLUDE	:=	$(foreach dir,$(INCLUDES), -I$(CURDIR)/$(dir)) \
 					$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
 					-I$(CURDIR)/$(BUILD) \
 					-I$(LIBOGC_INC)
