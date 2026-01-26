@@ -24,6 +24,7 @@
 #include "textures_tpl.h"
 
 #define GX_DEFAULT_Z_DEPTH -5
+#define GX_DEFAULT_ALPHA 0xFF
 
 GXColor GXColorAlpha(GXColor color, uint8_t alpha) {
 	return (GXColor) { color.r, color.g, color.b, alpha };
@@ -68,6 +69,12 @@ static int zPrevDepth = GX_DEFAULT_Z_DEPTH;
 static bool resetZDepthAfter = false;
 // if this is true, don't allow resetting. some functions call more draw calls, which would cause problems...
 static bool lockResetZDepth = false;
+
+// alpha for draw calls
+static uint8_t alphaValue = GX_DEFAULT_ALPHA;
+static uint8_t prevAlphaValue = GX_DEFAULT_ALPHA;
+static bool resetAlphaAfter = false;
+static bool lockResetAlpha = false;
 
 // change vertex descriptions to one of the above, specifying the tev combiner op if necessary
 void updateVtxDesc(enum CURRENT_VTX_MODE mode, int tevOp) {
@@ -193,20 +200,16 @@ void setupGX(GXRModeObj *rmode) {
 	GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
 	GX_SetVtxDesc(GX_VA_CLR0, GX_DIRECT);
 	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+
+	// VTXFMT0, configured for primitive drawing, integer screenspace coordinates
+	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_INT, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
+	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_INT, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
 	
-	// VTXFMT0, configured for primitive drawing
-	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_RGB, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
-	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_RGB, GX_VA_CLR0, GX_CLR_RGB, GX_RGB8, 0);
-	
-	// VTXFMT1, configured for primitive drawing, but with alpha available
-	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_RGBA, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
-	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_RGBA, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
-	
-	// VTXFMT2, configured for primitive drawing, float screenspace coordinates
+	// VTXFMT1, configured for primitive drawing, float screenspace coordinates
 	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_FLOAT, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
-	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_FLOAT, GX_VA_CLR0, GX_CLR_RGB, GX_RGB8, 0);
+	GX_SetVtxAttrFmt(VTXFMT_PRIMITIVES_FLOAT, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
 	
-	// VTXFMT3, configured for textures
+	// VTXFMT2, configured for textures
 	GX_SetVtxAttrFmt(VTXFMT_TEXTURES, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
 	GX_SetVtxAttrFmt(VTXFMT_TEXTURES, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
 	GX_SetVtxAttrFmt(VTXFMT_TEXTURES, GX_VA_TEX0, GX_TEX_ST, GX_S16, 0);
@@ -373,117 +376,134 @@ void resetDepth() {
 	lockResetZDepth = resetZDepthAfter = false;
 }
 
+void setAlpha(uint8_t newAlpha) {
+	prevAlphaValue = alphaValue;
+	alphaValue = newAlpha;
+}
+
+void setAlphaForDrawCall(uint8_t newAlpha) {
+	// dont allow a further setDepth
+	if (!resetAlphaAfter) {
+		setAlpha(newAlpha);
+		resetAlphaAfter = true;
+	}
+}
+
+void restorePrevAlpha() {
+	alphaValue = prevAlphaValue;
+}
+
+static void restorePrevAlphaFromDrawCall() {
+	if (!lockResetAlpha) {
+		restorePrevAlpha();
+		resetAlphaAfter = false;
+	}
+}
+
+void resetAlpha() {
+	alphaValue = prevAlphaValue = GX_DEFAULT_ALPHA;
+	lockResetAlpha = resetAlphaAfter = false;
+}
+
 void drawLine(int x1, int y1, int x2, int y2, GXColor color) {
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	
-	GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_RGB, 2);
+	GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_INT, 2);
 	
 	GX_Position3s16(x1, y1, zDepth);
-	GX_Color3u8(color.r, color.g, color.b);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	
 	GX_Position3s16(x2, y2, zDepth);
-	GX_Color3u8(color.r, color.g, color.b);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	
 	GX_End();
 	
 	if (resetZDepthAfter) {
 		restorePrevDepthFromDrawCall();
+	}
+	if (resetAlphaAfter) {
+		restorePrevAlphaFromDrawCall();
 	}
 }
 
 void drawBox(int x1, int y1, int x2, int y2, GXColor color) {
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	
-	GX_Begin(GX_LINESTRIP, VTXFMT_PRIMITIVES_RGB, 5);
+	GX_Begin(GX_LINESTRIP, VTXFMT_PRIMITIVES_INT, 5);
 	
 	GX_Position3s16(x1, y1, zDepth);
-	GX_Color3u8(color.r, color.g, color.b);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	
 	GX_Position3s16(x2, y1, zDepth);
-	GX_Color3u8(color.r, color.g, color.b);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	
 	GX_Position3s16(x2, y2, zDepth);
-	GX_Color3u8(color.r, color.g, color.b);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	
 	GX_Position3s16(x1, y2, zDepth);
-	GX_Color3u8(color.r, color.g, color.b);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	
 	GX_Position3s16(x1, y1, zDepth);
-	GX_Color3u8(color.r, color.g, color.b);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	
 	GX_End();
 	
 	if (resetZDepthAfter) {
 		restorePrevDepthFromDrawCall();
+	}
+	if (resetAlphaAfter) {
+		restorePrevAlphaFromDrawCall();
 	}
 }
 
 void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color) {
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	
-	GX_Begin(GX_QUADS, VTXFMT_PRIMITIVES_RGB, 4);
+	GX_Begin(GX_QUADS, VTXFMT_PRIMITIVES_INT, 4);
 	
 	GX_Position3s16(x1, y1, zDepth);
-	GX_Color3u8(color.r, color.g, color.b);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	
 	GX_Position3s16(x2, y1, zDepth);
-	GX_Color3u8(color.r, color.g, color.b);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	
 	GX_Position3s16(x2, y2, zDepth);
-	GX_Color3u8(color.r, color.g, color.b);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	
 	GX_Position3s16(x1, y2, zDepth);
-	GX_Color3u8(color.r, color.g, color.b);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	
 	GX_End();
 	
 	if (resetZDepthAfter) {
 		restorePrevDepthFromDrawCall();
 	}
-}
-
-void drawSolidBoxAlpha(int x1, int y1, int x2, int y2, GXColor color) {
-	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
-	
-	GX_Begin(GX_QUADS, VTXFMT_PRIMITIVES_RGBA, 4);
-	
-	GX_Position3s16(x1, y1, zDepth);
-	GX_Color4u8(color.r, color.g, color.b, color.a);
-	
-	GX_Position3s16(x2, y1, zDepth);
-	GX_Color4u8(color.r, color.g, color.b, color.a);
-	
-	GX_Position3s16(x2, y2, zDepth);
-	GX_Color4u8(color.r, color.g, color.b, color.a);
-	
-	GX_Position3s16(x1, y2, zDepth);
-	GX_Color4u8(color.r, color.g, color.b, color.a);
-	
-	GX_End();
-	
-	if (resetZDepthAfter) {
-		restorePrevDepthFromDrawCall();
+	if (resetAlphaAfter) {
+		restorePrevAlphaFromDrawCall();
 	}
 }
 
 void drawTri(int x1, int y1, int x2, int y2, int x3, int y3, GXColor color) {
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	
-	GX_Begin(GX_TRIANGLES, VTXFMT_PRIMITIVES_RGB, 3);
+	GX_Begin(GX_TRIANGLES, VTXFMT_PRIMITIVES_INT, 3);
 	
 	GX_Position3s16(x1, y1, zDepth);
-	GX_Color3u8(color.r, color.g, color.b);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	
 	GX_Position3s16(x2, y2, zDepth);
-	GX_Color3u8(color.r, color.g, color.b);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	
 	GX_Position3s16(x3, y3, zDepth);
-	GX_Color3u8(color.r, color.g, color.b);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	
 	GX_End();
 	
 	if (resetZDepthAfter) {
 		restorePrevDepthFromDrawCall();
+	}
+	if (resetAlphaAfter) {
+		restorePrevAlphaFromDrawCall();
 	}
 }
 
@@ -538,6 +558,7 @@ void getGraphDisplayedInfo(int *scrollOffset, int *visibleSamples) {
 }
 
 // actually draw the graph
+// we're just gonna ignore alphaValue here, doesn't really make sense to use in this context...
 void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 	// since we do a bunch of draw calls here, its easier just to store this ourselves...
 	int initialZValue = zPrevDepth;
@@ -847,7 +868,7 @@ void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 			
 			// actually draw the vertex
 			GX_Position3f32(windowXPos, yPosModifier - currSampleValue, zDepth + lineModifier);
-			GX_Color3u8(lineColor.r, lineColor.g, lineColor.b);
+			GX_Color4u8(lineColor.r, lineColor.g, lineColor.b, lineColor.a);
 		}
 		
 		GX_End();
@@ -888,22 +909,22 @@ void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 	switch (type) {
 		case GRAPH_TRIGGER:
 			// draw digital presses
-			GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_RGB, digitalPressInterval);
+			GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_INT, digitalPressInterval);
 			for (int i = 0; i < digitalPressInterval; i++) {
 				GX_Position3s16(digitalPressList[i], (SCREEN_POS_CENTER_Y + 28), zDepth + lineModifier - 2);
-				GX_Color3u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b);
+				GX_Color4u8(GX_COLOR_GREEN.r, GX_COLOR_GREEN.g, GX_COLOR_GREEN.b, GX_COLOR_GREEN.a);
 			}
 			GX_End();
 		case GRAPH_STICK_FULL:
 			// draw frame intervals
 			// *2 since each line has two vertices
-			GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_RGB, frameIntervalIndex * 2);
+			GX_Begin(GX_LINES, VTXFMT_PRIMITIVES_INT, frameIntervalIndex * 2);
 			for (int i = 0; i < frameIntervalIndex; i++) {
 				GX_Position3s16(frameIntervalList[i], (SCREEN_POS_CENTER_Y - 127), zDepth + lineModifier - 2);
-				GX_Color3u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b);
+				GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
 				
 				GX_Position3s16(frameIntervalList[i], (SCREEN_POS_CENTER_Y - 112), zDepth + lineModifier - 2);
-				GX_Color3u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b);
+				GX_Color4u8(GX_COLOR_GRAY.r, GX_COLOR_GRAY.g, GX_COLOR_GRAY.b, GX_COLOR_GRAY.a);
 			}
 			GX_End();
 			break;
@@ -984,6 +1005,10 @@ void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 		zDepth = zPrevDepth = initialZValue;
 		resetZDepthAfter = false;
 	}
+	// reset this, even though we didn't use it in this function
+	if (resetAlphaAfter) {
+		restorePrevAlphaFromDrawCall();
+	}
 }
 
 void drawTextureFull(int x1, int y1, GXColor color) {
@@ -991,7 +1016,7 @@ void drawTextureFull(int x1, int y1, GXColor color) {
 	getCurrentTexmapDims(&width, &height);
 	
 	drawTextureFullScaled(x1, y1, x1 + width, y1 + height, color);
-	// z depth reset check is done in drawTextureFullScaled()
+	// reset checks are done in drawTextureFullScaled()
 }
 
 void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color) {
@@ -1005,25 +1030,28 @@ void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color) {
 	GX_Begin(GX_QUADS, VTXFMT_TEXTURES, 4);
 	
 	GX_Position3s16(x1, y1, zDepth);
-	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	GX_TexCoord2s16(0, 0);
 	
 	GX_Position3s16(x2, y1, zDepth);
-	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	GX_TexCoord2s16(width, 0);
 	
 	GX_Position3s16(x2, y2, zDepth);
-	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	GX_TexCoord2s16(width, height);
 	
 	GX_Position3s16(x1, y2, zDepth);
-	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	GX_TexCoord2s16(0, height);
 	
 	GX_End();
 	
 	if (resetZDepthAfter) {
 		restorePrevDepthFromDrawCall();
+	}
+	if (resetAlphaAfter) {
+		restorePrevAlphaFromDrawCall();
 	}
 }
 
@@ -1034,26 +1062,28 @@ void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, i
 	GX_Begin(GX_QUADS, VTXFMT_TEXTURES, 4);
 	
 	GX_Position3s16(x1, y1, zDepth);
-	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	GX_TexCoord2s16(tx1, ty1);
 	
 	GX_Position3s16(x2, y1, zDepth);
-	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	GX_TexCoord2s16(tx2, ty1);
 	
 	GX_Position3s16(x2, y2, zDepth);
-	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	GX_TexCoord2s16(tx2, ty2);
 	
 	GX_Position3s16(x1, y2, zDepth);
-	GX_Color4u8(color.r, color.g, color.b, color.a);
+	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	GX_TexCoord2s16(tx1, ty2);
 	
 	GX_End();
 	
-	lockResetZDepth = false;
 	if (resetZDepthAfter) {
 		restorePrevDepthFromDrawCall();
+	}
+	if (resetAlphaAfter) {
+		restorePrevAlphaFromDrawCall();
 	}
 }
 
@@ -1085,18 +1115,18 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 		case DATE_NICE:
 			/*
 			// 1 quad
-			GX_Begin(GX_QUADS, VTXFMT_PRIMITIVES_RGB, 4);
+			GX_Begin(GX_QUADS, VTXFMT_PRIMITIVES_INT, 4);
 			GX_Position3s16(5, 35, -10);
-			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
+			GX_Color4u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b, alphaValue);
 			
 			GX_Position3s16(9 + 144, 35, -10);
-			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
+			GX_Color4u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b, alphaValue);
 			
 			GX_Position3s16(9 + 144, 58, -10);
-			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
+			GX_Color4u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b, alphaValue);
 			
 			GX_Position3s16(5, 58, -10);
-			GX_Color3u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b);
+			GX_Color4u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b, alphaValue);
 			
 			GX_End();
 			 */
@@ -1106,7 +1136,7 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 			sizeOfQuads = 144 / 6;
 			setDepth(-10);
 			for (int i = 0; i < 6; i++) {
-				drawSolidBoxAlpha(5 + (sizeOfQuads * i), 35,
+				drawSolidBox(5 + (sizeOfQuads * i), 35,
 				                  9 + (sizeOfQuads * (i + 1)), 58,
 				                  (GXColor) {colorList[i][0], colorList[i][1], colorList[i][2], 0xFF} );
 			}
@@ -1120,8 +1150,9 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 			
 			// then obscure them slightly
 			// 0x40 -> 64 / 255, ~25% opacity
+			setAlphaForDrawCall(0x40);
 			setDepth(-24);
-			drawSolidBoxAlpha(-10, -10, 700, 500, GXColorAlpha(GX_COLOR_BLACK, 0x40));
+			drawSolidBox(-10, -10, 700, 500, GX_COLOR_BLACK);
 			restorePrevDepth();
 			
 			break;
@@ -1133,6 +1164,9 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 	if (resetZDepthAfter) {
 		zDepth = zPrevDepth = initialZValue;
 		resetZDepthAfter = false;
+	}
+	if (resetAlphaAfter) {
+		restorePrevAlphaFromDrawCall();
 	}
 }
 
@@ -1173,7 +1207,7 @@ static void drawSnowParticles() {
 	
 	GX_SetPointSize(16, GX_TO_ZERO);
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
-	GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_RGB, numOfParticles);
+	GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_INT, numOfParticles);
 	
 	// iterate over our current number of particles
 	for (int i = 0; i < numOfParticles; i++) {
@@ -1229,7 +1263,7 @@ static void drawSnowParticles() {
 			}
 		}
 		
-		GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+		GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.a);
 	}
 	
 	// slowly add particles

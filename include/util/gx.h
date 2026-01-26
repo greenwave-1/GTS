@@ -37,10 +37,9 @@
 #define TEXMAP_P GX_TEXMAP5
 
 // same as above
-#define VTXFMT_PRIMITIVES_RGB GX_VTXFMT0
-#define VTXFMT_PRIMITIVES_RGBA GX_VTXFMT1
-#define VTXFMT_PRIMITIVES_FLOAT GX_VTXFMT2
-#define VTXFMT_TEXTURES GX_VTXFMT3
+#define VTXFMT_PRIMITIVES_INT GX_VTXFMT0
+#define VTXFMT_PRIMITIVES_FLOAT GX_VTXFMT1
+#define VTXFMT_TEXTURES GX_VTXFMT2
 
 // normal colors
 // mostly based on ogc/color.h
@@ -122,12 +121,18 @@ void restorePrevDepth();
 // sets zDepth to its default value, as defined by GX_DEFAULT_Z_DEPTH in gx.c
 void resetDepth();
 
+// change alpha used for most draw functions
+// follows same conventions as above
+void setAlpha(uint8_t newAlpha);
+void setAlphaForDrawCall(uint8_t newAlpha);
+void restorePrevAlpha();
+void resetAlpha();
+
 // basic drawing functions
 void drawLine(int x1, int y1, int x2, int y2, GXColor color);
 
 void drawBox(int x1, int y1, int x2, int y2, GXColor color);
 void drawSolidBox(int x1, int y1, int x2, int y2, GXColor color);
-void drawSolidBoxAlpha(int x1, int y1, int x2, int y2, GXColor color);
 
 void drawTri(int x1, int y1, int x2, int y2, int x3, int y3, GXColor color);
 

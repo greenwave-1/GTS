@@ -404,7 +404,7 @@ void menu_plot2d() {
 							// is our current datapoint a frame interval?
 							if (dataIndex == frameIntervalList[currFrameInterval]) {
 								GX_SetPointSize(32, GX_TO_ZERO);
-								GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_RGB, 1);
+								GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_INT, 1);
 								if (!showCStick) {
 									GX_Position3s16(COORD_CIRCLE_CENTER_X + dispData->samples[dataIndex].stickX,
 									                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].stickY, -4);
@@ -413,9 +413,9 @@ void menu_plot2d() {
 									                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].cStickY, -4);
 								}
 								if (dispData->samples[dataIndex].buttons != 0) {
-									GX_Color3u8(GX_COLOR_ORANGE.r, GX_COLOR_ORANGE.g, GX_COLOR_ORANGE.b);
+									GX_Color4u8(GX_COLOR_ORANGE.r, GX_COLOR_ORANGE.g, GX_COLOR_ORANGE.b, GX_COLOR_ORANGE.a);
 								} else {
-									GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+									GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.b);
 								}
 								currFrameInterval++;
 								dataIndex++;
@@ -431,7 +431,7 @@ void menu_plot2d() {
 									pointsToDraw = lastDrawPoint - dataIndex + 1;
 								}
 								
-								GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_RGB, pointsToDraw);
+								GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_INT, pointsToDraw);
 								
 								int endPoint = dataIndex + pointsToDraw;
 								while (dataIndex < endPoint) {
@@ -443,9 +443,9 @@ void menu_plot2d() {
 										                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].cStickY, -4);
 									}
 									if (dispData->samples[dataIndex].buttons != 0) {
-										GX_Color3u8(GX_COLOR_ORANGE.r, GX_COLOR_ORANGE.g, GX_COLOR_ORANGE.b);
+										GX_Color4u8(GX_COLOR_ORANGE.r, GX_COLOR_ORANGE.g, GX_COLOR_ORANGE.b, GX_COLOR_WHITE.b);
 									} else {
-										GX_Color3u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b);
+										GX_Color4u8(GX_COLOR_WHITE.r, GX_COLOR_WHITE.g, GX_COLOR_WHITE.b, GX_COLOR_WHITE.b);
 									}
 									dataIndex++;
 								}

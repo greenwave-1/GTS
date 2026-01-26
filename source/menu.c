@@ -10,6 +10,7 @@
 
 #include <ogc/pad.h>
 #include <ogc/video.h>
+#include <ogc/lwp.h>
 #include <ogc/libversion.h>
 
 #include "waveform.h"
@@ -22,7 +23,6 @@
 
 #ifndef NO_DATE_CHECK
 #include "util/datetime.h"
-static bool dateChecked = false;
 static enum DATE_CHECK_LIST date;
 #endif
 
@@ -88,7 +88,6 @@ static bool displayInstructions = false;
 
 static bool mainMenuDraw = false;
 
-static bool attemptedFilesystemInit = false;
 static bool filesystemInitResult = false;
 static int exportReturnCode = -1;
 
@@ -96,10 +95,33 @@ static uint8_t thanksPageCounter = 0;
 
 static void menu_mainMenuDraw();
 
+static lwp_t menu_setup_thread = (lwp_t) NULL;
+
+enum MENU_INIT_STATE { MENU_PRE_INIT, MENU_INIT, MENU_POST_INIT };
+static enum MENU_INIT_STATE menuInit = MENU_PRE_INIT;
+
+// these functions can take multiple frames to complete, so they should happen asynchronously
+void *menu_preSetup(void *args) {
+	#ifndef NO_DATE_CHECK
+	date = checkDate();
+	#endif
+	
+	filesystemInitResult = initFilesystem();
+	
+	menuInit = MENU_POST_INIT;
+	return NULL;
+}
+
 // the "main" for the menus
 // other menu functions are called from here
 // this also handles moving between menus and exiting
 bool menu_runMenu() {
+	// spawn a thread for initialization of stuff that might take a bit...
+	if (menuInit == MENU_PRE_INIT) {
+		menuInit = MENU_INIT;
+		LWP_CreateThread(&menu_setup_thread, menu_preSetup, NULL, NULL, 2048, LWP_PRIO_NORMAL);
+	}
+	
 	if (data == NULL) {
 		data = getRecordingData();
 	}
@@ -108,13 +130,8 @@ bool menu_runMenu() {
 		pressed = getButtonsDownPtr();
 		held = getButtonsHeldPtr();
 	}
-
-	resetCursor();
 	
-	if (!attemptedFilesystemInit) {
-		filesystemInitResult = initFilesystem();
-		attemptedFilesystemInit = true;
-	}
+	resetCursor();
 	
 	// read inputs and origin status
 	// calls ScanPads(), updates *pressed and *held, and checks for origin when a controller is connected/disconnected
@@ -126,11 +143,6 @@ bool menu_runMenu() {
 	readController(true);
 	
 	#ifndef NO_DATE_CHECK
-	if (!dateChecked) {
-		date = checkDate();
-		dateChecked = true;
-	}
-	
 	// in case a future check doesn't want to print the text normally...
 	switch (date) {
 		case DATE_NICE:
@@ -429,39 +441,17 @@ static void menu_mainMenuDraw() {
 		updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 		
 		// background quad
-		GX_Begin(GX_QUADS, VTXFMT_PRIMITIVES_RGB, 24);
-		
-		GX_Position3s16(startX - 2, startY - 2, -2);
-		GX_Color3u8(0xff, 0xff, 0xff);
-		
-		GX_Position3s16(startX + 202, startY - 2, -2);
-		GX_Color3u8(0xff, 0xff, 0xff);
-		
-		GX_Position3s16(startX + 202, startY + 122, -2);
-		GX_Color3u8(0xff, 0xff, 0xff);
-		
-		GX_Position3s16(startX - 2, startY + 122, -2);
-		GX_Color3u8(0xff, 0xff, 0xff);
+		drawSolidBox(startX - 2, startY - 2, startX + 202, startY + 122, GX_COLOR_WHITE);
 		
 		// colSelection = 0 can't reach here, so this is fine...
 		int indexStart = (colSelection - 1) * 5;
 		
 		for (int i = 0; i < colNum; i++) {
-			// colSelection - 1 because 1 = index 0
-			GX_Position3s16(startX, startY + (colHeight * i), -1);
-			GX_Color3u8(colSet[indexStart + i][0], colSet[indexStart + i][1], colSet[indexStart + i][2]);
-			
-			GX_Position3s16(startX + 200, startY + (colHeight * i), -1);
-			GX_Color3u8(colSet[indexStart + i][0], colSet[indexStart + i][1], colSet[indexStart + i][2]);
-			
-			GX_Position3s16(startX + 200, startY + (colHeight * (i + 1)), -1);
-			GX_Color3u8(colSet[indexStart + i][0], colSet[indexStart + i][1], colSet[indexStart + i][2]);
-			
-			GX_Position3s16(startX, startY + (colHeight * (i + 1)), -1);
-			GX_Color3u8(colSet[indexStart + i][0], colSet[indexStart + i][1], colSet[indexStart + i][2]);
+			drawSolidBox(startX, startY + (colHeight * i),
+					startX + 200, startY + (colHeight * (i + 1)),
+					(GXColor) {colSet[indexStart + i][0], colSet[indexStart + i][1], colSet[indexStart + i][2], 0xFF});
 		}
 		
-		GX_End();
 		
 		if (colSelection == 1) {
 			// this is in reference to a close friend of mine, not me

@@ -175,25 +175,24 @@ void menu_gateMeasure() {
 					
 					GX_SetPointSize(12, GX_TO_ZERO);
 					// totalPoints * 2 because each entry in the array contains both min and max
-					GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_RGB, totalPoints * 2);
+					GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_INT, totalPoints * 2);
 					
+					// TODO: there's a better way to do this, right?
 					if (showC) {
 						for (int i = 0; i < totalPoints; i++) {
 							GX_Position3s16(SCREEN_POS_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].cMax, -5);
-							GX_Color3u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b);
-							//GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
+							GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 							
 							GX_Position3s16(SCREEN_POS_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].cMin, -5);
-							GX_Color3u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b);
-							//GX_Color3u8(GX_COLOR_YELLOW.r, GX_COLOR_YELLOW.g, GX_COLOR_YELLOW.b);
+							GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 						}
 					} else {
 						for (int i = 0; i < totalPoints; i++) {
 							GX_Position3s16(SCREEN_POS_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].max, -5);
-							GX_Color3u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b);
+							GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 							
 							GX_Position3s16(SCREEN_POS_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].min, -5);
-							GX_Color3u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b);
+							GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 						}
 					}
 					GX_End();

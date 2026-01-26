@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 	
 	// do basic initialization
 	// see the devkitpro wii template if you want an explanation of the following
-	// the only thing we're doing differently is a double buffer (because terminal weirdness on actual hardware)
+	// the only thing we're doing differently is a double buffer
 	VIDEO_Init();
 	PAD_Init();
 	PAD_ScanPads();
@@ -350,7 +350,8 @@ int main(int argc, char **argv) {
 			setDepthForDrawCall(0);
 			// draw a black quad in front of everything, with an increasing alpha value
 			// we don't need to actually give this 255, since we blank out the frame at the end anyways
-			drawSolidBoxAlpha(-10, -10, 700, 700, GXColorAlpha(GX_COLOR_BLACK, 15 * (i - 60)));
+			setAlphaForDrawCall(15 * (i - 60));
+			drawSolidBox(-10, -10, 700, 700, GX_COLOR_BLACK);
 		}
 		
 		xfbSwitch ^= 1;

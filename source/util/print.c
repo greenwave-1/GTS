@@ -296,39 +296,10 @@ void endScrollingPrint() {
 	// TODO: generalize this in gx.c with drawTri() or something...
 	//  ideally, no raw drawing should be done outside of gx.c unless necessary
 	if (scrollingOffset < 0) {
-		updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
-		//drawLine(10, scrollTop, 630, scrollTop, GX_COLOR_SILVER);
-		
-		GX_Begin(GX_TRIANGLES, VTXFMT_PRIMITIVES_RGB, 3);
-		
-		GX_Position3s16(310, scrollTop - 4, -2);
-		GX_Color3u8(255, 255, 255);
-		
-		GX_Position3s16(330, scrollTop - 4, -2);
-		GX_Color3u8(255, 255, 255);
-		
-		GX_Position3s16(320, scrollTop - 10, -2);
-		GX_Color3u8(255, 255, 255);
-		
-		GX_End();
+		drawTri(310, scrollTop - 4, 330, scrollTop - 4, 320, scrollTop - 10, GX_COLOR_WHITE);
 	}
 	if (scrollingOffset > scrollBottomBound) {
-		updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
-		
-		//drawLine(10, scrollBottom + 2, 630, scrollBottom, GX_COLOR_SILVER);
-		
-		GX_Begin(GX_TRIANGLES, VTXFMT_PRIMITIVES_RGB, 3);
-		
-		GX_Position3s16(310, scrollBottom + 4, -2);
-		GX_Color3u8(255, 255, 255);
-		
-		GX_Position3s16(330, scrollBottom + 4, -2);
-		GX_Color3u8(255, 255, 255);
-		
-		GX_Position3s16(320, scrollBottom + 10, -2);
-		GX_Color3u8(255, 255, 255);
-		
-		GX_End();
+		drawTri(310, scrollBottom + 4, 330, scrollBottom + 4, 320, scrollBottom + 10, GX_COLOR_WHITE);
 	}
 }
 
