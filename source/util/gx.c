@@ -17,7 +17,6 @@
 #include <time.h>
 
 #include <ogc/tpl.h>
-#include <ogc/pad.h>
 
 #include "util/polling.h"
 
@@ -561,27 +560,27 @@ void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 	
 	// allow pan/zoom if the image is considered "frozen"
 	if (isFrozen) {
-		uint16_t *held = getButtonsHeldPtr();
+		float baseChange = graphVisibleDatapoints / 100.0;
+		
+		int cStickX = PAD_SubStickX(0) / 23;
+		int cStickY = PAD_SubStickY(0) / 23;
+		
 		int datapointModifier = 0;
-		if (abs(PAD_SubStickY(0)) >= 23) {
-			datapointModifier = PAD_SubStickY(0) / 12;
-			// datapointModifier needs to be even to make zooming work properly...
-			if (datapointModifier < 0 && abs(datapointModifier) % 2 == 1) {
-				datapointModifier--;
-			}
-			if (datapointModifier > 0 && datapointModifier % 2 == 1) {
-				datapointModifier++;
-			}
-		}
-		
 		int scrollModifier = 0;
-		// scrolling needs to change rate based on visible number of samples
-		if (abs(PAD_SubStickX(0)) >= 23) {
-			scrollModifier = ((graphVisibleDatapoints / 250) + 1) * (PAD_SubStickX(0) / 25);
-		}
 		
-		if (*held & PAD_TRIGGER_L) {
-			datapointModifier /= 8;
+		// modify zoom
+		if (cStickY) {
+			datapointModifier = (cStickY * baseChange);
+
+			// below a certain point, we can't zoom at integer units, so we round to the lowest value we can
+			if (graphVisibleDatapoints <= 50 || datapointModifier == 0) {
+				if (cStickY < 0) {
+					datapointModifier = -1;
+				} else {
+					datapointModifier = 1;
+				}
+			}
+			
 			// datapointModifier needs to be even to make zooming work properly...
 			if (datapointModifier < 0 && abs(datapointModifier) % 2 == 1) {
 				datapointModifier--;
@@ -589,41 +588,38 @@ void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 			if (datapointModifier > 0 && datapointModifier % 2 == 1) {
 				datapointModifier++;
 			}
+		}
+		
+		// modify scrolling
+		if (cStickX) {
+			scrollModifier = (cStickX * baseChange);
 			
-			if (PAD_SubStickX(0) >= 23) {
-				scrollModifier = 1;
-			} else if (PAD_SubStickX(0) <= -23) {
-				scrollModifier = -1;
-			}
-			
-			if (abs(scrollModifier) > 0) {
-				graphScrollOffset += scrollModifier;
-			}
-			if (abs(datapointModifier) > 0) {
-				graphVisibleDatapoints -= datapointModifier;
-				if (graphVisibleDatapoints > 25) {
-					graphScrollOffset += (datapointModifier / 2);
+			// below a certain point, we can't scroll at integer units, so we round to the lowest value we can
+			if (graphVisibleDatapoints <= 50) {
+				if (cStickX < 0) {
+					scrollModifier = -1;
+				} else {
+					scrollModifier = 1;
 				}
-			}
-		} else {
-			if (*held & PAD_TRIGGER_R) {
-				datapointModifier *= 2;
-				scrollModifier *= 2;
-			}
-			if (datapointModifier) {
-				graphVisibleDatapoints -= datapointModifier;
-				if (graphVisibleDatapoints > 25) {
-					graphScrollOffset += (datapointModifier / 2);
-				}
-			}
-			if (scrollModifier) {
-				graphScrollOffset += scrollModifier;
 			}
 		}
+		
+		if (datapointModifier) {
+			graphVisibleDatapoints -= datapointModifier;
+			// offset the scroll by half of zoom, so that we 'zoom' from the center
+			if (graphVisibleDatapoints > 25) {
+				graphScrollOffset += (datapointModifier) / 2;
+			}
+		}
+		if (scrollModifier) {
+			graphScrollOffset += scrollModifier;
+		}
+	
 	} else {
 		graphScrollOffset = 0;
 		graphVisibleDatapoints = graphMaxVisibleDatapoints;
 	}
+	
 	
 	// bounds check
 	if (graphVisibleDatapoints < 25) {
