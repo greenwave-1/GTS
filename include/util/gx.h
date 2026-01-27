@@ -90,8 +90,7 @@ void setupGX(GXRModeObj *rmode);
 // we use this to mabe a "subwindow" for a scrolling text box
 // see startScrollingPrint() and endScrollingPrint() in print.c
 // screen coordinates will be shifted to match the scissorbox
-// TODO: extend this to allow setting width
-void setSubwindowScissorBox(int top, int bottom);
+void setSubwindowScissorBox(int x1, int y1, int x2, int y2);
 // return scissor box to normal, mainly used after setSubwindowScissorBox()
 void restoreNormalScissorBox();
 

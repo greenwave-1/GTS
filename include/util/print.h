@@ -49,7 +49,7 @@ void drawFontButton(enum FONT_BUTTON_LIST button);
 //void printStrButton(struct INSTRUCTION_ENTRY list[]);
 
 void resetScrollingPrint();
-void startScrollingPrint(int top, int bottom);
+void startScrollingPrint(int x1, int y1, int x2, int y2);
 void endScrollingPrint();
 
 void printEllipse(const int counter, const int interval);

@@ -279,14 +279,14 @@ void setupGX(GXRModeObj *rmode) {
 	
 	// setup our camera at the origin
 	// looking down the -z axis with y up
-	guVector cam = {0.0F, 0.0F, 0.0F},
+	guVector cam = {0.0F, 0.0F, 10.0F},
 			up = {0.0F, 1.0F, 0.0F},
 			look = {0.0F, 0.0F, -1.0F};
 	guLookAt(view, &cam, &up, &look);
 	
 	// setup projection matrix
 	// orthographic projection, z distance doesn't affect apparent size
-	guOrtho(projectionMatrix, 0, rmodePtr->viHeight, 0, rmodePtr->viWidth, 0.1f, 300.0f);
+	guOrtho(projectionMatrix, 0, rmodePtr->viHeight, 0, rmodePtr->viWidth, 10.0f, 300.0f);
 	
 	// perspecive matrix, z distance affects apparent size
 	//guPerspective(projectionMatrix, 45, (float) rmodePtr->viWidth / rmodePtr->viHeight, 0.1f, 300.0f);
@@ -297,10 +297,11 @@ void setupGX(GXRModeObj *rmode) {
 // we use this to mabe a "subwindow" for a scrolling text box
 // see startScrollingPrint() and endScrollingPrint() in print.c
 // TODO: extend this to allow setting width
-void setSubwindowScissorBox(int top, int bottom) {
-	drawBox(5, top, 635, bottom, GX_COLOR_WHITE);
-	GX_SetScissor(0, 0, 640, bottom - top);
-	GX_SetScissorBoxOffset(0, -1 * top);
+void setSubwindowScissorBox(int x1, int y1, int x2, int y2) {
+	setDepthForDrawCall(3);
+	drawBox(x1, y1, x2, y2, GX_COLOR_WHITE);
+	GX_SetScissor(0, 0, x2 - x1, y2 - y1);
+	GX_SetScissorBoxOffset(-1 * x1, -1 * y1);
 }
 
 // return scissor box to normal, mainly used after setSubwindowScissorBox()

@@ -25,6 +25,8 @@ static char strBuffer[1000];
 static int cursorX = 0;
 static int cursorY = 0;
 
+static int screenWidth = 640;
+
 // z depth
 // TODO: z depth for specific elements (font, quads, lines, etc) need to be standardized
 static int cursorZ = -4;
@@ -64,7 +66,7 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 		texturePosY1 = (charIndex / 10) * 16;
 		
 		// go to a "new line" if drawing would put us outside the safe area, or if newline
-		if (cursorX + 10 > 640 - (PRINT_PADDING_HORIZONTAL * 2) || *curr == '\n') {
+		if (cursorX + 10 > screenWidth - (PRINT_PADDING_HORIZONTAL * 2) || *curr == '\n') {
 			// draw our background color, if applicable
 			if (!draw) {
 				drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 2,
@@ -182,7 +184,7 @@ void printStrBox(const GXColor box_color, const char* str, ...) {
 	int length = strlen(subString);
 	
 	// we don't do anything if we would draw off the screen
-	if (cursorX + PRINT_PADDING_HORIZONTAL + 2 + (length * 10) <= 640 - (PRINT_PADDING_HORIZONTAL * 2)) {
+	if (cursorX + PRINT_PADDING_HORIZONTAL + 2 + (length * 10) <= screenWidth - (PRINT_PADDING_HORIZONTAL * 2)) {
 		setDepth(cursorZ);
 		GX_SetLineWidth(8, GX_TO_ZERO);
 		drawBox(cursorX + PRINT_PADDING_HORIZONTAL - 5, cursorY + PRINT_PADDING_VERTICAL - 4,
@@ -199,7 +201,7 @@ void printStrBox(const GXColor box_color, const char* str, ...) {
 
 void drawFontButton(enum FONT_BUTTON_LIST button) {
 	cursorX += 4;
-	if (cursorX + 18 > 640 - (PRINT_PADDING_HORIZONTAL * 2)) {
+	if (cursorX + 20 > screenWidth - (PRINT_PADDING_HORIZONTAL * 2)) {
 		advanceCursorLine();
 	}
 	
@@ -218,18 +220,24 @@ static int scrollModifier = 0;
 static int scrollBottomBound = 0;
 
 static int scrollTop = 0, scrollBottom = 480;
+static int scrollXMid = 320;
 
 void resetScrollingPrint() {
 	scrollingOffset = 0;
 	scrollBottomBound = 0;
 	scrollTop = 0;
 	scrollBottom = 480;
+	scrollXMid = 320;
+	screenWidth = 640;
 }
 
-void startScrollingPrint(int top, int bottom) {
+void startScrollingPrint(int x1, int y1, int x2, int y2) {
 	// set bounds
-	scrollTop = top;
-	scrollBottom = bottom;
+	scrollTop = y1;
+	scrollBottom = y2;
+	
+	screenWidth = x2 - x1;
+	scrollXMid = x1 + (screenWidth / 2);
 	// we restore the old xy after scrolling print is done
 	tempX = cursorX;
 	tempY = cursorY;
@@ -264,7 +272,8 @@ void startScrollingPrint(int top, int bottom) {
 	
 	// move cursor to top left of screen, subtract vertical padding so we actually start printing at y=~0
 	setCursorXY(0, scrollingOffset - PRINT_PADDING_VERTICAL + 5);
-	setSubwindowScissorBox(top, bottom);
+	setSubwindowScissorBox(x1, y1, x2, y2);
+	setCursorDepth(2);
 }
 
 void endScrollingPrint() {
@@ -291,16 +300,24 @@ void endScrollingPrint() {
 	// set everything back to normal
 	restoreNormalScissorBox();
 	setCursorXY(tempX, tempY);
+	screenWidth = 640;
 	
 	// draw indicator for if there's more text in either direction
 	// TODO: generalize this in gx.c with drawTri() or something...
 	//  ideally, no raw drawing should be done outside of gx.c unless necessary
-	if (scrollingOffset < 0) {
-		drawTri(310, scrollTop - 4, 330, scrollTop - 4, 320, scrollTop - 10, GX_COLOR_WHITE);
+	if (scrollingOffset < 0 && scrollBottomBound != 0) {
+		drawTri(scrollXMid - 10, scrollTop - 4,
+				scrollXMid + 10, scrollTop - 4,
+				scrollXMid, scrollTop - 10,
+				GX_COLOR_WHITE);
 	}
-	if (scrollingOffset > scrollBottomBound) {
-		drawTri(310, scrollBottom + 4, 330, scrollBottom + 4, 320, scrollBottom + 10, GX_COLOR_WHITE);
+	if (scrollingOffset > scrollBottomBound && scrollBottomBound != 0) {
+		drawTri(scrollXMid - 10, scrollBottom + 4,
+				scrollXMid + 10, scrollBottom + 4,
+				scrollXMid, scrollBottom + 10,
+				GX_COLOR_WHITE);
 	}
+	restorePrevCursorDepth();
 }
 
 void printEllipse(const int counter, const int interval) {
