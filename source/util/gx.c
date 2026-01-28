@@ -286,7 +286,7 @@ void setupGX(GXRModeObj *rmode) {
 	
 	// setup projection matrix
 	// orthographic projection, z distance doesn't affect apparent size
-	guOrtho(projectionMatrix, 0, rmodePtr->viHeight, 0, rmodePtr->viWidth, 10.0f, 300.0f);
+	guOrtho(projectionMatrix, 0, rmodePtr->viHeight, 0, rmodePtr->viWidth, 0.1f, 300.0f);
 	
 	// perspecive matrix, z distance affects apparent size
 	//guPerspective(projectionMatrix, 45, (float) rmodePtr->viWidth / rmodePtr->viHeight, 0.1f, 300.0f);

@@ -37,12 +37,16 @@ static void advanceCursorLine() {
 	cursorY += 15 + LINE_SPACING;
 }
 
+static bool allowWordWrap = false;
+static int lastSpaceListIndex = 0;
+static const char* lastSpaceList[50] = { NULL };
+
 // this is almost directly adapted from the provided romfont example, but modified for our specific fontsheet,
 // as well as support for background colors
 // TODO: this might not respect a call to setDepthForDrawCall(), investigate...
-static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bgColor) {
+static void handleString(bool draw, GXColor bgColor, GXColor fgColor) {
 	// pointer for iterating over string
-	const char* curr = str;
+	const char* curr = strBuffer;
 	
 	// stores size of a given character from the font
 	int texturePosX1, texturePosY1;
@@ -52,10 +56,20 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 	// "working" values, used to determine if we need to draw a background color
 	int workingX = startingX, workingY = startingY;
 	
+	int workingSpaceIndex = 0;
+	
 	// loop until we hit a null terminator
 	for ( ; *curr != '\0'; curr++) {
 		// lower than space, larger than tilde, and not newline
 		if((*curr < 0x20 && *curr != '\n') || *curr > 0x7e) {
+			continue;
+		}
+		
+		// move to new line if needed
+		if (draw && curr == lastSpaceList[workingSpaceIndex] && workingSpaceIndex != lastSpaceListIndex && allowWordWrap) {
+			cursorY += 15 + LINE_SPACING;
+			cursorX = 0;
+			workingSpaceIndex++;
 			continue;
 		}
 		
@@ -67,6 +81,16 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 		
 		// go to a "new line" if drawing would put us outside the safe area, or if newline
 		if (cursorX + 10 > screenWidth - (PRINT_PADDING_HORIZONTAL * 2) || *curr == '\n') {
+			// move cursor back to the last 'space' char we encountered
+			if (*curr != ' ' && *curr != '\n' && !draw && allowWordWrap) {
+				// cursorX gets set to zero later, but this is for bg drawing if applicable
+				cursorX -= (10 * (curr - lastSpaceList[lastSpaceListIndex]));
+				// move current char back to last non-space char
+				curr = lastSpaceList[lastSpaceListIndex];
+				// we only increment here because _this_ space is the important one
+				lastSpaceListIndex++;
+			}
+			
 			// draw our background color, if applicable
 			if (!draw) {
 				drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 2,
@@ -76,9 +100,15 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 			cursorX = 0;
 			workingX = cursorX;
 			workingY = cursorY;
-			if (*curr == '\n') {
+			// advance cursor by one if newline or space
+			if (*curr == '\n' || (*curr == ' ' && allowWordWrap)) {
 				continue;
 			}
+		}
+		
+		// store last encountered space char
+		if (*curr == ' ' && !draw && allowWordWrap) {
+			lastSpaceList[lastSpaceListIndex] = curr;
 		}
 		
 		// determine real coordinates for drawing
@@ -111,34 +141,41 @@ static void handleString(const char* str, bool draw, GXColor fgColor, GXColor bg
 	}
 }
 
+// TODO: there's a better way to do this instead of calling handleString twice...
+static void handleStringPre(const GXColor bg_color, const GXColor fg_color) {
+	// reset word wrap index if needed
+	if (allowWordWrap) {
+		lastSpaceListIndex = 0;
+	}
+	
+	// setup
+	changeLoadedTexmap(TEXMAP_FONT);
+	setDepth(cursorZ);
+	
+	// do a first loop to draw background color if needed
+	if (bg_color.a != 0x00) {
+		handleString(false, bg_color, fg_color);
+	}
+	handleString(true, bg_color, fg_color);
+	restorePrevDepth();
+}
+
 void printStr(const char* str, ...) {
 	va_list list;
 	va_start(list, str);
 	vsnprintf(strBuffer, 999, str, list);
-	changeLoadedTexmap(TEXMAP_FONT);
-	setDepth(cursorZ);
-	handleString(strBuffer, true, GX_COLOR_WHITE, GX_COLOR_NONE);
 	va_end(list);
-	restorePrevDepth();
+	
+	handleStringPre(GX_COLOR_NONE, GX_COLOR_WHITE);
 }
 
-// TODO: there's a better way to do this instead of calling handleString twice...
-// TODO: for some reason this breaks drawing if immediately followed by drawing using VTX_TEX_NOCOLOR, why?
-// specifically, coordinateviewer.c for the circle breaks in that situation if it uses VTX_TEX_NOCOLOR...
 void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* str, ...) {
 	va_list list;
 	va_start(list, str);
 	vsnprintf(strBuffer, 999, str, list);
-	changeLoadedTexmap(TEXMAP_FONT);
-	setDepth(cursorZ);
-	// only do background if it isn't transparent
-	// we don't actually do transparency on bg stuff, but its useful for this check...
-	if (bg_color.a != 0x00) {
-		handleString(strBuffer, false, fg_color, bg_color);
-	}
-	handleString(strBuffer, true, fg_color, bg_color);
 	va_end(list);
-	restorePrevDepth();
+	
+	handleStringPre(bg_color, fg_color);
 }
 
 /*
@@ -177,26 +214,25 @@ void printStrBox(const GXColor box_color, const char* str, ...) {
 	va_list list;
 	va_start(list, str);
 	vsnprintf(strBuffer, 999, str, list);
-	changeLoadedTexmap(TEXMAP_FONT);
+	va_end(list);
 	
-	// draw box behind text
+	// get text before a newline, if encountered
 	char *subString = strtok(strBuffer, "\n");
 	int length = strlen(subString);
 	
 	// we don't do anything if we would draw off the screen
 	if (cursorX + PRINT_PADDING_HORIZONTAL + 2 + (length * 10) <= screenWidth - (PRINT_PADDING_HORIZONTAL * 2)) {
-		setDepth(cursorZ);
 		GX_SetLineWidth(8, GX_TO_ZERO);
+		
+		setDepthForDrawCall(cursorZ);
 		drawBox(cursorX + PRINT_PADDING_HORIZONTAL - 5, cursorY + PRINT_PADDING_VERTICAL - 4,
 		             cursorX + PRINT_PADDING_HORIZONTAL + (length * 10) + 2, cursorY + PRINT_PADDING_VERTICAL + 16,
 					 box_color);
+		
 		GX_SetLineWidth(12, GX_TO_ZERO);
 		
-		handleString(subString, true, GX_COLOR_WHITE, GX_COLOR_BLACK);
-		restorePrevDepth();
+		handleStringPre(GX_COLOR_BLACK, GX_COLOR_WHITE);
 	}
-	
-	va_end(list);
 }
 
 void drawFontButton(enum FONT_BUTTON_LIST button) {
@@ -326,6 +362,7 @@ void printEllipse(const int counter, const int interval) {
 		printStr(".");
 		remainder--;
 	}
+	lastSpaceListIndex = 0;
 }
 
 static char lineSpinArr[] = { '/', '-', '\\', '|' };
@@ -348,6 +385,7 @@ void printSpinningLineInterval(const int waitInterval) {
 		lineSpinArrIndex %= 4;
 		intervalCounter = currInterval;
 	}
+	lastSpaceListIndex = 0;
 }
 
 void resetCursor() {
@@ -373,4 +411,16 @@ void setCursorDepth(int z) {
 
 void restorePrevCursorDepth() {
 	cursorZ = cursorPrevZ;
+}
+
+void setWordWrap(bool enable) {
+	allowWordWrap = enable;
+}
+
+
+bool swapButtonTex() {
+	changeButtons++;
+	changeButtons %= 3;
+	
+	return (changeButtons != 1);
 }
