@@ -90,7 +90,7 @@ LDFLAGS_POST :=		-Wl,-Map,$(notdir $@).map
 
 # external libraries that we might link
 LIBS_PRE =			-lfat
-LIBS_POST:=			-lm
+LIBS_POST =			-lm
 
 # remote gdb debugging
 # we need to link -ldb for this target
@@ -98,10 +98,11 @@ ifdef REMOTEGDB
 	LIBS_PRE +=		-ldb
 endif
 
-# external libraries folder
+# external libraries folder (self-compiled stuff)
+# stuff specific to devkitpro (portlibs) should be specified in LIBDIRS_DKP or LIBDIRS_PKGCONF
 # "must be the top level containing include and lib"
 # not used in GTS
-LIBDIRS :=
+LIBDIRS_LOCAL :=
 
 
 # wiiload target
@@ -168,9 +169,42 @@ endif
 
 #----------------------------------------
 
-# these are platform specific, so they have to be set here...
-export DEPSDIR	:=	$(PROJDIR)/$(BUILD_DIR)
-INCLUDE	+= -I$(PROJDIR)/$(BUILD_DIR) -I$(LIBOGC_INC)
+# pkg-config link flags
+# example:
+# LIBS_PRE += 		$(shell powerpc-eabi-pkg-config --libs freetype2)
+# appends:
+# -> -L/opt/devkitpro/portlibs/ppc/lib -lfreetype -lbz2 -lpng16 -lz -lbrotlidec -lbrotlicommon -lm
+LIBS_PRE +=
+
+# external libraries folder (stuff from devkitpro/extremscorner repos)
+# "must be the top level containing include and lib"
+# basically, portlibs
+#LIBDIRS_DKP := 	$(PORTLIBS)
+LIBDIRS_DKP :=
+
+# pkg-config includes
+# some packages will have a specific subfolder that needs to be included
+# as an example, freetype2 includes $(PORTLIBS)/include/freetype2 and $(PORTLIBS)/include/libpng16
+# these would not be included by just including $(PORTLIBS)
+# example:
+# LIBDIRS_PKGCONF :=		$(shell powerpc-eabi-pkg-config --cflags-only-I freetype2)
+# gives:
+# -> -I/opt/devkitpro/portlibs/ppc/include/freetype2 -I/opt/devkitpro/portlibs/ppc/include -I/opt/devkitpro/portlibs/ppc/include/libpng16
+LIBDIRS_PKGCONF :=
+
+# pkg-config other flags
+# stuff like -DSOMEVAR that should be passed
+# example:
+# CFLAGS_POST +=		$(shell powerpc-eabi-pkg-config --cflags-only-other freetype2)
+# appends:
+# -> -DWITH_GZFILEOP
+CFLAGS_POST +=
+
+
+export DEPSDIR :=	$(PROJDIR)/$(BUILD_DIR)
+
+# pkgconfig is not in the foreach loop because pkgconfig alraedy links to the needed /include
+INCLUDE	+= -I$(PROJDIR)/$(BUILD_DIR) -I$(LIBOGC_INC) $(foreach dir,$(LIBDIRS_DKP),-I$(dir)/include) $(LIBDIRS_PKGCONF)
 
 # these shouldn't be modified
 # use _PRE, _POST, and SYSTEM_LIBS above
@@ -186,6 +220,10 @@ ifeq ($(strip $(CPPFILES)),)
 else
 	export LD	:=	$(CXX)
 endif
+
+# just combine all libdirs for use below
+# pkgconfig stuff is not included here because pkgconfig ones might already have directly linked to the needed /lib
+LIBDIRS := $(LIBDIRS_LOCAL) $(LIBDIRS_DKP)
 
 # uses LIBOGC_LIB, so needs to be in here
 export LIBPATHS	:=	-L$(LIBOGC_LIB) $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
@@ -258,7 +296,7 @@ export HFILES := $(addsuffix .h,$(subst .,_,$(BINFILES)))
 
 # build a list of include paths
 export INCLUDE	=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
-			$(foreach dir,$(LIBDIRS),-I$(dir)/include)
+			$(foreach dir,$(LIBDIRS_LOCAL),-I$(dir)/include)
 
 # pass the root folder of the project to the next run
 # needed since we go to another directory (the build directory), but still need to reference stuff here
