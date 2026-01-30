@@ -1012,6 +1012,11 @@ void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 	}
 }
 
+enum TEX_ROTATE tempRotation = ROTATE_0;
+void rotateTextureForDraw(enum TEX_ROTATE rotation) {
+	tempRotation = rotation;
+}
+
 void drawTextureFull(int x1, int y1, GXColor color) {
 	int width = 0, height = 0;
 	getCurrentTexmapDims(&width, &height);
@@ -1028,8 +1033,24 @@ void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color) {
 	int width = 0, height = 0;
 	getCurrentTexmapDims(&width, &height);
 	
+	// list of coordinates for each vertex, done this way so that we can iterate over the list to 'rotate'
+	int vectorPairList[][2] = { { x1, y1 },
+	                           { x2, y1 },
+	                           { x2, y2 },
+	                           { x1, y2 } };
+	
 	GX_Begin(GX_QUADS, VTXFMT_TEXTURES, 4);
 	
+	for (int i = 0; i < 4; i++) {
+		int x = vectorPairList[(i + tempRotation) % 4][0];
+		int y = vectorPairList[(i + tempRotation) % 4][1];
+		GX_Position3s16(x, y, zDepth);
+		GX_Color4u8(color.r, color.g, color.b, alphaValue);
+		int texX = (i == 0 || i == 3) ? 0 : width;
+		int texY = i >= 2 ? height : 0;
+		GX_TexCoord2s16(texX, texY);
+	}
+	/*
 	GX_Position3s16(x1, y1, zDepth);
 	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	GX_TexCoord2s16(0, 0);
@@ -1044,7 +1065,7 @@ void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color) {
 	
 	GX_Position3s16(x1, y2, zDepth);
 	GX_Color4u8(color.r, color.g, color.b, alphaValue);
-	GX_TexCoord2s16(0, height);
+	GX_TexCoord2s16(0, height);*/
 	
 	GX_End();
 	
@@ -1054,14 +1075,36 @@ void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color) {
 	if (resetAlphaAfter) {
 		restorePrevAlphaFromDrawCall();
 	}
+	
+	tempRotation = ROTATE_0;
 }
 
 // a bit ugly, probably a better way to do this...
 void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, int ty2, GXColor color) {
 	updateVtxDesc(VTX_TEXTURES, GX_MODULATE);
+	
+	// list of coordinates for each vertex, done this way so that we can iterate over the list to 'rotate'
+	int vectorPairList[][2] = { { x1, y1 },
+	                            { x2, y1 },
+	                            { x2, y2 },
+	                            { x1, y2 } };
+	// same as above, but for texture coordinates
+	// this is done so that we don't have to do another check in the for loop
+	int textureCoordPairList[][2] = { { tx1, ty1 },
+	                            { tx2, ty1 },
+	                            { tx2, ty2 },
+	                            { tx1, ty2 } };
 
 	GX_Begin(GX_QUADS, VTXFMT_TEXTURES, 4);
 	
+	for (int i = 0; i < 4; i++) {
+		int x = vectorPairList[(i + tempRotation) % 4][0];
+		int y = vectorPairList[(i + tempRotation) % 4][1];
+		GX_Position3s16(x, y, zDepth);
+		GX_Color4u8(color.r, color.g, color.b, alphaValue);
+		GX_TexCoord2s16(textureCoordPairList[i][0], textureCoordPairList[i][1]);
+	}
+	/*
 	GX_Position3s16(x1, y1, zDepth);
 	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	GX_TexCoord2s16(tx1, ty1);
@@ -1077,7 +1120,7 @@ void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, i
 	GX_Position3s16(x1, y2, zDepth);
 	GX_Color4u8(color.r, color.g, color.b, alphaValue);
 	GX_TexCoord2s16(tx1, ty2);
-	
+	*/
 	GX_End();
 	
 	if (resetZDepthAfter) {
@@ -1086,6 +1129,7 @@ void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, i
 	if (resetAlphaAfter) {
 		restorePrevAlphaFromDrawCall();
 	}
+	tempRotation = ROTATE_0;
 }
 
 #ifndef NO_DATE_CHECK

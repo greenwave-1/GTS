@@ -26,7 +26,16 @@
 // enum for a given button picture when printing
 enum FONT_BUTTON_LIST {
 	FONT_A, FONT_B, FONT_X, FONT_Y, FONT_START, FONT_L, FONT_R, FONT_Z,
-	FONT_DPAD, FONT_DPAD_UP, FONT_DPAD_LEFT, FONT_DPAD_DOWN, FONT_DPAD_RIGHT, FONT_STICK_A, FONT_STICK_C, FONT_NONE = -1 };
+	FONT_DPAD, FONT_DPAD_OVERLAY, FONT_STICK_A, FONT_STICK_C, FONT_NONE = -1
+};
+
+// for directions, bitwise or'd together do indicate direction, if any
+// see fontButtonSetDpadDirections()
+enum FONT_BUTTON_DPAD_LIST {
+	FONT_DPAD_NONE = 0b00,
+	FONT_DPAD_UP = 0b0001, FONT_DPAD_RIGHT = 0b0010,
+	FONT_DPAD_DOWN = 0b0100, FONT_DPAD_LEFT = 0b1000
+};
 
 /*
 // struct for custom printing, used in instruction pages
@@ -44,6 +53,9 @@ void printStr(const char* str, ...);
 void printStrColor(const GXColor bg_color, const GXColor fg_color, const char* str, ...);
 void printStrBox(const GXColor box_color, const char* str, ...);
 
+// similar to printEllipse and printSpinningLine, but for dpad direction indicators
+void fontButtonFlashIncrement(int *counter, int increment);
+void fontButtonSetDpadDirections(int selection);
 void drawFontButton(enum FONT_BUTTON_LIST button);
 
 //void printStrButton(struct INSTRUCTION_ENTRY list[]);
@@ -52,6 +64,7 @@ void resetScrollingPrint();
 void startScrollingPrint(int x1, int y1, int x2, int y2);
 void endScrollingPrint();
 
+// TODO: use int pointer and have this function do the incrementing
 void printEllipse(const int counter, const int interval);
 void printSpinningLine();
 void printSpinningLineInterval(const int waitInterval);

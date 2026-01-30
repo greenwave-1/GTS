@@ -153,6 +153,9 @@ void getGraphDisplayedInfo(int *scrollOffset, int *visibleSamples);
 // scaling is handled in drawGraph(), so to get information about the graph, this is needed
 void getGraphStats(uint64_t *uSecs, int8_t *minX, int8_t *minY, int8_t *maxX, int8_t *maxY, bool *yMag);
 
+// set temp rotation for a texture draw
+enum TEX_ROTATE { ROTATE_0, ROTATE_90, ROTATE_180, ROTATE_270 };
+void rotateTextureForDraw(enum TEX_ROTATE rotation);
 // draws full texture without scaling it (texture size to screen space used is 1:1)
 void drawTextureFull(int x1, int y1, GXColor color);
 // draws full texture, scaled to fit the specified bounds

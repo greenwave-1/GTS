@@ -235,7 +235,25 @@ void printStrBox(const GXColor box_color, const char* str, ...) {
 	}
 }
 
+static bool dpadFlash = false;
+void fontButtonFlashIncrement(int *counter, int increment) {
+	(*counter)++;
+	if (*counter >= increment) {
+		dpadFlash = !dpadFlash;
+		*counter = 0;
+	}
+}
+
+static int dpadDirections = FONT_DPAD_NONE;
+void fontButtonSetDpadDirections(int selection) {
+	dpadDirections = selection;
+}
+
 void drawFontButton(enum FONT_BUTTON_LIST button) {
+	if (button == FONT_NONE) {
+		return;
+	}
+	
 	cursorX += 4;
 	if (cursorX + 20 > screenWidth - (PRINT_PADDING_HORIZONTAL * 2)) {
 		advanceCursorLine();
@@ -247,6 +265,55 @@ void drawFontButton(enum FONT_BUTTON_LIST button) {
 	drawSubTexture(cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL - 2,
 	               cursorX + PRINT_PADDING_HORIZONTAL + 18, cursorY + PRINT_PADDING_VERTICAL + 16,
 	               texX1, texY1, texX1 + 18, texY1 + 18, GX_COLOR_WHITE);
+	int texX1 = 20 * (button % 6);
+	int texY1 = 20 * (button / 6);
+	
+	drawSubTexture(cursorX + PRINT_PADDING_HORIZONTAL - 3, cursorY + PRINT_PADDING_VERTICAL - 2,
+	               cursorX + PRINT_PADDING_HORIZONTAL + 17, cursorY + PRINT_PADDING_VERTICAL + 18,
+	               texX1, texY1, texX1 + 20, texY1 + 20, GX_COLOR_WHITE);
+	
+	// draw dpad overlay if applicable
+	if (dpadDirections != FONT_DPAD_NONE && button == FONT_DPAD) {
+		// move texture to dpad overlay
+		texX1 += 20;
+		
+		// xy offsets for screenspace coordinates,
+		const int dpadScreenspaceOffset[][4] = {
+				{ 0, 0, 0, 0 },
+				{ 12, 0, 0, 12 },
+				{ 0, 12, 0, 12 },
+				{ 0, 0, -12, 12 }
+		};
+		
+		// four possible directions
+		// up -> right -> down -> left
+		for (int i = 0; i < 4; i++) {
+			// dpadDirections has directions or'd together, so continue to shift 1 to check each
+			if (dpadDirections & (1 << i)) {
+				// i matches the rotation directions, just use it:
+				// 0 (dont rotate) -> 90 -> 180 -> 270
+				rotateTextureForDraw((enum TEX_ROTATE) i);
+				
+				if (dpadFlash) {
+					drawSubTexture(cursorX + PRINT_PADDING_HORIZONTAL - 3 + dpadScreenspaceOffset[i][0],
+					               cursorY + PRINT_PADDING_VERTICAL - 2 + dpadScreenspaceOffset[i][1],
+					               cursorX + PRINT_PADDING_HORIZONTAL + 17 + dpadScreenspaceOffset[i][2],
+					               cursorY + PRINT_PADDING_VERTICAL + 6 + dpadScreenspaceOffset[i][3],
+					               texX1, texY1 + 20, texX1 + 20, texY1 + 12, GX_COLOR_WHITE);
+				} else {
+					drawSubTexture(cursorX + PRINT_PADDING_HORIZONTAL - 3 + dpadScreenspaceOffset[i][0],
+					               cursorY + PRINT_PADDING_VERTICAL - 2 + dpadScreenspaceOffset[i][1],
+					               cursorX + PRINT_PADDING_HORIZONTAL + 17 + dpadScreenspaceOffset[i][2],
+					               cursorY + PRINT_PADDING_VERTICAL + 6 + dpadScreenspaceOffset[i][3],
+					               texX1, texY1, texX1 + 20, texY1 + 8, GX_COLOR_WHITE);
+				}
+			}
+		}
+		
+		// unset after we're done
+		dpadDirections = FONT_DPAD_NONE;
+	}
+
 	cursorX += 24;
 }
 
