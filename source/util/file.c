@@ -22,8 +22,8 @@ static bool initSuccess = false, initAttempted = false;
 
 bool initFilesystem() {
 	if (!initAttempted) {
-		initSuccess = fatInitDefault();
 		initAttempted = true;
+		initSuccess = fatInitDefault();
 	}
 	return initSuccess;
 }

@@ -38,8 +38,8 @@ static struct tm * getCurrTimeInfo() {
 	return timeinfo;
 }
 
-bool forceDateSet = false;
-enum DATE_CHECK_LIST forcedDate = DATE_NONE;
+static bool forceDateSet = false;
+static enum DATE_CHECK_LIST forcedDate = DATE_NONE;
 
 void forceDate(enum DATE_CHECK_LIST dateToForce) {
 	forceDateSet = true;

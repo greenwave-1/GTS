@@ -250,16 +250,15 @@ bool menu_runMenu() {
 
 	// exit the program if start is pressed
 	if (*pressed & PAD_BUTTON_START && currentMenu == MAIN_MENU) {
-		printStr("Exiting...");
 		return true;
 	}
 	
 	// controller test lock stuff
 	else if (*held == PAD_BUTTON_START && (currentMenu == CONTROLLER_TEST || currentMenu == COORD_MAP) && !startHeldAfter) {
 		if (lockExitEnabled) {
-			printStr("Enabling exit, hold for 2 seconds");
+			printStr("Unlocking menu, hold for 2 seconds");
 		} else {
-			printStr("Disabling exit, hold for 2 seconds");
+			printStr("Locking menu, hold for 2 seconds");
 		}
 		printEllipse(startHeldCounter, 40);
 		
@@ -273,9 +272,7 @@ bool menu_runMenu() {
 
 	// does the user want to move back to the main menu?
 	// this shouldn't trigger when certain menus are currently recording an input
-	else if (*held == PAD_BUTTON_B && currentMenu != MAIN_MENU &&
-			!lockExitEnabled &&
-			!menu_plotButtonHasCaptureStarted()) {
+	else if (*held == PAD_BUTTON_B && currentMenu != MAIN_MENU && !lockExitEnabled) {
 
 		// give user feedback that they are holding the button
 		printStr("Moving back to main menu");
@@ -321,12 +318,13 @@ bool menu_runMenu() {
 			PAD_ControlMotor(0, PAD_MOTOR_STOP);
 			PAD_ControlMotor(3, PAD_MOTOR_STOP);
 		}
-
 	} else {
 		// change bottom message depending on what menu we are in
 		switch (currentMenu) {
 			case MAIN_MENU:
-				printStr("Press Start to exit.");
+				printStr("Press Start");
+				drawFontButton(FONT_START);
+				printStr("to exit.");
 				int col = 55 - (sizeof(VERSION_NUMBER));
 				if (col > 25) {
 					setCursorPos(22, col);
@@ -337,9 +335,15 @@ bool menu_runMenu() {
 			case COORD_MAP:
 			case CONTROLLER_TEST:
 				if (lockExitEnabled) {
-					printStr("Exiting disabled, hold Start to re-enable.");
+					printStr("Menu locked, hold Start");
+					drawFontButton(FONT_START);
+					printStr("to re-enable.");
 				} else {
-					printStr("Hold B to return to main menu, hold start to disable.");
+					printStr("Hold B");
+					drawFontButton(FONT_B);
+					printStr("to return to main menu, hold Start");
+					drawFontButton(FONT_START);
+					printStr("to lock.");
 				}
 				startHeldCounter = 0;
 				
@@ -347,13 +351,10 @@ bool menu_runMenu() {
 					startHeldAfter = false;
 				}
 				break;
-			case PLOT_BUTTON:
-				// don't print anything when exiting is disabled
-				if (menu_plotButtonHasCaptureStarted()) {
-					break;
-				}
 			default:
-				printStr("Hold B to return to main menu.");
+				printStr("Hold B");
+				drawFontButton(FONT_B);
+				printStr("to return to main menu.");
 				break;
 		}
 		bHeldCounter = 0;
@@ -364,47 +365,30 @@ bool menu_runMenu() {
 }
 
 // this is completely unnecessary, but it looks nice
-// this just draws the main menu as it would when exiting, no logic or anything
 // this allows for the effect of the menu 'fading out' when combined with drawing a quad in front of everything
-void runMenuVisual(bool showText) {
-	if (showText) {
-		resetCursor();
-		#ifndef NO_DATE_CHECK
-		// in case a future check doesn't want to print the text normally...
-		switch (date) {
-			case DATE_NICE:
-			case DATE_CMAS:
-				drawDateSpecial(date);
-				printStrColor(GX_COLOR_NONE, GX_COLOR_WHITE, "GCC Test Suite");
-				break;
-			case DATE_PM:
-				drawDateSpecial(date);
-			case DATE_NONE:
-			default:
-				printStrColor(GX_COLOR_BLACK, GX_COLOR_WHITE, "GCC Test Suite");
-				break;
-		}
-		#else
-		printStr("GCC Test Suite");
-		#endif
-		
-		if (mainMenuDraw) {
-			menu_mainMenuDraw();
-		}
-		
-		for (int i = 0; i < MENUITEMS_LEN; i++) {
-			setCursorPos(2 + i, 4);
-			printStr(menuItems[i]);
-		}
-		
-		setCursorPos(22, 0);
-		printStr("Exiting...");
-		
-	} else {
-		// draw bg if present
-		if (date == DATE_CMAS) {
+void runMenuVisual() {
+	resetCursor();
+	#ifndef NO_DATE_CHECK
+	// in case a future check doesn't want to print the text normally...
+	switch (date) {
+		case DATE_NICE:
+		case DATE_CMAS:
 			drawDateSpecial(date);
-		}
+			printStrColor(GX_COLOR_NONE, GX_COLOR_WHITE, "GCC Test Suite");
+			break;
+		case DATE_PM:
+			drawDateSpecial(date);
+		case DATE_NONE:
+		default:
+			printStrColor(GX_COLOR_BLACK, GX_COLOR_WHITE, "GCC Test Suite");
+			break;
+	}
+	#else
+	printStr("GCC Test Suite");
+	#endif
+	
+	if (mainMenuDraw) {
+		menu_mainMenuDraw();
 	}
 }
 

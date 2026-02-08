@@ -17,6 +17,5 @@ enum PLOT_BUTTON_STATE { BUTTON_DISPLAY, BUTTON_INPUT };
 
 void menu_plotButton();
 void menu_plotButtonEnd();
-bool menu_plotButtonHasCaptureStarted();
 
 #endif //GTS_PLOTBUTTON_H

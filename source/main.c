@@ -30,7 +30,7 @@ static GXRModeObj *rmode = NULL;
 
 static VIRetraceCallback cb;
 
-static char* resetMessage = "Reset button pressed, exiting...";
+static char* resetMessage = "Exiting...";
 
 void retraceCallback(uint32_t retraceCnt) {
 	setSamplingRate();
@@ -52,7 +52,7 @@ void retraceCallback(uint32_t retraceCnt) {
 
 #if defined(HW_RVL)
 // this is stupid, but makes the #ifdef in logic look a bit nicer
-static char* powerButtonMessage = "Power button pressed, shutting down...";
+static char* powerButtonMessage = "Shutting down...";
 
 static bool powerButtonPressed = false;
 void powerButtonCallback() {
@@ -170,6 +170,14 @@ int main(int argc, char **argv) {
 	#elifdef HW_DOL
 	debugLog("Running on GC");
 	#endif
+	
+	debugLog("argc: %d", argc);
+	
+	setAllowDuplicateMessages(true);
+	for (int i = 0; i < argc; i++) {
+		debugLog("argv[%d] @ 0x%x: %s", i, argv[i], argv[i]);
+	}
+	setAllowDuplicateMessages(false);
 	
 	#endif
 
@@ -323,12 +331,12 @@ int main(int argc, char **argv) {
 	// if using hard-coded strings, then either there would be repeat code, or you'd need two #if defined()
 	// to create a wii-only if-else
 	char* strPointer = resetMessage;
-	int exitMessageX = 15;
+	int exitMessageX = 26;
 	
 	#if defined(HW_RVL)
 	if (!normalExit) {
 		if (powerButtonPressed) {
-			exitMessageX = 12;
+			exitMessageX = 23;
 			strPointer = powerButtonMessage;
 		}
 	}
@@ -337,13 +345,11 @@ int main(int argc, char **argv) {
 	// hold for ~1 second, then fade over 15 frames
 	for (int i = 0; i < 75; i++) {
 		startDraw();
-		runMenuVisual(normalExit);
+		runMenuVisual();
 		
-		// display exit message if applicable
-		if (!normalExit) {
-			setCursorPos(10, exitMessageX);
-			printStr(strPointer);
-		}
+		// display exit message
+		setCursorPos(10, exitMessageX);
+		printStr(strPointer);
 		
 		// ~1 second has passed
 		if (i >= 60) {

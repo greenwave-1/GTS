@@ -596,18 +596,14 @@ void menu_plotButton() {
 void menu_plotButtonEnd() {
 	setSamplingRateNormal();
 	PAD_SetSamplingCallback(cb);
-	captureStart = false;
-	captureButtonsReleased = false;
-	if (!(*temp)->isRecordingReady) {
+	if (!(*temp)->isRecordingReady || captureStart) {
 		(*temp)->sampleEnd = 0;
 	}
+	captureStart = false;
+	captureButtonsReleased = false;
 	autoCaptureCounter = 0;
 	autoCapture = false;
 	pressed = NULL;
 	held = NULL;
 	menuState = BUTTON_SETUP;
-}
-
-bool menu_plotButtonHasCaptureStarted() {
-	return captureStart;
 }
