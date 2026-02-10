@@ -130,6 +130,11 @@ bool menu_runMenu() {
 		held = getButtonsHeldPtr();
 	}
 	
+	// we're gonna wait for init to finish, graphics flash for some reason if we don't
+	if (menuInit != MENU_POST_INIT) {
+		return false;
+	}
+	
 	resetCursor();
 	
 	// read inputs and origin status
