@@ -95,7 +95,7 @@ void menu_continuousWaveform() {
 			printStr("A to freeze. Y to toggle.");
 			
 			if (cState == INPUT_LOCK) {
-				setCursorPos(2, 28);
+				setCursorPos(2, 25);
 				printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
 			}
 			
@@ -129,10 +129,9 @@ void menu_continuousWaveform() {
 				
 				setCursorPos(21,0);
 				if (cState == INPUT_LOCK) {
-					printStr("Start, End: (%d -> %d), %d total",
-					         dataScrollOffset,
-					         dataScrollOffset + visibleDatapoints,
-					         visibleDatapoints);
+					setCursorPos(3, 16);
+					printStr("%4u Samples, (%4u/%4u)", visibleDatapoints, dataScrollOffset,
+					         dataScrollOffset + visibleDatapoints);
 				}
 				
 				// checking for input

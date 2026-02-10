@@ -17,7 +17,7 @@
 #include "util/gx.h"
 
 // padding on both sides that print funtion won't touch
-#define PRINT_PADDING_HORIZONTAL 10
+#define PRINT_PADDING_HORIZONTAL 40
 #define PRINT_PADDING_VERTICAL 40
 
 // number of pixels between given columns
@@ -76,5 +76,6 @@ void setCursorDepth(int z);
 void restorePrevCursorDepth();
 void setWordWrap(bool enable);
 
+int swapButtonTex();
 
 #endif //GTS_PRINT_H

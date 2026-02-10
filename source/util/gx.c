@@ -286,7 +286,7 @@ void setupGX(GXRModeObj *rmode) {
 	
 	// setup projection matrix
 	// orthographic projection, z distance doesn't affect apparent size
-	guOrtho(projectionMatrix, 0, rmodePtr->viHeight, 0, rmodePtr->viWidth, 0.1f, 300.0f);
+	guOrtho(projectionMatrix, 0, rmodePtr->efbHeight, 0, rmodePtr->fbWidth, 0.1f, 300.0f);
 	
 	// perspecive matrix, z distance affects apparent size
 	//guPerspective(projectionMatrix, 45, (float) rmodePtr->viWidth / rmodePtr->viHeight, 0.1f, 300.0f);
@@ -1181,8 +1181,8 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 			sizeOfQuads = 144 / 6;
 			setDepth(-10);
 			for (int i = 0; i < 6; i++) {
-				drawSolidBox(5 + (sizeOfQuads * i), 35,
-				                  9 + (sizeOfQuads * (i + 1)), 58,
+				drawSolidBox(35 + (sizeOfQuads * i), 35,
+				                  39 + (sizeOfQuads * (i + 1)), 58,
 				                  (GXColor) {colorList[i][0], colorList[i][1], colorList[i][2], 0xFF} );
 			}
 			restorePrevDepth();

@@ -37,6 +37,10 @@ static void advanceCursorLine() {
 	cursorY += 15 + LINE_SPACING;
 }
 
+static int changeButtons = 0;
+
+static int workingHorizontalPadding = PRINT_PADDING_HORIZONTAL;
+
 static bool allowWordWrap = false;
 static int lastSpaceListIndex = 0;
 static const char* lastSpaceList[50] = { NULL };
@@ -80,7 +84,7 @@ static void handleString(bool draw, GXColor bgColor, GXColor fgColor) {
 		texturePosY1 = (charIndex / 10) * 16;
 		
 		// go to a "new line" if drawing would put us outside the safe area, or if newline
-		if (cursorX + 10 > screenWidth - (PRINT_PADDING_HORIZONTAL * 2) || *curr == '\n') {
+		if (cursorX + 10 > screenWidth - (workingHorizontalPadding * 2) || *curr == '\n') {
 			// move cursor back to the last 'space' char we encountered
 			if (*curr != ' ' && *curr != '\n' && !draw && allowWordWrap) {
 				// cursorX gets set to zero later, but this is for bg drawing if applicable
@@ -92,9 +96,9 @@ static void handleString(bool draw, GXColor bgColor, GXColor fgColor) {
 			}
 			
 			// draw our background color, if applicable
-			if (!draw) {
-				drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 2,
-			       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 15, bgColor);
+			if (!draw && !allowWordWrap) {
+				drawSolidBox(workingX + workingHorizontalPadding - 2, workingY + PRINT_PADDING_VERTICAL - 2,
+			       cursorX + workingHorizontalPadding, cursorY + PRINT_PADDING_VERTICAL + 15, bgColor);
 			}
 			cursorY += 15 + LINE_SPACING;
 			cursorX = 0;
@@ -113,7 +117,7 @@ static void handleString(bool draw, GXColor bgColor, GXColor fgColor) {
 		
 		// determine real coordinates for drawing
 		if (draw) {
-			int quadX1 = cursorX + PRINT_PADDING_HORIZONTAL;
+			int quadX1 = cursorX + workingHorizontalPadding;
 			int quadY1 = cursorY + PRINT_PADDING_VERTICAL;
 			int quadX2 = quadX1 + 8;
 			int quadY2 = quadY1 + 15;
@@ -131,9 +135,9 @@ static void handleString(bool draw, GXColor bgColor, GXColor fgColor) {
 		// advance cursor
 		cursorX += 10;
 	}
-	if (workingX != cursorX && !draw) {
-		drawSolidBox(workingX + PRINT_PADDING_HORIZONTAL - 2, workingY + PRINT_PADDING_VERTICAL - 2,
-		       cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL + 15, bgColor);
+	if (workingX != cursorX && !draw && !allowWordWrap) {
+		drawSolidBox(workingX + workingHorizontalPadding - 2, workingY + PRINT_PADDING_VERTICAL - 2,
+		       cursorX + workingHorizontalPadding, cursorY + PRINT_PADDING_VERTICAL + 15, bgColor);
 	}
 	if (!draw) {
 		cursorX = startingX;
@@ -153,7 +157,7 @@ static void handleStringPre(const GXColor bg_color, const GXColor fg_color) {
 	setDepth(cursorZ);
 	
 	// do a first loop to draw background color if needed
-	if (bg_color.a != 0x00) {
+	if (bg_color.a != 0x00 || allowWordWrap) {
 		handleString(false, bg_color, fg_color);
 	}
 	handleString(true, bg_color, fg_color);
@@ -198,7 +202,7 @@ void printStrButton(struct INSTRUCTION_ENTRY list[]) {
 			// this _technically_ is more repeat code than necessary, but it makes it much clearer for what's happening
 			if (!currEntry.printInline) {
 				advanceCursorLine();
-				drawTextureFull(cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL, GX_COLOR_WHITE);
+				drawTextureFull(cursorX + workingHorizontalPadding, cursorY + PRINT_PADDING_VERTICAL, GX_COLOR_WHITE);
 				cursorY += texheight;
 				cursorX = 0;
 			}
@@ -221,12 +225,12 @@ void printStrBox(const GXColor box_color, const char* str, ...) {
 	int length = strlen(subString);
 	
 	// we don't do anything if we would draw off the screen
-	if (cursorX + PRINT_PADDING_HORIZONTAL + 2 + (length * 10) <= screenWidth - (PRINT_PADDING_HORIZONTAL * 2)) {
+	if (cursorX + 2 + (length * 10) <= screenWidth - (workingHorizontalPadding * 2)) {
 		GX_SetLineWidth(8, GX_TO_ZERO);
 		
 		setDepthForDrawCall(cursorZ);
-		drawBox(cursorX + PRINT_PADDING_HORIZONTAL - 5, cursorY + PRINT_PADDING_VERTICAL - 4,
-		             cursorX + PRINT_PADDING_HORIZONTAL + (length * 10) + 2, cursorY + PRINT_PADDING_VERTICAL + 16,
+		drawBox(cursorX + workingHorizontalPadding - 5, cursorY + PRINT_PADDING_VERTICAL - 4,
+		             cursorX + workingHorizontalPadding + (length * 10) + 2, cursorY + PRINT_PADDING_VERTICAL + 16,
 					 box_color);
 		
 		GX_SetLineWidth(12, GX_TO_ZERO);
@@ -255,21 +259,18 @@ void drawFontButton(enum FONT_BUTTON_LIST button) {
 	}
 	
 	cursorX += 4;
-	if (cursorX + 20 > screenWidth - (PRINT_PADDING_HORIZONTAL * 2)) {
+	if (cursorX + 20 > screenWidth - (workingHorizontalPadding * 2)) {
 		advanceCursorLine();
 	}
 	
-	int texX1 = 18 * (button % 8);
-	int texY1 = 18 * (button / 8);
-	changeLoadedTexmap(TEXMAP_FONT_BUTTON);
-	drawSubTexture(cursorX + PRINT_PADDING_HORIZONTAL, cursorY + PRINT_PADDING_VERTICAL - 2,
-	               cursorX + PRINT_PADDING_HORIZONTAL + 18, cursorY + PRINT_PADDING_VERTICAL + 16,
-	               texX1, texY1, texX1 + 18, texY1 + 18, GX_COLOR_WHITE);
 	int texX1 = 20 * (button % 6);
 	int texY1 = 20 * (button / 6);
 	
 	drawSubTexture(cursorX + PRINT_PADDING_HORIZONTAL - 3, cursorY + PRINT_PADDING_VERTICAL - 2,
 	               cursorX + PRINT_PADDING_HORIZONTAL + 17, cursorY + PRINT_PADDING_VERTICAL + 18,
+		changeLoadedTexmap(TEXMAP_FONT_BUTTON);
+	drawSubTexture(cursorX + workingHorizontalPadding - 1, cursorY + PRINT_PADDING_VERTICAL - 2,
+	               cursorX + workingHorizontalPadding + 19, cursorY + PRINT_PADDING_VERTICAL + 18,
 	               texX1, texY1, texX1 + 20, texY1 + 20, GX_COLOR_WHITE);
 	
 	// draw dpad overlay if applicable
@@ -295,15 +296,15 @@ void drawFontButton(enum FONT_BUTTON_LIST button) {
 				rotateTextureForDraw((enum TEX_ROTATE) i);
 				
 				if (dpadFlash) {
-					drawSubTexture(cursorX + PRINT_PADDING_HORIZONTAL - 3 + dpadScreenspaceOffset[i][0],
+					drawSubTexture(cursorX + workingHorizontalPadding - 1 + dpadScreenspaceOffset[i][0],
 					               cursorY + PRINT_PADDING_VERTICAL - 2 + dpadScreenspaceOffset[i][1],
-					               cursorX + PRINT_PADDING_HORIZONTAL + 17 + dpadScreenspaceOffset[i][2],
+					               cursorX + workingHorizontalPadding + 19 + dpadScreenspaceOffset[i][2],
 					               cursorY + PRINT_PADDING_VERTICAL + 6 + dpadScreenspaceOffset[i][3],
 					               texX1, texY1 + 20, texX1 + 20, texY1 + 12, GX_COLOR_WHITE);
 				} else {
-					drawSubTexture(cursorX + PRINT_PADDING_HORIZONTAL - 3 + dpadScreenspaceOffset[i][0],
+					drawSubTexture(cursorX + workingHorizontalPadding - 1 + dpadScreenspaceOffset[i][0],
 					               cursorY + PRINT_PADDING_VERTICAL - 2 + dpadScreenspaceOffset[i][1],
-					               cursorX + PRINT_PADDING_HORIZONTAL + 17 + dpadScreenspaceOffset[i][2],
+					               cursorX + workingHorizontalPadding + 19 + dpadScreenspaceOffset[i][2],
 					               cursorY + PRINT_PADDING_VERTICAL + 6 + dpadScreenspaceOffset[i][3],
 					               texX1, texY1, texX1 + 20, texY1 + 8, GX_COLOR_WHITE);
 				}
@@ -375,6 +376,7 @@ void startScrollingPrint(int x1, int y1, int x2, int y2) {
 	
 	// move cursor to top left of screen, subtract vertical padding so we actually start printing at y=~0
 	setCursorXY(0, scrollingOffset - PRINT_PADDING_VERTICAL + 5);
+	workingHorizontalPadding = 10;
 	setSubwindowScissorBox(x1, y1, x2, y2);
 	setCursorDepth(2);
 }
@@ -386,7 +388,7 @@ void endScrollingPrint() {
 	// - text is long enough that scrolling is necessary
 	//   we need to determine the bottom bound
 	
-	int textHeight = (cursorY + PRINT_PADDING_VERTICAL) - scrollingOffset;
+	int textHeight = (cursorY + PRINT_PADDING_VERTICAL + 15) - scrollingOffset;
 	
 	// text didn't make it to the bottom, first case
 	if (textHeight <= (scrollBottom - scrollTop)) {
@@ -404,6 +406,7 @@ void endScrollingPrint() {
 	restoreNormalScissorBox();
 	setCursorXY(tempX, tempY);
 	screenWidth = 640;
+	workingHorizontalPadding = PRINT_PADDING_HORIZONTAL;
 	
 	// draw indicator for if there's more text in either direction
 	// TODO: generalize this in gx.c with drawTri() or something...
@@ -485,9 +488,9 @@ void setWordWrap(bool enable) {
 }
 
 
-bool swapButtonTex() {
+int swapButtonTex() {
 	changeButtons++;
 	changeButtons %= 3;
 	
-	return (changeButtons != 1);
+	return changeButtons;
 }

@@ -225,28 +225,51 @@ static void setup() {
 
 static void displayInstructions() {
 	setCursorPos(2, 0);
-	printStr("Press A to prepare a recording. Recording will start when\n"
-			 "a digital button is pressed, or when an analog value moves\n"
+	setWordWrap(true);
+	printStr("Press A");
+	drawFontButton(FONT_A);
+	printStr("to prepare a recording. Recording will start when "
+			 "a digital button is pressed, or when an analog value moves "
 			 "beyond its threshold. Recording will last ~200 ms.\n\n"
-			 "Vertical gray lines show ~1 frame (~16.6ms) boundaries.\n"
-			 "Frame times are shown on the right. The highlighted number\n"
-			 "shows what button started the recording, and how long its\n"
-			 "initial input was held. The other numbers show how much time\n"
-			 "passed between the recording starting, and when the first\n"
+			 "Vertical gray lines show ~1 frame (~16.6ms) boundaries. "
+			 "Frame times are shown on the right. The highlighted number "
+			 "shows what button started the recording, and how long its "
+			 "initial input was held. The other numbers show how much time "
+			 "passed between the recording starting, and when the first "
 			 "input was detected for a given button.\n\n"
-			 "Use the D-Pad to adjust the thresholds.\n"
-			 "Hold R to change thresholds faster.\n\n"
-			 "Hold Start to toggle Auto-Trigger. Enabling this removes\n"
-			 "the need to press A, but disables the instruction menu (Z),\n"
-			 "and the R modifier.\n");
+			 "Use");
+	fontButtonSetDpadDirections(FONT_DPAD_LEFT | FONT_DPAD_RIGHT);
+	drawFontButton(FONT_DPAD);
+	printStr("to select a threshold, and");
+	fontButtonSetDpadDirections(FONT_DPAD_UP | FONT_DPAD_DOWN);
+	drawFontButton(FONT_DPAD);
+	printStr("to change its value. Hold R");
+	drawFontButton(FONT_R);
+	printStr("to change thresholds faster.\n\n"
+			 "Hold Start");
+	drawFontButton(FONT_START);
+	printStr("to toggle Auto-Trigger. Enabling this removes "
+			 "the need to press A");
+	drawFontButton(FONT_A);
+	printStr(", but disables the instruction menu (Z");
+	drawFontButton(FONT_Z);
+	printStr("), "
+			 "and the R");
+	drawFontButton(FONT_R);
+	printStr("modifier. ");
+	setWordWrap(false);
 	
-	setCursorPos(21, 0);
-	printStr("Press Z to close instructions.");
+	setCursorPos(0, 25);
+	printStr("Press Z");
+	drawFontButton(FONT_Z);
+	printStr("to close instructions");
 	
 	if (*pressed & PAD_TRIGGER_Z) {
 		menuState = BUTTON_POST_SETUP;
 	}
 }
+
+static int dpadFlashIncrement = 0;
 
 void menu_plotButton() {
 	switch (menuState) {
@@ -260,6 +283,13 @@ void menu_plotButton() {
 			// we're getting the address of the object itself here, not the address of the pointer,
 			// which means we will always point to the same object, regardless of a flip
 			ControllerRec *dispData = *data;
+			
+			if (!autoCapture) {
+				setCursorPos(0, 30);
+				printStr("Press Z");
+				drawFontButton(FONT_Z);
+				printStr("for instructions");
+			}
 			
 			// set here for the same reason as the above var
 			// since this is separate from recording logic, this could change during draw
@@ -284,17 +314,20 @@ void menu_plotButton() {
 					
 				case BUTTON_DISPLAY:
 					if (!autoCapture && state != BUTTON_INPUT) {
-						printStr("Press A to prepare a recording, press Z for instructions");
+						setCursorPos(2,0);
+						printStr("Press A");
+						drawFontButton(FONT_A);
+						printStr("to prepare a recording");
 					}
 					
-					setCursorPos(4,7);
+					setCursorPos(4,4);
 					if (stickThresholdSelected) {
 						printStrBox(GX_COLOR_WHITE, "Stick Threshold: %3u", stickThreshold);
-						setCursorPos(4, 32);
+						setCursorPos(4, 29);
 						printStr("Trigger Threshold: %3u", triggerThreshold);
 					} else {
 						printStr("Stick Threshold: %3u", stickThreshold);
-						setCursorPos(4, 32);
+						setCursorPos(4, 29);
 						printStrBox(GX_COLOR_WHITE, "Trigger Threshold: %3u", triggerThreshold);
 					}
 					
@@ -308,7 +341,7 @@ void menu_plotButton() {
 								600, SCREEN_TIMEPLOT_Y_BOTTOM + 1, GX_COLOR_WHITE);
 						
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
-							setCursorPos(7 + button, 4);
+							setCursorPos(7 + button, 2);
 							if (button == triggeringInputDisplay) {
 								printStrBox(GX_COLOR_WHITE, BUTTON_STR[button]);
 							} else {
@@ -461,16 +494,13 @@ void menu_plotButton() {
 						// draw frame durations
 						for (enum PLOT_BUTTON_LIST button = A; button < NO_BUTTON; button++) {
 							if (buttons[button].timeHeld != 0) {
-								setCursorPos(7 + button, 52);
+								setCursorPos(7 + button, 48);
 								float frames = buttons[button].timeHeld / FRAME_TIME_US_F;
-								if (frames >= 10) {
-									setCursorPos(7 + button, 51);
-								}
 								// indicate the initial input with black on white text
 								if (button == triggeringInputDisplay) {
-									printStrBox(GX_COLOR_WHITE, "%2.2ff", frames);
+									printStrBox(GX_COLOR_WHITE, "%5.2ff", frames);
 								} else {
-									printStr("%2.2ff", frames);
+									printStr("%5.2ff", frames);
 								}
 							}
 						}
@@ -553,6 +583,7 @@ void menu_plotButton() {
 						}
 					}
 					
+					/*
 					// toggle auto-capture
 					setCursorPos(21, 0);
 					if (*held == PAD_BUTTON_START && !captureStart && autoCaptureStartReleased) {
@@ -584,6 +615,7 @@ void menu_plotButton() {
 							}
 						}
 					}
+					 */
 					break;
 
 				default:
@@ -591,6 +623,7 @@ void menu_plotButton() {
 					break;
 			}
 	}
+	fontButtonFlashIncrement(&dpadFlashIncrement, 30);
 }
 
 void menu_plotButtonEnd() {
@@ -606,4 +639,18 @@ void menu_plotButtonEnd() {
 	pressed = NULL;
 	held = NULL;
 	menuState = BUTTON_SETUP;
+}
+
+
+void menu_plotButtonSetAutoTrigger(bool captureState) {
+	if (autoCapture != captureState && menuState != BUTTON_SETUP) {
+		autoCapture = captureState;
+		captureStart = false;
+		captureButtonsReleased = false;
+		if (autoCapture) {
+			state = BUTTON_INPUT;
+		} else {
+			state = BUTTON_DISPLAY;
+		}
+	}
 }

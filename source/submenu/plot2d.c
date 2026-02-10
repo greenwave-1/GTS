@@ -206,30 +206,61 @@ static void setup() {
 	}
 	
 	showCStick = false;
+	resetScrollingPrint();
 }
 
 static void displayInstructions() {
 	setCursorPos(2, 0);
-	printStr("Press A to prepare a recording. Recording will start when\n"
+	//startScrollingPrint(40, 70, 600, 400);
+	setWordWrap(true);
+	printStr("Press A");
+	drawFontButton(FONT_A);
+	printStr("to prepare a recording. Recording will start when "
 			 "any button is pressed, or when the stick moves.\n\n"
-			 "Use DPAD up/down to change stickmap background. Use DPAD\n"
-			 "left/right to change the graph\'s end point. Information on\n"
+			 "Use");
+	fontButtonSetDpadDirections(FONT_DPAD_UP | FONT_DPAD_DOWN);
+	drawFontButton(FONT_DPAD);
+	printStr("to change stickmap background. Use");
+	fontButtonSetDpadDirections(FONT_DPAD_LEFT | FONT_DPAD_RIGHT);
+	drawFontButton(FONT_DPAD);
+	printStr("to change the graph\'s end point. Information on "
 			 "the last drawn point is shown on the left.\n\n"
-			 "Hold R to go faster, or L to move one point at a time.\n\n"
-			 "Hold X to move the \"starting sample\" with the same controls\n"
+			 "Hold R");
+	drawFontButton(FONT_R);
+	printStr("to go faster, or L");
+	drawFontButton(FONT_L);
+	//printStr("to move one point at a time.\n\n"
+	printStr("to move by one point.\n\n"
+			 "Hold X");
+	drawFontButton(FONT_X);
+	printStr("to move the \"starting sample\" with the same controls "
 			 "as above. Info for the selected range is shown on the left.\n\n"
-			 "Press Y to toggle which stick is captured.\n\n"
-	         "Hold Start to toggle Auto-Trigger. Enabling this removes\n"
-	         "the need to press A, but disables the instruction menu (Z),\n"
-			 "and only allows the stick to start a recording.\n");
+			 "Press Y");
+	drawFontButton(FONT_Y);
+	printStr("to toggle which stick is captured.\n\n"
+			 "Hold Start");
+	drawFontButton(FONT_START);
+	printStr("to toggle Auto-Trigger. Enabling this removes "
+			 "the need to press A");
+	drawFontButton(FONT_A);
+	printStr(", but disables the instruction menu (Z");
+	drawFontButton(FONT_Z);
+	printStr("), "
+			 "and only allows the stick to start a recording.");
+	setWordWrap(false);
+	//endScrollingPrint();
 	
-	setCursorPos(21, 0);
-	printStr("Press Z to close instructions.");
+	setCursorPos(0, 25);
+	printStr("Press Z");
+	drawFontButton(FONT_Z);
+	printStr("to close instructions");
 	
 	if (*pressed & PAD_TRIGGER_Z) {
 		menuState = PLOT_POST_SETUP;
 	}
 }
+
+static int dpadFlashIncrement = 0;
 
 void menu_plot2d() {
 	switch (menuState) {
@@ -243,6 +274,13 @@ void menu_plot2d() {
 			// we're getting the address of the object itself here, not the address of the pointer,
 			// which means we will always point to the same object, regardless of a flip
 			ControllerRec *dispData = *data;
+			
+			if (!autoCapture && plotState != PLOT_INPUT) {
+				setCursorPos(0, 30);
+				printStr("Press Z");
+				drawFontButton(FONT_Z);
+				printStr("for instructions");
+			}
 			
 			switch(plotState) {
 				case PLOT_INPUT:
@@ -261,7 +299,9 @@ void menu_plot2d() {
 							ellipseCounter = 0;
 						}
 					} else {
-						printStr("Press A to prepare a recording, press Z for instructions");
+						printStr("Press A");
+						drawFontButton(FONT_A);
+						printStr("to prepare a recording");
 					}
 					
 					// check if last draw point needs to be reset
@@ -270,7 +310,10 @@ void menu_plot2d() {
 					}
 					
 					setCursorPos(4, 0);
-					printStr("Stick:    ");
+					printStr("Stick (Y");
+					drawFontButton(FONT_Y);
+					printStr("):");
+					setCursorPos(5, 2);
 					if (!showCStick) {
 						printStr("Analog Stick");
 					} else {
@@ -293,25 +336,68 @@ void menu_plot2d() {
 					             COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
 					             GX_COLOR_BLACK);
 					
+					// selected stickmap
+					setCursorPos(6, 0);
+					printStr("Stickmap ");
+					fontButtonSetDpadDirections(FONT_DPAD_UP | FONT_DPAD_DOWN);
+					drawFontButton(FONT_DPAD);
+					printStr(":  ");
+					setCursorPos(7, 2);
+					switch (selectedImage) {
+						case A_WAIT:
+							printStr("Wait Attacks");
+							break;
+						case CROUCH:
+							printStr("Crouch");
+							break;
+						case DEADZONE:
+							printStr("Deadzones");
+							break;
+						case LEDGE_L:
+							printStr("Left Ledge");
+							break;
+						case LEDGE_R:
+							printStr("Right Ledge");
+							break;
+						case MOVE_WAIT:
+							printStr("Wait Movement");
+							break;
+						case NO_IMAGE:
+							printStr("None");
+						default:
+							break;
+					}
+					
+					updateVtxDesc(VTX_TEXTURES, GX_MODULATE);
+					changeLoadedTexmap(TEXMAP_STICKMAPS);
+					changeStickmapTexture((int) selectedImage);
+					
+					// draw image
+					if (selectedImage != NO_IMAGE) {
+						setDepthForDrawCall(-8);
+						drawTextureFull(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128, GX_COLOR_WHITE);
+					}
+					
 					if (dispData->isRecordingReady) {
 						convertedCoords = convertStickRawToMelee(dispData->samples[lastDrawPoint]);
 						
 						// print coordinates of last drawn point
 						// raw stick coordinates
-						setCursorPos(11, 0);
-						printStr("Raw XY:   (");
+						setCursorPos(14, 0);
+						printStr("Raw XY:");
+						setCursorPos(15, 2);
 						if (!showCStick) {
-							printStr("%4d,%4d)\n", dispData->samples[lastDrawPoint].stickX,
+							printStr("(%4d,%4d)\n", dispData->samples[lastDrawPoint].stickX,
 							         dispData->samples[lastDrawPoint].stickY);
-							printStr("Melee XY: (%s)", getMeleeCoordinateString(convertedCoords, AXIS_AXY));
+							printStr("Melee XY:\n  (%s)", getMeleeCoordinateString(convertedCoords, AXIS_AXY));
 						} else {
-							printStr("%4d,%4d)\n", dispData->samples[lastDrawPoint].cStickX,
+							printStr("(%4d,%4d)\n", dispData->samples[lastDrawPoint].cStickX,
 							         dispData->samples[lastDrawPoint].cStickY);
-							printStr("Melee XY: (%s)", getMeleeCoordinateString(convertedCoords, AXIS_CXY));
+							printStr("Melee XY:\n  (%s)", getMeleeCoordinateString(convertedCoords, AXIS_CXY));
 						}
 						
 						// show button presses of last drawn point
-						setCursorPos(14, 0);
+						setCursorPos(18, 0);
 						printStr("Buttons Pressed:\n");
 						if (dispData->samples[lastDrawPoint].buttons & PAD_BUTTON_A) {
 							printStr("A ");
@@ -333,43 +419,6 @@ void menu_plot2d() {
 						}
 						if (dispData->samples[lastDrawPoint].buttons & PAD_TRIGGER_R) {
 							printStr("R ");
-						}
-						
-						updateVtxDesc(VTX_TEXTURES, GX_MODULATE);
-						changeLoadedTexmap(TEXMAP_STICKMAPS);
-						changeStickmapTexture((int) selectedImage);
-						
-						// draw image
-						if (selectedImage != NO_IMAGE) {
-							setDepthForDrawCall(-8);
-							drawTextureFull(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128, GX_COLOR_WHITE);
-						}
-						
-						setCursorPos(17, 0);
-						printStr("Stickmap: ");
-						switch (selectedImage) {
-							case A_WAIT:
-								printStr("Wait Attacks");
-								break;
-							case CROUCH:
-								printStr("Crouch");
-								break;
-							case DEADZONE:
-								printStr("Deadzones");
-								break;
-							case LEDGE_L:
-								printStr("Left Ledge");
-								break;
-							case LEDGE_R:
-								printStr("Right Ledge");
-								break;
-							case MOVE_WAIT:
-								printStr("Wait Movement");
-								break;
-							case NO_IMAGE:
-								printStr("None");
-							default:
-								break;
 						}
 						
 						setCursorPos(17, 0);
@@ -469,35 +518,13 @@ void menu_plot2d() {
 							        GX_COLOR_WHITE);
 						}
 						
-						setCursorPos(6, 0);
-						printStr("Total samples: %11u\n", dispData->sampleEnd);
-						printStr("Graph start/end: %4u/%4u\n", map2dStartIndex + 1, lastDrawPoint + 1);
+						setCursorPos(9, 0);
+						printStr("Total samples: %10u\n", dispData->sampleEnd);
+						printStr("Graph range: %6u->%4u\n", map2dStartIndex + 1, lastDrawPoint + 1);
 						
 						double timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
-						printStr("Total MS: %16.2f\n", timeFromStartMs);
-						printStr("Total frames:%13.2f", timeFromStartMs / FRAME_TIME_MS_F);
-						
-						
-						// cycle the stickmap shown
-						// we want up/down to be pressed, but no other dpad direction held
-						if ((*pressed & DPAD_MASK) == PAD_BUTTON_UP && ((*held & DPAD_MASK) ^ PAD_BUTTON_UP) == 0) {
-							selectedImage++;
-							if (!showCStick) {
-								selectedImage %= IMAGE_LEN;
-							} else {
-								// only first 3 options are valid for c-stick
-								selectedImage %= 3;
-							}
-						} else if ((*pressed & DPAD_MASK) == PAD_BUTTON_DOWN && ((*held & DPAD_MASK) ^ PAD_BUTTON_DOWN) == 0) {
-							selectedImage--;
-							if (selectedImage == -1) {
-								if (!showCStick) {
-									selectedImage = IMAGE_LEN - 1;
-								} else {
-									selectedImage = 2;
-								}
-							}
-						}
+						printStr("Total MS: %15.2f\n", timeFromStartMs);
+						printStr("Total frames:%12.2f", timeFromStartMs / FRAME_TIME_MS_F);
 						
 						// holding L makes only individual presses work
 						if (*held & PAD_TRIGGER_L) {
@@ -596,7 +623,28 @@ void menu_plot2d() {
 						}
 					}
 					
-					if (*pressed & PAD_TRIGGER_Z && !autoCapture) {
+					// cycle the stickmap shown
+					// we want up/down to be pressed, but no other dpad direction held
+					if ((*pressed & DPAD_MASK) == PAD_BUTTON_UP && ((*held & DPAD_MASK) ^ PAD_BUTTON_UP) == 0) {
+						selectedImage++;
+						if (!showCStick) {
+							selectedImage %= IMAGE_LEN;
+						} else {
+							// only first 3 options are valid for c-stick
+							selectedImage %= 3;
+						}
+					} else if ((*pressed & DPAD_MASK) == PAD_BUTTON_DOWN && ((*held & DPAD_MASK) ^ PAD_BUTTON_DOWN) == 0) {
+						selectedImage--;
+						if (selectedImage == -1) {
+							if (!showCStick) {
+								selectedImage = IMAGE_LEN - 1;
+							} else {
+								selectedImage = 2;
+							}
+						}
+					}
+					
+					if (*pressed & PAD_TRIGGER_Z && !autoCapture && plotState != PLOT_INPUT) {
 						menuState = PLOT_INSTRUCTIONS;
 					} else if (*pressed & PAD_BUTTON_Y && plotState != PLOT_INPUT) {
 						// cycle between analog and c-stick
@@ -613,6 +661,7 @@ void menu_plot2d() {
 						(*temp)->isRecordingReady = false;
 					}
 					
+					/*
 					// toggle auto-capture
 					setCursorPos(21, 0);
 					if (*held == PAD_BUTTON_START && !captureStart && autoCaptureStartReleased) {
@@ -639,7 +688,7 @@ void menu_plot2d() {
 								autoCaptureStartReleased = true;
 							}
 						}
-					}
+					}*/
 					
 					if (captureStartFrameCooldown != 0) {
 						captureStartFrameCooldown--;
@@ -655,6 +704,7 @@ void menu_plot2d() {
 			printStr("how did we get here? menuState");
 			break;
 	}
+	fontButtonFlashIncrement(&dpadFlashIncrement, 30);
 }
 
 void menu_plot2dEnd() {
@@ -673,5 +723,13 @@ void menu_plot2dEnd() {
 		noMovementStartIndex = -1;
 		noMovementTimer = 0;
 		captureStart = false;
+	}
+}
+
+void menu_plot2dSetAutoTrigger(bool captureState) {
+	if (autoCapture != captureState) {
+		autoCapture = captureState;
+		captureStart = false;
+		haveStartPoint = false;
 	}
 }

@@ -84,18 +84,32 @@ static void setup() {
 
 static void displayInstructions() {
 	setCursorPos(2, 0);
-	printStr("Slowly move the stick around the gate to measure.\n\n"
-			 "As data is captured, points will begin to show the gate\'s\n"
+	setWordWrap(true);
+	printStr("Slowly move the Analog Stick");
+	drawFontButton(FONT_STICK_A);
+	printStr("or the C-Stick");
+	drawFontButton(FONT_STICK_C);
+	printStr("\naround its gate to measure.\n\n"
+			 "As data is captured, points will begin to show the gate\'s "
 			 "outline.\n\n"
 			 "Phob visualizations can have two quirks: \n"
-			 "- Small gaps around the cardinals, and user-defined notches\n"
-			 "- Points may appear inside the gate, close to the origin\n\n"
+			 "- Small gaps around the cardinals, and user-defined\n notches\n"
+			 "- Points may appear inside the gate, close to\n the origin\n\n"
 			 "Neither of these are an issue, and can be ignored.\n\n"
-			 "Press X to toggle which stick is being visualized.\n"
-			 "Hold Y to reset the current visualization.");
+			 "Press X");
+	drawFontButton(FONT_Y);
+	printStr("to toggle which stick is being visualized.\n"
+			 "Hold Y");
+	drawFontButton(FONT_X);
+	printStr("to reset the current visualization.");
+	setWordWrap(false);
 	
-	setCursorPos(21, 0);
-	printStr("Press Z to close instructions.");
+	//setCursorPos(21, 0);
+	//printStr("Press Z to close instructions.");
+	setCursorPos(0, 25);
+	printStr("Press Z");
+	drawFontButton(FONT_Z);
+	printStr("to close instructions");
 	
 	if (*pressed & PAD_TRIGGER_Z) {
 		menuState = GATE_POST_SETUP;
@@ -128,10 +142,15 @@ void menu_gateMeasure() {
 					yPressFrameCounter = 0;
 					state = GATE_POST_INIT;
 				case GATE_POST_INIT:
-					setCursorPos(2, 0);
-					printStr("Press Z for Instructions");
-					setCursorPos(21,0);
-					printStr("Current stick: ");
+					setCursorPos(0, 30);
+					printStr("Press Z");
+					drawFontButton(FONT_Z);
+					printStr("for instructions");
+					setCursorPos(4, 0);
+					printStr("Stick (Y");
+					drawFontButton(FONT_Y);
+					printStr("):");
+					setCursorPos(5, 2);
 					if (showC) {
 						printStr("C-Stick");
 					} else {
@@ -142,22 +161,24 @@ void menu_gateMeasure() {
 						printStr("Resetting");
 						printEllipse(yPressFrameCounter, 30);
 					} else {
-						printStr("Hold Y to reset visualization");
+						printStr("Hold X");
+						drawFontButton(FONT_X);
+						printStr("to reset visualization");
 					}
 					
 					updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 					
 					// draw box around plot area
-					drawSolidBox(SCREEN_POS_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
-					             SCREEN_POS_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
+					drawSolidBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
+					             COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
 					             GX_COLOR_BLACK);
 					if (showC) {
-						drawBox(SCREEN_POS_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
-						        SCREEN_POS_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
+						drawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
+						        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
 						        GX_COLOR_YELLOW);
 					} else {
-						drawBox(SCREEN_POS_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
-						        SCREEN_POS_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
+						drawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
+						        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
 						        GX_COLOR_WHITE);
 					}
 					
@@ -180,18 +201,18 @@ void menu_gateMeasure() {
 					// TODO: there's a better way to do this, right?
 					if (showC) {
 						for (int i = 0; i < totalPoints; i++) {
-							GX_Position3s16(SCREEN_POS_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].cMax, -5);
+							GX_Position3s16(COORD_CIRCLE_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].cMax, -5);
 							GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 							
-							GX_Position3s16(SCREEN_POS_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].cMin, -5);
+							GX_Position3s16(COORD_CIRCLE_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].cMin, -5);
 							GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 						}
 					} else {
 						for (int i = 0; i < totalPoints; i++) {
-							GX_Position3s16(SCREEN_POS_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].max, -5);
+							GX_Position3s16(COORD_CIRCLE_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].max, -5);
 							GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 							
-							GX_Position3s16(SCREEN_POS_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].min, -5);
+							GX_Position3s16(COORD_CIRCLE_CENTER_X - 128 + validPointIndexes[i], SCREEN_POS_CENTER_Y - gateMinMax[validPointIndexes[i]].min, -5);
 							GX_Color4u8(GX_COLOR_SILVER.r, GX_COLOR_SILVER.g, GX_COLOR_SILVER.b, GX_COLOR_SILVER.a);
 						}
 					}
@@ -200,11 +221,11 @@ void menu_gateMeasure() {
 					
 					if (*pressed & PAD_TRIGGER_Z) {
 						menuState = GATE_INSTRUCTIONS;
-					} else if (*pressed & PAD_BUTTON_X) {
+					} else if (*pressed & PAD_BUTTON_Y) {
 						showC = !showC;
 					}
 					
-					if (*held & PAD_BUTTON_Y) {
+					if (*held & PAD_BUTTON_X) {
 						if (!yHeldAfterReset) {
 							yPressFrameCounter++;
 							if (yPressFrameCounter == 91) {

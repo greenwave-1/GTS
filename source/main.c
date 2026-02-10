@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <gccore.h>
 
@@ -86,14 +87,19 @@ int main(int argc, char **argv) {
 	PAD_ScanPads();
 
 	rmode = VIDEO_GetPreferredMode(NULL);
-
+	
+	// https://github.com/extremscorner/GRRLIB -> GRRLib_core.c
+	// correct aspect ratio
+	rmode->viWidth = 704;
+	rmode->viXOrigin = 8; // (720 - 704) / 2
+	
+	VIDEO_Configure(rmode);
+	
 	xfb[0] = SYS_AllocateFramebuffer(rmode);
 	xfb[1] = SYS_AllocateFramebuffer(rmode);
 	
 	VIDEO_ClearFrameBuffer(rmode, xfb[0], COLOR_BLACK);
 	VIDEO_ClearFrameBuffer(rmode, xfb[1], COLOR_BLACK);
-
-	VIDEO_Configure(rmode);
 
 	VIDEO_SetNextFramebuffer(xfb[xfbSwitch]);
 
@@ -292,8 +298,8 @@ int main(int argc, char **argv) {
 		
 		#ifdef BENCH
 		us = ticks_to_microsecs(gettime() - time);
-		setCursorPos(23, 40);
-		printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOGIC: %d | GX: %d", us, gxtime);
+		setCursorPos(23, 32);
+		printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOGIC: %5d | GX: %5d", us, gxtime);
 		#endif
 		
 		xfbSwitch ^= 1;
@@ -331,12 +337,12 @@ int main(int argc, char **argv) {
 	// if using hard-coded strings, then either there would be repeat code, or you'd need two #if defined()
 	// to create a wii-only if-else
 	char* strPointer = resetMessage;
-	int exitMessageX = 26;
+	int exitMessageX = 23;
 	
 	#if defined(HW_RVL)
 	if (!normalExit) {
 		if (powerButtonPressed) {
-			exitMessageX = 23;
+			exitMessageX = 20;
 			strPointer = powerButtonMessage;
 		}
 	}
@@ -372,6 +378,10 @@ int main(int argc, char **argv) {
 	freeControllerRecStructs();
 	
 	clearScreenBeforeExit();
+	
+	// free framebuffers
+	free(xfb[0]);
+	free(xfb[1]);
 	
 	// issue poweroff if the power button was pressed
 	// done here so that any logging stuff can finish cleanly

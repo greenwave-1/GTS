@@ -18,4 +18,6 @@ enum PLOT_BUTTON_STATE { BUTTON_DISPLAY, BUTTON_INPUT };
 void menu_plotButton();
 void menu_plotButtonEnd();
 
+void menu_plotButtonSetAutoTrigger(bool captureState);
+
 #endif //GTS_PLOTBUTTON_H

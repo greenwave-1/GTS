@@ -58,6 +58,7 @@ static enum CURRENT_MENU currentMenu = MAIN_MENU;
 
 // lock var for controller test
 static bool lockExitEnabled = false;
+static bool autoTriggerEnabled = false;
 static bool startHeldAfter = false;
 static uint8_t startHeldCounter = 0;
 
@@ -83,8 +84,6 @@ static bool stickLockout = false;
 // menu item strings
 static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Continuous Stick Oscilloscope", "Trigger Oscilloscope",
                                                 "Coordinate Viewer", "2D Plot", "Button Timing Viewer", "Gate Visualizer", "Export Data"};
-
-static bool displayInstructions = false;
 
 static bool mainMenuDraw = false;
 
@@ -163,39 +162,14 @@ bool menu_runMenu() {
 	
 	// check if port 1 is disconnected
 	if (!isControllerConnected(CONT_PORT_1)) {
-		setCursorPos(0, 38);
+		setCursorPos(0, 32);
 		printStr("Controller Disconnected!");
 		(*data)->isRecordingReady = false;
 		menu_gateMeasureResetData();
 	}
 	
-	// TODO: is there a better way to have an indicator but also have more screen space?
-	if ((*data)->isRecordingReady && currentMenu == MAIN_MENU) {
-		switch ((*data)->recordingType) {
-			case REC_OSCILLOSCOPE:
-				setCursorPos(0, 31);
-				printStr("Oscilloscope");
-				break;
-			case REC_2DPLOT:
-				setCursorPos(0, 36);
-				printStr("2D Plot");
-				break;
-			case REC_BUTTONTIME:
-				setCursorPos(0, 30);
-				printStr("Button Viewer");
-				break;
-			case REC_TRIGGER_L:
-			case REC_TRIGGER_R:
-				setCursorPos(0, 36);
-				printStr("Trigger");
-				break;
-			default:
-				setCursorPos(0, 36);
-				printStr("Unknown");
-				break;
-		}
-		printStr(" Capture in memory!");
-	} else if (!(*data)->isRecordingReady) {
+	// disallow export if data isn't ready
+	if (!(*data)->isRecordingReady) {
 		exportReturnCode = -1;
 	}
 	setCursorPos(2, 0);
@@ -212,6 +186,7 @@ bool menu_runMenu() {
 			menu_oscilloscope();
 			break;
 		case PLOT_2D:
+			menu_plot2dSetAutoTrigger(autoTriggerEnabled);
 			menu_plot2d();
 			break;
 		case FILE_EXPORT:
@@ -234,41 +209,64 @@ bool menu_runMenu() {
 			menu_gateMeasure();
 			break;
 		case PLOT_BUTTON:
+			menu_plotButtonSetAutoTrigger(autoTriggerEnabled);
 			menu_plotButton();
 			break;
 		default:
 			printStr("currentMenu is invalid value, how did this happen?\n");
 			break;
 	}
-	if (displayInstructions) {
-		setCursorPos(21, 0);
-		printStr("Press Z to close instructions.");
-	}
 
 	// move cursor to bottom left
 	setCursorPos(22, 0);
 
-	// exit the program if start is pressed
-	if (*pressed & PAD_BUTTON_START && currentMenu == MAIN_MENU) {
-		return true;
+	// check for buttons, some menus share functionality so this is here
+	
+	// holding start, lock menu or toggle auto-trigger
+	if (*held & PAD_BUTTON_START &&
+		(currentMenu == CONTROLLER_TEST || currentMenu == COORD_MAP || currentMenu == PLOT_BUTTON || currentMenu == PLOT_2D)
+		&& !startHeldAfter) {
+		switch (currentMenu) {
+			// lock menu
+			case CONTROLLER_TEST:
+			case COORD_MAP:
+				if (lockExitEnabled) {
+					printStr("Unlocking menu, hold for 2 seconds");
+				} else {
+					printStr("Locking menu, hold for 2 seconds");
+				}
+				printEllipse(startHeldCounter, 40);
+				
+				startHeldCounter++;
+				if (startHeldCounter > 121) {
+					lockExitEnabled = !lockExitEnabled;
+					startHeldCounter = 0;
+					startHeldAfter = true;
+				}
+				break;
+			// auto-trigger
+			case PLOT_BUTTON:
+			case PLOT_2D:
+				printStr("Toggling Auto-Trigger, hold for 2 seconds");
+				printEllipse(startHeldCounter, 40);
+				
+				startHeldCounter++;
+				if (startHeldCounter > 121) {
+					autoTriggerEnabled = !autoTriggerEnabled;
+					startHeldCounter = 0;
+					startHeldAfter = true;
+				}
+				break;
+			default:
+				break;
+		}
 	}
 	
-	// controller test lock stuff
-	else if (*held == PAD_BUTTON_START && (currentMenu == CONTROLLER_TEST || currentMenu == COORD_MAP) && !startHeldAfter) {
-		if (lockExitEnabled) {
-			printStr("Unlocking menu, hold for 2 seconds");
-		} else {
-			printStr("Locking menu, hold for 2 seconds");
-		}
-		printEllipse(startHeldCounter, 40);
-		
-		startHeldCounter++;
-		if (startHeldCounter > 121) {
-			lockExitEnabled = !lockExitEnabled;
-			startHeldCounter = 0;
-			startHeldAfter = true;
-		}
+	// exit the program if start is pressed
+	else if (*pressed & PAD_BUTTON_START && currentMenu == MAIN_MENU) {
+		return true;
 	}
+
 
 	// does the user want to move back to the main menu?
 	// this shouldn't trigger when certain menus are currently recording an input
@@ -312,11 +310,13 @@ bool menu_runMenu() {
 					break;
 			}
 			currentMenu = MAIN_MENU;
-			displayInstructions = false;
 			bHeldCounter = 0;
 			// stop rumble if it didn't get stopped before
 			PAD_ControlMotor(0, PAD_MOTOR_STOP);
 			PAD_ControlMotor(3, PAD_MOTOR_STOP);
+			// just in case
+			lockExitEnabled = false;
+			autoTriggerEnabled = false;
 		}
 	} else {
 		// change bottom message depending on what menu we are in
@@ -325,7 +325,7 @@ bool menu_runMenu() {
 				printStr("Press Start");
 				drawFontButton(FONT_START);
 				printStr("to exit.");
-				int col = 55 - (sizeof(VERSION_NUMBER));
+				int col = 52 - (sizeof(VERSION_NUMBER));
 				if (col > 25) {
 					setCursorPos(22, col);
 					printStr("Ver: ");
@@ -341,7 +341,7 @@ bool menu_runMenu() {
 				} else {
 					printStr("Hold B");
 					drawFontButton(FONT_B);
-					printStr("to return to main menu, hold Start");
+					printStr("to go back, or Start");
 					drawFontButton(FONT_START);
 					printStr("to lock.");
 				}
@@ -351,10 +351,24 @@ bool menu_runMenu() {
 					startHeldAfter = false;
 				}
 				break;
+			case PLOT_2D:
+			case PLOT_BUTTON:
+				printStr("Hold B");
+				drawFontButton(FONT_B);
+				printStr("to go back, or Start");
+				drawFontButton(FONT_START);
+				printStr("to toggle Auto-Trigger");
+
+				startHeldCounter = 0;
+				
+				if (startHeldAfter && *held ^ PAD_BUTTON_START) {
+					startHeldAfter = false;
+				}
+				break;
 			default:
 				printStr("Hold B");
 				drawFontButton(FONT_B);
-				printStr("to return to main menu.");
+				printStr("to go back.");
 				break;
 		}
 		bHeldCounter = 0;

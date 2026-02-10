@@ -22,9 +22,9 @@ enum STICKMAP_LIST { NONE, FF_WD, SHIELDDROP };
 
 // Firefox and Wavedash min/max
 static const char* STICKMAP_FF_WD_DESC = "Min/Max coordinates for Firefox and Wavedash notches around\ncardinals\n\n"
-                                  "SAFE / Green -> Ideal coordinates, aim here\n"
-                                  "UNSAFE / Yellow -> Risks hitting deadzone, but works\n"
-                                  "MISS -> Self explanatory";
+                                  "SAFE / Green:\n Ideal coordinates, aim here\n"
+								  "UNSAFE / Yellow:\n Risks hitting deadzone, but works\n"
+                                  "MISS:\n Self explanatory";
 
 static const char* STICKMAP_FF_WD_RETVALS[] = {"MISS", "SAFE", "UNSAFE"};
 
@@ -48,12 +48,12 @@ static const int STICKMAP_FF_WD_COORD_UNSAFE[][2] = { {9500, 3000},
 static const int STICKMAP_FF_WD_COORD_UNSAFE_LEN = 2;
 
 // Shield drop coordinates
-static const char* STICKMAP_SHIELDDROP_DESC = "Coorinates for Vanilla and UCF Shield drops. Different\n"
-                                       "coordinate groups vary in requirements, check the SmashBoards\n"
+static const char* STICKMAP_SHIELDDROP_DESC = "Coorinates for Vanilla and UCF Shield drops. Different "
+                                       "coordinate groups vary in requirements, check the SmashBoards "
                                        "UCF post for more info.\n\n"
-                                       "VANILLA / Green -> Coordinates that will work without UCF\n"
-                                       "UCF LOWER / Blue -> Lower coordinates for any UCF Version\n"
-                                       "UCF v0.84 UPPER / Yellow -> Upper coordinates for v0.84+ only\n";
+                                       "VANILLA / Green:\n Coordinates that will work without UCF\n"
+                                       "UCF LOWER / Blue:\n Lower coordinates for any UCF Version\n"
+                                       "UCF v0.84 UPPER / Yellow:\n Upper coordinates for v0.84+ only\n";
 
 static const char* STICKMAP_SHIELDDROP_RETVALS[] = { "MISS", "VANILLA", "UCF LOWER", "UCF v0.84 UPPER" };
 
@@ -113,6 +113,7 @@ static const int STICKMAP_SHIELDDROP_COORD_UCF_UPPER[][2] = { { 7875, 6125 },
 static const int STICKMAP_SHIELDDROP_COORD_UCF_UPPER_LEN = 8;
 
 static int isCoordValid(enum STICKMAP_LIST test, MeleeCoordinates coords) {
+	// 0 index is always "show all"
 	int ret = 0;
 	switch (test) {
 		case FF_WD:
@@ -196,6 +197,7 @@ static void setup() {
 	}
 	
 	menuState = COORD_VIEW_POST_SETUP;
+	resetScrollingPrint();
 }
 
 
@@ -368,7 +370,30 @@ static void drawStickmapOverlay(enum STICKMAP_LIST stickmap, int which) {
 }
 
 static void displayInstructions() {
-	setCursorPos(2, 0);
+	//setCursorPos(2, 0);
+	startScrollingPrint(40, 70, 600, 400);
+	setWordWrap(true);
+	printStr("Press");
+	fontButtonSetDpadDirections(FONT_DPAD_RIGHT);
+	drawFontButton(FONT_DPAD);
+	printStr("to change the overall coordinate category, and");
+	fontButtonSetDpadDirections(FONT_DPAD_UP);
+	drawFontButton(FONT_DPAD);
+	printStr("to change what subset of coordinates are shown. Melee "
+	         "Coordinates are shown on the left.\n\n"
+	         "The white line shows the analog stick's position, and the "
+	         "yellow line shows the c-stick's position.\n\n"
+	         "Hold Start to 'lock' the menu. This disables the "
+			 "instructions page (Z");
+	drawFontButton(FONT_Z);
+	printStr(") and exiting (B");
+	drawFontButton(FONT_B);
+	printStr(").\n\n"
+			 "Current Stickmap");
+	fontButtonSetDpadDirections(FONT_DPAD_RIGHT);
+	drawFontButton(FONT_DPAD);
+	printStr(": ");
+	/*
 	printStr("Press X to change the overall coordinate category, and Y to\n"
 			 "change what subset of coordinates are shown. Melee\n"
 			 "Coordinates are shown on the left.\n\n"
@@ -378,6 +403,7 @@ static void displayInstructions() {
 			 "instructions page (Z) and exiting (B), and swaps X/Y with\n"
 			 "DPad Up and Right.\n\n"
 	         "Current Stickmap: ");
+	*/
 	switch (selectedStickmap) {
 		case FF_WD:
 			printStr("Firefox / Wavedash\n");
@@ -392,12 +418,20 @@ static void displayInstructions() {
 			printStr("None\n");
 			break;
 	}
+	setWordWrap(false);
+	endScrollingPrint();
+	
+	setCursorPos(0, 25);
+	printStr("Press Z");
+	drawFontButton(FONT_Z);
+	printStr("to close instructions");
 	
 	if (*pressed & PAD_TRIGGER_Z || menuLockEnabled) {
 		menuState = COORD_VIEW_POST_SETUP;
 	}
 }
 
+static int dpadFlashCounter = 0;
 // coordinate viewer submenu
 // draws melee coordinates for both sticks on a circle
 // "overlays" can be toggled to show specific coordinate groups (shield drop, for example)
@@ -411,9 +445,10 @@ void menu_coordView() {
 			// a lot of this comes from github.com/phobgcc/phobconfigtool
 			
 			if (!menuLockEnabled) {
-				printStr("Press Z for instructions");
-			} else {
-				printStr("Use D-Pad Right and Up to change\nthe coordinate category.");
+				setCursorPos(0, 30);
+				printStr("Press Z");
+				drawFontButton(FONT_Z);
+				printStr("for instructions");
 			}
 			
 			static ControllerSample stickRaw;
@@ -428,50 +463,69 @@ void menu_coordView() {
 			
 			// print melee coordinates
 			setCursorPos(10, 0);
-			printStr("Stick X: %s", getMeleeCoordinateString(stickMelee, AXIS_AX));
+			printStr("Analog Stick:");
+			setCursorPos(11, 2);
+			printStr("(%s)", getMeleeCoordinateString(stickMelee, AXIS_AXY));
 			
-			setCursorPos(11, 0);
-			printStr("Stick Y: %s", getMeleeCoordinateString(stickMelee, AXIS_AY));
+			setCursorPos(12, 0);
+			printStr("C-Stick:");
+			setCursorPos(13, 2);
+			printStr("(%s)", getMeleeCoordinateString(stickMelee, AXIS_CXY));
 			
-			setCursorPos(13, 0);
-			printStr("C-Stick X: %s", getMeleeCoordinateString(stickMelee, AXIS_CX));
+			setCursorPos(5, 0);
+			printStr("Stickmap ");
+			fontButtonSetDpadDirections(FONT_DPAD_RIGHT);
+			drawFontButton(FONT_DPAD);
+			printStr(":");
+			
+			//setCursorPos(6, 15);
+			int stickmapRetVal = isCoordValid(selectedStickmap, stickMelee);
+			setCursorPos(7, 0);
+			
+			printStr("Shown ");
+			fontButtonSetDpadDirections(FONT_DPAD_UP);
+			drawFontButton(FONT_DPAD);
+			printStr(":");
 			
 			setCursorPos(14, 0);
-			printStr("C-Stick Y: %s", getMeleeCoordinateString(stickMelee, AXIS_CY));
-			
-			setCursorPos(19, 0);
-			printStr("Stickmap: ");
-			int stickmapRetVal = isCoordValid(selectedStickmap, stickMelee);
+			printStr("Result:");
 			switch (selectedStickmap) {
 				case FF_WD:
-					printStr("Firefox/Wavedash\n");
-					printStr("Visible: ");
+					setCursorPos(6, 2);
+					printStr("Firefox/Wavedash");
+					setCursorPos(8, 2);
 					if (selectedStickmapSub == 0) {
 						printStr("ALL");
 					} else {
 						printStrColor(STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][0], STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][1],
 						              STICKMAP_FF_WD_RETVALS[selectedStickmapSub]);
 					}
-					printStr("\nResult: ");
+					setCursorPos(15, 2);
 					printStrColor(STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][0], STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][1],
 					              STICKMAP_FF_WD_RETVALS[stickmapRetVal]);
 					break;
 				case SHIELDDROP:
-					printStr("Shield Drop\n");
-					printStr("Visible: ");
+					setCursorPos(6, 2);
+					printStr("Shield Drop");
+					setCursorPos(8, 2);
 					if (selectedStickmapSub == 0) {
 						printStr("ALL");
 					} else {
 						printStrColor(STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][0], STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][1],
 						              STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub]);
 					}
-					printStr("\nResult: ");
+					setCursorPos(15, 2);
 					printStrColor(STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][0], STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][1],
 					              STICKMAP_SHIELDDROP_RETVALS[stickmapRetVal]);
 					break;
 				case NONE:
 				default:
+					setCursorPos(6, 2);
 					printStr("NONE");
+					setCursorPos(8, 2);
+					printStr("N/A");
+					setCursorPos(15, 2);
+					printStr("N/A");
 					break;
 			}
 			
@@ -516,65 +570,9 @@ void menu_coordView() {
 			drawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, xfbCoordCX, xfbCoordCY, GX_COLOR_YELLOW);
 			drawSolidBox(xfbCoordCX - 2, xfbCoordCY - 2, xfbCoordCX + 2, xfbCoordCY + 2, GX_COLOR_YELLOW);
 			
-			// we disable
 			if (!menuLockEnabled) {
-				if (*pressed & PAD_BUTTON_X) {
-					selectedStickmap++;
-					selectedStickmapSub = 0;
-					if (selectedStickmap == 3) {
-						selectedStickmap = 0;
-					}
-				}
-				if (*pressed & PAD_BUTTON_Y) {
-					selectedStickmapSub++;
-					switch (selectedStickmap) {
-						case (FF_WD):
-							if (selectedStickmapSub == STICKMAP_FF_WD_ENUM_LEN) {
-								selectedStickmapSub = 0;
-							}
-							break;
-						case (SHIELDDROP):
-							if (selectedStickmapSub == STICKMAP_SHIELDDROP_ENUM_LEN) {
-								selectedStickmapSub = 0;
-							}
-							break;
-						case (NONE):
-						default:
-							selectedStickmapSub = 0;
-							break;
-					}
-				}
-				
-				if (*pressed & PAD_TRIGGER_Z) {
+				if (*pressed & PAD_TRIGGER_Z && menuState) {
 					menuState = COORD_VIEW_INSTRUCTIONS;
-				}
-			} else {
-				// change controls to use d-pad
-				if (*pressed == PAD_BUTTON_RIGHT) {
-					selectedStickmap++;
-					selectedStickmapSub = 0;
-					if (selectedStickmap == 3) {
-						selectedStickmap = 0;
-					}
-				}
-				if (*pressed == PAD_BUTTON_UP) {
-					selectedStickmapSub++;
-					switch (selectedStickmap) {
-						case (FF_WD):
-							if (selectedStickmapSub == STICKMAP_FF_WD_ENUM_LEN) {
-								selectedStickmapSub = 0;
-							}
-							break;
-						case (SHIELDDROP):
-							if (selectedStickmapSub == STICKMAP_SHIELDDROP_ENUM_LEN) {
-								selectedStickmapSub = 0;
-							}
-							break;
-						case (NONE):
-						default:
-							selectedStickmapSub = 0;
-							break;
-					}
 				}
 			}
 			
@@ -583,11 +581,39 @@ void menu_coordView() {
 			displayInstructions();
 			break;
 	}
+	
+	if (*pressed == PAD_BUTTON_RIGHT) {
+		selectedStickmap++;
+		selectedStickmapSub = 0;
+		if (selectedStickmap == 3) {
+			selectedStickmap = 0;
+		}
+	} else if (*pressed == PAD_BUTTON_UP) {
+		selectedStickmapSub++;
+		switch (selectedStickmap) {
+			case (FF_WD):
+				if (selectedStickmapSub == STICKMAP_FF_WD_ENUM_LEN) {
+					selectedStickmapSub = 0;
+				}
+				break;
+			case (SHIELDDROP):
+				if (selectedStickmapSub == STICKMAP_SHIELDDROP_ENUM_LEN) {
+					selectedStickmapSub = 0;
+				}
+				break;
+			case (NONE):
+			default:
+				selectedStickmapSub = 0;
+				break;
+		}
+	}
+	
+	fontButtonFlashIncrement(&dpadFlashCounter, 30);
 }
 
 void menu_coordViewEnd() {
 	// not sure if this is actually useful, maybe get rid of it...
-	//menuState = COORD_VIEW_SETUP;
+	menuState = COORD_VIEW_SETUP;
 }
 
 void menu_coordViewSetLockState(bool state) {

@@ -93,14 +93,14 @@ void menu_controllerTest() {
 			setCursorPos(19, 0);
 			setCursorDepth(-10);
 			printStr("Raw XY:    (%4d,%4d)", stickRaw.stickX, stickRaw.stickY);
-			setCursorPos(19, 32);
+			setCursorPos(19, 29);
 			printStr("C-Raw XY:    (%4d,%4d)", stickRaw.cStickX, stickRaw.cStickY);
 			
 			// print melee coordinates
 			setCursorPos(20, 0);
 			printStr("Melee:  (%s)", getMeleeCoordinateString(stickMelee, AXIS_AXY));
 			
-			setCursorPos(20, 32);
+			setCursorPos(20, 29);
 			printStr("C-Melee:  (%s)", getMeleeCoordinateString(stickMelee, AXIS_CXY));
 			
 			// show origin info if controller is connected
@@ -127,7 +127,7 @@ void menu_controllerTest() {
 						printStr("(%4d,%4d)", origin.stickX, origin.stickY);
 					}
 				}
-				setCursorPos(21, 32);
+				setCursorPos(21, 29);
 				printStr("C-Origin XY: ");
 				
 				// change text color depending on the origin's value
@@ -154,20 +154,24 @@ void menu_controllerTest() {
 					printStr("L Origin: %3d", origin.triggerL);
 				}
 				if (!(*held & PAD_TRIGGER_R)) {
-					setCursorPos(18, 44);
+					setCursorPos(18, 42);
 					printStr("R Origin: %3d", origin.triggerR);
 				}
 				if (rumbleSecret) {
-					setCursorPos(0, 37);
-					printStr("Press Z to test 'Rumble'");
+					setCursorPos(0, 30);
+					printStr("Press Z");
+					drawFontButton(FONT_Z);
+					printStr("to test 'Rumble'");
 				} else {
 					// 'shake' the rumble text if z is held
 					if (*held & PAD_TRIGGER_Z) {
-						setCursorXY(390 + rumbleOffsets[rumbleIndex][0], rumbleOffsets[rumbleIndex][1]);
+						setCursorXY(320 + rumbleOffsets[rumbleIndex][0], rumbleOffsets[rumbleIndex][1]);
 					} else {
-						setCursorPos(0, 39);
+						setCursorPos(0, 32);
 					}
-					printStr("Press Z to test Rumble");
+					printStr("Press Z");
+					drawFontButton(FONT_Z);
+					printStr("to test Rumble");
 				}
 			}
 			
@@ -178,10 +182,10 @@ void menu_controllerTest() {
 				printStr("Digital L Pressed");
 			}
 			
-			setCursorPos(17,44);
+			setCursorPos(17, 42);
 			printStr("Analog R: %3d", PAD_TriggerR(0));
 			if (*held & PAD_TRIGGER_R) {
-				setCursorPos(18, 40);
+				setCursorPos(18, 38);
 				printStr("Digital R Pressed");
 			}
 			

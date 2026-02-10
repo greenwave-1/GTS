@@ -21,4 +21,6 @@ enum PLOT_2D_STATE { PLOT_DISPLAY, PLOT_INPUT };
 void menu_plot2d();
 void menu_plot2dEnd();
 
+void menu_plot2dSetAutoTrigger(bool captureState);
+
 #endif //GTS_PLOT2D_H

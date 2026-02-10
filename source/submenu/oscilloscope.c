@@ -335,30 +335,41 @@ static void oscilloscopeCallback() {
 
 static void displayInstructions() {
 	setCursorPos(2, 0);
-	printStr("Press X to cycle the current test, results will show above the\n"
-			"waveform. Press Y to cycle between Analog Stick and C-Stick.\n"
-			"Use DPAD left/right to scroll waveform when it is\n"
-			"larger than the displayed area, hold R to move faster.");
+	setWordWrap(true);
+	printStr("Press X");
+	drawFontButton(FONT_X);
+	printStr("to cycle the current test, results will show below the waveform.\n\nPress Y");
+	drawFontButton(FONT_Y);
+	printStr("to cycle between the Analog Stick");
+	drawFontButton(FONT_STICK_A);
+	printStr("and C-Stick");
+	drawFontButton(FONT_STICK_C);
+	printStr(".\n\nUse D-Pad");
+	fontButtonSetDpadDirections(FONT_DPAD_LEFT | FONT_DPAD_RIGHT);
+	drawFontButton(FONT_DPAD);
+	printStr("to scroll waveform when it is larger than the displayed area, hold R");
+	drawFontButton(FONT_R);
+	printStr("to move faster.");
 	printStr("\n\nCURRENT TEST: ");
 	switch (currentTest) {
 		case SNAPBACK:
 			printStr("SNAPBACK\n"
-					"Check the min/max value on a given axis depending on where\n"
-					"the stick started. The range in which Melee will not register\n"
-					"a directional input is -22 to +22. Anything outside that range\n"
+					"Check the min/max value on a given axis depending on where "
+					"the stick started. The range in which Melee will not register "
+					"a directional input is -22 to +22. Anything outside that range "
 					"risks the game registering a non-neutral stick input.");
 			break;
 		case PIVOT:
 			printStr("PIVOT\n"
-					"For a successful pivot, the stick's position should stay\n"
-					"above/below +64/-64 for ~16.6ms (1 frame). Less, and a pivot\n"
-					"may not occur; more, and a dashback may occur. The stick\n"
-					"should also hit 80/-80 on both sides.\n");
+					"For a successful pivot, the stick's position should stay "
+					"above/below +64/-64 for ~16.6ms (1 frame). Less, and a pivot "
+					"may not occur; more, and a dashback may occur. The stick "
+					"should also hit 80/-80 on both sides. ");
 			break;
 		case DASHBACK:
 			printStr("DASHBACK\n"
-					"A (vanilla) dashback will be successful when the stick doesn't\n"
-					"get polled between 23 and 64, or -23 and -64.\n"
+					"A (vanilla) dashback will be successful when the stick doesn't "
+					"get polled between 23 and 64, or -23 and -64. "
 					"Less time in this range is better.");
 			break;
 		default:
@@ -397,6 +408,7 @@ static void setup() {
 		oState = PRE_INPUT;
 	}
 	resetDrawGraph();
+	resetScrollingPrint();
 }
 
 // function called from outside
@@ -411,30 +423,26 @@ void menu_oscilloscope() {
 			// this prevents a situation where the pointer is 'flipped' while we're attempting to draw from it
 			ControllerRec *dispData = *data;
 			
+			setCursorPos(0, 30);
+			printStr("Press Z");
+			drawFontButton(FONT_Z);
+			printStr("for instructions");
+			
 			switch (oState) {
-				case PRE_INPUT:
-					printStr("Waiting for input.");
-					printEllipse(ellipseCounter, 20);
-					ellipseCounter++;
-					if (ellipseCounter == 60) {
-						ellipseCounter = 0;
-					}
 				case POST_INPUT_LOCK:
-					// TODO: this is dumb, do this a better way to fit better
-					if (oState == POST_INPUT_LOCK) {
-						// dont allow new input until cooldown elapses
-						if (stickCooldown != 0) {
-							if (stickReturnedToOrigin) {
-								stickCooldown--;
-							}
-							if (stickCooldown == 0) {
-								oState = POST_INPUT;
-							}
-						} else {
-							setCursorPos(2, 28);
-							printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
+					// dont allow new input until cooldown elapses
+					if (stickCooldown != 0) {
+						if (stickReturnedToOrigin) {
+							stickCooldown--;
 						}
+						if (stickCooldown == 0) {
+							oState = POST_INPUT;
+						}
+					} else {
+						setCursorPos(2, 25);
+						printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
 					}
+				case PRE_INPUT:
 				case POST_INPUT:
 					// draw guidelines based on selected test
 					// blank background
@@ -508,7 +516,7 @@ void menu_oscilloscope() {
 						int visibleDatapoints, dataScrollOffset;
 						getGraphDisplayedInfo(&dataScrollOffset, &visibleDatapoints);
 						
-						setCursorPos(3, 0);
+						setCursorPos(3, 4);
 						
 						int actualDatapoints = dataScrollOffset + visibleDatapoints;
 						if (actualDatapoints > dispData->sampleEnd) {
@@ -645,10 +653,10 @@ void menu_oscilloscope() {
 										pivotPercent = 100 - noTurnPercent;
 									}
 
-									printStr("MS: %6.2f | No turn: %3.0f%% | Pivot: %3.0f%% | Dashback: %3.0f%%",
+									printStr("MS: %5.1f | No turn: %3.0f%% | Pivot: %3.0f%% | Dashback: %3.0f%%",
 											timeInPivotRangeMs, noTurnPercent, pivotPercent, dashbackPercent);
 								} else {
-									printStr("MS:    0.0 | No turn:   0%% | Pivot:   0%% | Dashback: 100%%");
+									printStr("MS:   0.0 | No turn:   0%% | Pivot:   0%% | Dashback: 100%%");
 									//printStr("prev %d piv %d last %d start %d", prevPivotHit80, pivotHit80, pivotLastValue, pivotStartSign);
 								}
 								break;

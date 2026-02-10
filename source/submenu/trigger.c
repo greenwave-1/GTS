@@ -160,17 +160,25 @@ static void setup() {
 
 static void displayInstructions() {
 	setCursorPos(2, 0);
-	printStr("Press and release either trigger to capture. A capture will\n"
-			 "start if a digital press is detected, or if the analog value\n"
-			 "is above 42. Capture will be displayed once the buffer fills\n"
+	setWordWrap(true);
+	printStr("Press and release either L");
+	drawFontButton(FONT_L);
+	printStr("or R");
+	drawFontButton(FONT_R);
+	printStr("to capture. A capture will "
+			 "start if a digital press is detected, or if the analog value "
+			 "is above 42. Capture will be displayed once the buffer fills "
 			 "(500 samples).\n\n"
-			 "A Green line indicates when a digital press is detected.\n"
-			 "A Gray line shows the minimum value Melee uses for Analog\n"
+			 "A Green line indicates when a digital press is detected. "
+			 "A Gray line shows the minimum value Melee uses for Analog "
 			 "shield (43 or above).\n\n"
-			 "Percents for projectile powershields are shown at the bottom.\n");
+			 "Percents for projectile powershields are shown at the bottom.");
 	
-	setCursorPos(21, 0);
-	printStr("Press Z to close instructions.");
+	setWordWrap(false);
+	setCursorPos(0, 25);
+	printStr("Press Z");
+	drawFontButton(FONT_Z);
+	printStr("to close instructions");
 	
 	if (*pressed & PAD_TRIGGER_Z) {
 		menuState = TRIG_POST_SETUP;
@@ -187,24 +195,28 @@ void menu_triggerOscilloscope() {
 			// which means we will always point to the same object, regardless of a flip
 			ControllerRec *dispData = *data;
 			
+			setCursorPos(0, 30);
+			printStr("Press Z");
+			drawFontButton(FONT_Z);
+			printStr("for instructions");
+			
 			switch (trigState) {
+				case TRIG_DISPLAY_LOCK:
+					setCursorPos(2, 25);
+					printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
 				case TRIG_INPUT:
+				case TRIG_DISPLAY:
 					// nothing happens here other than showing the message about waiting for an input
 					// the sampling callback function will change the trigState enum when an input is done
-					setCursorPos(2,0);
-					printStr("Waiting for input.");
-					printEllipse(ellipseCounter, 20);
-					ellipseCounter++;
-					if (ellipseCounter == 60) {
-						ellipseCounter = 0;
+					if (trigState != TRIG_DISPLAY_LOCK) {
+						setCursorPos(2, 0);
+						printStr("Waiting for input.");
+						printEllipse(ellipseCounter, 20);
+						ellipseCounter++;
+						if (ellipseCounter == 60) {
+							ellipseCounter = 0;
+						}
 					}
-				case TRIG_DISPLAY_LOCK:
-					// TODO: this is dumb, do this a better way to fit better
-					if (trigState == TRIG_DISPLAY_LOCK) {
-						setCursorPos(2, 28);
-						printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
-					}
-				case TRIG_DISPLAY:
 					// bounding box
 					setDepthForDrawCall(-10);
 					drawSolidBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
@@ -221,7 +233,7 @@ void menu_triggerOscilloscope() {
 						setDepthForDrawCall(-2);
 						drawGraph(dispData, GRAPH_TRIGGER, trigState == TRIG_DISPLAY_LOCK);
 						
-						setCursorPos(3, 27);
+						setCursorPos(3, 24);
 						
 						// calculate projectile powershield percentages
 						// mostly based on phobvision code:
@@ -278,8 +290,8 @@ void menu_triggerOscilloscope() {
 							psADT = 100 - psDigital;
 						}
 						
-						setCursorPos(20, 0);
-						printStr("Digital PS: %5.1f%% | ADT PS: %5.1f%% | No PS: %5.1f%%", psDigital, psADT, psNone);
+						setCursorPos(20, 4);
+						printStr("Digital PS: %4.0f%% | ADT PS: %4.0f%% | No PS: %4.0f%%", psDigital, psADT, psNone);
 
 						if (*pressed & PAD_BUTTON_A) {
 							if (trigState == TRIG_DISPLAY) {
