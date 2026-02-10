@@ -171,7 +171,11 @@ static void oscilloscopeCallback() {
 					uint64_t timeFromOriginCross = 0;
 					bool crossed64Range = false;
 					int8_t inputSign = 0;
+					// default invalid recording point, so recordings don't look weird
 					int pivotStartIndex = 0;
+					if ((*temp)->sampleEnd > 500) {
+						pivotStartIndex = (*temp)->sampleEnd - 500;
+					}
 					bool hasCrossedOrigin = false;
 					
 					// read from back of list
@@ -189,7 +193,10 @@ static void oscilloscopeCallback() {
 						} else {
 							timeFromOriginCross += (*temp)->samples[i].timeDiffUs;
 							if (timeFromOriginCross / 1000 >= 50) {
-								pivotStartIndex = i;
+								// is this a valid recording?
+								if ((*temp)->sampleEnd - i < 500) {
+									pivotStartIndex = i;
+								}
 								break;
 							}
 						}
@@ -671,10 +678,10 @@ void menu_oscilloscope() {
 										pivotPercent = 100 - noTurnPercent;
 									}
 
-									printStr("MS: %5.1f | No turn: %3.0f%% | Pivot: %3.0f%% | Dashback: %3.0f%%",
+									printStr("%5.1f ms | NoTurn: %3.0f%% | Pivot: %3.0f%% | Dashback: %3.0f%%",
 											timeInPivotRangeMs, noTurnPercent, pivotPercent, dashbackPercent);
 								} else {
-									printStr("MS:   0.0 | No turn:   0%% | Pivot:   0%% | Dashback: 100%%");
+									printStr("  0.0 ms | NoTurn:   0%% | Pivot:   0%% | Dashback: 100%%");
 									//printStr("prev %d piv %d last %d start %d", prevPivotHit80, pivotHit80, pivotLastValue, pivotStartSign);
 								}
 								break;
