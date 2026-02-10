@@ -333,7 +333,9 @@ static void oscilloscopeCallback() {
 	}
 }
 
+static int dpadFlashIncrement = 0;
 static void displayInstructions() {
+	fontButtonFlashIncrement(&dpadFlashIncrement, 30);
 	setCursorPos(2, 0);
 	setWordWrap(true);
 	printStr("Press X");
@@ -376,9 +378,16 @@ static void displayInstructions() {
 			printStr("NO TEST SELECTED");
 			break;
 	}
+	setWordWrap(false);
 	
 	setCursorPos(21, 0);
 	printStr("Press Z to close instructions.");
+	setCursorPos(0, 25);
+	printStr("Press Z");
+	drawFontButton(FONT_Z);
+	printStr("to close instructions");
+	
+
 	
 	if (*pressed & PAD_TRIGGER_Z) {
 		state = OSC_POST_SETUP;
@@ -398,7 +407,7 @@ static void setup() {
 		data = getRecordingData();
 		temp = getTempData();
 	}
-	if ((*data)->isRecordingReady && oState == PRE_INPUT) {
+	if ((*data)->isRecordingReady && oState == PRE_INPUT && (*data)->recordingType != REC_OSCILLOSCOPE) {
 		oState = POST_INPUT_LOCK;
 	}
 
@@ -444,6 +453,15 @@ void menu_oscilloscope() {
 					}
 				case PRE_INPUT:
 				case POST_INPUT:
+					if (oState != POST_INPUT_LOCK || stickCooldown != 0) {
+						setCursorPos(2, 0);
+						printStr("Waiting for input.");
+						printEllipse(ellipseCounter, 20);
+						ellipseCounter++;
+						if (ellipseCounter == 60) {
+							ellipseCounter = 0;
+						}
+					}
 					// draw guidelines based on selected test
 					// blank background
 					setDepthForDrawCall(-10);
@@ -893,6 +911,7 @@ void menu_oscilloscopeEnd() {
 	pressed = NULL;
 	held = NULL;
 	state = OSC_SETUP;
+	oState = PRE_INPUT;
 	stickReturnedToOrigin = true;
 	if (!(*temp)->isRecordingReady) {
 		(*temp)->sampleEnd = 0;

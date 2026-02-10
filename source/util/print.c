@@ -266,9 +266,7 @@ void drawFontButton(enum FONT_BUTTON_LIST button) {
 	int texX1 = 20 * (button % 6);
 	int texY1 = 20 * (button / 6);
 	
-	drawSubTexture(cursorX + PRINT_PADDING_HORIZONTAL - 3, cursorY + PRINT_PADDING_VERTICAL - 2,
-	               cursorX + PRINT_PADDING_HORIZONTAL + 17, cursorY + PRINT_PADDING_VERTICAL + 18,
-		changeLoadedTexmap(TEXMAP_FONT_BUTTON);
+	changeLoadedTexmap(TEXMAP_FONT_BUTTON);
 	drawSubTexture(cursorX + workingHorizontalPadding - 1, cursorY + PRINT_PADDING_VERTICAL - 2,
 	               cursorX + workingHorizontalPadding + 19, cursorY + PRINT_PADDING_VERTICAL + 18,
 	               texX1, texY1, texX1 + 20, texY1 + 20, GX_COLOR_WHITE);
