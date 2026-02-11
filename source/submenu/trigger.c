@@ -175,10 +175,12 @@ static void displayInstructions() {
 			 "Percents for projectile powershields are shown at the bottom.");
 	
 	setWordWrap(false);
-	setCursorPos(0, 25);
-	printStr("Press Z");
-	drawFontButton(FONT_Z);
-	printStr("to close instructions");
+	if (isControllerConnected(CONT_PORT_1)) {
+		setCursorPos(0, 25);
+		printStr("Press Z");
+		drawFontButton(FONT_Z);
+		printStr("to close instructions");
+	}
 	
 	if (*pressed & PAD_TRIGGER_Z) {
 		menuState = TRIG_POST_SETUP;
@@ -195,10 +197,12 @@ void menu_triggerOscilloscope() {
 			// which means we will always point to the same object, regardless of a flip
 			ControllerRec *dispData = *data;
 			
-			setCursorPos(0, 30);
-			printStr("Press Z");
-			drawFontButton(FONT_Z);
-			printStr("for instructions");
+			if (isControllerConnected(CONT_PORT_1)) {
+				setCursorPos(0, 30);
+				printStr("Press Z");
+				drawFontButton(FONT_Z);
+				printStr("for instructions");
+			}
 			
 			switch (trigState) {
 				case TRIG_DISPLAY_LOCK:

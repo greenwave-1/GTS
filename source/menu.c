@@ -455,7 +455,6 @@ static void menu_mainMenuDraw() {
 					(GXColor) {colSet[indexStart + i][0], colSet[indexStart + i][1], colSet[indexStart + i][2], 0xFF});
 		}
 		
-		
 		if (colSelection == 1) {
 			// this is in reference to a close friend of mine, not me
 			setCursorPos(10, 45);
@@ -545,6 +544,7 @@ void menu_mainMenu() {
 		} else {
 			setCursorPos(2 + i, 4);
 		}
+		
 		// disable export button if filesystem mount failed or no data ready
 		if (i == ENTRY_DATA_EXPORT && disableDataExport) {
 			printStrColor(GX_COLOR_NONE, GX_COLOR_GRAY, menuItems[i]);

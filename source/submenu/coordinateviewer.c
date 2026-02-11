@@ -421,10 +421,12 @@ static void displayInstructions() {
 	setWordWrap(false);
 	endScrollingPrint();
 	
-	setCursorPos(0, 25);
-	printStr("Press Z");
-	drawFontButton(FONT_Z);
-	printStr("to close instructions");
+	if (isControllerConnected(CONT_PORT_1)) {
+		setCursorPos(0, 25);
+		printStr("Press Z");
+		drawFontButton(FONT_Z);
+		printStr("to close instructions");
+	}
 	
 	if (*pressed & PAD_TRIGGER_Z || menuLockEnabled) {
 		menuState = COORD_VIEW_POST_SETUP;
@@ -444,7 +446,7 @@ void menu_coordView() {
 			// melee stick coordinates stuff
 			// a lot of this comes from github.com/phobgcc/phobconfigtool
 			
-			if (!menuLockEnabled) {
+			if (!menuLockEnabled && isControllerConnected(CONT_PORT_1)) {
 				setCursorPos(0, 30);
 				printStr("Press Z");
 				drawFontButton(FONT_Z);

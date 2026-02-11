@@ -387,14 +387,12 @@ static void displayInstructions() {
 	}
 	setWordWrap(false);
 	
-	setCursorPos(21, 0);
-	printStr("Press Z to close instructions.");
-	setCursorPos(0, 25);
-	printStr("Press Z");
-	drawFontButton(FONT_Z);
-	printStr("to close instructions");
-	
-
+	if (isControllerConnected(CONT_PORT_1)) {
+		setCursorPos(0, 25);
+		printStr("Press Z");
+		drawFontButton(FONT_Z);
+		printStr("to close instructions");
+	}
 	
 	if (*pressed & PAD_TRIGGER_Z) {
 		state = OSC_POST_SETUP;
@@ -439,10 +437,12 @@ void menu_oscilloscope() {
 			// this prevents a situation where the pointer is 'flipped' while we're attempting to draw from it
 			ControllerRec *dispData = *data;
 			
-			setCursorPos(0, 30);
-			printStr("Press Z");
-			drawFontButton(FONT_Z);
-			printStr("for instructions");
+			if (isControllerConnected(CONT_PORT_1)) {
+				setCursorPos(0, 30);
+				printStr("Press Z");
+				drawFontButton(FONT_Z);
+				printStr("for instructions");
+			}
 			
 			switch (oState) {
 				case POST_INPUT_LOCK:

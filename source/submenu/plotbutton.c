@@ -259,10 +259,12 @@ static void displayInstructions() {
 	printStr("modifier. ");
 	setWordWrap(false);
 	
-	setCursorPos(0, 25);
-	printStr("Press Z");
-	drawFontButton(FONT_Z);
-	printStr("to close instructions");
+	if (isControllerConnected(CONT_PORT_1)) {
+		setCursorPos(0, 25);
+		printStr("Press Z");
+		drawFontButton(FONT_Z);
+		printStr("to close instructions");
+	}
 	
 	if (*pressed & PAD_TRIGGER_Z) {
 		menuState = BUTTON_POST_SETUP;
@@ -284,7 +286,7 @@ void menu_plotButton() {
 			// which means we will always point to the same object, regardless of a flip
 			ControllerRec *dispData = *data;
 			
-			if (!autoCapture) {
+			if (!autoCapture && isControllerConnected(CONT_PORT_1)) {
 				setCursorPos(0, 30);
 				printStr("Press Z");
 				drawFontButton(FONT_Z);

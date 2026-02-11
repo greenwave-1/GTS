@@ -104,12 +104,12 @@ static void displayInstructions() {
 	printStr("to reset the current visualization.");
 	setWordWrap(false);
 	
-	//setCursorPos(21, 0);
-	//printStr("Press Z to close instructions.");
-	setCursorPos(0, 25);
-	printStr("Press Z");
-	drawFontButton(FONT_Z);
-	printStr("to close instructions");
+	if (isControllerConnected(CONT_PORT_1)) {
+		setCursorPos(0, 25);
+		printStr("Press Z");
+		drawFontButton(FONT_Z);
+		printStr("to close instructions");
+	}
 	
 	if (*pressed & PAD_TRIGGER_Z) {
 		menuState = GATE_POST_SETUP;
@@ -142,10 +142,12 @@ void menu_gateMeasure() {
 					yPressFrameCounter = 0;
 					state = GATE_POST_INIT;
 				case GATE_POST_INIT:
-					setCursorPos(0, 30);
-					printStr("Press Z");
-					drawFontButton(FONT_Z);
-					printStr("for instructions");
+					if (isControllerConnected(CONT_PORT_1)) {
+						setCursorPos(0, 30);
+						printStr("Press Z");
+						drawFontButton(FONT_Z);
+						printStr("for instructions");
+					}
 					setCursorPos(4, 0);
 					printStr("Stick (Y");
 					drawFontButton(FONT_Y);

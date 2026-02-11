@@ -69,8 +69,10 @@ static void attemptConnect() {
 				break;
 			}
 		}
+		
+		connectionEstablished = true;
 	}
-	connectionEstablished = true;
+	
 	return;
 }
 

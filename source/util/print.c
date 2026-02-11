@@ -37,8 +37,6 @@ static void advanceCursorLine() {
 	cursorY += 15 + LINE_SPACING;
 }
 
-static int changeButtons = 0;
-
 static int workingHorizontalPadding = PRINT_PADDING_HORIZONTAL;
 
 static bool allowWordWrap = false;
@@ -485,10 +483,3 @@ void setWordWrap(bool enable) {
 	allowWordWrap = enable;
 }
 
-
-int swapButtonTex() {
-	changeButtons++;
-	changeButtons %= 3;
-	
-	return changeButtons;
-}

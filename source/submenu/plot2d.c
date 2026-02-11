@@ -250,10 +250,12 @@ static void displayInstructions() {
 	setWordWrap(false);
 	//endScrollingPrint();
 	
-	setCursorPos(0, 25);
-	printStr("Press Z");
-	drawFontButton(FONT_Z);
-	printStr("to close instructions");
+	if (isControllerConnected(CONT_PORT_1)) {
+		setCursorPos(0, 25);
+		printStr("Press Z");
+		drawFontButton(FONT_Z);
+		printStr("to close instructions");
+	}
 	
 	if (*pressed & PAD_TRIGGER_Z) {
 		menuState = PLOT_POST_SETUP;
@@ -275,7 +277,7 @@ void menu_plot2d() {
 			// which means we will always point to the same object, regardless of a flip
 			ControllerRec *dispData = *data;
 			
-			if (!autoCapture && plotState != PLOT_INPUT) {
+			if (!autoCapture && plotState != PLOT_INPUT && isControllerConnected(CONT_PORT_1)) {
 				setCursorPos(0, 30);
 				printStr("Press Z");
 				drawFontButton(FONT_Z);

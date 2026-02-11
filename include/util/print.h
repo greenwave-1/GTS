@@ -76,6 +76,4 @@ void setCursorDepth(int z);
 void restorePrevCursorDepth();
 void setWordWrap(bool enable);
 
-int swapButtonTex();
-
 #endif //GTS_PRINT_H
