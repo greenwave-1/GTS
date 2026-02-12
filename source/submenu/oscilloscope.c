@@ -457,6 +457,10 @@ void menu_oscilloscope() {
 					} else {
 						setCursorPos(2, 25);
 						printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
+						setCursorPos(2, 35);
+						printStr("Pan/Zoom (C-Stick");
+						drawFontButton(FONT_STICK_C);
+						printStr(")");
 					}
 				case PRE_INPUT:
 				case POST_INPUT:
@@ -526,7 +530,19 @@ void menu_oscilloscope() {
 					}
 					restorePrevDepth();
 					
+					if (oState != POST_INPUT_LOCK || stickCooldown > 0) {
+						setCursorPos(2, 37);
+						printStr("Toggle Stick (Y");
+						drawFontButton(FONT_Y);
+						printStr(")");
+					}
+					
 					if (dispData->isRecordingReady) {
+						setCursorPos(1, 38);
+						printStr("Toggle Lock (A");
+						drawFontButton(FONT_A);
+						printStr(")");
+						
 						setDrawGraphStickAxis(displayedAxis);
 						setDepthForDrawCall(-2);
 						drawGraph(dispData, GRAPH_STICK, oState == POST_INPUT_LOCK);
@@ -863,7 +879,11 @@ void menu_oscilloscope() {
 			}
 			
 			setCursorPos(21,0);
-			printStr("Current test: ");
+			printStr("Current test (X");
+			setCursorDepth(-5);
+			drawFontButton(FONT_X);
+			restorePrevCursorDepth();
+			printStr("): ");
 			switch (currentTest) {
 				case SNAPBACK:
 					printStr("Snapback");

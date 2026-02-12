@@ -342,7 +342,7 @@ bool menu_runMenu() {
 				if (lockExitEnabled) {
 					printStr("Menu locked, hold Start");
 					drawFontButton(FONT_START);
-					printStr("to re-enable.");
+					printStr("to unlock.");
 				} else {
 					printStr("Hold B");
 					drawFontButton(FONT_B);
@@ -362,7 +362,13 @@ bool menu_runMenu() {
 				drawFontButton(FONT_B);
 				printStr("to go back, or Start");
 				drawFontButton(FONT_START);
-				printStr("to toggle Auto-Trigger");
+				printStr("to ");
+				if (autoTriggerEnabled) {
+					printStr("disable");
+				} else {
+					printStr("enable");
+				}
+				printStr(" Auto-Trigger");
 
 				startHeldCounter = 0;
 				

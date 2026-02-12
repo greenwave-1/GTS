@@ -208,6 +208,10 @@ void menu_triggerOscilloscope() {
 				case TRIG_DISPLAY_LOCK:
 					setCursorPos(2, 25);
 					printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
+					setCursorPos(2, 35);
+					printStr("Pan/Zoom (C-Stick");
+					drawFontButton(FONT_STICK_C);
+					printStr(")");
 				case TRIG_INPUT:
 				case TRIG_DISPLAY:
 					// nothing happens here other than showing the message about waiting for an input
@@ -234,6 +238,11 @@ void menu_triggerOscilloscope() {
 					         SCREEN_TIMEPLOT_START + 500, (SCREEN_POS_CENTER_Y + 85), GX_COLOR_GRAY);
 					
 					if (dispData->isRecordingReady) {
+						setCursorPos(1, 38);
+						printStr("Toggle Lock (A");
+						drawFontButton(FONT_A);
+						printStr(")");
+						
 						setDepthForDrawCall(-2);
 						drawGraph(dispData, GRAPH_TRIGGER, trigState == TRIG_DISPLAY_LOCK);
 						

@@ -302,12 +302,7 @@ void menu_plotButton() {
 					// nothing happens here other than showing the message about waiting for an input
 					// the sampling callback function will change the plotState enum when an input is done
 					setCursorPos(2,0);
-					if (autoCapture) {
-						printStr("Auto-Trigger enabled, w");
-					} else {
-						printStr("W");
-					}
-					printStr("aiting for input.");
+					printStr("Waiting for input.");
 					printEllipse(ellipseCounter, 20);
 					ellipseCounter++;
 					if (ellipseCounter == 60) {
@@ -355,9 +350,11 @@ void menu_plotButton() {
 						ButtonPressedTime buttons[13] = { {0, false} };
 						
 						// initial "frame" line
-						drawSolidBox(SCREEN_BUTTONPLOT_START, SCREEN_TIMEPLOT_Y_TOP,
-						              SCREEN_BUTTONPLOT_START + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
-									  GX_COLOR_SILVER);
+						GX_SetLineWidth(8, GX_TO_ZERO);
+						drawLine(SCREEN_BUTTONPLOT_START, SCREEN_TIMEPLOT_Y_TOP,
+								 SCREEN_BUTTONPLOT_START, SCREEN_TIMEPLOT_Y_BOTTOM,
+								 GX_COLOR_SILVER);
+						GX_SetLineWidth(12, GX_TO_ZERO);
 						
 						int currMs = 0;
 						int frameIntervalIndex = 0;
@@ -370,9 +367,11 @@ void menu_plotButton() {
 							if (totalTimeUs >= (1000 * currMs)) {
 								currMs++;
 								if (totalTimeUs / 1000 >= FRAME_INTERVAL_MS[frameIntervalIndex]) {
-									drawSolidBox(SCREEN_BUTTONPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
-												  SCREEN_BUTTONPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
+									GX_SetLineWidth(6, GX_TO_ZERO);
+									drawLine(SCREEN_BUTTONPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
+												  SCREEN_BUTTONPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_BOTTOM,
 												  GX_COLOR_GRAY);
+									GX_SetLineWidth(12, GX_TO_ZERO);
 									
 									/*
 									if (menuDisplay400) {
@@ -477,9 +476,11 @@ void menu_plotButton() {
 						}
 						
 						// draw end line
-						drawSolidBox(SCREEN_BUTTONPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
-						              SCREEN_BUTTONPLOT_START + (currMs * 2) + 1, SCREEN_TIMEPLOT_Y_BOTTOM,
-						              GX_COLOR_GRAY);
+						GX_SetLineWidth(8, GX_TO_ZERO);
+						drawLine(SCREEN_BUTTONPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_TOP,
+						              SCREEN_BUTTONPLOT_START + (currMs * 2), SCREEN_TIMEPLOT_Y_BOTTOM,
+						              GX_COLOR_SILVER);
+						GX_SetLineWidth(12, GX_TO_ZERO);
 						/*if (menuDisplay400) {
 							DrawVLine(SCREEN_BUTTONPLOT_START + currMs, SCREEN_TIMEPLOT_Y_TOP,
 							          SCREEN_TIMEPLOT_Y_BOTTOM,

@@ -16,9 +16,6 @@
 // orange for button press samples
 #define COLOR_ORANGE 0xAD1EADBA
 
-// used to make sure diagonals don't count as an input
-const static uint16_t DPAD_MASK = PAD_BUTTON_UP | PAD_BUTTON_DOWN | PAD_BUTTON_LEFT | PAD_BUTTON_RIGHT;
-
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;
 static uint8_t captureStartFrameCooldown = 0;
@@ -289,12 +286,7 @@ void menu_plot2d() {
 				case PLOT_DISPLAY:
 					setCursorPos(2,0);
 					if (plotState == PLOT_INPUT || autoCapture) {
-						if (autoCapture) {
-							printStr("Auto-Trigger enabled, w");
-						} else {
-							printStr("W");
-						}
-						printStr("aiting for input.");
+						printStr("Waiting for input.");
 						printEllipse(ellipseCounter, 20);
 						ellipseCounter++;
 						if (ellipseCounter == 60) {
@@ -311,16 +303,11 @@ void menu_plot2d() {
 						lastDrawPoint = dispData->sampleEnd - 1;
 					}
 					
-					setCursorPos(4, 0);
-					printStr("Stick (Y");
+					setCursorPos(2, 37);
+					printStr("Toggle Stick (Y");
 					drawFontButton(FONT_Y);
-					printStr("):");
-					setCursorPos(5, 2);
-					if (!showCStick) {
-						printStr("Analog Stick");
-					} else {
-						printStr("C-Stick");
-					}
+					printStr(")");
+
 					
 					// draw box around plot area
 					if (!showCStick) {
@@ -339,12 +326,12 @@ void menu_plot2d() {
 					             GX_COLOR_BLACK);
 					
 					// selected stickmap
-					setCursorPos(6, 0);
+					setCursorPos(4, 0);
 					printStr("Stickmap ");
 					fontButtonSetDpadDirections(FONT_DPAD_UP | FONT_DPAD_DOWN);
 					drawFontButton(FONT_DPAD);
 					printStr(":  ");
-					setCursorPos(7, 2);
+					setCursorPos(5, 2);
 					switch (selectedImage) {
 						case A_WAIT:
 							printStr("Wait Attacks");
@@ -520,13 +507,24 @@ void menu_plot2d() {
 							        GX_COLOR_WHITE);
 						}
 						
-						setCursorPos(9, 0);
-						printStr("Total samples: %10u\n", dispData->sampleEnd);
-						printStr("Graph range: %6u->%4u\n", map2dStartIndex + 1, lastDrawPoint + 1);
+						setCursorPos(3, 30);
+						printStr("Total samples: %4u", dispData->sampleEnd);
+						setCursorPos(7, 0);
+						printStr("Graph start (");
+						drawFontButton(FONT_X);
+						printStr("+");
+						fontButtonSetDpadDirections(FONT_DPAD_LEFT | FONT_DPAD_RIGHT);
+						drawFontButton(FONT_DPAD);
+						printStr("):\n %4u\n", map2dStartIndex + 1);
+						
+						printStr("Graph End(");
+						fontButtonSetDpadDirections(FONT_DPAD_LEFT | FONT_DPAD_RIGHT);
+						drawFontButton(FONT_DPAD);
+						printStr("):\n %4u\n", lastDrawPoint + 1);
 						
 						double timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
-						printStr("Total MS: %15.2f\n", timeFromStartMs);
-						printStr("Total frames:%12.2f", timeFromStartMs / FRAME_TIME_MS_F);
+						printStr("Visible MS, frames:\n");
+						printStr(" %7.2f ms, %5.2ff", timeFromStartMs, timeFromStartMs / FRAME_TIME_MS_F);
 						
 						// holding L makes only individual presses work
 						if (*held & PAD_TRIGGER_L) {
@@ -626,8 +624,9 @@ void menu_plot2d() {
 					}
 					
 					// cycle the stickmap shown
-					// we want up/down to be pressed, but no other dpad direction held
-					if ((*pressed & DPAD_MASK) == PAD_BUTTON_UP && ((*held & DPAD_MASK) ^ PAD_BUTTON_UP) == 0) {
+					// we want up/down to be pressed, and nothing else held
+					// checking *pressed here lets this be a one-shot until the button is released
+					if (*pressed == PAD_BUTTON_UP && *held == PAD_BUTTON_UP) {
 						selectedImage++;
 						if (!showCStick) {
 							selectedImage %= IMAGE_LEN;
@@ -635,7 +634,7 @@ void menu_plot2d() {
 							// only first 3 options are valid for c-stick
 							selectedImage %= 3;
 						}
-					} else if ((*pressed & DPAD_MASK) == PAD_BUTTON_DOWN && ((*held & DPAD_MASK) ^ PAD_BUTTON_DOWN) == 0) {
+					} else if (*pressed == PAD_BUTTON_DOWN && *held == PAD_BUTTON_DOWN) {
 						selectedImage--;
 						if (selectedImage == -1) {
 							if (!showCStick) {
@@ -662,35 +661,6 @@ void menu_plot2d() {
 						plotState = PLOT_INPUT;
 						(*temp)->isRecordingReady = false;
 					}
-					
-					/*
-					// toggle auto-capture
-					setCursorPos(21, 0);
-					if (*held == PAD_BUTTON_START && !captureStart && autoCaptureStartReleased) {
-						if (autoCapture) {
-							printStr("Disabling ");
-						} else {
-							printStr("Enabling ");
-						}
-						printStr("Auto-Trigger");
-						printEllipse(autoCaptureCounter, 40);
-						autoCaptureCounter++;
-						if (autoCaptureCounter == 120) {
-							autoCapture = !autoCapture;
-							captureStart = false;
-							haveStartPoint = false;
-							autoCaptureCounter = 0;
-							autoCaptureStartReleased = false;
-						}
-					} else {
-						printStr("Hold start to toggle Auto-Trigger.");
-						autoCaptureCounter = 0;
-						if (!autoCaptureStartReleased) {
-							if ((*held & PAD_BUTTON_START) == 0) {
-								autoCaptureStartReleased = true;
-							}
-						}
-					}*/
 					
 					if (captureStartFrameCooldown != 0) {
 						captureStartFrameCooldown--;

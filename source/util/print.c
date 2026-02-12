@@ -265,6 +265,7 @@ void drawFontButton(enum FONT_BUTTON_LIST button) {
 	int texY1 = 20 * (button / 6);
 	
 	changeLoadedTexmap(TEXMAP_FONT_BUTTON);
+	setDepth(cursorZ);
 	drawSubTexture(cursorX + workingHorizontalPadding - 1, cursorY + PRINT_PADDING_VERTICAL - 2,
 	               cursorX + workingHorizontalPadding + 19, cursorY + PRINT_PADDING_VERTICAL + 18,
 	               texX1, texY1, texX1 + 20, texY1 + 20, GX_COLOR_WHITE);
@@ -310,6 +311,8 @@ void drawFontButton(enum FONT_BUTTON_LIST button) {
 		// unset after we're done
 		dpadDirections = FONT_DPAD_NONE;
 	}
+	
+	restorePrevDepth();
 
 	cursorX += 24;
 }

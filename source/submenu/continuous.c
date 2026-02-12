@@ -85,21 +85,34 @@ static void setup() {
 	resetDrawGraph();
 }
 
+static int ellipseCounter = 0;
+
 void menu_continuousWaveform() {
 	switch (state) {
 		case CONT_SETUP:
 			setup();
 			break;
 		case CONT_POST_SETUP:
-			setCursorPos(2, 0);
-			printStr("A to freeze. Y to toggle.");
-			
 			if (cState == INPUT_LOCK) {
 				setCursorPos(2, 25);
 				printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
+				setCursorPos(2, 35);
+				printStr("Pan/Zoom (C-Stick");
+				drawFontButton(FONT_STICK_C);
+				printStr(")");
 			}
 			
 			if (data->isRecordingReady) {
+				if (cState != INPUT_LOCK && isControllerConnected(CONT_PORT_1)) {
+					setCursorPos(2, 0);
+					printStr("Reading stick.");
+					printEllipse(ellipseCounter, 20);
+					ellipseCounter++;
+					if (ellipseCounter == 60) {
+						ellipseCounter = 0;
+					}
+				}
+				
 				// draw guidelines based on selected test
 				setDepthForDrawCall(-10);
 				drawSolidBox(SCREEN_TIMEPLOT_START - 1, SCREEN_POS_CENTER_Y - 128,
@@ -116,6 +129,18 @@ void menu_continuousWaveform() {
 				drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y, SCREEN_TIMEPLOT_START + 500, SCREEN_POS_CENTER_Y, GX_COLOR_GRAY);
 				
 				setDrawGraphStickAxis(selectedAxis);
+				
+				setCursorPos(1, 38);
+				printStr("Toggle Lock (A");
+				drawFontButton(FONT_A);
+				printStr(")");
+				
+				if (cState != INPUT_LOCK) {
+					setCursorPos(2, 37);
+					printStr("Toggle Stick (Y");
+					drawFontButton(FONT_Y);
+					printStr(")");
+				}
 				
 				// equivalent to dataIndex + 3000 - 1
 				// +3000 because index needs to be positive for modulus to work properly,

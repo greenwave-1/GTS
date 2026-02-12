@@ -464,17 +464,17 @@ void menu_coordView() {
 			stickMelee = convertStickRawToMelee(stickRaw);
 			
 			// print melee coordinates
-			setCursorPos(10, 0);
+			setCursorPos(9, 0);
 			printStr("Analog Stick:");
-			setCursorPos(11, 2);
+			setCursorPos(10, 2);
 			printStr("(%s)", getMeleeCoordinateString(stickMelee, AXIS_AXY));
 			
-			setCursorPos(12, 0);
+			setCursorPos(11, 0);
 			printStr("C-Stick:");
-			setCursorPos(13, 2);
+			setCursorPos(12, 2);
 			printStr("(%s)", getMeleeCoordinateString(stickMelee, AXIS_CXY));
 			
-			setCursorPos(5, 0);
+			setCursorPos(4, 0);
 			printStr("Stickmap ");
 			fontButtonSetDpadDirections(FONT_DPAD_RIGHT);
 			drawFontButton(FONT_DPAD);
@@ -482,7 +482,7 @@ void menu_coordView() {
 			
 			//setCursorPos(6, 15);
 			int stickmapRetVal = isCoordValid(selectedStickmap, stickMelee);
-			setCursorPos(7, 0);
+			setCursorPos(6, 0);
 			
 			printStr("Shown ");
 			fontButtonSetDpadDirections(FONT_DPAD_UP);
@@ -493,9 +493,9 @@ void menu_coordView() {
 			printStr("Result:");
 			switch (selectedStickmap) {
 				case FF_WD:
-					setCursorPos(6, 2);
+					setCursorPos(5, 2);
 					printStr("Firefox/Wavedash");
-					setCursorPos(8, 2);
+					setCursorPos(7, 2);
 					if (selectedStickmapSub == 0) {
 						printStr("ALL");
 					} else {
@@ -507,9 +507,9 @@ void menu_coordView() {
 					              STICKMAP_FF_WD_RETVALS[stickmapRetVal]);
 					break;
 				case SHIELDDROP:
-					setCursorPos(6, 2);
+					setCursorPos(5, 2);
 					printStr("Shield Drop");
-					setCursorPos(8, 2);
+					setCursorPos(7, 2);
 					if (selectedStickmapSub == 0) {
 						printStr("ALL");
 					} else {
@@ -522,9 +522,9 @@ void menu_coordView() {
 					break;
 				case NONE:
 				default:
-					setCursorPos(6, 2);
+					setCursorPos(5, 2);
 					printStr("NONE");
-					setCursorPos(8, 2);
+					setCursorPos(7, 2);
 					printStr("N/A");
 					setCursorPos(15, 2);
 					printStr("N/A");
@@ -559,7 +559,7 @@ void menu_coordView() {
 			changeLoadedTexmap(TEXMAP_STICKOUTLINE);
 			setDepthForDrawCall(-15);
 			drawTextureFullScaled(COORD_CIRCLE_CENTER_X - 164, SCREEN_POS_CENTER_Y - 164,
-			                      COORD_CIRCLE_CENTER_X + 164, SCREEN_POS_CENTER_Y + 164,
+			                      COORD_CIRCLE_CENTER_X + 163, SCREEN_POS_CENTER_Y + 163,
 			                      GX_COLOR_WHITE);
 			
 			drawStickmapOverlay(selectedStickmap, selectedStickmapSub);
