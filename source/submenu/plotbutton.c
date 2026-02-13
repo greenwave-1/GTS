@@ -585,40 +585,6 @@ void menu_plotButton() {
 							thresholdFrameCounter--;
 						}
 					}
-					
-					/*
-					// toggle auto-capture
-					setCursorPos(21, 0);
-					if (*held == PAD_BUTTON_START && !captureStart && autoCaptureStartReleased) {
-						if (autoCapture) {
-							printStr("Disabling ");
-						} else {
-							printStr("Enabling ");
-						}
-						printStr("Auto-Trigger");
-						printEllipse(autoCaptureCounter, 40);
-						autoCaptureCounter++;
-						if (autoCaptureCounter == 120) {
-							autoCapture = !autoCapture;
-							if (autoCapture) {
-								state = BUTTON_INPUT;
-							} else {
-								state = BUTTON_DISPLAY;
-							}
-							captureButtonsReleased = false;
-							autoCaptureStartReleased = false;
-							autoCaptureCounter = 0;
-						}
-					} else {
-						printStr("Hold start to toggle Auto-Trigger.");
-						autoCaptureCounter = 0;
-						if (!autoCaptureStartReleased) {
-							if ((*held & PAD_BUTTON_START) == 0) {
-								autoCaptureStartReleased = true;
-							}
-						}
-					}
-					 */
 					break;
 
 				default:

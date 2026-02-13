@@ -393,17 +393,6 @@ static void displayInstructions() {
 	fontButtonSetDpadDirections(FONT_DPAD_RIGHT);
 	drawFontButton(FONT_DPAD);
 	printStr(": ");
-	/*
-	printStr("Press X to change the overall coordinate category, and Y to\n"
-			 "change what subset of coordinates are shown. Melee\n"
-			 "Coordinates are shown on the left.\n\n"
-	         "The white line shows the analog stick's position, and the\n"
-			 "yellow line shows the c-stick's position.\n\n"
-			 "Hold Start to 'lock' the menu. This disables the\n"
-			 "instructions page (Z) and exiting (B), and swaps X/Y with\n"
-			 "DPad Up and Right.\n\n"
-	         "Current Stickmap: ");
-	*/
 	switch (selectedStickmap) {
 		case FF_WD:
 			printStr("Firefox / Wavedash\n");

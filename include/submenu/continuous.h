@@ -16,6 +16,4 @@ enum CONT_STATE { INPUT, INPUT_LOCK };
 void menu_continuousWaveform();
 void menu_continuousEnd();
 
-
-
 #endif //GTS_CONTINUOUS_H
