@@ -140,12 +140,14 @@ static void setup() {
 		pressed = getButtonsDownPtr();
 		held = getButtonsHeldPtr();
 	}
-	setSamplingRateHigh();
-	cb = PAD_SetSamplingCallback(triggerSamplingCallback);
+	
 	if (data == NULL) {
 		data = getRecordingData();
 		temp = getTempData();
 	}
+	
+	setSamplingRateHigh();
+	cb = PAD_SetSamplingCallback(triggerSamplingCallback);
 	
 	// check if existing recording is valid for this menu
 	if (!(RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & (REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG))) {

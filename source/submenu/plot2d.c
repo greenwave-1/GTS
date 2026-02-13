@@ -187,12 +187,14 @@ static void setup() {
 		pressed = getButtonsDownPtr();
 		held = getButtonsHeldPtr();
 	}
-	cb = PAD_SetSamplingCallback(plot2dSamplingCallback);
-	menuState = PLOT_POST_SETUP;
+
 	if (data == NULL) {
 		data = getRecordingData();
 		temp = getTempData();
 	}
+	
+	cb = PAD_SetSamplingCallback(plot2dSamplingCallback);
+	menuState = PLOT_POST_SETUP;
 	plotState = PLOT_DISPLAY;
 	
 	autoCaptureStartReleased = true;

@@ -207,11 +207,13 @@ static void setup() {
 		pressed = getButtonsDownPtr();
 		held = getButtonsHeldPtr();
 	}
-	cb = PAD_SetSamplingCallback(plotButtonSamplingCallback);
+	
 	if (data == NULL) {
 		data = getRecordingData();
 		temp = getTempData();
 	}
+	
+	cb = PAD_SetSamplingCallback(plotButtonSamplingCallback);
 	menuState = BUTTON_POST_SETUP;
 	state = BUTTON_DISPLAY;
 	
