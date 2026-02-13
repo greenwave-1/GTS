@@ -463,7 +463,7 @@ static void menu_mainMenuDraw() {
 		
 		if (colSelection == 1) {
 			// this is in reference to a close friend of mine, not me
-			setCursorPos(10, 45);
+			setCursorPos(10, 42);
 			printStr("G + A <3");
 		}
 	}
