@@ -422,10 +422,10 @@ static void displayInstructions() {
 	endScrollingPrint();
 	
 	if (isControllerConnected(CONT_PORT_1)) {
-		setCursorPos(0, 25);
-		printStr("Press Z");
+		setCursorPos(0, 31);
+		printStr("Close Instructions (Z");
 		drawFontButton(FONT_Z);
-		printStr("to close instructions");
+		printStr(")");
 	}
 	
 	if (*pressed & PAD_TRIGGER_Z || menuLockEnabled) {
@@ -447,10 +447,10 @@ void menu_coordView() {
 			// a lot of this comes from github.com/phobgcc/phobconfigtool
 			
 			if (!menuLockEnabled && isControllerConnected(CONT_PORT_1)) {
-				setCursorPos(0, 30);
-				printStr("Press Z");
+				setCursorPos(0, 32);
+				printStr("View Instructions (Z");
 				drawFontButton(FONT_Z);
-				printStr("for instructions");
+				printStr(")");
 			}
 			
 			static ControllerSample stickRaw;

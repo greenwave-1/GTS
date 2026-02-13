@@ -158,20 +158,20 @@ void menu_controllerTest() {
 					printStr("R Origin: %3d", origin.triggerR);
 				}
 				if (rumbleSecret) {
-					setCursorPos(0, 30);
-					printStr("Press Z");
+					setCursorPos(0, 36);
+					printStr("Test \'Rumble\' (Z");
 					drawFontButton(FONT_Z);
-					printStr("to test 'Rumble'");
+					printStr(")");
 				} else {
 					// 'shake' the rumble text if z is held
 					if (*held & PAD_TRIGGER_Z) {
-						setCursorXY(320 + rumbleOffsets[rumbleIndex][0], rumbleOffsets[rumbleIndex][1]);
+						setCursorXY(380 + rumbleOffsets[rumbleIndex][0], rumbleOffsets[rumbleIndex][1]);
 					} else {
-						setCursorPos(0, 32);
+						setCursorPos(0, 38);
 					}
-					printStr("Press Z");
+					printStr("Test Rumble (Z");
 					drawFontButton(FONT_Z);
-					printStr("to test Rumble");
+					printStr(")");
 				}
 			}
 			

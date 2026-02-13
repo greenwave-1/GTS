@@ -105,10 +105,10 @@ static void displayInstructions() {
 	setWordWrap(false);
 	
 	if (isControllerConnected(CONT_PORT_1)) {
-		setCursorPos(0, 25);
-		printStr("Press Z");
+		setCursorPos(0, 31);
+		printStr("Close Instructions (Z");
 		drawFontButton(FONT_Z);
-		printStr("to close instructions");
+		printStr(")");
 	}
 	
 	if (*pressed & PAD_TRIGGER_Z) {
@@ -143,10 +143,10 @@ void menu_gateMeasure() {
 					state = GATE_POST_INIT;
 				case GATE_POST_INIT:
 					if (isControllerConnected(CONT_PORT_1)) {
-						setCursorPos(0, 30);
-						printStr("Press Z");
+						setCursorPos(0, 32);
+						printStr("View Instructions (Z");
 						drawFontButton(FONT_Z);
-						printStr("for instructions");
+						printStr(")");
 					}
 					setCursorPos(4, 0);
 					printStr("Stick (Y");

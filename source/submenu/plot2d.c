@@ -248,10 +248,10 @@ static void displayInstructions() {
 	//endScrollingPrint();
 	
 	if (isControllerConnected(CONT_PORT_1)) {
-		setCursorPos(0, 25);
-		printStr("Press Z");
+		setCursorPos(0, 31);
+		printStr("Close Instructions (Z");
 		drawFontButton(FONT_Z);
-		printStr("to close instructions");
+		printStr(")");
 	}
 	
 	if (*pressed & PAD_TRIGGER_Z) {
@@ -275,10 +275,10 @@ void menu_plot2d() {
 			ControllerRec *dispData = *data;
 			
 			if (!autoCapture && plotState != PLOT_INPUT && isControllerConnected(CONT_PORT_1)) {
-				setCursorPos(0, 30);
-				printStr("Press Z");
+				setCursorPos(0, 32);
+				printStr("View Instructions (Z");
 				drawFontButton(FONT_Z);
-				printStr("for instructions");
+				printStr(")");
 			}
 			
 			switch(plotState) {
