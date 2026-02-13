@@ -147,18 +147,17 @@ bool menu_runMenu() {
 	readController(true);
 	
 	#ifndef NO_DATE_CHECK
+	drawDateSpecial(date);
 	// in case a future check doesn't want to print the text normally...
 	switch (date) {
+		case DATE_PM:
+			printStrColor(GX_COLOR_BLACK, GX_COLOR_WHITE, "GCC Test Suite");
+			break;
 		case DATE_NICE:
 		case DATE_CMAS:
-			drawDateSpecial(date);
-			printStrColor(GX_COLOR_NONE, GX_COLOR_WHITE, "GCC Test Suite");
-			break;
-		case DATE_PM:
-			drawDateSpecial(date);
 		case DATE_NONE:
 		default:
-			printStrColor(GX_COLOR_BLACK, GX_COLOR_WHITE, "GCC Test Suite");
+			printStr("GCC Test Suite");
 			break;
 	}
 	#else
@@ -394,18 +393,17 @@ bool menu_runMenu() {
 void runMenuVisual() {
 	resetCursor();
 	#ifndef NO_DATE_CHECK
+	drawDateSpecial(date);
 	// in case a future check doesn't want to print the text normally...
 	switch (date) {
+		case DATE_PM:
+			printStrColor(GX_COLOR_BLACK, GX_COLOR_WHITE, "GCC Test Suite");
+			break;
 		case DATE_NICE:
 		case DATE_CMAS:
-			drawDateSpecial(date);
-			printStrColor(GX_COLOR_NONE, GX_COLOR_WHITE, "GCC Test Suite");
-			break;
-		case DATE_PM:
-			drawDateSpecial(date);
 		case DATE_NONE:
 		default:
-			printStrColor(GX_COLOR_BLACK, GX_COLOR_WHITE, "GCC Test Suite");
+			printStr("GCC Test Suite");
 			break;
 	}
 	#else
