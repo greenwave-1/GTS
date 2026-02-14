@@ -170,8 +170,13 @@ static void displayInstructions() {
 	printStr("to capture. A capture will "
 			 "start if a digital press is detected, or if the analog value "
 			 "is above 42. Capture will be displayed once the buffer fills "
-			 "(500 samples).\n\n"
-			 "A Green line indicates when a digital press is detected. "
+			 "(500 samples).");
+	printStr("\n\nPress A");
+	drawFontButton(FONT_A);
+	printStr("to \'lock\' the current recording and enable zooming and panning the waveform with the C-Stick");
+	drawFontButton(FONT_STICK_C);
+	printStr(".\n\n");
+	printStr("A Green line indicates when a digital press is detected. "
 			 "A Gray line shows the minimum value Melee uses for Analog "
 			 "shield (43 or above).\n\n"
 			 "Percents for projectile powershields are shown at the bottom.");

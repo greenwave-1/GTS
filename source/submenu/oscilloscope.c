@@ -345,21 +345,28 @@ static void displayInstructions() {
 	fontButtonFlashIncrement(&dpadFlashIncrement, 30);
 	setCursorPos(2, 0);
 	setWordWrap(true);
+	printStr("Move the currently selected stick to record and plot its movement.\n\n");
 	printStr("Press X");
 	drawFontButton(FONT_X);
-	printStr("to cycle the current test, results will show below the waveform.\n\nPress Y");
+	printStr("to cycle the current test, results will show below the waveform.");
+	
+	printStr("\n\nPress Y");
 	drawFontButton(FONT_Y);
 	printStr("to cycle between the Analog Stick");
 	drawFontButton(FONT_STICK_A);
 	printStr("and C-Stick");
 	drawFontButton(FONT_STICK_C);
-	printStr(".\n\nUse D-Pad");
-	fontButtonSetDpadDirections(FONT_DPAD_LEFT | FONT_DPAD_RIGHT);
-	drawFontButton(FONT_DPAD);
-	printStr("to scroll waveform when it is larger than the displayed area, hold R");
-	drawFontButton(FONT_R);
-	printStr("to move faster.");
-	printStr("\n\nCURRENT TEST: ");
+	printStr(".");
+	
+	printStr("\n\nPress A");
+	drawFontButton(FONT_A);
+	printStr("to \'lock\' the current recording and enable zooming and panning the waveform with the C-Stick");
+	drawFontButton(FONT_STICK_C);
+	printStr(".");
+	
+	printStr("\n\nCURRENT TEST (X");
+	drawFontButton(FONT_X);
+	printStr("): ");
 	switch (currentTest) {
 		case SNAPBACK:
 			printStr("SNAPBACK\n"
@@ -406,12 +413,15 @@ static void setup() {
 		pressed = getButtonsDownPtr();
 		held = getButtonsHeldPtr();
 	}
-	cb = PAD_SetSamplingCallback(oscilloscopeCallback);
-	state = OSC_POST_SETUP;
-	if(data == NULL) {
+
+	if (data == NULL) {
 		data = getRecordingData();
 		temp = getTempData();
 	}
+	
+	cb = PAD_SetSamplingCallback(oscilloscopeCallback);
+	state = OSC_POST_SETUP;
+	
 	if ((*data)->isRecordingReady && oState == PRE_INPUT && (*data)->recordingType != REC_OSCILLOSCOPE) {
 		oState = POST_INPUT_LOCK;
 	}
@@ -907,12 +917,6 @@ void menu_oscilloscope() {
 				} else {
 					oState = POST_INPUT_LOCK;
 				}
-			} else if (*pressed & PAD_BUTTON_X && !recordingInProgress) {
-				currentTest++;
-				// check if we overrun our test length
-				if (currentTest == OSCILLOSCOPE_TEST_LEN) {
-					currentTest = SNAPBACK;
-				}
 			} else if (*pressed & PAD_TRIGGER_Z) {
 				state = OSC_INSTRUCTIONS;
 			} else if (*pressed & PAD_BUTTON_Y && !recordingInProgress) {
@@ -929,6 +933,13 @@ void menu_oscilloscope() {
 		default:
 			printStr("How did we get here?");
 			break;
+	}
+	if (*pressed & PAD_BUTTON_X && !recordingInProgress) {
+		currentTest++;
+		// check if we overrun our test length
+		if (currentTest == OSCILLOSCOPE_TEST_LEN) {
+			currentTest = SNAPBACK;
+		}
 	}
 }
 

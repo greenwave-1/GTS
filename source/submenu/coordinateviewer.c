@@ -373,11 +373,16 @@ static void displayInstructions() {
 	//setCursorPos(2, 0);
 	startScrollingPrint(40, 70, 600, 400);
 	setWordWrap(true);
+	printStr("Move either the Analog Stick");
+	drawFontButton(FONT_STICK_A);
+	printStr("or the C-Stick");
+	drawFontButton(FONT_STICK_C);
+	printStr("to show its corresponding position on the Melee coordinate stickmap.\n\n");
 	printStr("Press");
-	fontButtonSetDpadDirections(FONT_DPAD_RIGHT);
+	fontButtonSetDpadDirections(FONT_DPAD_LEFT | FONT_DPAD_RIGHT);
 	drawFontButton(FONT_DPAD);
 	printStr("to change the overall coordinate category, and");
-	fontButtonSetDpadDirections(FONT_DPAD_UP);
+	fontButtonSetDpadDirections(FONT_DPAD_UP | FONT_DPAD_DOWN);
 	drawFontButton(FONT_DPAD);
 	printStr("to change what subset of coordinates are shown. Melee "
 	         "Coordinates are shown on the left.\n\n"
@@ -389,10 +394,10 @@ static void displayInstructions() {
 	printStr(") and exiting (B");
 	drawFontButton(FONT_B);
 	printStr(").\n\n"
-			 "Current Stickmap");
-	fontButtonSetDpadDirections(FONT_DPAD_RIGHT);
+			 "Current Stickmap(");
+	fontButtonSetDpadDirections(FONT_DPAD_LEFT | FONT_DPAD_RIGHT);
 	drawFontButton(FONT_DPAD);
-	printStr(": ");
+	printStr("): ");
 	switch (selectedStickmap) {
 		case FF_WD:
 			printStr("Firefox / Wavedash\n");
@@ -464,19 +469,19 @@ void menu_coordView() {
 			printStr("(%s)", getMeleeCoordinateString(stickMelee, AXIS_CXY));
 			
 			setCursorPos(4, 0);
-			printStr("Stickmap ");
-			fontButtonSetDpadDirections(FONT_DPAD_RIGHT);
+			printStr("Stickmap (");
+			fontButtonSetDpadDirections(FONT_DPAD_LEFT | FONT_DPAD_RIGHT);
 			drawFontButton(FONT_DPAD);
-			printStr(":");
+			printStr("):");
 			
 			//setCursorPos(6, 15);
 			int stickmapRetVal = isCoordValid(selectedStickmap, stickMelee);
 			setCursorPos(6, 0);
 			
-			printStr("Shown ");
-			fontButtonSetDpadDirections(FONT_DPAD_UP);
+			printStr("Shown (");
+			fontButtonSetDpadDirections(FONT_DPAD_UP | FONT_DPAD_DOWN);
 			drawFontButton(FONT_DPAD);
-			printStr(":");
+			printStr("):");
 			
 			setCursorPos(14, 0);
 			printStr("Result:");
@@ -485,6 +490,9 @@ void menu_coordView() {
 					setCursorPos(5, 2);
 					printStr("Firefox/Wavedash");
 					setCursorPos(7, 2);
+					// TODO: look into manually spacing these due to highlighted text,
+					//  or having it manually handled...
+					//setCursorXY(20, (7 * (PRINT_FONT_CHAR_HEIGHT + LINE_SPACING)) + 5);
 					if (selectedStickmapSub == 0) {
 						printStr("ALL");
 					} else {
@@ -573,13 +581,23 @@ void menu_coordView() {
 			break;
 	}
 	
-	if (*pressed == PAD_BUTTON_RIGHT) {
+	// cycle stickmap
+	if (*pressed == PAD_BUTTON_LEFT) {
+		selectedStickmapSub = 0;
+		if (selectedStickmap == 0) {
+			selectedStickmap = 2;
+		} else {
+			selectedStickmap--;
+		}
+	} else if (*pressed == PAD_BUTTON_RIGHT) {
 		selectedStickmap++;
 		selectedStickmapSub = 0;
 		if (selectedStickmap == 3) {
 			selectedStickmap = 0;
 		}
-	} else if (*pressed == PAD_BUTTON_UP) {
+	}
+	// cycle stickmap categories
+	else if (*pressed == PAD_BUTTON_UP) {
 		selectedStickmapSub++;
 		switch (selectedStickmap) {
 			case (FF_WD):
@@ -590,6 +608,27 @@ void menu_coordView() {
 			case (SHIELDDROP):
 				if (selectedStickmapSub == STICKMAP_SHIELDDROP_ENUM_LEN) {
 					selectedStickmapSub = 0;
+				}
+				break;
+			case (NONE):
+			default:
+				selectedStickmapSub = 0;
+				break;
+		}
+	} else if (*pressed == PAD_BUTTON_DOWN) {
+		switch (selectedStickmap) {
+			case (FF_WD):
+				if (selectedStickmapSub == 0) {
+					selectedStickmapSub = STICKMAP_FF_WD_ENUM_LEN - 1;
+				} else {
+					selectedStickmapSub--;
+				}
+				break;
+			case (SHIELDDROP):
+				if (selectedStickmapSub == 0) {
+					selectedStickmapSub = STICKMAP_SHIELDDROP_ENUM_LEN;
+				} else {
+					selectedStickmapSub--;
 				}
 				break;
 			case (NONE):

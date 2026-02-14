@@ -158,14 +158,14 @@ void menu_gateMeasure() {
 					} else {
 						printStr("Analog Stick");
 					}
-					setCursorPos(20, 0);
+					setCursorPos(7, 0);
 					if (yPressFrameCounter != 0) {
 						printStr("Resetting");
 						printEllipse(yPressFrameCounter, 30);
 					} else {
-						printStr("Hold X");
+						printStr("Reset Data (X");
 						drawFontButton(FONT_X);
-						printStr("to reset visualization");
+						printStr(")");
 					}
 					
 					updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);

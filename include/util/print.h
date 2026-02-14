@@ -20,6 +20,11 @@
 #define PRINT_PADDING_HORIZONTAL 40
 #define PRINT_PADDING_VERTICAL 40
 
+// individual char size
+#define PRINT_FONT_CHAR_HEIGHT 15
+#define PRINT_FONT_CHAR_WIDTH 8
+
+
 // number of pixels between given columns
 #define LINE_SPACING 2
 
