@@ -142,10 +142,10 @@ static void oscilloscopeCallback() {
 				for (int i = 0; i < (*temp)->sampleEnd - 1; i++) {
 					getControllerSampleAxisPair((*temp)->samples[i], displayedAxis, &currX, &currY);
 					if (abs(currX) > xMax) {
-						xMax = currX;
+						xMax = abs(currX);
 					}
 					if (abs(currY) > yMax) {
-						yMax = currY;
+						yMax = abs(currY);
 					}
 				}
 				
@@ -555,7 +555,7 @@ void menu_oscilloscope() {
 						
 						setDrawGraphStickAxis(displayedAxis);
 						setDepthForDrawCall(-2);
-						drawGraph(dispData, GRAPH_STICK, oState == POST_INPUT_LOCK);
+						drawGraph(dispData, GRAPH_STICK, (oState == POST_INPUT_LOCK && stickCooldown == 0));
 						
 						// get stat values
 						int8_t minX, minY;
@@ -721,10 +721,10 @@ void menu_oscilloscope() {
 								// slow-turn range [23,63]
 								// we also check if the X axis reaches the dash range (64+)
 								for (int i = 0; i < dispData->sampleEnd; i++) {
-									int8_t curr = getControllerSampleAxisValue(dispData->samples[i], workingAxis);
+									int8_t curr = abs(getControllerSampleAxisValue(dispData->samples[i], workingAxis));
 									// is the stick in the dash range?
 									// note that this is independent from the other if
-									if (abs(curr) >= 65) {
+									if (curr >= 65) {
 										// mark that we did cross that threshold
 										stickInDashRange = true;
 										// did we miss the slow-turn range?
@@ -734,7 +734,7 @@ void menu_oscilloscope() {
 									}
 									
 									// is the stick in the slow-turn range
-									if ((abs(curr) >= 23 && abs(curr) < 64)) {
+									if ((curr >= 23 && curr < 64)) {
 										timeInRange += dispData->samples[i].timeDiffUs;
 										// set this as the first sample that is in slow-turn range
 										if (dashbackStartIndex == -1) {

@@ -626,7 +626,7 @@ void menu_coordView() {
 				break;
 			case (SHIELDDROP):
 				if (selectedStickmapSub == 0) {
-					selectedStickmapSub = STICKMAP_SHIELDDROP_ENUM_LEN;
+					selectedStickmapSub = STICKMAP_SHIELDDROP_ENUM_LEN - 1;
 				} else {
 					selectedStickmapSub--;
 				}
