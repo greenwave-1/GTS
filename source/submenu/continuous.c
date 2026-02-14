@@ -43,7 +43,7 @@ static void contSamplingCallback() {
 	
 	readController(false);
 	
-	if (cState != INPUT_LOCK) {
+	if (cState != INPUT_LOCK && state == CONT_POST_SETUP) {
 		data->samples[dataIndex].stickX = PAD_StickX(0);
 		data->samples[dataIndex].stickY = PAD_StickY(0);
 		data->samples[dataIndex].cStickX = PAD_SubStickX(0);
@@ -63,6 +63,44 @@ static void contSamplingCallback() {
 		if (data->sampleEnd != REC_SAMPLE_MAX) {
 			data->sampleEnd++;
 		}
+	}
+}
+
+static void displayInstructions() {
+	
+	setCursorPos(2, 0);
+	setWordWrap(true);
+	
+	printStr("Move the currently selected stick to plot its movement on the waveform.\n\n");
+	
+	printStr("The ");
+	printStrColor(GX_COLOR_NONE, GX_COLOR_RED_X, "red line");
+	printStr(" shows the X-Axis's value, and\nthe ");
+	printStrColor(GX_COLOR_NONE, GX_COLOR_BLUE_Y, "blue line");
+	printStr(" shows the Y-Axis's value.\n\n");
+	
+	printStr("The waveform will continue to be updated until \'locked\'.");
+	
+	printStr("\n\nPress A");
+	drawFontButton(FONT_A);
+	printStr("to \'lock\' the current waveform. This prevents new data from being recorded,"
+			 " and enables zooming and panning the waveform with the C-Stick");
+	drawFontButton(FONT_STICK_C);
+	printStr(".\n\n");
+	
+	printStr("The number of visible samples is shown above the recording window.");
+	
+	setWordWrap(false);
+	
+	if (isControllerConnected(CONT_PORT_1)) {
+		setCursorPos(0, 31);
+		printStr("Close Instructions (Z");
+		drawFontButton(FONT_Z);
+		printStr(")");
+	}
+	
+	if (*pressed == PAD_TRIGGER_Z) {
+		state = CONT_POST_SETUP;
 	}
 }
 
@@ -93,6 +131,13 @@ void menu_continuousWaveform() {
 			setup();
 			break;
 		case CONT_POST_SETUP:
+			if (isControllerConnected(CONT_PORT_1)) {
+				setCursorPos(0, 32);
+				printStr("View Instructions (Z");
+				drawFontButton(FONT_Z);
+				printStr(")");
+			}
+			
 			if (cState == INPUT_LOCK) {
 				setCursorPos(2, 25);
 				printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
@@ -175,6 +220,13 @@ void menu_continuousWaveform() {
 					}
 				}
 			}
+			
+			if (*pressed == PAD_TRIGGER_Z) {
+				state = CONT_INSTRUCTIONS;
+			}
+			break;
+		case CONT_INSTRUCTIONS:
+			displayInstructions();
 			break;
 	}
 }
