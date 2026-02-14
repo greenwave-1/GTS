@@ -176,10 +176,15 @@ static void displayInstructions() {
 	printStr("to \'lock\' the current recording and enable zooming and panning the waveform with the C-Stick");
 	drawFontButton(FONT_STICK_C);
 	printStr(".\n\n");
-	printStr("A Green line indicates when a digital press is detected. "
-			 "A Gray line shows the minimum value Melee uses for Analog "
+	printStr("A ");
+	printStrColor(GX_COLOR_NONE, GX_COLOR_GREEN, "green line");
+	printStr(" indicates when a digital press is detected.\n\n");
+	
+	printStr("The ");
+	printStrColor(GX_COLOR_NONE, GX_COLOR_GRAY, "gray line");
+	printStr(" shows the minimum value Melee uses for Analog "
 			 "shield (43 or above).\n\n"
-			 "Percents for projectile powershields are shown at the bottom.");
+			 "The percent likelihood of different powershield inputs are shown at the bottom.");
 	
 	setWordWrap(false);
 	if (isControllerConnected(CONT_PORT_1)) {
