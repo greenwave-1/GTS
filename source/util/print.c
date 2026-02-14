@@ -133,7 +133,7 @@ static void handleString(bool draw, GXColor bgColor, GXColor fgColor) {
 		// advance cursor
 		cursorX += 10;
 	}
-	if (workingX != cursorX && !draw && !allowWordWrap) {
+	if (workingX != cursorX && !draw) {
 		drawSolidBox(workingX + workingHorizontalPadding - 2, workingY + PRINT_PADDING_VERTICAL - 2,
 		       cursorX + workingHorizontalPadding, cursorY + PRINT_PADDING_VERTICAL + 15, bgColor);
 	}
@@ -152,12 +152,14 @@ static void handleStringPre(const GXColor bg_color, const GXColor fg_color) {
 	
 	// setup
 	changeLoadedTexmap(TEXMAP_FONT);
-	setDepth(cursorZ);
 	
 	// do a first loop to draw background color if needed
 	if (bg_color.a != 0x00 || allowWordWrap) {
+		setDepth(cursorZ - 1);
 		handleString(false, bg_color, fg_color);
+		restorePrevDepth();
 	}
+	setDepth(cursorZ);
 	handleString(true, bg_color, fg_color);
 	restorePrevDepth();
 }
@@ -408,8 +410,6 @@ void endScrollingPrint() {
 	workingHorizontalPadding = PRINT_PADDING_HORIZONTAL;
 	
 	// draw indicator for if there's more text in either direction
-	// TODO: generalize this in gx.c with drawTri() or something...
-	//  ideally, no raw drawing should be done outside of gx.c unless necessary
 	if (scrollingOffset < 0 && scrollBottomBound != 0) {
 		drawTri(scrollXMid - 10, scrollTop - 4,
 				scrollXMid + 10, scrollTop - 4,

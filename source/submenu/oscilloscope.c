@@ -343,9 +343,25 @@ static void oscilloscopeCallback() {
 static int dpadFlashIncrement = 0;
 static void displayInstructions() {
 	fontButtonFlashIncrement(&dpadFlashIncrement, 30);
-	setCursorPos(2, 0);
+	startScrollingPrint(40, 70, 600, 400);
 	setWordWrap(true);
-	printStr("Move the currently selected stick to record and plot its movement.\n\n");
+	printStr("Move the currently selected stick to plot its movement on the waveform.\n\n");
+	
+	printStr("The ");
+	printStrColor(GX_COLOR_NONE, GX_COLOR_RED_X, "red line");
+	printStr(" shows the X-Axis's value, and\nthe ");
+	printStrColor(GX_COLOR_NONE, GX_COLOR_BLUE_Y, "blue line");
+	printStr(" shows the Y-Axis's value.\n\n");
+	
+	printStr("Moving the selected stick will continue to create new recordings, unless \'locked\'.");
+	
+	printStr("\n\nPress A");
+	drawFontButton(FONT_A);
+	printStr("to \'lock\' the current waveform. This prevents a new recording from being made,"
+			 " and enables zooming and panning the waveform with the C-Stick");
+	drawFontButton(FONT_STICK_C);
+	printStr(".\n\n");
+	
 	printStr("Press X");
 	drawFontButton(FONT_X);
 	printStr("to cycle the current test, results will show below the waveform.");
@@ -355,12 +371,6 @@ static void displayInstructions() {
 	printStr("to cycle between the Analog Stick");
 	drawFontButton(FONT_STICK_A);
 	printStr("and C-Stick");
-	drawFontButton(FONT_STICK_C);
-	printStr(".");
-	
-	printStr("\n\nPress A");
-	drawFontButton(FONT_A);
-	printStr("to \'lock\' the current recording and enable zooming and panning the waveform with the C-Stick");
 	drawFontButton(FONT_STICK_C);
 	printStr(".");
 	
@@ -393,6 +403,8 @@ static void displayInstructions() {
 			break;
 	}
 	setWordWrap(false);
+	
+	endScrollingPrint();
 	
 	if (isControllerConnected(CONT_PORT_1)) {
 		setCursorPos(0, 31);
