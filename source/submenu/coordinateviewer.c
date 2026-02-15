@@ -476,6 +476,7 @@ void menu_coordView() {
 			
 			//setCursorPos(6, 15);
 			int stickmapRetVal = isCoordValid(selectedStickmap, stickMelee);
+			setPrintOffset(8);
 			setCursorPos(6, 0);
 			
 			printStr("Shown (");
@@ -483,12 +484,17 @@ void menu_coordView() {
 			drawFontButton(FONT_DPAD);
 			printStr("):");
 			
+			setPrintOffset(0);
 			setCursorPos(14, 0);
 			printStr("Result:");
+			
+			setPrintOffset(4);
 			switch (selectedStickmap) {
 				case FF_WD:
 					setCursorPos(5, 2);
 					printStr("Firefox/Wavedash");
+					
+					setPrintOffset(12);
 					setCursorPos(7, 2);
 					// TODO: look into manually spacing these due to highlighted text,
 					//  or having it manually handled...
@@ -499,6 +505,8 @@ void menu_coordView() {
 						printStrColor(STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][0], STICKMAP_FF_WD_RETCOLORS[selectedStickmapSub][1],
 						              STICKMAP_FF_WD_RETVALS[selectedStickmapSub]);
 					}
+					
+					setPrintOffset(4);
 					setCursorPos(15, 2);
 					printStrColor(STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][0], STICKMAP_FF_WD_RETCOLORS[stickmapRetVal][1],
 					              STICKMAP_FF_WD_RETVALS[stickmapRetVal]);
@@ -506,6 +514,8 @@ void menu_coordView() {
 				case SHIELDDROP:
 					setCursorPos(5, 2);
 					printStr("Shield Drop");
+					
+					setPrintOffset(12);
 					setCursorPos(7, 2);
 					if (selectedStickmapSub == 0) {
 						printStr("ALL");
@@ -513,6 +523,8 @@ void menu_coordView() {
 						printStrColor(STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][0], STICKMAP_SHIELDDROP_RETCOLORS[selectedStickmapSub][1],
 						              STICKMAP_SHIELDDROP_RETVALS[selectedStickmapSub]);
 					}
+					
+					setPrintOffset(4);
 					setCursorPos(15, 2);
 					printStrColor(STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][0], STICKMAP_SHIELDDROP_RETCOLORS[stickmapRetVal][1],
 					              STICKMAP_SHIELDDROP_RETVALS[stickmapRetVal]);
@@ -521,12 +533,17 @@ void menu_coordView() {
 				default:
 					setCursorPos(5, 2);
 					printStr("NONE");
+					
+					setPrintOffset(12);
 					setCursorPos(7, 2);
 					printStr("N/A");
+					
+					setPrintOffset(4);
 					setCursorPos(15, 2);
 					printStr("N/A");
 					break;
 			}
+			setPrintOffset(0);
 			
 			// calculate screen coordinates for stick position drawing
 			int xfbCoordX = (stickMelee.stickXUnit / 125) * 2;

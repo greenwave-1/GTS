@@ -32,9 +32,14 @@ static int screenWidth = 640;
 static int cursorZ = -4;
 static int cursorPrevZ = -4;
 
+// extra lines added to y value that can be specified by setPrintOffset()
+// used to separate some lines where we have room
+// reset when resetCursorPos() is called
+static int printOffset = 0;
+
 static void advanceCursorLine() {
 	cursorX = 0;
-	cursorY += 15 + LINE_SPACING;
+	cursorY += PRINT_FONT_CHAR_HEIGHT + LINE_SPACING + printOffset;
 }
 
 static int workingHorizontalPadding = PRINT_PADDING_HORIZONTAL;
@@ -69,8 +74,7 @@ static void handleString(bool draw, GXColor bgColor, GXColor fgColor) {
 		
 		// move to new line if needed
 		if (draw && curr == lastSpaceList[workingSpaceIndex] && workingSpaceIndex != lastSpaceListIndex && allowWordWrap) {
-			cursorY += 15 + LINE_SPACING;
-			cursorX = 0;
+			advanceCursorLine();
 			workingSpaceIndex++;
 			continue;
 		}
@@ -78,7 +82,7 @@ static void handleString(bool draw, GXColor bgColor, GXColor fgColor) {
 		// get texture coordinates
 		// font sheet starts at 0x20 ascii, 10 chars per line
 		int charIndex = (*curr) - 0x20;
-		texturePosX1 = (charIndex % 10) * 8;
+		texturePosX1 = (charIndex % 10) * PRINT_FONT_CHAR_WIDTH;
 		texturePosY1 = (charIndex / 10) * 16;
 		
 		// go to a "new line" if drawing would put us outside the safe area, or if newline
@@ -96,10 +100,9 @@ static void handleString(bool draw, GXColor bgColor, GXColor fgColor) {
 			// draw our background color, if applicable
 			if (!draw && !allowWordWrap) {
 				drawSolidBox(workingX + workingHorizontalPadding - 2, workingY + PRINT_PADDING_VERTICAL - 2,
-			       cursorX + workingHorizontalPadding, cursorY + PRINT_PADDING_VERTICAL + 15, bgColor);
+			       cursorX + workingHorizontalPadding, cursorY + PRINT_PADDING_VERTICAL + PRINT_FONT_CHAR_HEIGHT, bgColor);
 			}
-			cursorY += 15 + LINE_SPACING;
-			cursorX = 0;
+			advanceCursorLine();
 			workingX = cursorX;
 			workingY = cursorY;
 			// advance cursor by one if newline or space
@@ -117,12 +120,12 @@ static void handleString(bool draw, GXColor bgColor, GXColor fgColor) {
 		if (draw) {
 			int quadX1 = cursorX + workingHorizontalPadding;
 			int quadY1 = cursorY + PRINT_PADDING_VERTICAL;
-			int quadX2 = quadX1 + 8;
-			int quadY2 = quadY1 + 15;
+			int quadX2 = quadX1 + PRINT_FONT_CHAR_WIDTH;
+			int quadY2 = quadY1 + PRINT_FONT_CHAR_HEIGHT;
 			
 			// get secondary coordinates for texture
-			int texturePosX2 = texturePosX1 + 8;
-			int texturePosY2 = texturePosY1 + 15;
+			int texturePosX2 = texturePosX1 + PRINT_FONT_CHAR_WIDTH;
+			int texturePosY2 = texturePosY1 + PRINT_FONT_CHAR_HEIGHT;
 			
 			// draw the char
 			drawSubTexture(quadX1, quadY1, quadX2, quadY2,
@@ -135,7 +138,7 @@ static void handleString(bool draw, GXColor bgColor, GXColor fgColor) {
 	}
 	if (workingX != cursorX && !draw) {
 		drawSolidBox(workingX + workingHorizontalPadding - 2, workingY + PRINT_PADDING_VERTICAL - 2,
-		       cursorX + workingHorizontalPadding, cursorY + PRINT_PADDING_VERTICAL + 15, bgColor);
+		       cursorX + workingHorizontalPadding, cursorY + PRINT_PADDING_VERTICAL + PRINT_FONT_CHAR_HEIGHT, bgColor);
 	}
 	if (!draw) {
 		cursorX = startingX;
@@ -389,7 +392,7 @@ void endScrollingPrint() {
 	// - text is long enough that scrolling is necessary
 	//   we need to determine the bottom bound
 	
-	int textHeight = (cursorY + PRINT_PADDING_VERTICAL + 15) - scrollingOffset;
+	int textHeight = (cursorY + PRINT_PADDING_VERTICAL + PRINT_FONT_CHAR_HEIGHT) - scrollingOffset;
 	
 	// text didn't make it to the bottom, first case
 	if (textHeight <= (scrollBottom - scrollTop)) {
@@ -458,13 +461,14 @@ void printSpinningLineInterval(const int waitInterval) {
 }
 
 void resetCursor() {
+	printOffset = 0;
 	setCursorPos(0,0);
 	cursorZ = -4;
 	cursorPrevZ = -4;
 }
 
 void setCursorPos(int row, int col) {
-	cursorY = row * (15 + LINE_SPACING);
+	cursorY = (row * (PRINT_FONT_CHAR_HEIGHT + LINE_SPACING)) + printOffset;
 	cursorX = col * 10;
 }
 
@@ -480,6 +484,10 @@ void setCursorDepth(int z) {
 
 void restorePrevCursorDepth() {
 	cursorZ = cursorPrevZ;
+}
+
+void setPrintOffset(int offset) {
+	printOffset = offset;
 }
 
 void setWordWrap(bool enable) {

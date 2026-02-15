@@ -78,6 +78,7 @@ void resetCursor();
 void setCursorPos(int row, int col);
 void setCursorXY(int x, int y);
 void setCursorDepth(int z);
+void setPrintOffset(int padding);
 void restorePrevCursorDepth();
 void setWordWrap(bool enable);
 
