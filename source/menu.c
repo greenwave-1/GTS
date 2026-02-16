@@ -227,7 +227,7 @@ bool menu_runMenu() {
 	// check for buttons, some menus share functionality so this is here
 	
 	// holding start, lock menu or toggle auto-trigger
-	if (*held & PAD_BUTTON_START &&
+	if (*held == PAD_BUTTON_START &&
 		(currentMenu == CONTROLLER_TEST || currentMenu == COORD_MAP || currentMenu == PLOT_BUTTON || currentMenu == PLOT_2D)
 		&& !startHeldAfter) {
 		switch (currentMenu) {
@@ -267,7 +267,7 @@ bool menu_runMenu() {
 	}
 	
 	// exit the program if start is pressed
-	else if (*pressed & PAD_BUTTON_START && currentMenu == MAIN_MENU) {
+	else if (*pressed == PAD_BUTTON_START && currentMenu == MAIN_MENU) {
 		return true;
 	}
 
