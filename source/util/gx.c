@@ -334,13 +334,11 @@ void startDraw() {
 static int offsetX = 0, offsetY = 0;
 void finishDraw(void *xfb) {
 	GX_SetScissorBoxOffset(offsetX, offsetY);
-	//GX_Flush();
+	GX_CopyDisp(xfb, GX_TRUE);
 	GX_DrawDone();
 	
 	//GX_SetAlphaUpdate(GX_TRUE);
 	//GX_SetColorUpdate(GX_TRUE);
-	
-	GX_CopyDisp(xfb, GX_TRUE);
 }
 
 void setScreenOffset(int x, int y) {

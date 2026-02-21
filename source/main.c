@@ -61,12 +61,16 @@ void powerButtonCallback() {
 }
 #endif
 
-void clearScreenBeforeExit() {
+void cleanupBeforeExit() {
 	// avoid distorted graphics on GC (I have no idea if this actually does what I think it does...)
 	// https://github.com/emukidid/swiss-gc: cube/swiss/source/video.c -> unsetVideo()
 	VIDEO_SetBlack(true);
 	VIDEO_Flush();
 	VIDEO_WaitForFlush();
+	
+	// free framebuffers
+	free(xfb[0]);
+	free(xfb[1]);
 }
 
 int main(int argc, char **argv) {
@@ -136,7 +140,7 @@ int main(int argc, char **argv) {
 			
 			// exit completely if reset is pressed
 			if (SYS_ResetButtonDown()) {
-				clearScreenBeforeExit();
+				cleanupBeforeExit();
 				return 0;
 			}
 			
@@ -208,22 +212,13 @@ int main(int argc, char **argv) {
 			setCursorPos(2, 0);
 			
 			startDraw();
-			updateVtxDesc(VTX_TEXTURES, GX_MODULATE);
-			changeLoadedTexmap(TEXMAP_FONT);
-			printStrColor(GX_COLOR_RED, GX_COLOR_WHITE,
-						  "Unsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n"
+			printStr("Unsupported Video Mode\nEnsure your system is using NTSC or EURGB60\n"
 						  "Program will exit in 5 seconds...");
-			finishDraw(xfb[xfbSwitch]);
-			
-			// for some reason stuff doesn't draw as expected unless two frames have been drawn, so we 'draw' nothing
-			xfbSwitch ^= 1;
-			startDraw();
 			finishDraw(xfb[xfbSwitch]);
 			
 			VIDEO_WaitForRetrace(VIDEO_GetRetraceCount() + 300);
 			
-			clearScreenBeforeExit();
-			
+			cleanupBeforeExit();
 			return 0;
 			break; // unnecessary
 	}
@@ -237,21 +232,13 @@ int main(int argc, char **argv) {
 		setCursorPos(2, 0);
 		
 		startDraw();
-		updateVtxDesc(VTX_TEXTURES, GX_MODULATE);
-		changeLoadedTexmap(TEXMAP_FONT);
-		printStrColor(GX_COLOR_RED, GX_COLOR_WHITE,
-					  "Unsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n"
+		printStr("Unsupported Video Scan Mode\nEnsure your system will use 480i or 480p\n"
 					  "Program will exit in 5 seconds...");
-		finishDraw(xfb[xfbSwitch]);
-		
-		// for some reason stuff doesn't draw as expected unless two frames have been drawn, so we 'draw' nothing
-		xfbSwitch ^= 1;
-		startDraw();
 		finishDraw(xfb[xfbSwitch]);
 		
 		VIDEO_WaitForRetrace(VIDEO_GetRetraceCount() + 300);
 		
-		clearScreenBeforeExit();
+		cleanupBeforeExit();
 		return 0;
 	}
 	
@@ -377,11 +364,8 @@ int main(int argc, char **argv) {
 	// free memory (probably don't need to do this but eh)
 	freeControllerRecStructs();
 	
-	clearScreenBeforeExit();
-	
-	// free framebuffers
-	free(xfb[0]);
-	free(xfb[1]);
+	cleanupBeforeExit();
+
 	
 	// issue poweroff if the power button was pressed
 	// done here so that any logging stuff can finish cleanly
