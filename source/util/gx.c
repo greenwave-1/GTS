@@ -334,6 +334,11 @@ void startDraw() {
 static int offsetX = 0, offsetY = 0;
 void finishDraw(void *xfb) {
 	GX_SetScissorBoxOffset(offsetX, offsetY);
+	
+	// I'm not entirely sure as to why this order is correct
+	// drawdone() will call gx_flush(), which should be before copydisp() (extrems' discord)
+	// but i feel like this is counterintuitive, shouldn't the efb draw be done _before_ copying? or does copydisp()
+	// add a command to the gp list that is executed at the end? i wish i understood this better...
 	GX_CopyDisp(xfb, GX_TRUE);
 	GX_DrawDone();
 	

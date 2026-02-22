@@ -690,11 +690,12 @@ void menu_thanksPage() {
 			 "bkacjios / m-overlay\n"
 			 "Z. B. Wells");
 	
-	setCursorPos(17,0);
+	setCursorPos(15,0);
+	printStr("Compiled for: ");
 	#ifdef HW_RVL
-	printStr("Hardware: Wii");
+	printStr("Wii");
 	#elifdef HW_DOL
-	printStr("Hardware: GameCube");
+	printStr("GameCube");
 	#endif
 	printStr("\nCompiled with: ");
 	printStr(_V_STRING);
@@ -702,5 +703,6 @@ void menu_thanksPage() {
 	printStr(BUILD_DATE);
 	printStr("\nGTS Commit ID: ");
 	printStr(COMMIT_ID);
+	
+	printStr("\n\nLicensed under GNU GPLv3");
 }
-
