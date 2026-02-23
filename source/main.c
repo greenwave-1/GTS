@@ -289,8 +289,6 @@ int main(int argc, char **argv) {
 		printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOGIC: %5d | GX: %5d", us, gxtime);
 		#endif
 		
-		xfbSwitch ^= 1;
-		
 		finishDraw(xfb[xfbSwitch]);
 		
 		#ifdef BENCH
@@ -298,6 +296,7 @@ int main(int argc, char **argv) {
 		#endif
 		
 		// change framebuffer for next frame
+		xfbSwitch ^= 1;
 		VIDEO_SetNextFramebuffer(xfb[xfbSwitch]);
 
 		// Wait for the next frame
