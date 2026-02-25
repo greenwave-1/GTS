@@ -20,7 +20,7 @@
 
 static lwp_t socket_thread = (lwp_t) NULL;
 
-static enum LOGGING_DEVICE dev = USBGECKO_B;
+static enum LOGGING_DEVICE dev = LOG_NONE;
 
 static bool loggingPaused = false;
 static bool allowDuplicateMessages = false;
@@ -100,29 +100,31 @@ enum LOGGING_DEVICE getLoggingType() {
 }
 
 void setupLogging(enum LOGGING_DEVICE device) {
-	dev = device;
-	switch (dev) {
-		case USBGECKO_B:
-			SYS_EnableGecko(EXI_CHANNEL_1, true);
-			deviceSet = true;
-			break;
-		case NETWORKSOCK:
-			if (networkSetupState == NETLOG_INIT) {
-				// called in a thread so that we can print while we wait
-				LWP_CreateThread(&socket_thread, setupNetwork, NULL, NULL, 2048, LWP_PRIO_NORMAL);
+	if (dev == LOG_NONE && device != LOG_NONE) {
+		dev = device;
+		switch (dev) {
+			case LOG_USBGECKO:
+				SYS_EnableGecko(EXI_CHANNEL_1, true);
 				deviceSet = true;
-			}
-			break;
-		case LOGFILE:
-			if (initFilesystem()) {
-				logFile = openFile("/GTS/debug.log", "a");
-			}
-			if (logFile != NULL) {
-				deviceSet = true;
-			}
-			break;
-		default:
-			break;
+				break;
+			case LOG_NETWORKSOCK:
+				if (networkSetupState == NETLOG_INIT) {
+					// called in a thread so that we can print while we wait
+					LWP_CreateThread(&socket_thread, setupNetwork, NULL, NULL, 2048, LWP_PRIO_NORMAL);
+					deviceSet = true;
+				}
+				break;
+			case LOG_FILE:
+				if (initFilesystem()) {
+					logFile = openFile("/GTS/debug.log", "a");
+				}
+				if (logFile != NULL) {
+					deviceSet = true;
+				}
+				break;
+			default:
+				break;
+		}
 	}
 }
 
@@ -145,16 +147,18 @@ void debugLog(char *msg, ...) {
 		va_list list;
 		va_start(list, msg);
 		switch (dev) {
-			case USBGECKO_B:
+			case LOG_USBGECKO:
 				SYS_Reportv(msg, list);
 				SYS_Report("\n");
 				break;
-			case NETWORKSOCK:
+			case LOG_NETWORKSOCK:
 				networkMessage(msg, list);
 				break;
-			case LOGFILE:
+			case LOG_FILE:
 				vfprintf(logFile, msg, list);
 				fprintf(logFile, "\n");
+				break;
+			default:
 				break;
 		}
 		va_end(list);
@@ -164,11 +168,11 @@ void debugLog(char *msg, ...) {
 void stopLogging() {
 	debugLog("End of log.");
 	switch (dev) {
-		case NETWORKSOCK:
+		case LOG_NETWORKSOCK:
 			net_close(csock);
 			net_close(sock);
 			break;
-		case LOGFILE:
+		case LOG_FILE:
 			fclose(logFile);
 			break;
 		default:

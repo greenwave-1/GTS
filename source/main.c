@@ -125,8 +125,8 @@ int main(int argc, char **argv) {
 	#ifdef DEBUGLOG
 	
 	// options are defined in logging.h
-	setupLogging(USBGECKO_B);
-	//setupLogging(NETWORKSOCK);
+	setupLogging(LOG_USBGECKO);
+	//setupLogging(LOG_NETWORKSOCK);
 	
 	// if we're using a socket for logging, we need to prepare it
 	// TODO: should this just be in logging.c outright? if so it needs to have return values for different outcomes
