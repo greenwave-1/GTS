@@ -241,6 +241,7 @@ void setupGX(GXRModeObj *rmode) {
 	GX_InvalidateTexAll();
 	
 	// get textures
+	// see textures/textures.scf
 	TPL_OpenTPLFromMemory(&tpl, (void*)textures_tpl, textures_tpl_size);
 	
 	// font
