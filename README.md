@@ -1,6 +1,6 @@
 # GCC Test Suite (GTS)
 
-GCC Test Suite (GTS for short) is an open source GameCube controller tester, and an alternative to SmashScope.
+GCC Test Suite (GTS) is an open source GameCube controller tester, and an alternative to SmashScope.
 
 Currently not feature-complete, but in a workable state.
 
@@ -27,7 +27,7 @@ this.
 - Polling rate is not perfectly uniform. This is something that can't be dealt with easily while also reading
 at a high rate. Polling in progressive scan seems to be much better, however.
 - Specific tests need confirmation for correctness.
-- Overall layout needs another pass for usability, see [this issue](https://github.com/greenwave-1/GTS/issues/5)
+- Everything needs another pass for usability, see [this issue](https://github.com/greenwave-1/GTS/issues/5)
 for details.
 - A lot of logic that shouldn't be in menu.c is, needs to be moved to other files.
 - Other things I can't think of right now...
