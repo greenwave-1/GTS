@@ -1,11 +1,39 @@
+# this file defines what images will be compiled into the binary
+# Image dimensions should be a multiple of 4. Round up and fill with alpha if necessary.
+
+# example: <filepath="font.png" id="pvfont" colfmt=4 />
+#   filepath - self explanatory
+#   id - the name that is passed to TPL_GetTexture(tpl object, **the id**, destination texture object)
+#   colfmt - color format, good table here:
+#   https://wiki.tockdom.com/wiki/Image_Formats#Image_Formats
+
+
+# bitmap font from PhobGCC project
+#   https://github.com/phobgcc/phobgcc-sw -> PhobGCC/rp2040/include/images/font.h
+#   Manually decoded into a png from runlength encoding
 <filepath="font.png" id="font" colfmt=2 />
+
+# button font
 <filepath="button_font.png" id="font_button" colfmt=5 />
+
+# stickmaps from PhobGCC project
+#   https://github.com/phobgcc/phobgcc-sw -> PhobGCC/rp2040/include/images/
+#   Manually decoded into pngs from runlength encoding
 <filepath="crouch.png" id="crouch" colfmt=4 />
 <filepath="await.png" id="await" colfmt=4 />
 <filepath="deadzone.png" id="deadzone" colfmt=4 />
 <filepath="ledge_l.png" id="ledgel" colfmt=4 />
 <filepath="ledge_r.png" id="ledger" colfmt=4 />
 <filepath="movewait.png" id="movewait" colfmt=4 />
+
+# gui buttons from m-overlay
+#   https://github.com/bkacjios/m-overlay -> source/textures/buttons/
+#   texture format based on https://github.com/univrsal/input-overlay -> presets/gamecube/gamecube.png
 <filepath="controller.png" id="controller" colfmt=2 />
+
+# circle for coordinate viewer
 <filepath="stick_outline.png" id="outline" colfmt=2 />
+
+# <3
+#   https://commons.wikimedia.org/wiki/File:Intersex-inclusive_pride_flag.svg
 <filepath="p.png" id="p" colfmt=14 />
