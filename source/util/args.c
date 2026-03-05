@@ -48,8 +48,8 @@ void handleArgs(int argc, char **argv) {
 					if (strcasecmp(optarg, "cmas") == 0) {
 						forceDate(DATE_CMAS);
 					}
-					if (strcasecmp(optarg, "nice") == 0) {
-						forceDate(DATE_NICE);
+					if (strcasecmp(optarg, "af") == 0) {
+						forceDate(DATE_AF);
 					}
 					if (strcasecmp(optarg, "none") == 0) {
 						forceDate(DATE_NONE);

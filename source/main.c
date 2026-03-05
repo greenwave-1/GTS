@@ -337,7 +337,7 @@ int main(int argc, char **argv) {
 	// hold for ~1 second, then fade over 15 frames
 	for (int i = 0; i < 75; i++) {
 		startDraw();
-		runMenuVisual();
+		menu_drawHeader();
 		
 		// display exit message
 		setCursorPos(10, exitMessageX);

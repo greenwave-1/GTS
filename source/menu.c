@@ -135,8 +135,6 @@ bool menu_runMenu() {
 		return false;
 	}
 	
-	resetCursor();
-	
 	// read inputs and origin status
 	// calls ScanPads(), updates *pressed and *held, and checks for origin when a controller is connected/disconnected
 	// normally this function will update *pressed and *held via ButtonsDown() and ButtonsHeld()
@@ -146,23 +144,7 @@ bool menu_runMenu() {
 	// in this case, we handle setting 'pressed' buttons manually
 	readController(true);
 	
-	#ifndef NO_DATE_CHECK
-	drawDateSpecial(date);
-	// in case a future check doesn't want to print the text normally...
-	switch (date) {
-		case DATE_PM:
-			printStrColor(GX_COLOR_BLACK, GX_COLOR_WHITE, "GCC Test Suite");
-			break;
-		case DATE_NICE:
-		case DATE_CMAS:
-		case DATE_NONE:
-		default:
-			printStr("GCC Test Suite");
-			break;
-	}
-	#else
-	printStr("GCC Test Suite");
-	#endif
+	menu_drawHeader();
 	
 	// check if port 1 is disconnected
 	if (!isControllerConnected(CONT_PORT_1)) {
@@ -265,12 +247,6 @@ bool menu_runMenu() {
 				break;
 		}
 	}
-	
-	// exit the program if start is pressed
-	else if (*pressed == PAD_BUTTON_START && currentMenu == MAIN_MENU) {
-		return true;
-	}
-
 
 	// does the user want to move back to the main menu?
 	// this shouldn't trigger when certain menus are currently recording an input
@@ -383,34 +359,30 @@ bool menu_runMenu() {
 		}
 		bHeldCounter = 0;
 	}
+	
+	// exit the program if start is pressed
+	if (*pressed == PAD_BUTTON_START && currentMenu == MAIN_MENU) {
+		return true;
+	}
 
 	// default case, tells main.c while loop to continue
 	return false;
 }
 
-// this is completely unnecessary, but it looks nice
-// this allows for the effect of the menu 'fading out' when combined with drawing a quad in front of everything
-void runMenuVisual() {
+// draw the header
+// done this way so that it can be drawn anytime, even during exit fadeout
+void menu_drawHeader() {
 	resetCursor();
 	#ifndef NO_DATE_CHECK
-	drawDateSpecial(date);
-	// in case a future check doesn't want to print the text normally...
-	switch (date) {
-		case DATE_PM:
-			printStrColor(GX_COLOR_BLACK, GX_COLOR_WHITE, "GCC Test Suite");
-			break;
-		case DATE_NICE:
-		case DATE_CMAS:
-		case DATE_NONE:
-		default:
-			printStr("GCC Test Suite");
-			break;
+	// if true, we want to just draw the normal text
+	if (drawDateSpecial(date)) {
+		printStr("GCC Test Suite");
 	}
 	#else
 	printStr("GCC Test Suite");
 	#endif
 	
-	if (mainMenuDraw) {
+	if (mainMenuDraw && currentMenu == MAIN_MENU) {
 		menu_mainMenuDraw();
 	}
 }
@@ -631,10 +603,6 @@ void menu_mainMenu() {
 		}
 	} else {
 		thanksPageCounter = 0;
-	}
-	
-	if (mainMenuDraw) {
-		menu_mainMenuDraw();
 	}
 	
 	if (PAD_ButtonsDown(1) == PAD_TRIGGER_Z) {

@@ -19,6 +19,7 @@
 #include <ogc/tpl.h>
 
 #include "util/polling.h"
+#include "util/print.h"
 
 #include "textures.h"
 #include "textures_tpl.h"
@@ -1153,34 +1154,18 @@ const static int colorList[][3] = {
 		{ 0xe5, 0x00, 0x00 }
 		
 };
-void drawDateSpecial(enum DATE_CHECK_LIST date) {
+bool drawDateSpecial(enum DATE_CHECK_LIST date) {
 	// since we could do a bunch of draw calls here, its easier just to store this ourselves...
 	int initialZValue = zPrevDepth;
 	lockResetZDepth = true;
 	
+	bool drawNormalText = true;
+	
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	int sizeOfQuads = 144;
 	switch (date) {
-		case DATE_NICE:
-			/*
-			// 1 quad
-			GX_Begin(GX_QUADS, VTXFMT_PRIMITIVES_INT, 4);
-			GX_Position3s16(5, 35, -10);
-			GX_Color4u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b, alphaValue);
-			
-			GX_Position3s16(9 + 144, 35, -10);
-			GX_Color4u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b, alphaValue);
-			
-			GX_Position3s16(9 + 144, 58, -10);
-			GX_Color4u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b, alphaValue);
-			
-			GX_Position3s16(5, 58, -10);
-			GX_Color4u8(GX_COLOR_DARKGREEN.r, GX_COLOR_DARKGREEN.g, GX_COLOR_DARKGREEN.b, alphaValue);
-			
-			GX_End();
-			 */
-			break;
 		case DATE_PM:
+			drawNormalText = false;
 			// 6 quads total across 144 pixels
 			sizeOfQuads = 144 / 6;
 			setDepth(-10);
@@ -1190,6 +1175,11 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 				                  (GXColor) {colorList[i][0], colorList[i][1], colorList[i][2], 0xFF} );
 			}
 			restorePrevDepth();
+			printStrColor(GX_COLOR_BLACK, GX_COLOR_WHITE, "GCC Test Suite");
+			break;
+		case DATE_AF:
+			drawNormalText = false;
+			printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "Unregistered HyperCam 2");
 			break;
 		case DATE_CMAS:
 			// call snow code
@@ -1203,7 +1193,6 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 			setDepth(-24);
 			drawSolidBox(-10, -10, 700, 500, GX_COLOR_BLACK);
 			restorePrevDepth();
-			
 			break;
 		default:
 			break;
@@ -1217,6 +1206,8 @@ void drawDateSpecial(enum DATE_CHECK_LIST date) {
 	if (resetAlphaAfter) {
 		restorePrevAlphaFromDrawCall();
 	}
+	
+	return drawNormalText;
 }
 
 static uint16_t numOfParticles = 10;

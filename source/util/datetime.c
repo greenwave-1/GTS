@@ -63,8 +63,8 @@ enum DATE_CHECK_LIST checkDate() {
 	struct tm * timeinfo = getCurrTimeInfo();
 	
 	if (timeinfo->tm_mon == 3) {
-		if (timeinfo->tm_mday == 20) {
-			return DATE_NICE;
+		if (timeinfo->tm_mday == 1) {
+			return DATE_AF;
 		}
 	}
 	

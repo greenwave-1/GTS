@@ -8,7 +8,7 @@
 char *getDateTimeStr();
 
 #ifndef NO_DATE_CHECK
-enum DATE_CHECK_LIST { DATE_NONE, DATE_NICE, DATE_PM, DATE_CMAS };
+enum DATE_CHECK_LIST { DATE_NONE, DATE_AF, DATE_PM, DATE_CMAS };
 
 void forceDate(enum DATE_CHECK_LIST dateToForce);
 

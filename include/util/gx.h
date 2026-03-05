@@ -165,7 +165,8 @@ void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color);
 void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, int ty2, GXColor color);
 
 #ifndef NO_DATE_CHECK
-void drawDateSpecial(enum DATE_CHECK_LIST date);
+// true if standard "GCC Test Suite" text should be drawn
+bool drawDateSpecial(enum DATE_CHECK_LIST date);
 #endif
 
 #endif //GTS_GX_H
