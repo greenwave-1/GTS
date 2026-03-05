@@ -24,21 +24,18 @@ static ControllerRec *recordingData = NULL;
 static ControllerRec *tempData = NULL;
 static ControllerRec *continuousMenuData = NULL;
 
-void setContinuousRecStructPtr(ControllerRec* ptr) {
-	continuousMenuData = ptr;
-}
-
-bool isContinuousRecDataNull() {
-	return continuousMenuData == NULL;
-}
-
 // allocate memory for and initialize recording structs
 void initControllerRecStructs() {
 	if (!init) {
+		// data for most menus that do high-speed recording
 		recordingData = malloc(sizeof(ControllerRec));
 		clearRecordingArray(recordingData);
 		tempData = malloc(sizeof(ControllerRec));
 		clearRecordingArray(tempData);
+		
+		// continuous oscilloscope's data
+		continuousMenuData = malloc(sizeof(ControllerRec));
+		clearRecordingArray(continuousMenuData);
 		
 		init = true;
 	}
@@ -65,6 +62,10 @@ ControllerRec** getRecordingData() {
 
 ControllerRec** getTempData() {
 	return &tempData;
+}
+
+ControllerRec* getContinuousData() {
+	return continuousMenuData;
 }
 
 void clearRecordingArray(ControllerRec *recording) {

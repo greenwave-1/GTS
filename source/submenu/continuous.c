@@ -109,10 +109,9 @@ static void setup() {
 		pressed = getButtonsDownPtr();
 		held = getButtonsHeldPtr();
 	}
-	if (data == NULL || isContinuousRecDataNull()) {
-		data = malloc(sizeof(ControllerRec));
+	if (data == NULL) {
+		data = getContinuousData();
 		clearRecordingArray(data);
-		setContinuousRecStructPtr(data);
 		data->isRecordingReady = true;
 		data->recordingType = REC_OSCILLOSCOPE_CONTINUOUS;
 		data->sampleEnd = 0;
