@@ -42,18 +42,14 @@ void initControllerRecStructs() {
 }
 
 void freeControllerRecStructs() {
-	if (recordingData != NULL) {
-		free(recordingData);
-		recordingData = NULL;
-	}
-	if (tempData != NULL) {
-		free(tempData);
-		tempData = NULL;
-	}
-	if (continuousMenuData != NULL) {
-		free(continuousMenuData);
-		continuousMenuData = NULL;
-	}
+	free(recordingData);
+	recordingData = NULL;
+	
+	free(tempData);
+	tempData = NULL;
+	
+	free(continuousMenuData);
+	continuousMenuData = NULL;
 }
 
 ControllerRec** getRecordingData() {

@@ -365,7 +365,6 @@ int main(int argc, char **argv) {
 	freeControllerRecStructs();
 	
 	cleanupBeforeExit();
-
 	
 	// issue poweroff if the power button was pressed
 	// done here so that any logging stuff can finish cleanly
