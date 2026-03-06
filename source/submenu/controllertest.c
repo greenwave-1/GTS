@@ -241,127 +241,117 @@ void menu_controllerTest() {
 			
 			// buttons
 			// A
-			int texOffsetX = TEX_A_OFFSET_X;
+			int texPressedOffset = TEX_A_OFFSET_X;
 			if (*held & PAD_BUTTON_A) {
-				texOffsetX += TEX_NORMAL_DIMENSIONS;
+				texPressedOffset += TEX_A_DIMS;
 			}
 			drawSubTexture(LAYOUT_A_POS_X, LAYOUT_A_POS_Y,
-						   LAYOUT_A_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_A_POS_Y + TEX_NORMAL_DIMENSIONS,
-						   texOffsetX, TEX_A_OFFSET_Y,
-						   texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_A_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+						   LAYOUT_A_POS_X + TEX_A_DIMS, LAYOUT_A_POS_Y + TEX_A_DIMS,
+						   texPressedOffset, TEX_A_OFFSET_Y,
+						   texPressedOffset + TEX_A_DIMS, TEX_A_OFFSET_Y + TEX_A_DIMS,
 						   GX_COLOR_GREEN);
 
 			// B
-			texOffsetX = TEX_B_OFFSET_X;
+			texPressedOffset = TEX_B_OFFSET_Y;
 			if (*held & PAD_BUTTON_B) {
-				texOffsetX += TEX_NORMAL_DIMENSIONS;
+				texPressedOffset += TEX_B_DIMS;
 			}
 			drawSubTexture(LAYOUT_B_POS_X, LAYOUT_B_POS_Y,
-						   LAYOUT_B_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_B_POS_Y + TEX_NORMAL_DIMENSIONS,
-			               texOffsetX, TEX_B_OFFSET_Y,
-						   texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_B_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+						   LAYOUT_B_POS_X + TEX_B_DIMS, LAYOUT_B_POS_Y + TEX_B_DIMS,
+			               TEX_B_OFFSET_X, texPressedOffset,
+			               TEX_B_OFFSET_X + TEX_B_DIMS, texPressedOffset + TEX_B_DIMS,
 			               GX_COLOR_RED);
 			
 			// X
-			texOffsetX = TEX_X_OFFSET_X;
+			texPressedOffset = TEX_XY_OFFSET_Y;
 			if (*held & PAD_BUTTON_X) {
-				texOffsetX += TEX_NORMAL_DIMENSIONS;
+				texPressedOffset += TEX_XY_DIMS_SHORT;
 			}
+			// this texture is rotated
+			rotateTextureForDraw(ROTATE_90);
 			drawSubTexture(LAYOUT_X_POS_X, LAYOUT_X_POS_Y,
-						   LAYOUT_X_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_X_POS_Y + TEX_NORMAL_DIMENSIONS,
-			               texOffsetX, TEX_X_OFFSET_Y,
-						   texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_X_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+						   LAYOUT_X_POS_X + TEX_XY_DIMS_SHORT, LAYOUT_X_POS_Y + TEX_XY_DIMS_LONG,
+			               TEX_XY_OFFSET_X, texPressedOffset,
+			               TEX_XY_OFFSET_X + TEX_XY_DIMS_LONG, texPressedOffset + TEX_XY_DIMS_SHORT,
 			               GX_COLOR_SILVER);
 			
 			// Y
-			texOffsetX = TEX_Y_OFFSET_X;
+			texPressedOffset = TEX_XY_OFFSET_Y;
 			if (*held & PAD_BUTTON_Y) {
-				texOffsetX += TEX_NORMAL_DIMENSIONS;
+				texPressedOffset += TEX_XY_DIMS_SHORT;
 			}
 			drawSubTexture(LAYOUT_Y_POS_X, LAYOUT_Y_POS_Y,
-						   LAYOUT_Y_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_Y_POS_Y + TEX_NORMAL_DIMENSIONS,
-			               texOffsetX, TEX_Y_OFFSET_Y,
-						   texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_Y_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
-			               GX_COLOR_SILVER);
+						   LAYOUT_Y_POS_X + TEX_XY_DIMS_LONG, LAYOUT_Y_POS_Y + TEX_XY_DIMS_SHORT,
+						   TEX_XY_OFFSET_X, texPressedOffset,
+						   TEX_XY_OFFSET_X + TEX_XY_DIMS_LONG, texPressedOffset + TEX_XY_DIMS_SHORT,
+						   GX_COLOR_SILVER);
 			
 			// Z
-			texOffsetX = TEX_Z_OFFSET_X;
+			texPressedOffset = TEX_Z_OFFSET_Y;
 			if (*held & PAD_TRIGGER_Z) {
-				texOffsetX += TEX_NORMAL_DIMENSIONS;
+				texPressedOffset += TEX_Z_DIMS_SHORT;
 			}
 			drawSubTexture(LAYOUT_Z_POS_X, LAYOUT_Z_POS_Y,
-						   LAYOUT_Z_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_Z_POS_Y + TEX_NORMAL_DIMENSIONS,
-			               texOffsetX, TEX_Z_OFFSET_Y,
-						   texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_Z_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+						   LAYOUT_Z_POS_X + TEX_Z_DIMS_LONG, LAYOUT_Z_POS_Y + TEX_Z_DIMS_SHORT,
+			               TEX_Z_OFFSET_X, texPressedOffset,
+						   TEX_Z_OFFSET_X + TEX_Z_DIMS_LONG, texPressedOffset + TEX_Z_DIMS_SHORT,
 			               (GXColor) { 0x93, 0x70, 0xDB, 0xFF });
 
 			
-			// d-pad
-			int dpadPressedIndex = 1;
-			int dpadPressedOffsets[5];
-			dpadPressedOffsets[0] = TEX_DPAD_OFFSET_X;
+			// D-Pad
+			// base layer
+			drawSubTexture(LAYOUT_DPAD_POS_X, LAYOUT_DPAD_POS_Y,
+						   LAYOUT_DPAD_POS_X + TEX_DPAD_DIMS, LAYOUT_DPAD_POS_Y + TEX_DPAD_DIMS,
+						   TEX_DPAD_OFFSET_X, TEX_DPAD_OFFSET_Y,
+						   TEX_DPAD_OFFSET_X + TEX_DPAD_DIMS, TEX_DPAD_OFFSET_Y + TEX_DPAD_DIMS,
+						   GX_COLOR_SILVER);
 			
-			if (*held & PAD_BUTTON_UP) {
-				dpadPressedOffsets[dpadPressedIndex] = TEX_DPAD_UP_OFFSET_X;
-				dpadPressedIndex++;
-			}
-			if (*held & PAD_BUTTON_RIGHT) {
-				dpadPressedOffsets[dpadPressedIndex] = TEX_DPAD_RIGHT_OFFSET_X;
-				dpadPressedIndex++;
-			}
-			if (*held & PAD_BUTTON_LEFT) {
-				dpadPressedOffsets[dpadPressedIndex] = TEX_DPAD_LEFT_OFFSET_X;
-				dpadPressedIndex++;
-			}
-			if (*held & PAD_BUTTON_DOWN) {
-				dpadPressedOffsets[dpadPressedIndex] = TEX_DPAD_DOWN_OFFSET_X;
-				dpadPressedIndex++;
-			}
-			
-			for (int i = 0; i < dpadPressedIndex; i++) {
-				GXColor color = GX_COLOR_SILVER;
-				if (i != 0) {
-					color = GX_COLOR_WHITE;
+			// check each direction for press
+			for (enum TEX_ROTATE dpadRotation = ROTATE_0; dpadRotation <= ROTATE_270; dpadRotation++) {
+				if (*held & TEX_DPAD_DIRECTIONS_LIST[dpadRotation]) {
+					rotateTextureForDraw(dpadRotation);
+					// rotating the texture is off slightly for some reason...
+					drawSubTexture(LAYOUT_DPAD_POS_X + TEX_DPAD_DIRECTIONS_FIX_X[dpadRotation],
+								   LAYOUT_DPAD_POS_Y + TEX_DPAD_DIRECTIONS_FIX_Y[dpadRotation],
+					               LAYOUT_DPAD_POS_X + TEX_DPAD_DIRECTIONS_FIX_X[dpadRotation] + TEX_DPAD_DIMS,
+								   LAYOUT_DPAD_POS_Y + TEX_DPAD_DIRECTIONS_FIX_Y[dpadRotation] + TEX_DPAD_DIMS,
+					               TEX_DPAD_OFFSET_X, TEX_DPAD_OFFSET_Y + TEX_DPAD_DIMS,
+					               TEX_DPAD_OFFSET_X + TEX_DPAD_DIMS, TEX_DPAD_OFFSET_Y + (TEX_DPAD_DIMS * 2),
+					               GX_COLOR_WHITE);
 				}
-				texOffsetX = dpadPressedOffsets[i];
-				drawSubTexture(LAYOUT_DPAD_POS_X, LAYOUT_DPAD_POS_Y,
-							   LAYOUT_DPAD_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_DPAD_POS_Y + TEX_NORMAL_DIMENSIONS,
-				               texOffsetX, TEX_DPAD_OFFSET_Y,
-							   texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_DPAD_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
-				               color);
 			}
-			
+
 			// Start
-			texOffsetX = TEX_START_OFFSET_X;
+			texPressedOffset = TEX_START_OFFSET_X;
 			if (*held & PAD_BUTTON_START) {
-				texOffsetX += TEX_NORMAL_DIMENSIONS;
+				texPressedOffset += TEX_START_DIMS - 2;
 			}
 			drawSubTexture(LAYOUT_START_POS_X, LAYOUT_START_POS_Y,
-						   LAYOUT_START_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_START_POS_Y + TEX_NORMAL_DIMENSIONS,
-			               texOffsetX, TEX_START_OFFSET_Y,
-						   texOffsetX + TEX_NORMAL_DIMENSIONS, TEX_START_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+						   LAYOUT_START_POS_X + TEX_START_DIMS, LAYOUT_START_POS_Y + TEX_START_DIMS,
+			               texPressedOffset, TEX_START_OFFSET_Y,
+						   texPressedOffset + TEX_START_DIMS, TEX_START_OFFSET_Y + TEX_START_DIMS,
 			               GX_COLOR_WHITE);
 			
 			// stick gate
 			restorePrevDepth();
 			setDepth(-2);
 			drawSubTexture(LAYOUT_ASTICK_GATE_POS_X, LAYOUT_ASTICK_GATE_POS_Y,
-						   LAYOUT_ASTICK_GATE_POS_X + TEX_ASTICK_GATE_DIMENSIONS,
-						   LAYOUT_ASTICK_GATE_POS_Y + TEX_ASTICK_GATE_DIMENSIONS,
+						   LAYOUT_ASTICK_GATE_POS_X + TEX_ASTICK_GATE_DIMS,
+						   LAYOUT_ASTICK_GATE_POS_Y + TEX_ASTICK_GATE_DIMS,
 						   TEX_ASTICK_GATE_OFFSET_X, TEX_ASTICK_GATE_OFFSET_Y,
-						   TEX_ASTICK_GATE_OFFSET_X + TEX_ASTICK_GATE_DIMENSIONS,
-						   TEX_ASTICK_GATE_OFFSET_Y + TEX_ASTICK_GATE_DIMENSIONS,
+						   TEX_ASTICK_GATE_OFFSET_X + TEX_ASTICK_GATE_DIMS,
+						   TEX_ASTICK_GATE_OFFSET_Y + TEX_ASTICK_GATE_DIMS,
 						   GX_COLOR_GRAY);
 			
 			// line connecting gate to stick cap
 			// first draw circle in center, since GX_LINES doesn't look great on its own...
 			// we're using the "pressed start button" as the circle
-			drawSubTexture(LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMENSIONS / 2) - 12,
-			               LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMENSIONS / 2) - 12,
-			               LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMENSIONS / 2) + 12,
-			               LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMENSIONS / 2) + 12,
-			               TEX_START_OFFSET_X + TEX_NORMAL_DIMENSIONS, TEX_START_OFFSET_Y,
-			               TEX_START_OFFSET_X + (TEX_NORMAL_DIMENSIONS * 2), TEX_START_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+			drawSubTexture(LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMS / 2) - 4,
+			               LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMS / 2) - 4,
+			               LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMS / 2) + 4,
+			               LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMS / 2) + 4,
+			               TEX_START_OFFSET_X + TEX_START_DIMS, TEX_START_OFFSET_Y,
+			               TEX_START_OFFSET_X + (TEX_START_DIMS * 2), TEX_START_OFFSET_Y + TEX_START_DIMS,
 			               GX_COLOR_WHITE);
 			
 			// figure out where stick should go to
@@ -371,40 +361,40 @@ void menu_controllerTest() {
 			GX_SetLineWidth(40, GX_TO_ZERO);
 			
 			// actually draw the line
-			drawLine(LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMENSIONS / 2),
-			         LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMENSIONS / 2),
-			         LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMENSIONS / 2) + stickModX,
-			         LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMENSIONS / 2) - stickModY,
+			drawLine(LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMS / 2),
+			         LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMS / 2),
+			         LAYOUT_ASTICK_GATE_POS_X + (TEX_ASTICK_GATE_DIMS / 2) + stickModX,
+			         LAYOUT_ASTICK_GATE_POS_Y + (TEX_ASTICK_GATE_DIMS / 2) - stickModY,
 					 GX_COLOR_WHITE);
 			
 			GX_SetLineWidth(12, GX_TO_ZERO);
 			
 			// stick cap
 			drawSubTexture(LAYOUT_ASTICK_CAP_POS_X + stickModX, LAYOUT_ASTICK_CAP_POS_Y - stickModY,
-			               LAYOUT_ASTICK_CAP_POS_X + TEX_NORMAL_DIMENSIONS + stickModX,
-			               LAYOUT_ASTICK_CAP_POS_Y + TEX_NORMAL_DIMENSIONS - stickModY,
+			               LAYOUT_ASTICK_CAP_POS_X + TEX_STICK_DIMS + stickModX,
+			               LAYOUT_ASTICK_CAP_POS_Y + TEX_STICK_DIMS - stickModY,
 			               TEX_ASTICK_CAP_OFFSET_X, TEX_ASTICK_CAP_OFFSET_Y,
-			               TEX_ASTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS,
-			               TEX_ASTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+			               TEX_ASTICK_CAP_OFFSET_X + TEX_STICK_DIMS,
+			               TEX_ASTICK_CAP_OFFSET_Y + TEX_STICK_DIMS,
 						   GX_COLOR_WHITE);
 			
 			// c-stick gate
 			drawSubTexture(LAYOUT_CSTICK_POS_X, LAYOUT_CSTICK_POS_Y,
-			               LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS, LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS,
+			               LAYOUT_CSTICK_POS_X + TEX_STICK_DIMS, LAYOUT_CSTICK_POS_Y + TEX_STICK_DIMS,
 			               TEX_CSTICK_GATE_OFFSET_X, TEX_CSTICK_GATE_OFFSET_Y,
-			               TEX_CSTICK_GATE_OFFSET_X + TEX_NORMAL_DIMENSIONS,
-			               TEX_CSTICK_GATE_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+			               TEX_CSTICK_GATE_OFFSET_X + TEX_STICK_DIMS,
+			               TEX_CSTICK_GATE_OFFSET_Y + TEX_STICK_DIMS,
 						   GX_COLOR_GRAY);
 			
 			// line connecting gate to cstick cap
 			// first draw circle in center, since GX_LINES doesn't look great on its own...
 			// we're using the "pressed start button" as the circle
-			drawSubTexture(LAYOUT_CSTICK_POS_X + (TEX_NORMAL_DIMENSIONS / 2) - 12,
-			               LAYOUT_CSTICK_POS_Y + (TEX_NORMAL_DIMENSIONS / 2) - 12,
-			               LAYOUT_CSTICK_POS_X + (TEX_NORMAL_DIMENSIONS / 2) + 12,
-			               LAYOUT_CSTICK_POS_Y + (TEX_NORMAL_DIMENSIONS / 2) + 12,
-			               TEX_START_OFFSET_X + TEX_NORMAL_DIMENSIONS, TEX_START_OFFSET_Y,
-			               TEX_START_OFFSET_X + (TEX_NORMAL_DIMENSIONS * 2), TEX_START_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+			drawSubTexture(LAYOUT_CSTICK_POS_X + (TEX_STICK_DIMS / 2) - 4,
+			               LAYOUT_CSTICK_POS_Y + (TEX_STICK_DIMS / 2) - 4,
+			               LAYOUT_CSTICK_POS_X + (TEX_STICK_DIMS / 2) + 4,
+			               LAYOUT_CSTICK_POS_Y + (TEX_STICK_DIMS / 2) + 4,
+			               TEX_START_OFFSET_X + TEX_START_DIMS, TEX_START_OFFSET_Y,
+			               TEX_START_OFFSET_X + (TEX_START_DIMS * 2), TEX_START_OFFSET_Y + TEX_START_DIMS,
 			               GX_COLOR_YELLOW);
 			
 			// figure out where stick should go to
@@ -414,21 +404,21 @@ void menu_controllerTest() {
 			GX_SetLineWidth(40, GX_TO_ZERO);
 			
 			// actually draw the line
-			drawLine(LAYOUT_CSTICK_POS_X + (TEX_NORMAL_DIMENSIONS / 2),
-			         LAYOUT_CSTICK_POS_Y + (TEX_NORMAL_DIMENSIONS / 2),
-			         LAYOUT_CSTICK_POS_X + (TEX_NORMAL_DIMENSIONS / 2) + cStickModX,
-			         LAYOUT_CSTICK_POS_Y + (TEX_NORMAL_DIMENSIONS / 2) - cStickModY,
+			drawLine(LAYOUT_CSTICK_POS_X + (TEX_STICK_DIMS / 2),
+			         LAYOUT_CSTICK_POS_Y + (TEX_STICK_DIMS / 2),
+			         LAYOUT_CSTICK_POS_X + (TEX_STICK_DIMS / 2) + cStickModX,
+			         LAYOUT_CSTICK_POS_Y + (TEX_STICK_DIMS / 2) - cStickModY,
 					 GX_COLOR_YELLOW);
 			
 			GX_SetLineWidth(12, GX_TO_ZERO);
 			
 			// c-stick cap
 			drawSubTexture(LAYOUT_CSTICK_POS_X + cStickModX, LAYOUT_CSTICK_POS_Y - cStickModY - 1,
-			               LAYOUT_CSTICK_POS_X + TEX_NORMAL_DIMENSIONS + cStickModX,
-			               LAYOUT_CSTICK_POS_Y + TEX_NORMAL_DIMENSIONS - cStickModY - 1,
+			               LAYOUT_CSTICK_POS_X + TEX_STICK_DIMS + cStickModX,
+			               LAYOUT_CSTICK_POS_Y + TEX_STICK_DIMS - cStickModY - 1,
 			               TEX_CSTICK_CAP_OFFSET_X, TEX_CSTICK_CAP_OFFSET_Y,
-			               TEX_CSTICK_CAP_OFFSET_X + TEX_NORMAL_DIMENSIONS,
-			               TEX_CSTICK_CAP_OFFSET_Y + TEX_NORMAL_DIMENSIONS,
+			               TEX_CSTICK_CAP_OFFSET_X + TEX_STICK_DIMS,
+			               TEX_CSTICK_CAP_OFFSET_Y + TEX_STICK_DIMS,
 						   GX_COLOR_YELLOW);
 			
 			restorePrevDepth();
