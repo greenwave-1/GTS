@@ -373,18 +373,27 @@ bool menu_runMenu() {
 // done this way so that it can be drawn anytime, even during exit fadeout
 void menu_drawHeader() {
 	resetCursor();
-	#ifndef NO_DATE_CHECK
-	// if true, we want to just draw the normal text
-	if (drawDateSpecial(date)) {
-		printStr("GCC Test Suite");
-	}
-	#else
-	printStr("GCC Test Suite");
-	#endif
 	
-	if (mainMenuDraw && currentMenu == MAIN_MENU) {
-		menu_mainMenuDraw();
+	#ifndef NO_DATE_CHECK
+	if (drawDateSpecial(date, currentMenu)) {
+	#endif
+		
+		if (currentMenu == MAIN_MENU) {
+			printStr("GCC Test Suite");
+			if (mainMenuDraw) {
+				menu_mainMenuDraw();
+			}
+		} else {
+			if (mainMenuCursorPos < MENUITEMS_LEN) {
+				printStr(menuItems[mainMenuCursorPos]);
+			} else {
+				printStr("Invalid menu entry???");
+			}
+		}
+		
+	#ifndef NO_DATE_CHECK
 	}
+	#endif
 }
 
 static int colSelection = 0;

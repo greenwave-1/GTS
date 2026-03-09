@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
 	
 	// if we're using a socket for logging, we need to prepare it
 	// TODO: should this just be in logging.c outright? if so it needs to have return values for different outcomes
-	if (getLoggingType() == NETWORKSOCK) {
+	if (getLoggingType() == LOG_NETWORKSOCK) {
 		int netSetupEllipseCounter = 0;
 		while (true) {
 			// leave once connection is made
@@ -334,6 +334,8 @@ int main(int argc, char **argv) {
 		}
 	}
 	#endif
+	
+	menu_setCurrentMenu(MAIN_MENU);
 	
 	// hold for ~1 second, then fade over 15 frames
 	for (int i = 0; i < 75; i++) {

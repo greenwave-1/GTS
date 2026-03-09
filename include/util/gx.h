@@ -18,6 +18,7 @@
 
 #include "util/datetime.h"
 #include "waveform.h"
+#include "menu.h"
 
 // center of screen, 640x480
 // TODO: probably should get these from rmode, just in case...
@@ -166,7 +167,7 @@ void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, i
 
 #ifndef NO_DATE_CHECK
 // true if standard "GCC Test Suite" text should be drawn
-bool drawDateSpecial(enum DATE_CHECK_LIST date);
+bool drawDateSpecial(enum DATE_CHECK_LIST date, enum CURRENT_MENU menu);
 #endif
 
 #endif //GTS_GX_H

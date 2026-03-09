@@ -24,6 +24,7 @@ static enum LOGGING_DEVICE dev = LOG_NONE;
 
 static bool loggingPaused = false;
 static bool allowDuplicateMessages = false;
+static bool printNewline = true;
 
 static bool deviceSet = false;
 
@@ -149,7 +150,9 @@ void debugLog(char *msg, ...) {
 		switch (dev) {
 			case LOG_USBGECKO:
 				SYS_Reportv(msg, list);
-				SYS_Report("\n");
+				if (printNewline) {
+					SYS_Report("\n");
+				}
 				break;
 			case LOG_NETWORKSOCK:
 				networkMessage(msg, list);
@@ -186,6 +189,10 @@ void pauseLogging(bool state) {
 
 void setAllowDuplicateMessages(bool state) {
 	allowDuplicateMessages = state;
+}
+
+void setPrintNewline(bool state) {
+	printNewline = state;
 }
 
 char* getConfiguredIP() {

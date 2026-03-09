@@ -1154,7 +1154,7 @@ const static int colorList[][3] = {
 		{ 0xe5, 0x00, 0x00 }
 		
 };
-bool drawDateSpecial(enum DATE_CHECK_LIST date) {
+bool drawDateSpecial(enum DATE_CHECK_LIST date, enum CURRENT_MENU menu) {
 	// since we could do a bunch of draw calls here, its easier just to store this ourselves...
 	int initialZValue = zPrevDepth;
 	lockResetZDepth = true;
@@ -1165,6 +1165,9 @@ bool drawDateSpecial(enum DATE_CHECK_LIST date) {
 	int sizeOfQuads = 144;
 	switch (date) {
 		case DATE_PM:
+			if (menu != MAIN_MENU) {
+				break;
+			}
 			drawNormalText = false;
 			// 6 quads total across 144 pixels
 			sizeOfQuads = 144 / 6;
@@ -1178,6 +1181,9 @@ bool drawDateSpecial(enum DATE_CHECK_LIST date) {
 			printStrColor(GX_COLOR_BLACK, GX_COLOR_WHITE, "GCC Test Suite");
 			break;
 		case DATE_AF:
+			if (menu != MAIN_MENU) {
+				break;
+			}
 			drawNormalText = false;
 			printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "Unregistered HyperCam 2");
 			break;
