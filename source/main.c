@@ -249,6 +249,8 @@ int main(int argc, char **argv) {
 	// allocate memory for recording structs
 	initControllerRecStructs();
 	
+	// doing this again so that the controller isn't considered disconnected on frame 1
+	PAD_ScanPads();
 	
 	#ifdef BENCH
 	long long unsigned int time = 0;

@@ -397,7 +397,6 @@ void menu_drawHeader() {
 				}
 				break;
 		}
-		
 	#ifndef NO_DATE_CHECK
 	}
 	#endif
@@ -670,6 +669,7 @@ void menu_thanksPage() {
 			 "PhobGCC team and Discord\n"
 			 "DevkitPro team\n"
 			 "Extrems\n"
+	         "webhdx\n"
 			 "SmashScope\n"
 			 "bkacjios / m-overlay\n"
 			 "Z. B. Wells");
