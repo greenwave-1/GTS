@@ -377,18 +377,25 @@ void menu_drawHeader() {
 	#ifndef NO_DATE_CHECK
 	if (drawDateSpecial(date, currentMenu)) {
 	#endif
-		
-		if (currentMenu == MAIN_MENU) {
-			printStr("GCC Test Suite");
-			if (mainMenuDraw) {
-				menu_mainMenuDraw();
-			}
-		} else {
-			if (mainMenuCursorPos < MENUITEMS_LEN) {
-				printStr(menuItems[mainMenuCursorPos]);
-			} else {
-				printStr("Invalid menu entry???");
-			}
+		switch(currentMenu) {
+			case MAIN_MENU:
+				if (mainMenuDraw) {
+					menu_mainMenuDraw();
+				}
+				printStr("GCC Test Suite");
+				break;
+			case THANKS_PAGE:
+				#ifndef NO_DATE_CHECK
+				drawDateSpecial(DATE_PM, MAIN_MENU);
+				break;
+				#endif
+			default:
+				if (mainMenuCursorPos < MENUITEMS_LEN) {
+					printStr(menuItems[mainMenuCursorPos]);
+				} else {
+					printStr("ERR REPORT THIS PLS");
+				}
+				break;
 		}
 		
 	#ifndef NO_DATE_CHECK

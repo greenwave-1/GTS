@@ -1165,7 +1165,7 @@ bool drawDateSpecial(enum DATE_CHECK_LIST date, enum CURRENT_MENU menu) {
 	int sizeOfQuads = 144;
 	switch (date) {
 		case DATE_PM:
-			if (menu != MAIN_MENU) {
+			if (menu != MAIN_MENU && menu != THANKS_PAGE) {
 				break;
 			}
 			drawNormalText = false;
