@@ -4,9 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <inttypes.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 #include <ogc/pad.h>
 
@@ -35,6 +38,29 @@ void deinitFilesystem() {
 	}
 }
 
+// returns file pointer to new file, null otherwise (including if file already exists)
+FILE *createFile(char *filename, char *modes) {
+	if (!initFilesystem()) {
+		return NULL;
+	}
+
+	{
+		struct stat st = {0};
+		// check if file already exists
+		if (stat(filename, &st) == 0) {
+			return NULL;
+		}
+	}
+
+	FILE *retFile = fopen(filename, modes);
+
+	if (!retFile) {
+		return NULL;
+	}
+
+	return retFile;
+}
+
 FILE *openFile(char *filename, char *modes) {
 	if (!initFilesystem()) {
 		return NULL;
@@ -42,8 +68,8 @@ FILE *openFile(char *filename, char *modes) {
 	
 	{
 		struct stat st = {0};
-		// check if file already exists
-		if (stat(filename, &st) == 0) {
+		// check if file exists
+		if (stat(filename, &st) != 0) {
 			return NULL;
 		}
 	}
@@ -57,6 +83,38 @@ FILE *openFile(char *filename, char *modes) {
 	return retFile;
 }
 
+char* readFile(FILE *inFile, int *length) {
+	if (inFile == NULL) {
+		return NULL;
+	}
+	// check file length
+	// https://stackoverflow.com/questions/238603/how-can-i-get-a-files-size-in-c
+	fseek(inFile, 0, SEEK_END);
+
+	int fileLen = ftell(inFile);
+	
+	fseek(inFile, 0, SEEK_SET);
+
+	// arbitrary file size restriction, 250k
+	if (fileLen > (1000 * 250)) {
+		return NULL;
+	}
+
+	// +1 for null terminator
+	char *retVal = calloc(fileLen + 1, sizeof(char));
+
+	int numRead = fread(retVal, 1, fileLen, inFile);
+
+	// did we not get as much data as expected?
+	if (fileLen != numRead) {
+		free(retVal);
+		return NULL;
+	}
+
+	*length = numRead;
+	return retVal;
+}
+
 int exportData() {
 	ControllerRec *data = *(getRecordingData());
 	data->dataExported = true;
@@ -64,27 +122,32 @@ int exportData() {
 	if (!data->isRecordingReady || data->recordingType == REC_CLEAR) {
 		return 1;
 	}
-	
+
 	if (!initFilesystem()) {
 		return 2;
 	}
-	
-	// get current time in YY-MM-DD_HH-MM-SS format
-	char *timeStr = getDateTimeStr();
-	
+
 	// create directory if it doesn't exist
 	// https://stackoverflow.com/questions/7430248/creating-a-new-directory-in-c
 	{
 		struct stat st = {0};
-		if (stat("/GTS", &st) == -1) {
-			if (mkdir("/GTS", 0700) == -1) {
+		if (stat("/gts", &st) == -1) {
+			if (mkdir("/gts", 0700) == -1) {
+				return 3;
+			}
+		}
+		if (stat("/gts/export", &st) == -1) {
+			if (mkdir("/gts/export", 0700) == -1) {
 				return 3;
 			}
 		}
 	}
 	
+	// get current time in YY-MM-DD_HH-MM-SS format
+	char *timeStr = getDateTimeStr();
+
 	// create filepath
-	char fileStr[64] = "/GTS/";
+	char fileStr[128] = "/gts/export/";
 	strncat(fileStr, timeStr, 32);  // in theory this is right, idk if its actually right tho...
 	strcat(fileStr, "_");
 	{
@@ -95,9 +158,9 @@ int exportData() {
 		increment++;
 		increment %= 10;
 	}
-	
+
 	strcat(fileStr, ".csv");
-	
+
 	{
 		struct stat st = {0};
 		// check if file already exists
@@ -105,12 +168,12 @@ int exportData() {
 			return 4;
 		}
 	}
-	
-	FILE *fptr = openFile(fileStr, "w");
-	
+
+	FILE *fptr = createFile(fileStr, "w");
+
 	// first row is: datetime, number of polls, total time in microseconds, type of recording
 	fprintf(fptr, "%s,%u,%" PRIu64 ",%d\n", timeStr, data->sampleEnd, data->totalTimeUs, data->recordingType);
-	
+
 	switch (data->recordingType) {
 		case REC_OSCILLOSCOPE:
 			// X, Y, CX, CY, time from last poll
@@ -120,74 +183,73 @@ int exportData() {
 					data->samples[0].timeDiffUs);
 			for (int i = 1; i < data->sampleEnd; i++) {
 				fprintf(fptr, "%d,%d,%d,%d,%" PRIu64 "\n",
-				        data->samples[i].stickX, data->samples[i].stickY,
-				        data->samples[i].cStickX, data->samples[i].cStickY,
-				        data->samples[i].timeDiffUs);
+						data->samples[i].stickX, data->samples[i].stickY,
+						data->samples[i].cStickX, data->samples[i].cStickY,
+						data->samples[i].timeDiffUs);
 			}
 			break;
-		
+
 		case REC_2DPLOT:
 			// X, Y, buttons (decimal u16), time from last poll
 			fprintf(fptr, "%d,%d,%d,%" PRIu64 "\n",
-			        data->samples[0].stickX, data->samples[0].stickY,
-			        data->samples[0].buttons, data->samples[0].timeDiffUs);
+					data->samples[0].stickX, data->samples[0].stickY,
+					data->samples[0].buttons, data->samples[0].timeDiffUs);
 			for (int i = 1; i < data->sampleEnd; i++) {
 				fprintf(fptr, "%d,%d,%d,%" PRIu64 "\n",
-				        data->samples[i].stickX, data->samples[i].stickY,
-				        data->samples[i].buttons, data->samples[i].timeDiffUs);
+						data->samples[i].stickX, data->samples[i].stickY,
+						data->samples[i].buttons, data->samples[i].timeDiffUs);
 			}
 			break;
-		
+
 		case REC_TRIGGER_L:
 			// Analog L, Digital L, time from last poll
 			fprintf(fptr, "%u,%" PRIu16 ",%" PRIu64 "\n",
-			        data->samples[0].triggerL, data->samples[0].buttons & PAD_TRIGGER_L,
+					data->samples[0].triggerL, data->samples[0].buttons & PAD_TRIGGER_L,
 					data->samples[0].timeDiffUs);
 			for (int i = 1; i < data->sampleEnd; i++) {
 				fprintf(fptr, "%u,%" PRIu16 ",%" PRIu64 "\n",
-				        data->samples[i].triggerL, data->samples[i].buttons & PAD_TRIGGER_L,
-				        data->samples[i].timeDiffUs);
+						data->samples[i].triggerL, data->samples[i].buttons & PAD_TRIGGER_L,
+						data->samples[i].timeDiffUs);
 			}
 			break;
-		
+
 		case REC_TRIGGER_R:
 			// Analog L, Digital L, time from last poll
 			fprintf(fptr, "%u,%d,%" PRIu64 "\n",
-			        data->samples[0].triggerR, data->samples[0].buttons & PAD_TRIGGER_R,
-			        data->samples[0].timeDiffUs);
+					data->samples[0].triggerR, data->samples[0].buttons & PAD_TRIGGER_R,
+					data->samples[0].timeDiffUs);
 			for (int i = 1; i < data->sampleEnd; i++) {
 				fprintf(fptr, "%u,%d,%" PRIu64 "\n",
-				        data->samples[i].triggerR, data->samples[i].buttons & PAD_TRIGGER_R,
-				        data->samples[i].timeDiffUs);
+						data->samples[i].triggerR, data->samples[i].buttons & PAD_TRIGGER_R,
+						data->samples[i].timeDiffUs);
 			}
 			break;
-			
+
 		case REC_BUTTONTIME:
 			// X, Y, CX, CY, Analog L, Analog R, buttons (decimal u16), time from last poll
 			fprintf(fptr, "%d,%d,%d,%d,%u,%u,%" PRIu16 ",%" PRIu64 "\n",
-			        data->samples[0].stickX, data->samples[0].stickY,
-			        data->samples[0].cStickX, data->samples[0].cStickY,
-			        data->samples[0].triggerL, data->samples[0].triggerR,
-			        data->samples[0].buttons, data->samples[0].timeDiffUs);
+					data->samples[0].stickX, data->samples[0].stickY,
+					data->samples[0].cStickX, data->samples[0].cStickY,
+					data->samples[0].triggerL, data->samples[0].triggerR,
+					data->samples[0].buttons, data->samples[0].timeDiffUs);
 			for (int i = 1; i < data->sampleEnd; i++) {
 				fprintf(fptr, "%d,%d,%d,%d,%u,%u,%" PRIu16 ",%" PRIu64 "\n",
-				        data->samples[i].stickX, data->samples[i].stickY,
-				        data->samples[i].cStickX, data->samples[i].cStickY,
-				        data->samples[i].triggerL, data->samples[i].triggerR,
-				        data->samples[i].buttons, data->samples[i].timeDiffUs);
+						data->samples[i].stickX, data->samples[i].stickY,
+						data->samples[i].cStickX, data->samples[i].cStickY,
+						data->samples[i].triggerL, data->samples[i].triggerR,
+						data->samples[i].buttons, data->samples[i].timeDiffUs);
 			}
 			break;
-		
 		// this shouldn't happen??
 		case REC_CLEAR:
 		default:
 			fclose(fptr);
 			return 1;
 	}
-	
+
 	fclose(fptr);
-	
+
 	free(timeStr);
-	
+
 	return 0;
 }
