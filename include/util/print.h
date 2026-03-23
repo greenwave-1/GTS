@@ -66,7 +66,8 @@ void drawFontButton(enum FONT_BUTTON_LIST button);
 //void printStrButton(struct INSTRUCTION_ENTRY list[]);
 
 void resetScrollingPrint();
-void startScrollingPrint(int x1, int y1, int x2, int y2);
+void scrollingPrintFreeze(bool state);
+void startScrollingPrint(int x1, int y1, int x2, int y2, GXColor color);
 void endScrollingPrint();
 
 // TODO: use int pointer and have this function do the incrementing
@@ -81,5 +82,7 @@ void setCursorDepth(int z);
 void setPrintOffset(int padding);
 void restorePrevCursorDepth();
 void setWordWrap(bool enable);
+
+void setFontScale(int scale);
 
 #endif //GTS_PRINT_H

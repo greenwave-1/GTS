@@ -37,6 +37,9 @@ static int cursorPrevZ = -4;
 // reset when resetCursorPos() is called
 static int printOffset = 0;
 
+// multiplier for text size
+int fontScale = 1;
+
 static void advanceCursorLine() {
 	cursorX = 0;
 	cursorY += PRINT_FONT_CHAR_HEIGHT + LINE_SPACING + printOffset;
@@ -120,8 +123,8 @@ static void handleString(bool draw, GXColor bgColor, GXColor fgColor) {
 		if (draw) {
 			int quadX1 = cursorX + workingHorizontalPadding;
 			int quadY1 = cursorY + PRINT_PADDING_VERTICAL;
-			int quadX2 = quadX1 + PRINT_FONT_CHAR_WIDTH;
-			int quadY2 = quadY1 + PRINT_FONT_CHAR_HEIGHT;
+			int quadX2 = quadX1 + (PRINT_FONT_CHAR_WIDTH * fontScale);
+			int quadY2 = quadY1 + (PRINT_FONT_CHAR_HEIGHT * fontScale);
 			
 			// get secondary coordinates for texture
 			int texturePosX2 = texturePosX1 + PRINT_FONT_CHAR_WIDTH;
@@ -134,7 +137,7 @@ static void handleString(bool draw, GXColor bgColor, GXColor fgColor) {
 		}
 		
 		// advance cursor
-		cursorX += 10;
+		cursorX += (10 * fontScale);
 	}
 	if (workingX != cursorX && !draw) {
 		drawSolidBox(workingX + workingHorizontalPadding - 2, workingY + PRINT_PADDING_VERTICAL - 2,
@@ -330,6 +333,12 @@ static int scrollBottomBound = 0;
 static int scrollTop = 0, scrollBottom = 480;
 static int scrollXMid = 320;
 
+static bool scrollFreeze = false;
+
+void scrollingPrintFreeze(bool state) {
+	scrollFreeze = state;
+}
+
 void resetScrollingPrint() {
 	scrollingOffset = 0;
 	scrollBottomBound = 0;
@@ -339,7 +348,7 @@ void resetScrollingPrint() {
 	screenWidth = 640;
 }
 
-void startScrollingPrint(int x1, int y1, int x2, int y2) {
+void startScrollingPrint(int x1, int y1, int x2, int y2, GXColor color) {
 	// set bounds
 	scrollTop = y1;
 	scrollBottom = y2;
@@ -351,7 +360,11 @@ void startScrollingPrint(int x1, int y1, int x2, int y2) {
 	tempY = cursorY;
 	
 	// get stick position as a modifier
-	scrollModifier = PAD_StickY(0) / 16;
+	if (scrollFreeze) {
+		scrollModifier = 0;
+	} else {
+		scrollModifier = PAD_StickY(0) / 16;
+	}
 
 	// apply offset
 	scrollingOffset += scrollModifier;
@@ -381,7 +394,7 @@ void startScrollingPrint(int x1, int y1, int x2, int y2) {
 	// move cursor to top left of screen, subtract vertical padding so we actually start printing at y=~0
 	setCursorXY(0, scrollingOffset - PRINT_PADDING_VERTICAL + 5);
 	workingHorizontalPadding = 10;
-	setSubwindowScissorBox(x1, y1, x2, y2);
+	setSubwindowScissorBox(x1, y1, x2, y2, color);
 	setCursorDepth(2);
 }
 
@@ -413,13 +426,13 @@ void endScrollingPrint() {
 	workingHorizontalPadding = PRINT_PADDING_HORIZONTAL;
 	
 	// draw indicator for if there's more text in either direction
-	if (scrollingOffset < 0 && scrollBottomBound != 0) {
+	if (scrollingOffset < 0 && scrollBottomBound != 0 && !scrollFreeze) {
 		drawTri(scrollXMid - 10, scrollTop - 4,
 				scrollXMid + 10, scrollTop - 4,
 				scrollXMid, scrollTop - 10,
 				GX_COLOR_WHITE);
 	}
-	if (scrollingOffset > scrollBottomBound && scrollBottomBound != 0) {
+	if (scrollingOffset > scrollBottomBound && scrollBottomBound != 0 && !scrollFreeze) {
 		drawTri(scrollXMid - 10, scrollBottom + 4,
 				scrollXMid + 10, scrollBottom + 4,
 				scrollXMid, scrollBottom + 10,
@@ -494,3 +507,8 @@ void setWordWrap(bool enable) {
 	allowWordWrap = enable;
 }
 
+void setFontScale(int scale) {
+	if (scale > 0 && scale < 6) {
+		fontScale = scale;
+	}
+}
