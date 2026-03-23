@@ -117,7 +117,7 @@ void setupLogging(enum LOGGING_DEVICE device) {
 				break;
 			case LOG_FILE:
 				if (initFilesystem()) {
-					logFile = openFile("/GTS/debug.log", "a");
+					logFile = createFile("/GTS/debug.log", "a");
 				}
 				if (logFile != NULL) {
 					deviceSet = true;
