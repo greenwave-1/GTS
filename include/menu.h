@@ -11,7 +11,7 @@
 enum CURRENT_MENU { MAIN_MENU, CONTROLLER_TEST, WAVEFORM, PLOT_2D,
 		PLOT_BUTTON, IMAGE_TEST, FILE_EXPORT, COORD_MAP,
 		CONTINUOUS_WAVEFORM, TRIGGER_WAVEFORM, GATE_MEASURE, 
-		THANKS_PAGE, ERR };
+		THANKS_PAGE, BLACKOUT, ERR };
 
 // enum for the individual menu entries on the main menu
 // used for iterating over stuff/readability
@@ -19,8 +19,13 @@ enum MENU_MAIN_ENTRY_LIST { ENTRY_CONT_TEST, ENTRY_OSCILLOSCOPE, ENTRY_CONT_OSCI
 		ENTRY_TRIGGER_OSCILLOSCOPE, ENTRY_COORD_VIEWER, ENTRY_2D_PLOT,
 		ENTRY_BUTTON_PLOT, ENTRY_GATE_VIS, ENTRY_DATA_EXPORT };
 
-// functions for drawing the individual menus
+// any cleanup jobs that need to be done...
+void menu_deInit();
+
+// "main" function
 bool menu_runMenu();
+
+// functions for drawing the individual menus
 void menu_mainMenu();
 void menu_fileExport();
 void menu_thanksPage();

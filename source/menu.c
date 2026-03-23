@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <malloc.h>
 
 #include <ogc/pad.h>
 #include <ogc/video.h>
@@ -20,6 +21,12 @@
 
 // TODO: these should go away once all menus have been moved to a separate file
 #include "util/file.h"
+
+#ifdef DEBUGLOG
+#include "util/logging.h"
+#else
+#include <ogc/card.h>
+#endif
 
 #ifndef NO_DATE_CHECK
 #include "util/datetime.h"
@@ -94,13 +101,22 @@ static uint8_t thanksPageCounter = 0;
 
 static void menu_mainMenuDraw();
 
+#ifndef DEBUGLOG
+static bool menu_checkBlackout();
+static void menu_blackout();
+
+// used for checkBlackout()
+static void *workarea = NULL;
+static bool blackoutTriggered = false;
+#endif
+
 static lwp_t menu_setup_thread = (lwp_t) NULL;
 
 enum MENU_INIT_STATE { MENU_PRE_INIT, MENU_INIT, MENU_POST_INIT };
 static enum MENU_INIT_STATE menuInit = MENU_PRE_INIT;
 
 // these functions can take multiple frames to complete, so they should happen asynchronously
-void *menu_preSetup(void *args) {
+static void *menu_preSetupThread(void *args) {
 	#ifndef NO_DATE_CHECK
 	date = checkDate();
 	#endif
@@ -111,14 +127,33 @@ void *menu_preSetup(void *args) {
 	return NULL;
 }
 
+void menu_deInit() {
+	#ifndef DEBUGLOG
+	free(workarea);
+	#endif
+	// close filesystem if necessary
+	deinitFilesystem();
+}
+
+static int ellipseCounter = 0;
+
 // the "main" for the menus
 // other menu functions are called from here
 // this also handles moving between menus and exiting
 bool menu_runMenu() {
-	// spawn a thread for initialization of stuff that might take a bit...
-	if (menuInit == MENU_PRE_INIT) {
-		menuInit = MENU_INIT;
-		LWP_CreateThread(&menu_setup_thread, menu_preSetup, NULL, NULL, 2048, LWP_PRIO_NORMAL);
+	if (menuInit != MENU_POST_INIT) {
+		// spawn a thread for initialization of stuff that might take a bit...
+		if (menuInit == MENU_PRE_INIT) {
+			menuInit = MENU_INIT;
+			LWP_CreateThread(&menu_setup_thread, menu_preSetupThread, NULL, NULL, 2048, LWP_PRIO_NORMAL);
+		} else if (menuInit == MENU_INIT) {
+			setCursorPos(22, 46);
+			printStr("Loading.");
+			printEllipse(ellipseCounter, 10);
+			ellipseCounter++;
+			ellipseCounter %= 30;
+		}
+		return false;
 	}
 	
 	if (data == NULL) {
@@ -128,11 +163,6 @@ bool menu_runMenu() {
 	if (pressed == NULL) {
 		pressed = getButtonsDownPtr();
 		held = getButtonsHeldPtr();
-	}
-	
-	// we're gonna wait for init to finish, graphics flash for some reason if we don't
-	if (menuInit != MENU_POST_INIT) {
-		return false;
 	}
 	
 	// read inputs and origin status
@@ -198,6 +228,11 @@ bool menu_runMenu() {
 			menu_plotButtonSetAutoTrigger(autoTriggerEnabled);
 			menu_plotButton();
 			break;
+		#ifndef DEBUGLOG
+		case BLACKOUT:
+			menu_blackout();
+			break;
+		#endif
 		default:
 			printStr("currentMenu is invalid value, how did this happen?\n");
 			break;
@@ -377,26 +412,27 @@ void menu_drawHeader() {
 	#ifndef NO_DATE_CHECK
 	if (drawDateSpecial(date, currentMenu)) {
 	#endif
-		switch(currentMenu) {
+		switch (currentMenu) {
 			case MAIN_MENU:
+				printStr("GCC Test Suite");
 				if (mainMenuDraw) {
 					menu_mainMenuDraw();
 				}
-				printStr("GCC Test Suite");
 				break;
 			case THANKS_PAGE:
-				#ifndef NO_DATE_CHECK
+				#ifdef NO_DATE_CHECK
 				drawDateSpecial(DATE_PM, MAIN_MENU);
-				break;
 				#endif
+				break;
 			default:
 				if (mainMenuCursorPos < MENUITEMS_LEN) {
 					printStr(menuItems[mainMenuCursorPos]);
 				} else {
-					printStr("ERR REPORT THIS PLS");
+					printStr("Invalid menu entry???");
 				}
 				break;
 		}
+		
 	#ifndef NO_DATE_CHECK
 	}
 	#endif
@@ -454,7 +490,7 @@ static void menu_mainMenuDraw() {
 	}
 	
 	// cycle through options
-	if (PAD_ButtonsDown(1) == PAD_BUTTON_A) {
+	if (PAD_ButtonsDown(2) == PAD_BUTTON_A) {
 		colSelection++;
 		colSelection %= 3;
 	}
@@ -620,9 +656,17 @@ void menu_mainMenu() {
 		thanksPageCounter = 0;
 	}
 	
-	if (PAD_ButtonsDown(1) == PAD_TRIGGER_Z) {
+	if (PAD_ButtonsDown(2) == PAD_TRIGGER_Z) {
 		mainMenuDraw = !mainMenuDraw;
 	}
+	
+	#ifndef DEBUGLOG
+	if (!blackoutTriggered) {
+		if (menu_checkBlackout()) {
+			currentMenu = BLACKOUT;
+		}
+	}
+	#endif
 }
 
 void menu_fileExport() {
@@ -669,7 +713,7 @@ void menu_thanksPage() {
 			 "PhobGCC team and Discord\n"
 			 "DevkitPro team\n"
 			 "Extrems\n"
-	         "webhdx\n"
+			 "webhdx\n"
 			 "SmashScope\n"
 			 "bkacjios / m-overlay\n"
 			 "Z. B. Wells");
@@ -690,3 +734,77 @@ void menu_thanksPage() {
 	
 	printStr("\n\nLicensed under GNU GPLv3");
 }
+
+#ifndef DEBUGLOG
+static bool initCard = false;
+static bool cardMounting = false;
+static bool cardMounted = false;
+static bool gotDir = false;
+static int32_t cardInitCode;
+static card_dir memcard;
+static int memcardLen = 0;
+
+static void mount_callback(int32_t chn, int32_t res) {
+	cardMounted = true;
+}
+
+static bool menu_checkBlackout() {
+	if (!initCard) {
+		cardInitCode = CARD_Init("GGSE", "A4");
+		workarea = memalign(32, CARD_WORKAREA);
+		initCard = true;
+	}
+	
+	if (cardInitCode >= 0 && currentMenu == MAIN_MENU) {
+		if (CARD_Probe(CARD_SLOTB) == 1) {
+			if (!cardMounted) {
+				if (!cardMounting) {
+					CARD_MountAsync(CARD_SLOTB, workarea, NULL, &mount_callback);
+					cardMounting = true;
+				}
+			} else if (!gotDir) {
+				CARD_GetDirectory(CARD_SLOTB, &memcard, &memcardLen, false);
+			}
+			if (memcardLen != 0 && !isControllerConnected(CONT_PORT_1) && isControllerConnected(CONT_PORT_2)) {
+				return true;
+			}
+		} else {
+			cardMounted = false;
+			cardMounting = false;
+			memcardLen = 0;
+			gotDir = false;
+		}
+	}
+	
+	return false;
+}
+
+// "You like Castlevania, don't you?"
+static int blackoutFrameCounter = 0;
+static void menu_blackout() {
+	blackoutTriggered = true;
+	setDepthForDrawCall(0);
+	drawSolidBox(0, 0, 640, 480, GX_COLOR_BLACK);
+	setCursorDepth(1);
+	if (blackoutFrameCounter < 2) {
+		setDepthForDrawCall(0);
+		drawSolidBox(0, 0, 640, 480, GX_COLOR_WHITE);
+	} else if (blackoutFrameCounter < 90) {
+		setFontScale(5);
+		setCursorPos(0, 30);
+		printStrColor(GX_COLOR_NONE, GX_COLOR_GREEN, "HIDEO");
+	} else {
+		setFontScale(3);
+		setCursorPos(0, 40);
+		printStrColor(GX_COLOR_NONE, GX_COLOR_GREEN, "HIDEO");
+	}
+	if (blackoutFrameCounter <= 360) {
+		blackoutFrameCounter++;
+	} else {
+		blackoutFrameCounter = 0;
+		currentMenu = MAIN_MENU;
+	}
+	setFontScale(1);
+	restorePrevCursorDepth();
+}
+#endif

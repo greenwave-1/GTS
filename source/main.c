@@ -4,12 +4,10 @@
 #include <gccore.h>
 
 #include "menu.h"
-#include "waveform.h"
 #include "util/gx.h"
 #include "util/polling.h"
 #include "util/print.h"
 #include "util/args.h"
-#include "util/file.h"
 
 #ifdef DEBUGLOG
 #include "util/logging.h"
@@ -319,9 +317,6 @@ int main(int argc, char **argv) {
 	stopLogging();
 	#endif
 	
-	// close filesystem if necessary
-	deinitFilesystem();
-	
 	// dumb way to have a different message show, while also avoiding two #if defined().
 	// if using hard-coded strings, then either there would be repeat code, or you'd need two #if defined()
 	// to create a wii-only if-else
@@ -365,9 +360,12 @@ int main(int argc, char **argv) {
 		VIDEO_WaitForFlush();
 	}
 	
-	// free memory (probably don't need to do this but eh)
-	freeControllerRecStructs();
 	
+	// cleanup any malloc'd memory
+	freeControllerRecStructs();
+	menu_deInit();
+	
+	// clear screen and free framebuffers
 	cleanupBeforeExit();
 	
 	// issue poweroff if the power button was pressed
