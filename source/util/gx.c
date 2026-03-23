@@ -299,9 +299,9 @@ void setupGX(GXRModeObj *rmode) {
 // we use this to mabe a "subwindow" for a scrolling text box
 // see startScrollingPrint() and endScrollingPrint() in print.c
 // TODO: extend this to allow setting width
-void setSubwindowScissorBox(int x1, int y1, int x2, int y2) {
+void setSubwindowScissorBox(int x1, int y1, int x2, int y2, GXColor color) {
 	setDepthForDrawCall(3);
-	drawBox(x1, y1, x2, y2, GX_COLOR_WHITE);
+	drawBox(x1, y1, x2, y2, color);
 	GX_SetScissor(0, 0, x2 - x1, y2 - y1);
 	GX_SetScissorBoxOffset(-1 * x1, -1 * y1);
 }

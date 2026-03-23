@@ -343,7 +343,7 @@ static void oscilloscopeCallback() {
 static int dpadFlashIncrement = 0;
 static void displayInstructions() {
 	fontButtonFlashIncrement(&dpadFlashIncrement, 30);
-	startScrollingPrint(40, 70, 600, 400);
+	startScrollingPrint(40, 70, 600, 400, GX_COLOR_WHITE);
 	setWordWrap(true);
 	printStr("Move the currently selected stick to plot its movement on the waveform.\n\n");
 	

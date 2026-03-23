@@ -91,7 +91,7 @@ void setupGX(GXRModeObj *rmode);
 // we use this to mabe a "subwindow" for a scrolling text box
 // see startScrollingPrint() and endScrollingPrint() in print.c
 // screen coordinates will be shifted to match the scissorbox
-void setSubwindowScissorBox(int x1, int y1, int x2, int y2);
+void setSubwindowScissorBox(int x1, int y1, int x2, int y2, GXColor color);
 // return scissor box to normal, mainly used after setSubwindowScissorBox()
 void restoreNormalScissorBox();
 
@@ -164,6 +164,9 @@ void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color);
 
 // draw part of a given texture
 void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, int ty2, GXColor color);
+
+// draw an option list (pickable strings)
+bool drawList(char** list, int listLen, int *currSelection);
 
 #ifndef NO_DATE_CHECK
 // true if standard "GCC Test Suite" text should be drawn
