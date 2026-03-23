@@ -12,6 +12,7 @@
 
 #include "util/print.h"
 #include "util/polling.h"
+#include "util/stickmap.h"
 
 // orange for button press samples
 #define COLOR_ORANGE 0xAD1EADBA
@@ -57,6 +58,9 @@ static sampling_callback cb;
 static uint64_t prevSampleCallbackTick = 0;
 static uint64_t sampleCallbackTick = 0;
 static uint8_t ellipseCounter = 0;
+
+static Stickmap **builtinStickmaps = NULL;
+static int builtinStickmapsLen = 0;
 
 static void plot2dSamplingCallback() {
 	// time from last call of this function calculation
@@ -187,6 +191,10 @@ static void setup() {
 		pressed = getButtonsDownPtr();
 		held = getButtonsHeldPtr();
 	}
+	
+	if (builtinStickmaps == NULL) {
+		builtinStickmaps = getBuiltinStickmap(STICKMAP_PLOT2D, &builtinStickmapsLen);
+	}
 
 	if (data == NULL) {
 		data = getRecordingData();
@@ -209,45 +217,60 @@ static void setup() {
 }
 
 static void displayInstructions() {
-	setCursorPos(2, 0);
-	//startScrollingPrint(40, 70, 600, 400);
+	startScrollingPrint(40, 70, 600, 400, GX_COLOR_WHITE);
 	setWordWrap(true);
+
 	printStr("Press A");
 	drawFontButton(FONT_A);
 	printStr("to prepare a recording. Recording will start when "
-			 "any button is pressed, or when the stick moves.\n\n"
-			 "Use");
+			 "any button is pressed, or when the stick moves.\n\n");
+			 
+	printStr("Use");
 	fontButtonSetDpadDirections(FONT_DPAD_UP | FONT_DPAD_DOWN);
 	drawFontButton(FONT_DPAD);
 	printStr("to change stickmap background. Use");
 	fontButtonSetDpadDirections(FONT_DPAD_LEFT | FONT_DPAD_RIGHT);
 	drawFontButton(FONT_DPAD);
 	printStr("to change the graph\'s end point. Information on "
-			 "the last drawn point is shown on the left.\n\n"
-			 "Hold R");
+			 "the last drawn point is shown on the left.\n\n");
+	
+	printStr("Where applicable, press L");
+	drawFontButton(FONT_L);
+	printStr(" and Z");
+	drawFontButton(FONT_Z);
+	printStr("together to show a more detailed description of "
+			 "the last sample's location.\n\n");
+	
+	printStr("Hold R");
 	drawFontButton(FONT_R);
 	printStr("to go faster, or L");
 	drawFontButton(FONT_L);
-	//printStr("to move one point at a time.\n\n"
-	printStr("to move by one point.\n\n"
-			 "Hold X");
+	printStr("to move one point at a time.\n\n");
+	
+	printStr("Hold X");
 	drawFontButton(FONT_X);
 	printStr("to move the \"starting sample\" with the same controls "
-			 "as above. Info for the selected range is shown on the left.\n\n"
-			 "Press Y");
+			 "as above. Info for the selected range is shown on the left.\n\n");
+			 
+	printStr("Press Y");
 	drawFontButton(FONT_Y);
-	printStr("to toggle which stick is captured.\n\n"
-			 "Hold Start");
+	printStr("to toggle which stick is captured.\n\n");
+	
+	printStr("Hold Start");
 	drawFontButton(FONT_START);
 	printStr("to toggle Auto-Trigger. Enabling this removes "
 			 "the need to press A");
 	drawFontButton(FONT_A);
 	printStr(", but disables the instruction menu (Z");
 	drawFontButton(FONT_Z);
-	printStr("), "
-			 "and only allows the stick to start a recording.");
+	printStr("), showing the zone description (L");
+	drawFontButton(FONT_L);
+	printStr("+Z");
+	drawFontButton(FONT_Z);
+	printStr("), and only allows the stick to start a recording.");
+	
 	setWordWrap(false);
-	//endScrollingPrint();
+	endScrollingPrint();
 	
 	if (isControllerConnected(CONT_PORT_1)) {
 		setCursorPos(0, 31);
@@ -256,12 +279,14 @@ static void displayInstructions() {
 		printStr(")");
 	}
 	
-	if (*pressed & PAD_TRIGGER_Z) {
+	if (*pressed == PAD_TRIGGER_Z && *held == PAD_TRIGGER_Z) {
 		menuState = PLOT_POST_SETUP;
 	}
 }
 
 static int dpadFlashIncrement = 0;
+static bool showDesc = false;
+
 
 void menu_plot2d() {
 	switch (menuState) {
@@ -362,11 +387,14 @@ void menu_plot2d() {
 					updateVtxDesc(VTX_TEXTURES, GX_MODULATE);
 					changeLoadedTexmap(TEXMAP_STICKMAPS);
 					changeStickmapTexture((int) selectedImage);
+					int stickmapIndex = -1;
 					
 					// draw image
 					if (selectedImage != NO_IMAGE) {
 						setDepthForDrawCall(-8);
 						drawTextureFull(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128, GX_COLOR_WHITE);
+						// set stickmap category for zones
+						stickmapIndex = selectedImage - 1;
 					}
 					
 					if (dispData->isRecordingReady) {
@@ -412,8 +440,35 @@ void menu_plot2d() {
 							printStr("R ");
 						}
 						
-						setCursorPos(17, 0);
-						//printStr("Zone: %s", "TEMP");
+						int subcatIndex = -1, descIndex = -1;
+						setCursorPos(20, 0);
+						if (stickmapIndex != -1) {
+							printStr("Zone (L");
+							drawFontButton(FONT_L);
+							printStr("+Z");
+							drawFontButton(FONT_Z);
+							printStr("): ");
+							subcatIndex = getCoordSubcategory(convertedCoords, builtinStickmaps[stickmapIndex]);
+							
+							if (subcatIndex != -1) {
+								for (int i = builtinStickmaps[stickmapIndex]->subcategoryDescListLen - 1; i >= 0 ; i--) {
+									if (subcatIndex >=
+									    builtinStickmaps[stickmapIndex]->subcategoryDescList[i].listIndexStart) {
+										descIndex = i;
+										break;
+									}
+								}
+								if (descIndex != -1) {
+									printStr(builtinStickmaps[stickmapIndex]->subcategoryDescList[descIndex].name);
+								} else {
+									printStr("ERR: ");
+									printStr(builtinStickmaps[stickmapIndex]->subcategoryList[subcatIndex].name);
+								}
+								
+							} else {
+								printStr("None");
+							}
+						}
 						
 						// we need to calculate vertices ahead of time
 						
@@ -527,6 +582,36 @@ void menu_plot2d() {
 						double timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
 						printStr("Visible MS, frames:\n");
 						printStr(" %7.2f ms, %5.2ff", timeFromStartMs, timeFromStartMs / FRAME_TIME_MS_F);
+						
+						if (showDesc) {
+							if (stickmapIndex != -1) {
+								// dim background
+								// TODO: this doesn't work as expected
+								//  need to change scrollingprint to not draw in (0, 0) -> (640,480)
+								//setAlphaForDrawCall(128);
+								//setDepthForDrawCall(0);
+								//drawSolidBox(0, 0, 640, 480, GX_COLOR_BLACK);
+								startScrollingPrint(100, 100, 540, 350, GX_COLOR_WHITE);
+								// clear screen in new bounds
+								setDepthForDrawCall(0);
+								drawSolidBox(0, 0, 640, 4800, GX_COLOR_BLACK);
+								setWordWrap(true);
+								if (descIndex != -1) {
+									printStr("Zone Name: %s\n",
+									         builtinStickmaps[stickmapIndex]->subcategoryDescList[descIndex].name);
+									printStr("\nZone Desc: %s\n",
+									         builtinStickmaps[stickmapIndex]->subcategoryDescList[descIndex].desc);
+								} else {
+									printStr("Zone Name: None\n");
+									printStr("\nZone Desc: N/A\n");
+								}
+								setWordWrap(false);
+								endScrollingPrint();
+							} else {
+								// just in case...
+								showDesc = false;
+							}
+						}
 						
 						// holding L makes only individual presses work
 						if (*held & PAD_TRIGGER_L) {
@@ -647,7 +732,7 @@ void menu_plot2d() {
 						}
 					}
 					
-					if (*pressed & PAD_TRIGGER_Z && !autoCapture && plotState != PLOT_INPUT) {
+					if (*pressed == PAD_TRIGGER_Z && *held == PAD_TRIGGER_Z && !autoCapture && plotState != PLOT_INPUT) {
 						menuState = PLOT_INSTRUCTIONS;
 					} else if (*pressed & PAD_BUTTON_Y && plotState != PLOT_INPUT) {
 						// cycle between analog and c-stick
@@ -657,6 +742,8 @@ void menu_plot2d() {
 						enum IMAGE temp = selectedImageCopy;
 						selectedImageCopy = selectedImage;
 						selectedImage = temp;
+					} else if (*pressed == PAD_TRIGGER_Z && *held == (PAD_TRIGGER_Z | PAD_TRIGGER_L) && !autoCapture && plotState != PLOT_INPUT) {
+						showDesc = !showDesc;
 					}
 					
 					if ((*pressed & PAD_BUTTON_A && !autoCapture) || captureStart) {
@@ -690,6 +777,7 @@ void menu_plot2dEnd() {
 	lastDrawPoint = -1;
 	autoCaptureCounter = 0;
 	autoCapture = false;
+	showDesc = false;
 	if (!(*temp)->isRecordingReady) {
 		// reset stuff
 		(*temp)->sampleEnd = 0;
