@@ -15,6 +15,7 @@
 #include <ogc/libversion.h>
 
 #include "waveform.h"
+#include "util/stickmap.h"
 #include "util/gx.h"
 #include "util/print.h"
 #include "util/polling.h"
@@ -123,11 +124,18 @@ static void *menu_preSetupThread(void *args) {
 	
 	filesystemInitResult = initFilesystem();
 	
+	loadBuiltinStickmaps();
+	
+	loadExternalJsonList();
+	
 	menuInit = MENU_POST_INIT;
 	return NULL;
 }
 
 void menu_deInit() {
+	// cleanup for any specific submenus...
+	freeExternalJsonList();
+	freeBuiltinJsonList();
 	#ifndef DEBUGLOG
 	free(workarea);
 	#endif
