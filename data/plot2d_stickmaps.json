@@ -1,0 +1,2177 @@
+[
+	{
+		"format_gts": true
+	},
+	{
+		"stickmap_name": "Deadzone/Cardinals",
+		"stickmap_desc": "Deadzone/Cardinals",
+		"stickmap_subcategories": [
+			{
+				"subcategory_name": "Right Cardinal",
+				"subcategory_desc": "Right Cardinal"
+			},
+			{
+				"subcategory_name": "Quadrant 1",
+				"subcategory_desc": "Quadrant 1"
+			},
+			{
+				"subcategory_name": "Up Cardinal",
+				"subcategory_desc": "Up Cardinal"
+			},
+			{
+				"subcategory_name": "Quadrant 2",
+				"subcategory_desc": "Quadrant 2"
+			},
+			{
+				"subcategory_name": "Left Cardinal",
+				"subcategory_desc": "Left Cardinal"
+			},
+			{
+				"subcategory_name": "Quadrant 3",
+				"subcategory_desc": "Quadrant 3"
+			},
+			{
+				"subcategory_name": "Down Cardinal",
+				"subcategory_desc": "Down Cardinal"
+			},
+			{
+				"subcategory_name": "Quadrant 4",
+				"subcategory_desc": "Quadrant 4"
+			}
+		],
+		"subcategory_data": [
+			{
+				"name": "Right Cardinal",
+				"color": [
+					255,
+					175,
+					200,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 22,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Quadrant 1",
+				"color": [
+					114,
+					214,
+					237,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 23,
+				"maxX": 76,
+				"maxY": 76,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Up Cardinal",
+				"color": [
+					255,
+					175,
+					200,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 23,
+				"maxX": 22,
+				"maxY": 80,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Quadrant 2",
+				"color": [
+					114,
+					214,
+					237,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 23,
+				"maxX": 76,
+				"maxY": 76,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Left Cardinal",
+				"color": [
+					255,
+					175,
+					200,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 22,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Quadrant 3",
+				"color": [
+					114,
+					214,
+					237,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 23,
+				"maxX": 76,
+				"maxY": 76,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Down Cardinal",
+				"color": [
+					255,
+					175,
+					200,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 23,
+				"maxX": 22,
+				"maxY": 80,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Quadrant 4",
+				"color": [
+					114,
+					214,
+					237,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 23,
+				"maxX": 76,
+				"maxY": 76,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			}
+		]
+	},
+	{
+		"stickmap_name": "A Wait",
+		"stickmap_desc": "A Options wait facing right",
+		"stickmap_subcategories": [
+			{
+				"subcategory_name": "Down Smash",
+				"subcategory_desc": "Down Smash"
+			},
+			{
+				"subcategory_name": "Region 2",
+				"subcategory_desc": "Region 2"
+			},
+			{
+				"subcategory_name": "Downward Angled Forward Tilt",
+				"subcategory_desc": "Downward Angled Forward Tilt"
+			},
+			{
+				"subcategory_name": "DAFT (Facing Right)*",
+				"subcategory_desc": "Downward Angled Forward Smash (When Applicable) Facing Right"
+			},
+			{
+				"subcategory_name": "DAFT (Facing Left)*",
+				"subcategory_desc": "Downward Angled Forward Smash (When Applicable) Facing Left"
+			},
+			{
+				"subcategory_name": "Jab (Facing Right)",
+				"subcategory_desc": "Jab (Facing Right)"
+			},
+			{
+				"subcategory_name": "Samus Mid DAFT (Facing Right)*",
+				"subcategory_desc": "Middle Downward Angled Downward Forward Smash (Facing Right) (On Samus) If the character is not Samus, this value does not angle down, it is simply a normal Forward smash"
+			},
+			{
+				"subcategory_name": "Samus Mid DAFT (Facing Left)*",
+				"subcategory_desc": "Middle Downward Angled Downward Forward Smash (Facing Left) (On Samus) If the character is not Samus, this value does not angle down, it is simply a normal Forward smash"
+			},
+			{
+				"subcategory_name": "Forward Smash (Facing Right)",
+				"subcategory_desc": "Forward Smash (Facing Right)"
+			},
+			{
+				"subcategory_name": "Forward Smash (Facing Left)",
+				"subcategory_desc": "Forward Smash (Facing Left)"
+			},
+			{
+				"subcategory_name": "Forward Tilt",
+				"subcategory_desc": "Forward Tilt"
+			},
+			{
+				"subcategory_name": "Samus Mid UAFT (Facing Right)*",
+				"subcategory_desc": "Middle Upward Angled Forward Smash (Facing Right) (On Samus) If the character is not Samus, this value does not angle up, it is simply a normal Forward Smash"
+			},
+			{
+				"subcategory_name": "Samus Mid UAFT (Facing Left)*",
+				"subcategory_desc": "Middle Upward Angled Forward Smash (Facing Left) (On Samus) If the character is not Samus, this value does not angle up, it is simply a normal Forward Smash"
+			},
+			{
+				"subcategory_name": "UAFT (Facing Right)*",
+				"subcategory_desc": "Upward Angled Forward Smash (Facing Right) (When Applicable)"
+			},
+			{
+				"subcategory_name": "UAFT (Facing Left)*",
+				"subcategory_desc": "Upward Angled Forward Smash (Facing Left) (When Applicable)"
+			},
+			{
+				"subcategory_name": "UAFT*",
+				"subcategory_desc": "Upward Angled Forward Tilt (When Applicable)"
+			},
+			{
+				"subcategory_name": "Up Tilt",
+				"subcategory_desc": "Up Tilt"
+			},
+			{
+				"subcategory_name": "Up Smash",
+				"subcategory_desc": "Up Smash"
+			}
+		],
+		"subcategory_data": [
+			{
+				"name": "Down Smash",
+				"color": [
+					88,
+					187,
+					219,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 53,
+				"maxX": 59,
+				"maxY": 80,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Region 2",
+				"color": [
+					112,
+					173,
+					18,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 23,
+				"maxX": 43,
+				"maxY": 52,
+				"angleMin": 50,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Downward Angled Forward Tilt",
+				"color": [
+					227,
+					43,
+					7,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 23,
+				"maxX": 63,
+				"maxY": 52,
+				"angleMin": 0,
+				"angleMax": 50,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Downward Angled Forward Smash (When Applicable) Facing Right",
+				"color": [
+					224,
+					210,
+					52,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 24,
+				"maxX": 77,
+				"maxY": 48,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Downward Angled Forward Smash (When Applicable) Facing Right",
+				"color": [
+					224,
+					210,
+					52,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 23,
+				"maxX": 75,
+				"maxY": 23,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Downward Angled Forward Smash (When Applicable) Facing Left",
+				"color": [
+					224,
+					210,
+					52,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 24,
+				"maxX": 76,
+				"maxY": 48,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Downward Angled Forward Smash (When Applicable) Facing Left",
+				"color": [
+					224,
+					210,
+					52,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 23,
+				"maxX": 75,
+				"maxY": 23,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Jab (Facing Right)",
+				"color": [
+					222,
+					130,
+					131,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 63,
+				"maxY": 52,
+				"angleMin": 0,
+				"angleMax": 50,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Middle Downward Angled Downward Forward Smash (Facing Right) (On Samus) If the character is not Samus, this value does not angle down, it is simply a normal Forward smash",
+				"color": [
+					118,
+					148,
+					148,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 76,
+				"minY": 23,
+				"maxX": 76,
+				"maxY": 23,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Middle Downward Angled Downward Forward Smash (Facing Left) (On Samus) If the character is not Samus, this value does not angle down, it is simply a normal Forward smash",
+				"color": [
+					118,
+					148,
+					148,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 76,
+				"minY": 23,
+				"maxX": 76,
+				"maxY": 23,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Forward Smash (Facing Right)",
+				"color": [
+					117,
+					64,
+					182,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 22,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Forward Smash (Facing Left)",
+				"color": [
+					117,
+					64,
+					182,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 22,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Forward Tilt",
+				"color": [
+					10,
+					29,
+					194,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 63,
+				"maxY": 22,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Middle Upward Angled Forward Smash (Facing Right) (On Samus) If the character is not Samus, this value does not angle up, it is simply a normal Forward Smash",
+				"color": [
+					211,
+					147,
+					60,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 76,
+				"minY": 23,
+				"maxX": 76,
+				"maxY": 23,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Middle Upward Angled Forward Smash (Facing Left) (On Samus) If the character is not Samus, this value does not angle up, it is simply a normal Forward Smash",
+				"color": [
+					211,
+					147,
+					60,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 76,
+				"minY": 23,
+				"maxX": 76,
+				"maxY": 23,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Upward Angled Forward Smash (Facing Right) (When Applicable)",
+				"color": [
+					199,
+					194,
+					216,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 24,
+				"maxX": 76,
+				"maxY": 48,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Upward Angled Forward Smash (Facing Right) (When Applicable)",
+				"color": [
+					199,
+					194,
+					216,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 23,
+				"maxX": 75,
+				"maxY": 23,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Upward Angled Forward Smash (Facing Left) (When Applicable)",
+				"color": [
+					199,
+					194,
+					216,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 24,
+				"maxX": 76,
+				"maxY": 48,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Upward Angled Forward Smash (Facing Left) (When Applicable)",
+				"color": [
+					199,
+					194,
+					216,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 23,
+				"maxX": 75,
+				"maxY": 23,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Upward Angled Forward Tilt (When Applicable)",
+				"color": [
+					31,
+					28,
+					49,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 23,
+				"maxX": 63,
+				"maxY": 52,
+				"angleMin": 0,
+				"angleMax": 50,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Up Tilt",
+				"color": [
+					255,
+					74,
+					2,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 23,
+				"maxX": 43,
+				"maxY": 52,
+				"angleMin": 50,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Up Smash",
+				"color": [
+					214,
+					36,
+					110,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 53,
+				"maxX": 59,
+				"maxY": 80,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			}
+		]
+	},
+	{
+		"stickmap_name": "Move Wait",
+		"stickmap_desc": "Options out of wait facing right",
+		"stickmap_subcategories": [
+			{
+				"subcategory_name": "Crouch",
+				"subcategory_desc": "Crouch"
+			},
+			{
+				"subcategory_name": "Tilt Turn (ASDI Down)",
+				"subcategory_desc": "Tilt Turn (ASDI Down)"
+			},
+			{
+				"subcategory_name": "ASDI Down",
+				"subcategory_desc": "ASDI Down"
+			},
+			{
+				"subcategory_name": "ASDI Down Walk",
+				"subcategory_desc": "ASDI Down Walk"
+			},
+			{
+				"subcategory_name": "Dash",
+				"subcategory_desc": "Dash"
+			},
+			{
+				"subcategory_name": "Dash 1f, then Jump",
+				"subcategory_desc": "Dash 1f, then Jump"
+			},
+			{
+				"subcategory_name": "Turn 1f, then Dash",
+				"subcategory_desc": "Turn 1f, then Dash"
+			},
+			{
+				"subcategory_name": "Turn 1f, Dash 1f, then Jump",
+				"subcategory_desc": "Turn 1f, Dash 1f, then Jump"
+			},
+			{
+				"subcategory_name": "Enter Walk Slow",
+				"subcategory_desc": "Enter Walk Slow"
+			},
+			{
+				"subcategory_name": "Tilt Turn",
+				"subcategory_desc": "Tilt Turn"
+			},
+			{
+				"subcategory_name": "Dead Zone",
+				"subcategory_desc": "Dead Zone"
+			},
+			{
+				"subcategory_name": "Jump",
+				"subcategory_desc": "Jump"
+			}
+		],
+		"subcategory_data": [
+			{
+				"name": "Crouch",
+				"color": [
+					207,
+					247,
+					213,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 56,
+				"maxX": 58,
+				"maxY": 80,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Tilt Turn (ASDI Down)",
+				"color": [
+					33,
+					53,
+					125,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 50,
+				"maxX": 62,
+				"maxY": 55,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "ASDI Down",
+				"color": [
+					236,
+					41,
+					8,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 50,
+				"maxX": 22,
+				"maxY": 55,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "ASDI Down Walk",
+				"color": [
+					115,
+					214,
+					115,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 50,
+				"maxX": 62,
+				"maxY": 55,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Dash",
+				"color": [
+					193,
+					0,
+					207,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 48,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Dash",
+				"color": [
+					193,
+					0,
+					207,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 44,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Dash 1f, then Jump",
+				"color": [
+					180,
+					255,
+					0,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 45,
+				"maxX": 66,
+				"maxY": 48,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Turn 1f, then Dash",
+				"color": [
+					248,
+					148,
+					255,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 48,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Turn 1f, then Dash",
+				"color": [
+					248,
+					148,
+					255,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 44,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Turn 1f, Dash 1f, then Jump",
+				"color": [
+					226,
+					255,
+					158,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 45,
+				"maxX": 66,
+				"maxY": 48,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Enter Walk Slow",
+				"color": [
+					0,
+					17,
+					255,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 63,
+				"maxY": 49,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Enter Walk Slow",
+				"color": [
+					0,
+					17,
+					255,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 63,
+				"maxY": 52,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Tilt Turn",
+				"color": [
+					160,
+					207,
+					239,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 63,
+				"maxY": 49,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Tilt Turn",
+				"color": [
+					160,
+					207,
+					239,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 63,
+				"maxY": 52,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Dead Zone",
+				"color": [
+					60,
+					60,
+					60,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 0,
+				"maxX": 22,
+				"maxY": 49,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Dead Zone",
+				"color": [
+					60,
+					60,
+					60,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 0,
+				"maxX": 22,
+				"maxY": 52,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Jump",
+				"color": [
+					1,
+					254,
+					157,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 53,
+				"maxX": 59,
+				"maxY": 80,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			}
+		]
+	},
+	{
+		"stickmap_name": "Crouch",
+		"stickmap_desc": "Crouch options facing right",
+		"stickmap_subcategories": [
+			{
+				"subcategory_name": "Remain in Crouch",
+				"subcategory_desc": "Remain in Crouch"
+			},
+			{
+				"subcategory_name": "Remain in Crouch*",
+				"subcategory_desc": "Remain in Crouch, but, if you stay here longer than 1f, Dash in the right direction fails"
+			},
+			{
+				"subcategory_name": "Remain in Crouch*",
+				"subcategory_desc": "Remain in Crouch, but, if you stay here longer than 1f, Dash in the left direction fails"
+			},
+			{
+				"subcategory_name": "Dash",
+				"subcategory_desc": "Dash"
+			},
+			{
+				"subcategory_name": "Enter SquatRV for 1f, then Enter Walk",
+				"subcategory_desc": "Enter SquatRV for 1f, then Enter Walk"
+			},
+			{
+				"subcategory_name": "Enter SquatRV for 8f, then Enter Wait",
+				"subcategory_desc": "Enter SquatRV for 8f, then Enter Wait"
+			},
+			{
+				"subcategory_name": "Enter SquatRV for 8f, then Enter Turn",
+				"subcategory_desc": "Enter SquatRV for 8f, then Enter Turn"
+			},
+			{
+				"subcategory_name": "Turn 1f, then Dash",
+				"subcategory_desc": "Turn 1f, then Dash"
+			},
+			{
+				"subcategory_name": "Dash 1f, then Jump",
+				"subcategory_desc": "Dash 1f, then Jump"
+			},
+			{
+				"subcategory_name": "Turn 1f, Dash 1f, then Jump",
+				"subcategory_desc": "Turn 1f, Dash 1f, then Jump"
+			},
+			{
+				"subcategory_name": "Jump",
+				"subcategory_desc": "Jump"
+			}
+		],
+		"subcategory_data": [
+			{
+				"name": "Remain in Crouch",
+				"color": [
+					194,
+					221,
+					77,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 50,
+				"maxX": 22,
+				"maxY": 80,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Remain in Crouch, but, if you stay here longer than 1f, Dash in the right direction fails",
+				"color": [
+					65,
+					120,
+					54,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 50,
+				"maxX": 62,
+				"maxY": 76,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Remain in Crouch, but, if you stay here longer than 1f, Dash in the left direction fails",
+				"color": [
+					65,
+					120,
+					54,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 50,
+				"maxX": 62,
+				"maxY": 76,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Dash",
+				"color": [
+					169,
+					134,
+					182,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 48,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Dash",
+				"color": [
+					169,
+					134,
+					182,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 44,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Enter SquatRV for 1f, then Enter Walk",
+				"color": [
+					105,
+					121,
+					175,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 63,
+				"maxY": 49,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Enter SquatRV for 1f, then Enter Walk",
+				"color": [
+					105,
+					121,
+					175,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 63,
+				"maxY": 52,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Enter SquatRV for 8f, then Enter Wait",
+				"color": [
+					251,
+					159,
+					110,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 23,
+				"maxX": 22,
+				"maxY": 49,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Enter SquatRV for 8f, then Enter Wait",
+				"color": [
+					251,
+					159,
+					110,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 23,
+				"maxX": 22,
+				"maxY": 52,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Enter SquatRV for 8f, then Enter Turn",
+				"color": [
+					89,
+					156,
+					154,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 63,
+				"maxY": 49,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Enter SquatRV for 8f, then Enter Turn",
+				"color": [
+					89,
+					156,
+					154,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 63,
+				"maxY": 52,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Turn 1f, then Dash",
+				"color": [
+					232,
+					150,
+					160,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 48,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Turn 1f, then Dash",
+				"color": [
+					232,
+					150,
+					160,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 44,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Dash 1f, then Jump",
+				"color": [
+					198,
+					218,
+					164,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 45,
+				"maxX": 66,
+				"maxY": 48,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Turn 1f, Dash 1f, then Jump",
+				"color": [
+					249,
+					233,
+					152,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 64,
+				"minY": 45,
+				"maxX": 66,
+				"maxY": 48,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Jump",
+				"color": [
+					160,
+					58,
+					94,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 53,
+				"maxX": 59,
+				"maxY": 80,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			}
+		]
+	},
+	{
+		"stickmap_name": "Ledge L",
+		"stickmap_desc": "Options from left ledge (facing right)",
+		"stickmap_subcategories": [
+			{
+				"subcategory_name": "Ledgedrop Fastfall After",
+				"subcategory_desc": "Ledgedrop Fastfall After"
+			},
+			{
+				"subcategory_name": "Ledgedrop",
+				"subcategory_desc": "Ledgedrop"
+			},
+			{
+				"subcategory_name": "Climb Up",
+				"subcategory_desc": "Climb Up"
+			},
+			{
+				"subcategory_name": "Ledgejump",
+				"subcategory_desc": "Ledgejump"
+			}
+		],
+		"subcategory_data": [
+			{
+				"name": "Ledgedrop Fastfall After",
+				"color": [
+					207,
+					0,
+					0,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 53,
+				"maxX": 59,
+				"maxY": 80,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Ledgedrop Fastfall After",
+				"color": [
+					207,
+					0,
+					0,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 53,
+				"maxX": 55,
+				"maxY": 80,
+				"angleMin": 50,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Ledgedrop",
+				"color": [
+					255,
+					0,
+					120,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 23,
+				"maxX": 43,
+				"maxY": 52,
+				"angleMin": 50,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Ledgedrop",
+				"color": [
+					255,
+					0,
+					120,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 52,
+				"angleMin": 0,
+				"angleMax": 50,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Climb Up",
+				"color": [
+					0,
+					156,
+					255,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 60,
+				"angleMin": 0,
+				"angleMax": 50,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Climb Up",
+				"color": [
+					0,
+					156,
+					255,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 52,
+				"angleMin": 0,
+				"angleMax": 50,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Climb Up",
+				"color": [
+					0,
+					156,
+					255,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 23,
+				"maxX": 43,
+				"maxY": 52,
+				"angleMin": 50,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Ledgejump",
+				"color": [
+					162,
+					80,
+					0,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 53,
+				"maxX": 59,
+				"maxY": 80,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			}
+		]
+	},
+	{
+		"stickmap_name": "Ledge R",
+		"stickmap_desc": "Options from right ledge (facing left)",
+		"stickmap_subcategories": [
+			{
+				"subcategory_name": "Ledgedrop Fastfall After",
+				"subcategory_desc": "Ledgedrop Fastfall After"
+			},
+			{
+				"subcategory_name": "Ledgedrop",
+				"subcategory_desc": "Ledgedrop"
+			},
+			{
+				"subcategory_name": "Climb Up",
+				"subcategory_desc": "Climb Up"
+			},
+			{
+				"subcategory_name": "Ledgejump",
+				"subcategory_desc": "Ledgejump"
+			}
+		],
+		"subcategory_data": [
+			{
+				"name": "Ledgedrop Fastfall After",
+				"color": [
+					207,
+					0,
+					0,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 53,
+				"maxX": 59,
+				"maxY": 80,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Ledgedrop Fastfall After",
+				"color": [
+					207,
+					0,
+					0,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 53,
+				"maxX": 55,
+				"maxY": 80,
+				"angleMin": 50,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Ledgedrop",
+				"color": [
+					255,
+					0,
+					120,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 23,
+				"maxX": 43,
+				"maxY": 52,
+				"angleMin": 50,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Ledgedrop",
+				"color": [
+					255,
+					0,
+					120,
+					255
+				],
+				"quadrants": [
+					true,
+					false,
+					false,
+					true
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 52,
+				"angleMin": 0,
+				"angleMax": 50,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Climb Up",
+				"color": [
+					0,
+					156,
+					255,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 60,
+				"angleMin": 0,
+				"angleMax": 50,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Climb Up",
+				"color": [
+					0,
+					156,
+					255,
+					255
+				],
+				"quadrants": [
+					false,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 0,
+				"maxX": 80,
+				"maxY": 52,
+				"angleMin": 0,
+				"angleMax": 50,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Climb Up",
+				"color": [
+					0,
+					156,
+					255,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 23,
+				"maxX": 43,
+				"maxY": 52,
+				"angleMin": 50,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Ledgejump",
+				"color": [
+					162,
+					80,
+					0,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					false,
+					false
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 53,
+				"maxX": 59,
+				"maxY": 80,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			}
+		]
+	}
+]

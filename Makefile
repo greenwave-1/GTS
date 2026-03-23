@@ -31,7 +31,8 @@ INCLUDES :=			include include/submenu include/util
 # project source files
 SOURCES :=			source source/submenu source/util
 
-# not used in GTS
+# arbitrary files/data to be compiled into the binary
+# for gts, this is used to include the .json data
 DATA :=				data
 
 # textures folder
@@ -174,13 +175,12 @@ endif
 # LIBS_PRE += 		$(shell powerpc-eabi-pkg-config --libs freetype2)
 # appends:
 # -> -L/opt/devkitpro/portlibs/ppc/lib -lfreetype -lbz2 -lpng16 -lz -lbrotlidec -lbrotlicommon -lm
-LIBS_PRE +=
+LIBS_PRE += -ljansson
 
 # external libraries folder (stuff from devkitpro/extremscorner repos)
 # "must be the top level containing include and lib"
 # basically, portlibs
-#LIBDIRS_DKP := 	$(PORTLIBS)
-LIBDIRS_DKP :=
+LIBDIRS_DKP := 	$(PORTLIBS)
 
 # pkg-config includes
 # some packages will have a specific subfolder that needs to be included
@@ -246,6 +246,11 @@ $(OFILES_SOURCES) : $(HFILES)
 # OFILES is a requirement for the .elf, which is a requirement for the .dol
 # bin2o is defined in base_tools, it calls gxtexconv, bin2s, and cc
 %.tpl.o	%_tpl.h :	%.tpl
+	@echo $(notdir $<)
+	@$(bin2o)
+
+# json in data/
+%.json.o %_json.h : %.json
 	@echo $(notdir $<)
 	@$(bin2o)
 

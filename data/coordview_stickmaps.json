@@ -1,0 +1,373 @@
+[
+	{
+		"format_gts": true
+	},
+	{
+		"stickmap_name": "Firefox/Wavedash",
+		"stickmap_desc": "Min/Max coordinates for Firefox and Wavedash notches around the cardinals",
+		"stickmap_subcategories": [
+			{
+				"subcategory_desc": "Risks hitting deadzone, but works"
+			},
+			{
+				"subcategory_desc": "Ideal coordinates, aim here"
+			}
+		],
+		"subcategory_data": [
+			{
+				"name": "Unsafe",
+				"color": [
+					255,
+					255,
+					0,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 76,
+				"minY": 23,
+				"maxX": 76,
+				"maxY": 24,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Unsafe",
+				"color": [
+					255,
+					255,
+					0,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 23,
+				"minY": 76,
+				"maxX": 24,
+				"maxY": 76,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Safe",
+				"color": [
+					0,
+					255,
+					0,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 75,
+				"minY": 25,
+				"maxX": 75,
+				"maxY": 26,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "Safe",
+				"color": [
+					0,
+					255,
+					0,
+					255
+				],
+				"quadrants": [
+					true,
+					true,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 25,
+				"minY": 75,
+				"maxX": 26,
+				"maxY": 75,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			}
+		]
+	},
+
+	{
+		"stickmap_name": "Shield Drop",
+		"stickmap_desc": "Coordinates for Vanilla and UCF Shield Drops",
+		"stickmap_subcategories": [
+			{
+				"subcategory_desc": "Coordinates that will work without UCF"
+			},
+			{
+				"subcategory_desc": "Lower coordinates for any UCF Version"
+			},
+			{
+				"subcategory_desc": "Upper coordinates for v0.84+ only"
+			}
+		],
+		"subcategory_data": [
+			{
+				"name": "Vanilla",
+				"color": [
+					0,
+					255,
+					0,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 53,
+				"maxX": 80,
+				"maxY": 55,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "UCF Lower",
+				"color": [
+					0,
+					0,
+					255,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 56,
+				"maxX": 80,
+				"maxY": 58,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 79,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "UCF Lower",
+				"color": [
+					0,
+					0,
+					255,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 53,
+				"minY": 59,
+				"maxX": 80,
+				"maxY": 59,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "UCF Lower",
+				"color": [
+					0,
+					0,
+					255,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 51,
+				"minY": 60,
+				"maxX": 80,
+				"maxY": 60,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "UCF Lower",
+				"color": [
+					0,
+					0,
+					255,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 50,
+				"minY": 61,
+				"maxX": 80,
+				"maxY": 61,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "UCF Lower",
+				"color": [
+					0,
+					0,
+					255,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 0,
+				"minY": 62,
+				"maxX": 80,
+				"maxY": 63,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 79,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "UCF v0.84 Upper",
+				"color": [
+					255,
+					255,
+					0,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 62,
+				"minY": 49,
+				"maxX": 80,
+				"maxY": 49,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "UCF v0.84 Upper",
+				"color": [
+					255,
+					255,
+					0,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 61,
+				"minY": 50,
+				"maxX": 80,
+				"maxY": 50,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "UCF v0.84 Upper",
+				"color": [
+					255,
+					255,
+					0,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 60,
+				"minY": 51,
+				"maxX": 80,
+				"maxY": 51,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			},
+			{
+				"name": "UCF v0.84 Upper",
+				"color": [
+					255,
+					255,
+					0,
+					255
+				],
+				"quadrants": [
+					false,
+					false,
+					true,
+					true
+				],
+				"displayMode": 0,
+				"minX": 59,
+				"minY": 52,
+				"maxX": 80,
+				"maxY": 52,
+				"angleMin": 0,
+				"angleMax": 90,
+				"magnitudeMin": 0,
+				"magnitudeMax": 80
+			}
+		]
+	}
+]

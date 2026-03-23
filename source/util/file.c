@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <inttypes.h>
 #include <sys/types.h>
+#include <jansson.h>
 #include <dirent.h>
 
 #include <ogc/pad.h>
@@ -112,6 +113,61 @@ char* readFile(FILE *inFile, int *length) {
 	}
 
 	*length = numRead;
+	return retVal;
+}
+
+char** getFilesystemJson(int *len) {
+	*len = 0;
+	if (!initFilesystem()) {
+		return NULL;
+	}
+
+	int counter = 0;
+	DIR *jsonDir = opendir("/gts/stickmaps/");
+
+	// first find how many json files are present
+	struct dirent *dirList = readdir(jsonDir);
+	while (dirList != NULL) {
+		if (dirList->d_type == DT_REG) {
+			if (strcasecmp(strrchr(dirList->d_name, '.'), ".json") == 0) {
+				counter++;
+			}
+		}
+		dirList = readdir(jsonDir);
+	}
+
+	if (counter == 0) {
+		return NULL;
+	}
+
+	char **retVal = calloc(sizeof(char*) * counter, sizeof(char*));
+
+	jsonDir = opendir("/gts/stickmaps/");
+	dirList = readdir(jsonDir);
+
+	// get actual filenames
+	while(dirList != NULL) {
+		if (dirList->d_type == DT_REG) {
+			if (strcasecmp(strrchr(dirList->d_name, '.'), ".json") == 0) {
+				// d_name's max size is 256
+				int strSize = strlen(dirList->d_name) + 1;
+				if (strSize <= 256) {
+					retVal[*len] = calloc(strSize, sizeof(char));
+					strcpy(retVal[*len], dirList->d_name);
+					(*len)++;
+				}
+			}
+		}
+
+		dirList = readdir(jsonDir);
+	}
+
+	if (*len != counter) {
+		*len = 0;
+		free(retVal);
+		return NULL;
+	}
+
 	return retVal;
 }
 
