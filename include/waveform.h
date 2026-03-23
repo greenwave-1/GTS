@@ -35,20 +35,14 @@ typedef struct ControllerSample {
 	
 } ControllerSample;
 
-// TODO: would a bitfield be better here?
 typedef struct MeleeCoordinates {
-	// valid values for melee units are 0 -> 10000 in multiples of 125
-	uint16_t stickXUnit;
-	uint16_t stickYUnit;
-	uint16_t cStickXUnit;
-	uint16_t cStickYUnit;
+	int8_t stickX;
+	int8_t stickY;
+	int8_t cStickX;
+	int8_t cStickY;
 	
-	// since we're storing the values as unsigned, we need these to know direction
-	bool stickXNegative;
-	bool stickYNegative;
-	bool cStickXNegative;
-	bool cStickYNegative;
-	
+	float magnitude;
+	float cMagnitude;
 } MeleeCoordinates;
 
 // allocated/max size of the data array
@@ -118,13 +112,18 @@ void clearRecordingArray(ControllerRec *recording);
 // allows menus to get a double pointer and not have to change them in each menu
 void flipData();
 
-enum CONTROLLER_STICK_AXIS { AXIS_AX, AXIS_AY, AXIS_CX, AXIS_CY, AXIS_AXY, AXIS_CXY };
+enum CONTROLLER_STICK_AXIS { AXIS_AX = 0x01, AXIS_AY = 0x02,
+	AXIS_CX = 0x04, AXIS_CY = 0x08,
+	AXIS_AXY = (0x10 | AXIS_AX | AXIS_AY),
+	AXIS_CXY = (0x20 | AXIS_CX | AXIS_CY)
+};
 
 int8_t getControllerSampleAxisValue(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis);
 int8_t getControllerSampleXValue(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis);
 int8_t getControllerSampleYValue(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis);
 void getControllerSampleAxisPair(ControllerSample sample, enum CONTROLLER_STICK_AXIS axis, int8_t* retX, int8_t* retY);
 MeleeCoordinates convertStickRawToMelee(ControllerSample sample);
+
 
 char* getMeleeCoordinateString(MeleeCoordinates coords, enum CONTROLLER_STICK_AXIS axis);
 
