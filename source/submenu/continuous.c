@@ -79,11 +79,11 @@ static void displayInstructions() {
 	printStrColor(GX_COLOR_NONE, GX_COLOR_BLUE_Y, "blue line");
 	printStr(" shows the Y-Axis's value.\n\n");
 	
-	printStr("The waveform will continue to be updated until \'locked\'.");
+	printStr("The waveform will continue to be updated until \'frozen\'.");
 	
 	printStr("\n\nPress A");
 	drawFontButton(FONT_A);
-	printStr("to \'lock\' the current waveform. This prevents new data from being recorded,"
+	printStr("to \'freeze\' the current waveform. This prevents new data from being recorded,"
 			 " and enables zooming and panning the waveform with the C-Stick");
 	drawFontButton(FONT_STICK_C);
 	printStr(".\n\n");
@@ -139,7 +139,7 @@ void menu_continuousWaveform() {
 			
 			if (cState == INPUT_LOCK) {
 				setCursorPos(2, 25);
-				printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
+				printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "FROZEN");
 				setCursorPos(2, 35);
 				printStr("Pan/Zoom (C-Stick");
 				drawFontButton(FONT_STICK_C);
@@ -174,8 +174,8 @@ void menu_continuousWaveform() {
 				
 				setDrawGraphStickAxis(selectedAxis);
 				
-				setCursorPos(1, 38);
-				printStr("Toggle Lock (A");
+				setCursorPos(1, 36);
+				printStr("Toggle Freeze (A");
 				drawFontButton(FONT_A);
 				printStr(")");
 				

@@ -219,7 +219,7 @@ void menu_triggerOscilloscope() {
 			switch (trigState) {
 				case TRIG_DISPLAY_LOCK:
 					setCursorPos(2, 25);
-					printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "LOCKED");
+					printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "FROZEN");
 					setCursorPos(2, 35);
 					printStr("Pan/Zoom (C-Stick");
 					drawFontButton(FONT_STICK_C);
@@ -250,8 +250,8 @@ void menu_triggerOscilloscope() {
 					         SCREEN_TIMEPLOT_START + 500, (SCREEN_POS_CENTER_Y + 85), GX_COLOR_GRAY);
 					
 					if (dispData->isRecordingReady) {
-						setCursorPos(1, 38);
-						printStr("Toggle Lock (A");
+						setCursorPos(1, 36);
+						printStr("Toggle Freeze (A");
 						drawFontButton(FONT_A);
 						printStr(")");
 						
