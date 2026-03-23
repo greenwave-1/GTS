@@ -17,6 +17,8 @@ FILE *openFile(char *filename, char *modes);
 
 char* readFile(FILE *inFile, int *length);
 
+char** getFilesystemJson(int *len);
+
 int exportData();
 
 #endif //GTS_FILE_H
