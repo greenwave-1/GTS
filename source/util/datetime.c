@@ -14,6 +14,10 @@ char *getDateTimeStr() {
 	// 32 chars max
 	char *retStr = malloc(sizeof(char) * 32);
 	
+	if (retStr == NULL) {
+		return NULL;
+	}
+	
 	// get current time
 	time_t currTime;
 	struct tm * timeinfo;

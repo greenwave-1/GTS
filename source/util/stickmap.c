@@ -77,6 +77,10 @@ static void createSubCoordList(StickmapSubcategory *data) {
 			}
 			data->numOfCoords = totalCoords;
 			data->coordList = malloc(sizeof(int[data->numOfCoords][2]));
+			if (data->coordList == NULL) {
+				data->numOfCoords = 0;
+				return;
+			}
 		}
 	}
 }
@@ -199,13 +203,6 @@ static bool decodeJsonSubcategory(StickmapSubcategory *target, json_t *data) {
 		target->magnitudeMax = json_integer_value(dataFromJson);
 	}
 	
-	// create coordinate list
-	//createSubCoordList(target);
-	
-	//if (target->coordList == NULL) {
-		//return false;
-	//}
-	
 	return true;
 }
 
@@ -214,6 +211,10 @@ static bool isGTSFile = false;
 
 Stickmap *readJsonNormal(json_t *root, const char *stickmapName) {
 	Stickmap *retVal = malloc(sizeof(Stickmap));
+	if (retVal == NULL) {
+		isGTSFile = false;
+		return NULL;
+	}
 	
 	retVal->name = stickmapName;
 	
@@ -228,6 +229,11 @@ Stickmap *readJsonNormal(json_t *root, const char *stickmapName) {
 	// allocate array based on how many entries
 	retVal->subcategoryListLen = 0;
 	retVal->subcategoryList = malloc(sizeof(StickmapSubcategory) * (json_array_size(root)));
+	
+	if (retVal->subcategoryList == NULL) {
+		freeStickmap(retVal);
+		return NULL;
+	}
 	
 	// decode each entry
 	for (int i = 0; i < json_array_size(root); i++) {
@@ -250,6 +256,10 @@ Stickmap *readJsonNormal(json_t *root, const char *stickmapName) {
 	
 	// now we allocate space based on the above
 	retVal->subcategoryDescList = malloc(sizeof(StickmapSubcategoryDesc) * (retVal->subcategoryDescListLen));
+	if (retVal->subcategoryDescList == NULL) {
+		freeStickmap(retVal);
+		return NULL;
+	}
 	for (int i = 0; i < retVal->subcategoryDescListLen; i++) {
 		retVal->subcategoryDescList[i].name = NULL;
 		retVal->subcategoryDescList[i].desc = NULL;
@@ -293,6 +303,9 @@ Stickmap *readJsonNormal(json_t *root, const char *stickmapName) {
 Stickmap **readJsonGTS(json_t *root, int *len) {
 	int decodedEntries = 0;
 	Stickmap **target = malloc(sizeof(Stickmap*) * json_array_size(root));
+	if (target == NULL) {
+		return NULL;
+	}
 
 	// index 0 had the "gts_format" token, so we start at index 1
 	for (int i = 1; i < json_array_size(root); i++) {
@@ -441,11 +454,6 @@ void loadBuiltinStickmaps() {
 		
 		assert(jsonType == STICKMAP_TYPE_GTS);
 		plot2dStickmaps = readJsonGTS(root, &plot2dStickmapsLen);
-		/*
-		for (int i = 0; i < plot2dStickmapsLen; i++) {
-			genStickmapCoords(plot2dStickmaps[i]);
-		}
-		 */
 		
 		jsonType = identifyJson((char *) coordview_stickmaps_json, &root);
 		
@@ -498,12 +506,15 @@ void loadExternalJsonList() {
 					// open and read file
 					FILE *inFile = openFile(filePath, "r");
 					int len = 0;
+					if (inFile == NULL) {
+						continue;
+					}
 					char *buf = readFile(inFile, &len);
 					fclose(inFile);
 					free(filePath);
 					
 					// did something error?
-					if (inFile == NULL || buf == NULL || len == 0) {
+					if (buf == NULL || len == 0) {
 						continue;
 					}
 					
@@ -530,6 +541,10 @@ void loadExternalJsonList() {
 							if (normalTemp != NULL) {
 								externalStickmaps[externalStickmapsLen].stickmapArrLen = 1;
 								externalStickmaps[externalStickmapsLen].stickmapArr = malloc(sizeof(Stickmap*));
+								if (externalStickmaps[externalStickmapsLen].stickmapArr == NULL) {
+									freeStickmap(normalTemp);
+									continue;
+								}
 								externalStickmaps[externalStickmapsLen].stickmapArr[0] = normalTemp;
 							}
 							break;

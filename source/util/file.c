@@ -103,6 +103,9 @@ char* readFile(FILE *inFile, int *length) {
 
 	// +1 for null terminator
 	char *retVal = calloc(fileLen + 1, sizeof(char));
+	if (retVal == NULL) {
+		return NULL;
+	}
 
 	int numRead = fread(retVal, 1, fileLen, inFile);
 
@@ -141,6 +144,9 @@ char** getFilesystemJson(int *len) {
 	}
 
 	char **retVal = calloc(sizeof(char*) * counter, sizeof(char*));
+	if (retVal == NULL) {
+		return NULL;
+	}
 
 	jsonDir = opendir("/gts/stickmaps/");
 	dirList = readdir(jsonDir);
@@ -153,6 +159,10 @@ char** getFilesystemJson(int *len) {
 				int strSize = strlen(dirList->d_name) + 1;
 				if (strSize <= 256) {
 					retVal[*len] = calloc(strSize, sizeof(char));
+					if (retVal[*len] == NULL) {
+						free(retVal);
+						return NULL;
+					}
 					strcpy(retVal[*len], dirList->d_name);
 					(*len)++;
 				}
@@ -201,6 +211,9 @@ int exportData() {
 	
 	// get current time in YY-MM-DD_HH-MM-SS format
 	char *timeStr = getDateTimeStr();
+	if (timeStr == NULL) {
+		return 4;
+	}
 
 	// create filepath
 	char fileStr[128] = "/gts/export/";
@@ -221,7 +234,7 @@ int exportData() {
 		struct stat st = {0};
 		// check if file already exists
 		if (stat(fileStr, &st) == 0) {
-			return 4;
+			return 5;
 		}
 	}
 
