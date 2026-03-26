@@ -9,6 +9,7 @@
 #include <strings.h>
 #include <assert.h>
 
+#include <ogc/system.h>
 #include <ogc/pad.h>
 
 #include "util/file.h"
@@ -498,6 +499,13 @@ void loadExternalJsonList() {
 			if (externalJsonNum != 0 && externalJsonFiles != NULL) {
 				externalStickmaps = calloc(sizeof(ExternalStickmap) * externalJsonNum, sizeof(ExternalStickmap));
 				for (int i = 0; i < externalJsonNum; i++) {
+					// if at ANY point we have less than 1MB of memory left, stop
+					// technically this should be different on wii, since it seems like malloc's go to arena2
+					// after a certain point...
+					if (SYS_GetArena1Size() < (1024 * 1000)) {
+						break;
+					}
+					
 					// build path to open file
 					char *filePath = calloc((sizeof(char) * 256) + 16, sizeof(char));
 					strcat(filePath, "/gts/stickmaps/");
