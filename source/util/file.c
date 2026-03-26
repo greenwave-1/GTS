@@ -96,8 +96,8 @@ char* readFile(FILE *inFile, int *length) {
 	
 	fseek(inFile, 0, SEEK_SET);
 
-	// arbitrary file size restriction, 250k
-	if (fileLen > (1000 * 250)) {
+	// arbitrary file size restriction, 256k
+	if (fileLen > (1024 * 250)) {
 		return NULL;
 	}
 
