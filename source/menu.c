@@ -581,8 +581,13 @@ void menu_mainMenu() {
 		}
 		
 		// disable export button if filesystem mount failed or no data ready
-		if (i == ENTRY_DATA_EXPORT && disableDataExport) {
-			printStrColor(GX_COLOR_NONE, GX_COLOR_GRAY, menuItems[i]);
+		if (i == ENTRY_DATA_EXPORT) {
+			if (disableDataExport) {
+				printStrColor(GX_COLOR_NONE, GX_COLOR_GRAY, menuItems[i]);
+			} else {
+				printStr(menuItems[i]);
+			}
+			printStrColor(GX_COLOR_NONE, GX_COLOR_GRAY, " (%s)", getDeviceString(getCurrentDevice()));
 		} else {
 			printStr(menuItems[i]);
 		}
@@ -684,7 +689,7 @@ void menu_fileExport() {
 			// print status after print
 			switch (exportReturnCode) {
 				case 0:
-					printStr("File exported successfully.");
+					printStr("File exported to %s.", getDeviceString(getCurrentDevice()));
 					break;
 				case 1:
 					printStr("Data was marked as not ready, this shouldn't happen!");
@@ -745,6 +750,7 @@ void menu_thanksPage() {
 
 #ifndef DEBUGLOG
 static bool initCard = false;
+static bool cardRemoved = false;
 static bool cardMounting = false;
 static bool cardMounted = false;
 static bool gotDir = false;
@@ -764,23 +770,29 @@ static bool menu_checkBlackout() {
 	}
 	
 	if (cardInitCode >= 0 && currentMenu == MAIN_MENU) {
-		if (CARD_Probe(CARD_SLOTB) == 1) {
-			if (!cardMounted) {
-				if (!cardMounting) {
-					CARD_MountAsync(CARD_SLOTB, workarea, NULL, &mount_callback);
-					cardMounting = true;
+		if (cardRemoved) {
+			if (CARD_Probe(CARD_SLOTB) == 1) {
+				if (!cardMounted) {
+					if (!cardMounting) {
+						CARD_MountAsync(CARD_SLOTB, workarea, NULL, &mount_callback);
+						cardMounting = true;
+					}
+				} else if (!gotDir) {
+					CARD_GetDirectory(CARD_SLOTB, &memcard, &memcardLen, false);
 				}
-			} else if (!gotDir) {
-				CARD_GetDirectory(CARD_SLOTB, &memcard, &memcardLen, false);
-			}
-			if (memcardLen != 0 && !isControllerConnected(CONT_PORT_1) && isControllerConnected(CONT_PORT_2)) {
-				return true;
+				if (memcardLen != 0 && !isControllerConnected(CONT_PORT_1) && isControllerConnected(CONT_PORT_2)) {
+					return true;
+				}
+			} else {
+				cardMounted = false;
+				cardMounting = false;
+				memcardLen = 0;
+				gotDir = false;
 			}
 		} else {
-			cardMounted = false;
-			cardMounting = false;
-			memcardLen = 0;
-			gotDir = false;
+			if (CARD_Probe(CARD_SLOTB) == 0) {
+				cardRemoved = true;
+			}
 		}
 	}
 	
