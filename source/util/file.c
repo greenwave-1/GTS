@@ -312,16 +312,13 @@ int exportData() {
 	}
 
 	strcat(fileStr, ".csv");
-
-	{
-		struct stat st = {0};
-		// check if file already exists
-		if (stat(fileStr, &st) == 0) {
-			return 5;
-		}
-	}
-
+	
 	FILE *fptr = createFile(fileStr, "w");
+	
+	// NULL -> failed to create file, likely already exists
+	if (fptr == NULL) {
+		return 5;
+	}
 
 	// first row is: datetime, number of polls, total time in microseconds, type of recording
 	fprintf(fptr, "%s,%u,%" PRIu64 ",%d\n", timeStr, data->sampleEnd, data->totalTimeUs, data->recordingType);
