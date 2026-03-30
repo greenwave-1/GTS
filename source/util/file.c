@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <jansson.h>
 #include <dirent.h>
+#include <unistd.h>
 
 #include <ogc/pad.h>
 
@@ -24,10 +25,38 @@ static unsigned int increment = 0;
 
 static bool initSuccess = false, initAttempted = false;
 
+static enum FS_DEVICE_LIST mountedDevice = DEVICE_NONE;
+
+static void identifyCurrentDevice() {
+	char devicePath[32] = {0};
+	getcwd(devicePath, 32);
+	char *devicePrefix = strtok(devicePath, ":");
+	
+	if (strcmp(devicePrefix, "carda") == 0) {
+		mountedDevice = DEVICE_CARD_A;
+	} else if (strcmp(devicePrefix, "cardb") == 0) {
+		mountedDevice = DEVICE_CARD_B;
+	} else if (strcmp(devicePrefix, "sd") == 0) {
+		// "sd" prefix is shared between sp2 and wii sd
+		#ifdef HW_DOL
+		mountedDevice = DEVICE_GC_SP2;
+		#elifdef HW_RVL
+		mountedDevice = DEVICE_WII_SD;
+		#endif
+	} else if (strcmp(devicePrefix, "usb") == 0) {
+		mountedDevice = DEVICE_WII_USB;
+	} else {
+		mountedDevice = DEVICE_NONE;
+	}
+}
+
 bool initFilesystem() {
 	if (!initAttempted) {
 		initAttempted = true;
 		initSuccess = fatInitDefault();
+		if (initSuccess) {
+			identifyCurrentDevice();
+		}
 	}
 	return initSuccess;
 }
@@ -36,6 +65,60 @@ bool initFilesystem() {
 void deinitFilesystem() {
 	if (initSuccess) {
 		fatDeinit();
+	}
+}
+
+enum FS_DEVICE_LIST getCurrentDevice() {
+	return mountedDevice;
+}
+
+bool attemptOpenDevice(enum FS_DEVICE_LIST device) {
+	bool ret = false;
+	switch (device) {
+		case DEVICE_CARD_A:
+			ret = (chdir("carda:/") == 0);
+			break;
+		case DEVICE_CARD_B:
+			ret = (chdir("cardb:/") == 0);
+			break;
+		case DEVICE_GC_SP2:
+		case DEVICE_WII_SD:
+			ret = (chdir("sd:/") == 0);
+			break;
+		case DEVICE_WII_USB:
+			ret = (chdir("usb:/") == 0);
+			break;
+		default:
+			break;
+	}
+	
+	if (ret) {
+		identifyCurrentDevice();
+	}
+	
+	return ret;
+}
+
+char *getDeviceString(enum FS_DEVICE_LIST device) {
+	switch (device) {
+		case DEVICE_CARD_A:
+			return "SDGecko Slot A";
+			break;
+		case DEVICE_CARD_B:
+			return "SDGecko Slot B";
+			break;
+		case DEVICE_GC_SP2:
+			return "SD2SP2";
+			break;
+		case DEVICE_WII_SD:
+			return "Wii SD Card";
+			break;
+		case DEVICE_WII_USB:
+			return "USB Storage";
+			break;
+		default:
+			return "No Device";
+			break;
 	}
 }
 
