@@ -428,7 +428,7 @@ void menu_drawHeader() {
 				}
 				break;
 			case THANKS_PAGE:
-				#ifdef NO_DATE_CHECK
+				#ifndef NO_DATE_CHECK
 				drawDateSpecial(DATE_PM, MAIN_MENU);
 				#endif
 				break;
