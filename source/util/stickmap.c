@@ -590,7 +590,7 @@ static int stickYPos = 0, stickYPrevPos = 0;
 
 static int jsonPickerCursor = 0;
 int drawJsonFilePicker(ExternalStickmap *list) {
-	printStr("Choose a file:\n\n");
+	printStr("Choose a file (%s):\n\n", getDeviceString(getCurrentDevice()));
 	if ((externalStickmaps == NULL || externalStickmapsLen == 0) && readFilesystemForJson) {
 		printStr("No files found");
 	} else {
