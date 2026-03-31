@@ -701,7 +701,7 @@ void menu_fileExport() {
 					printStr("Failed to create parent directory.");
 					break;
 				case 4:
-					printStr("Failed to generate filename, out of memory.")
+					printStr("Failed to generate filename, out of memory.");
 					break;
 				case 5:
 					printStr("Failed to create file, file might already exist.");
