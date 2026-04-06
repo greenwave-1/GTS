@@ -99,7 +99,6 @@ void flipData() {
 
 // a lot of this comes from github.com/phobgcc/phobconfigtool
 MeleeCoordinates convertStickRawToMelee(ControllerSample sample) {
-	
 	float floatStickX = abs(sample.stickX), floatStickY = abs(sample.stickY);
 	float floatCStickX = abs(sample.cStickX), floatCStickY = abs(sample.cStickY);
 	
@@ -111,19 +110,14 @@ MeleeCoordinates convertStickRawToMelee(ControllerSample sample) {
 		// scale stick value to be within range
 		floatStickX = (floatStickX / stickMagnitude) * 80;
 		floatStickY = (floatStickY / stickMagnitude) * 80;
-		stickMagnitude = 80.0;
 	}
 	if (cStickMagnitude > 80) {
 		// scale stick value to be within range
 		floatCStickX = (floatCStickX / cStickMagnitude) * 80;
 		floatCStickY = (floatCStickY / cStickMagnitude) * 80;
-		cStickMagnitude = 80.0;
 	}
 	
 	MeleeCoordinates ret;
-	
-	ret.magnitude = stickMagnitude;
-	ret.cMagnitude = cStickMagnitude;
 	
 	// truncate the floats
 	ret.stickX = (int) floatStickX, ret.stickY = (int) floatStickY;
