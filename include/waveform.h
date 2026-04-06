@@ -40,9 +40,6 @@ typedef struct MeleeCoordinates {
 	int8_t stickY;
 	int8_t cStickX;
 	int8_t cStickY;
-	
-	float magnitude;
-	float cMagnitude;
 } MeleeCoordinates;
 
 // allocated/max size of the data array

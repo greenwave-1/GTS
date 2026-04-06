@@ -20,6 +20,9 @@
 #include "plot2d_stickmaps_json.h"
 #include "coordview_stickmaps_json.h"
 
+// largest value still in the melee deadzone (23+ will register)
+#define MELEE_DEADZONE_MAX 22
+
 static void createSubCoordList(StickmapSubcategory *data) {
 	// we do this twice
 	for (int iter = 0; iter < 2; iter++) {
@@ -28,12 +31,17 @@ static void createSubCoordList(StickmapSubcategory *data) {
 		// iterate over provided range
 		for (int x = data->minX; x <= data->maxX; x++) {
 			for (int y = data->minY; y <= data->maxY; y++) {
+                // check deadzone
+                // this is done in the altimor stickmap code, so I assume this is correct...
+                int workingX = x > MELEE_DEADZONE_MAX ? x : 0;
+                int workingY = y > MELEE_DEADZONE_MAX ? y : 0;
+
 				// check magnitude
-				double mag = sqrt((x * x) + (y * y));
+				double mag = sqrt((workingX * workingX) + (workingY * workingY));
 				
 				if (mag >= data->magnitudeMin && mag <= data->magnitudeMax) {
 					// check angle
-					double angle = atan2(y, x) * 180 / M_PI;
+					double angle = atan2(workingY, workingX) * 180 / M_PI;
 					
 					if (angle >= data->angleMin && angle <= data->angleMax) {
 						// iterate over each valid quadrant
@@ -403,43 +411,56 @@ void genStickmapCoords(Stickmap *target) {
 int getCoordSubcategory(MeleeCoordinates coord, Stickmap *stickmap) {
 	// iterate over each subcategory
 	for (int i = 0; i < stickmap->subcategoryListLen; i++) {
-		StickmapSubcategory *sub = &stickmap->subcategoryList[i];
-		// check magnitude
-		if (coord.magnitude >= sub->magnitudeMin &&
-			coord.magnitude <= sub->magnitudeMax) {
-			int x = abs(coord.stickX);
-			int y = abs(coord.stickY);
-			// initial range check
-			if (x >= sub->minX && x <= sub->maxX &&
-				y >= sub->minY && y <= sub->maxY) {
-				// check quadrants
-				for (int j = 0; j < 4; j++) {
-					if (sub->quadrants[j]) {
-						// set sign based on quadrant
-						if (j == 1 || j == 2) {
-							x *= -1;
-						}
-						if (j > 1) {
-							y *= -1;
-						}
-						// do signs match?
-						if (x == coord.stickX && y == coord.stickY) {
-							// check angle (done here so that we don't do atan2() as often(?)
-							x = abs(x);
-							y = abs(y);
-							double angle = atan2(y, x) * 180 / M_PI;
-							if (angle >= sub->angleMin && angle <= sub->angleMax) {
-								return i;
-							}
-						}
-					}
-					// return values to normal
-					x = abs(x);
-					y = abs(y);
-				}
-			}
-		}
-	}
+        StickmapSubcategory *sub = &stickmap->subcategoryList[i];
+        // initial range check
+        int x = abs(coord.stickX);
+        int y = abs(coord.stickY);
+
+        if (x >= sub->minX && x <= sub->maxX &&
+            y >= sub->minY && y <= sub->maxY) {
+            // check magnitude
+            // magnitude and angle take deadzone into account
+            if (x <= MELEE_DEADZONE_MAX) {
+                x = 0;
+            }
+            if (y <= MELEE_DEADZONE_MAX) {
+                y = 0;
+            }
+
+            float stickMagnitude = sqrt((x * x) + (y * y));
+            if (stickMagnitude >= sub->magnitudeMin &&
+                stickMagnitude <= sub->magnitudeMax) {
+                // check quadrants
+                for (int j = 0; j < 4; j++) {
+                    if (sub->quadrants[j]) {
+                        int workingX = abs(coord.stickX);
+                        int workingY = abs(coord.stickY);
+                        // set sign based on quadrant
+                        if (j == 1 || j == 2) {
+                            workingX *= -1;
+                        }
+                        if (j > 1) {
+                            workingY *= -1;
+                        }
+                        // do signs match?
+                        if (workingX == coord.stickX && workingY == coord.stickY) {
+                            // check angle (done here so that we don't do atan2() as often(?)
+                            // angle uses deadzone
+                            x = abs(x);
+                            y = abs(y);
+                            double angle = atan2(y, x) * 180 / M_PI;
+                            if (angle >= sub->angleMin && angle <= sub->angleMax) {
+                                return i;
+                            }
+                        }
+                    }
+                    // return values to normal
+                    x = abs(x);
+                    y = abs(y);
+                }
+            }
+        }
+    }
 	
 	return -1;
 }
