@@ -31,15 +31,15 @@ static void createSubCoordList(StickmapSubcategory *data) {
 		// iterate over provided range
 		for (int x = data->minX; x <= data->maxX; x++) {
 			for (int y = data->minY; y <= data->maxY; y++) {
-                // check deadzone
-                // this is done in the altimor stickmap code, so I assume this is correct...
-                int workingX = x > MELEE_DEADZONE_MAX ? x : 0;
-                int workingY = y > MELEE_DEADZONE_MAX ? y : 0;
-
 				// check magnitude
-				double mag = sqrt((workingX * workingX) + (workingY * workingY));
+				double mag = sqrt((x * x) + (y * y));
 				
 				if (mag >= data->magnitudeMin && mag <= data->magnitudeMax) {
+					// check deadzone
+					// this is done in the altimor stickmap code, so I assume this is correct...
+					int workingX = x > MELEE_DEADZONE_MAX ? x : 0;
+					int workingY = y > MELEE_DEADZONE_MAX ? y : 0;
+
 					// check angle
 					double angle = atan2(workingY, workingX) * 180 / M_PI;
 					
