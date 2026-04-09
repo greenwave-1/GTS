@@ -13,7 +13,7 @@
 
 #include <jansson.h>
 
-#include <gx.h>
+#include <ogc/gx.h>
 
 typedef struct StickmapSubcategory {
 	// info from json itself
