@@ -38,12 +38,10 @@ static enum CURRENT_VTX_MODE currentVtxMode = VTX_NONE;
 static int currentTexmap = TEXMAP_NONE;
 
 // address of memory allocated for fifo
-static void *gp_fifo = nullptr;
+static void *main_fifo_buf = nullptr;
 
 // fifo object itself
-// only used if we need to actually interface with the fifo later
-// (basically for debugging)
-//static GXFifoObj *gxFifoObj = nullptr;
+//static GXFifoObj *mainFifo = nullptr;
 
 // rmode pointer
 // passed in setupGX()
@@ -162,13 +160,13 @@ void changeStickmapTexture(int image) {
 // basic initialization stuff
 void setupGX(GXRModeObj *rmode) {
 	// allocate fifo space, 32 byte aligned
-	gp_fifo = memalign(32, DEFAULT_FIFO_SIZE);
+	main_fifo_buf = memalign(32, DEFAULT_FIFO_SIZE);
 	// clear newly allocated space
-	memset(gp_fifo, 0, DEFAULT_FIFO_SIZE);
+	memset(main_fifo_buf, 0, DEFAULT_FIFO_SIZE);
 	
 	// start gx stuff
-	GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
-	//gxFifoObj = GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
+	GX_Init(main_fifo_buf, DEFAULT_FIFO_SIZE);
+	//mainFifo = GX_Init(main_fifo_buf, DEFAULT_FIFO_SIZE);
 	//GX_InitFifoLimits(gxFifoObj, DEFAULT_FIFO_SIZE - GX_FIFO_HIWATERMARK, DEFAULT_FIFO_SIZE / 2);
 	
 	// set this for future use, so we don't have to continue to pass it
