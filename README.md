@@ -59,7 +59,7 @@ and that Dolphin support is considered secondary to real hardware.
   - Systems that normally use pacman should run ```pacman```
   - `gamecube-dev` and `wii-dev` are meta packages that install most necessary libraries and tools.
 Accept the defaults when prompted. 
-  - If prompted, use the `ppc-jansson` from the extremscorner repo
+  - If prompted, use the `ppc-jansson` from the libogc2 repo
 - Run ```make``` in the root of the project
 - A numbered release can be made with ```make release <version string>```, or using the bash script to also make
 a distributable zip file for wii
