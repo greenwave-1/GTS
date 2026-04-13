@@ -8,6 +8,14 @@
 #include <stdlib.h>
 #include <math.h>
 
+// why is this required?
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+// first value outside the melee deadzone
+#define MELEE_DEADZONE_END 23
+
 // bitwise or'd flags that specify what recordings are valid for a given menu
 // note that the order is important, same order as enum RECORDING_TYPE
 const uint8_t RECORDING_TYPE_VALID_MENUS[] = { 0, // REC_CLEAR, null entry
@@ -99,43 +107,66 @@ void flipData() {
 
 // a lot of this comes from github.com/phobgcc/phobconfigtool
 MeleeCoordinates convertStickRawToMelee(ControllerSample sample) {
-	float floatStickX = abs(sample.stickX), floatStickY = abs(sample.stickY);
-	float floatCStickX = abs(sample.cStickX), floatCStickY = abs(sample.cStickY);
-	
-	float stickMagnitude = sqrt((sample.stickX * sample.stickX) + (sample.stickY * sample.stickY));
-	float cStickMagnitude = sqrt((sample.cStickX * sample.cStickX) + (sample.cStickY * sample.cStickY));
-	
-	// magnitude must be between 0 and 80
-	if (stickMagnitude > 80) {
-		// scale stick value to be within range
-		floatStickX = (floatStickX / stickMagnitude) * 80;
-		floatStickY = (floatStickY / stickMagnitude) * 80;
-	}
-	if (cStickMagnitude > 80) {
-		// scale stick value to be within range
-		floatCStickX = (floatCStickX / cStickMagnitude) * 80;
-		floatCStickY = (floatCStickY / cStickMagnitude) * 80;
-	}
-	
 	MeleeCoordinates ret;
-	
-	// truncate the floats
-	ret.stickX = (int) floatStickX, ret.stickY = (int) floatStickY;
-	ret.cStickX = (int) floatCStickX, ret.cStickY = (int) floatCStickY;
-	
-	// set sign
-	if (sample.stickX < 0) {
-		ret.stickX *= -1;
+
+	int deadzoneX, deadzoneY;
+	int deadzoneCX, deadzoneCY;
+
+	// store and scale coordinates (if necessary)
+	{
+		float fX = abs(sample.stickX), fY = abs(sample.stickY);
+		float fCX = abs(sample.cStickX), fCY = abs(sample.cStickY);
+
+		float mag = sqrt((fX * fX) + (fY * fY));
+		float cMag = sqrt((fCX * fCX) + (fCY * fCY));
+
+		// scale values if necessary
+		if (mag > 80) {
+			fX = (fX / mag) * 80;
+			fY = (fY / mag) * 80;
+		}
+
+		if (cMag > 80) {
+			fCX = (fCX / cMag) * 80;
+			fCY = (fCY / cMag) * 80;
+		}
+
+		// store values
+		ret.stickX = (int) fX, ret.stickY = (int) fY;
+		deadzoneX = ret.stickX, deadzoneY = ret.stickY;
+
+		ret.cStickX = (int) fCX, ret.cStickY = (int) fCY;
+		deadzoneCX = ret.cStickX, deadzoneCY = ret.cStickY;
+
+		// set sign
+		if (sample.stickX < 0) {
+			ret.stickX *= -1;
+		}
+		if (sample.stickY < 0) {
+			ret.stickY *= -1;
+		}
+		if (sample.cStickX < 0) {
+			ret.cStickX *= -1;
+		}
+		if (sample.cStickY < 0) {
+			ret.cStickY *= -1;
+		}
 	}
-	if (sample.stickY < 0) {
-		ret.stickY *= -1;
-	}
-	if (sample.cStickX < 0) {
-		ret.cStickX *= -1;
-	}
-	if (sample.cStickY < 0) {
-		ret.cStickY *= -1;
-	}
+
+	// apply deadzone prior to calc magnitude
+	deadzoneX = deadzoneX < MELEE_DEADZONE_END ? 0 : deadzoneX;
+	deadzoneY = deadzoneY < MELEE_DEADZONE_END ? 0 : deadzoneY;
+
+	deadzoneCX = deadzoneCX < MELEE_DEADZONE_END ? 0 : deadzoneCX;
+	deadzoneCY = deadzoneCY < MELEE_DEADZONE_END ? 0 : deadzoneCY;
+
+	// calc magnitude
+	ret.stickMagnitude = sqrt((deadzoneX * deadzoneX) + (deadzoneY * deadzoneY));
+	ret.cStickMagnitude = sqrt((deadzoneCX * deadzoneCX) + (deadzoneCY * deadzoneCY));
+
+	// get angle
+	ret.stickAngle = atan2(deadzoneY, deadzoneX) * 180 / M_PI;
+	ret.cStickAngle = atan2(deadzoneCY, deadzoneCX) * 180 / M_PI;
 	
 	return ret;
 }
