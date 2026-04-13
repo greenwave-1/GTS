@@ -38,8 +38,16 @@ typedef struct ControllerSample {
 typedef struct MeleeCoordinates {
 	int8_t stickX;
 	int8_t stickY;
+
 	int8_t cStickX;
 	int8_t cStickY;
+
+	int stickMagnitude;
+	int cStickMagnitude;
+
+	double stickAngle;
+	double cStickAngle;
+
 } MeleeCoordinates;
 
 // allocated/max size of the data array
