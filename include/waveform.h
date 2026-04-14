@@ -54,9 +54,11 @@ typedef struct MeleeCoordinates {
 #define REC_SAMPLE_MAX 3000
 
 // the type of recording created
-enum RECORDING_TYPE { REC_CLEAR, REC_OSCILLOSCOPE, REC_OSCILLOSCOPE_CONTINUOUS,
-		REC_TRIGGER_L, REC_TRIGGER_R,
-		REC_2DPLOT, REC_BUTTONTIME };
+enum RECORDING_TYPE {
+	REC_CLEAR, REC_OSCILLOSCOPE, REC_OSCILLOSCOPE_CONTINUOUS,
+	REC_TRIGGER_L, REC_TRIGGER_R,
+	REC_2DPLOT, REC_BUTTONTIME
+};
 
 #define REC_CLEAR_FLAG 0
 #define REC_OSCILLOSCOPE_FLAG 1
@@ -117,7 +119,8 @@ void clearRecordingArray(ControllerRec *recording);
 // allows menus to get a double pointer and not have to change them in each menu
 void flipData();
 
-enum CONTROLLER_STICK_AXIS { AXIS_AX = 0x01, AXIS_AY = 0x02,
+enum CONTROLLER_STICK_AXIS {
+	AXIS_AX = 0x01, AXIS_AY = 0x02,
 	AXIS_CX = 0x04, AXIS_CY = 0x08,
 	AXIS_AXY = (0x10 | AXIS_AX | AXIS_AY),
 	AXIS_CXY = (0x20 | AXIS_CX | AXIS_CY)

@@ -10,12 +10,11 @@
 #include "util/datetime.h"
 #include "menu.h"
 
-static struct option launchFlags[] =
-		{
-				{"date", required_argument, 0, 'd'},
-				{"menu", required_argument, 0, 'm'},
-				{ 0, 0, 0, 0 }
-		};
+static struct option launchFlags[] = {
+	{"date", required_argument, 0, 'd'},
+	{"menu", required_argument, 0, 'm'},
+	{ 0, 0, 0, 0 }
+};
 
 // mostly based on the gnu example for long args:
 // https://www.gnu.org/software/libc/manual/html_node/Getopt-Long-Option-Example.html

@@ -285,10 +285,10 @@ void drawFontButton(enum FONT_BUTTON_LIST button) {
 		
 		// xy offsets for screenspace coordinates,
 		const int dpadScreenspaceOffset[][4] = {
-				{ 0, 0, 0, 0 },
-				{ 12, 0, 0, 12 },
-				{ 0, 12, 0, 12 },
-				{ 0, 0, -12, 12 }
+			{ 0, 0, 0, 0 },
+			{ 12, 0, 0, 12 },
+			{ 0, 12, 0, 12 },
+			{ 0, 0, -12, 12 }
 		};
 		
 		// four possible directions

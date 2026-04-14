@@ -15,11 +15,13 @@
 // rough time in milliseconds where a vsync would occur
 // calculated by multiplying 16.666 by x amount, and truncating the decimal
 // this is specifically for menus that have 1 column = one millisecond
-const int FRAME_INTERVAL_MS[] = {16, 33, 49, 66, 83, 100,
-                                        116, 133, 149, 166, 183, 199,
-                                        216, 233, 249, 266, 283, 299,
-                                        316, 333, 349, 366, 383, 399,
-										416, 433, 449, 466, 483, 499, 516};
+const int FRAME_INTERVAL_MS[] = {
+	16, 33, 49, 66, 83, 100,
+    116, 133, 149, 166, 183, 199,
+    216, 233, 249, 266, 283, 299,
+    316, 333, 349, 366, 383, 399,
+	416, 433, 449, 466, 483, 499, 516
+};
 
 static bool unsupportedMode = false;
 static bool firstRun = true;

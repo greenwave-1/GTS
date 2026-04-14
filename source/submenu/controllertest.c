@@ -23,9 +23,12 @@ const static int rumbleOffsets[][2] = { {-2, -2}, {-2, 2}, {2, 2}, {2, -2} };
 
 static enum CONTROLLER_TEST_MENU_STATE menuState = CONT_TEST_SETUP;
 
-const static uint16_t codeInputSequence[] = { PAD_BUTTON_UP, PAD_BUTTON_UP, PAD_BUTTON_DOWN, PAD_BUTTON_DOWN,
-                                               PAD_BUTTON_LEFT, PAD_BUTTON_RIGHT, PAD_BUTTON_LEFT, PAD_BUTTON_RIGHT,
-                                               PAD_BUTTON_B, PAD_BUTTON_A, PAD_BUTTON_START };
+const static uint16_t codeInputSequence[] = {
+	PAD_BUTTON_UP, PAD_BUTTON_UP, PAD_BUTTON_DOWN, PAD_BUTTON_DOWN,
+	PAD_BUTTON_LEFT, PAD_BUTTON_RIGHT, PAD_BUTTON_LEFT, PAD_BUTTON_RIGHT,
+	PAD_BUTTON_B, PAD_BUTTON_A, PAD_BUTTON_START
+};
+
 static int codeInputSequenceIndex = 0;
 static int codeInputRumbleCounter = 0;
 
