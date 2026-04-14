@@ -21,13 +21,17 @@ const static int SCREEN_CHAR_SIZE = 14;
 
 enum PLOT_BUTTON_LIST { A, B, X, Y, L, La, R, Ra, Z, AX, AY, CX, CY, NO_BUTTON };
 
-const static char* BUTTON_STR[13] = { "A", "B", "X", "Y",
-									  "L", "La", "R", "Ra", "Z",
-									  "AX", "AY", "CX", "CY"};
+const static char* BUTTON_STR[13] = {
+	"A", "B", "X", "Y",
+	"L", "La", "R", "Ra", "Z",
+	"AX", "AY", "CX", "CY"
+};
 
-const static uint16_t BUTTON_MASKS[13] = { PAD_BUTTON_A, PAD_BUTTON_B, PAD_BUTTON_X, PAD_BUTTON_Y,
-									  PAD_TRIGGER_L, 0, PAD_TRIGGER_R, 0, PAD_TRIGGER_Z,
-									  0, 0, 0, 0 };
+const static uint16_t BUTTON_MASKS[13] = {
+	PAD_BUTTON_A, PAD_BUTTON_B, PAD_BUTTON_X, PAD_BUTTON_Y,
+	PAD_TRIGGER_L, 0, PAD_TRIGGER_R, 0, PAD_TRIGGER_Z,
+	0, 0, 0, 0
+};
 
 static uint16_t *pressed = NULL;
 static uint16_t *held = NULL;

@@ -18,13 +18,28 @@
 
 // bitwise or'd flags that specify what recordings are valid for a given menu
 // note that the order is important, same order as enum RECORDING_TYPE
-const uint8_t RECORDING_TYPE_VALID_MENUS[] = { 0, // REC_CLEAR, null entry
-											   REC_OSCILLOSCOPE_FLAG | REC_2DPLOT_FLAG, // normal oscilloscope
-											   0, // continuous oscilloscope
-											   REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG, // trigger L
-											   REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG, // trigger R
-											   REC_OSCILLOSCOPE_FLAG | REC_2DPLOT_FLAG, // 2d plot
-											   REC_2DPLOT_FLAG | REC_BUTTONTIME_FLAG }; // buttonplot
+const uint8_t RECORDING_TYPE_VALID_MENUS[] = {
+	// REC_CLEAR, null entry
+	0,
+
+	// normal oscilloscope
+	REC_OSCILLOSCOPE_FLAG | REC_2DPLOT_FLAG,
+
+	// continuous oscilloscope
+	0,
+
+	// trigger L
+	REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG,
+
+	// trigger R
+	REC_TRIGGER_L_FLAG | REC_TRIGGER_R_FLAG,
+
+	// 2d plot
+	REC_OSCILLOSCOPE_FLAG | REC_2DPLOT_FLAG,
+
+	// buttonplot
+	REC_2DPLOT_FLAG | REC_BUTTONTIME_FLAG
+};
 
 
 static bool init = false;
