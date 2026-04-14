@@ -6,7 +6,6 @@
 
 #include <stdint.h>
 #include <math.h>
-#include <assert.h>
 #include <string.h>
 
 #include <jansson.h>

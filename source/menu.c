@@ -43,6 +43,7 @@ static enum DATE_CHECK_LIST date;
 #include "submenu/plotbutton.h"
 #include "submenu/controllertest.h"
 #include "submenu/coordinateviewer.h"
+#include "submenu/errordisplay.h"
 
 #ifndef VERSION_NUMBER
 #define VERSION_NUMBER BUILD_DATE
@@ -89,9 +90,39 @@ static int stickYPos = 0, stickYPrevPos = 0;
 static uint8_t stickLockoutCounter = 0;
 static bool stickLockout = false;
 
-// menu item strings
-static const char* menuItems[MENUITEMS_LEN] = { "Controller Test", "Stick Oscilloscope", "Continuous Stick Oscilloscope", "Trigger Oscilloscope",
-                                                "Coordinate Viewer", "2D Plot", "Button Timing Viewer", "Gate Visualizer", "Export Data"};
+static char* menu_getMenuNameFromEntry(enum MENU_MAIN_ENTRY_LIST entry) {
+	switch (entry) {
+		case ENTRY_CONT_TEST:
+			return menu_getMenuString(CONTROLLER_TEST);
+			break;
+		case ENTRY_OSCILLOSCOPE:
+			return menu_getMenuString(WAVEFORM);
+			break;
+		case ENTRY_CONT_OSCILLOSCOPE:
+			return menu_getMenuString(CONTINUOUS_WAVEFORM);
+			break;
+		case ENTRY_TRIGGER_OSCILLOSCOPE:
+			return menu_getMenuString(TRIGGER_WAVEFORM);
+			break;
+		case ENTRY_COORD_VIEWER:
+			return menu_getMenuString(COORD_MAP);
+			break;
+		case ENTRY_2D_PLOT:
+			return menu_getMenuString(PLOT_2D);
+			break;
+		case ENTRY_BUTTON_PLOT:
+			return menu_getMenuString(PLOT_BUTTON);
+			break;
+		case ENTRY_GATE_VIS:
+			return menu_getMenuString(GATE_MEASURE);
+			break;
+		case ENTRY_DATA_EXPORT:
+			return menu_getMenuString(FILE_EXPORT);
+			break;
+		default:
+			return "Invalid menu list entry";
+	}
+}
 
 static bool mainMenuDraw = false;
 
@@ -236,6 +267,9 @@ bool menu_runMenu() {
 			menu_plotButtonSetAutoTrigger(autoTriggerEnabled);
 			menu_plotButton();
 			break;
+		case ERR:
+			menu_errorDisplay();
+			break;
 		#ifndef DEBUGLOG
 		case BLACKOUT:
 			menu_blackout();
@@ -293,7 +327,7 @@ bool menu_runMenu() {
 
 	// does the user want to move back to the main menu?
 	// this shouldn't trigger when certain menus are currently recording an input
-	else if (*held == PAD_BUTTON_B && currentMenu != MAIN_MENU && !lockExitEnabled) {
+	else if (*held == PAD_BUTTON_B && currentMenu != MAIN_MENU && currentMenu != ERR && !lockExitEnabled) {
 
 		// give user feedback that they are holding the button
 		printStr("Moving back to main menu");
@@ -302,49 +336,13 @@ bool menu_runMenu() {
 		
 		// has the button been held long enough?
 		if (bHeldCounter > 46) {
-			// special exit stuff that needs to happen for certain menus
-			switch (currentMenu) {
-				case WAVEFORM:
-					menu_oscilloscopeEnd();
-					break;
-				case CONTINUOUS_WAVEFORM:
-					menu_continuousEnd();
-					break;
-				case PLOT_2D:
-					menu_plot2dEnd();
-					break;
-				case TRIGGER_WAVEFORM:
-					menu_triggerOscilloscopeEnd();
-					break;
-				case GATE_MEASURE:
-					menu_gateMeasureEnd();
-					break;
-				case PLOT_BUTTON:
-					menu_plotButtonEnd();
-					break;
-				case CONTROLLER_TEST:
-					menu_controllerTestEnd();
-					break;
-				case COORD_MAP:
-					menu_coordViewEnd();
-					break;
-				case THANKS_PAGE:
-				default:
-					break;
-			}
-			currentMenu = MAIN_MENU;
-			bHeldCounter = 0;
-			// stop rumble if it didn't get stopped before
-			PAD_ControlMotor(0, PAD_MOTOR_STOP);
-			PAD_ControlMotor(3, PAD_MOTOR_STOP);
-			// just in case
-			lockExitEnabled = false;
-			autoTriggerEnabled = false;
+			menu_setCurrentMenu(MAIN_MENU);
 		}
 	} else {
 		// change bottom message depending on what menu we are in
 		switch (currentMenu) {
 			case MAIN_MENU:
+			case ERR:
 				printStr("Press Start");
 				drawFontButton(FONT_START);
 				printStr("to exit.");
@@ -404,7 +402,7 @@ bool menu_runMenu() {
 	}
 	
 	// exit the program if start is pressed
-	if (*pressed == PAD_BUTTON_START && currentMenu == MAIN_MENU) {
+	if (*pressed == PAD_BUTTON_START && (currentMenu == MAIN_MENU || currentMenu == ERR)) {
 		return true;
 	}
 
@@ -420,25 +418,28 @@ void menu_drawHeader() {
 	#ifndef NO_DATE_CHECK
 	if (drawDateSpecial(date, currentMenu)) {
 	#endif
-		switch (currentMenu) {
-			case MAIN_MENU:
-				printStr("GCC Test Suite");
-				if (mainMenuDraw) {
-					menu_mainMenuDraw();
-				}
-				break;
-			case THANKS_PAGE:
-				#ifndef NO_DATE_CHECK
-				drawDateSpecial(DATE_PM, MAIN_MENU);
-				#endif
-				break;
-			default:
-				if (mainMenuCursorPos < MENUITEMS_LEN) {
-					printStr(menuItems[mainMenuCursorPos]);
-				} else {
-					printStr("Invalid menu entry???");
-				}
-				break;
+		char *headerStr = menu_getMenuString(currentMenu);
+		if (headerStr != NULL) {
+			printStr(headerStr);
+		} else {
+			switch (currentMenu) {
+				case MAIN_MENU:
+					printStr("GCC Test Suite");
+					if (mainMenuDraw) {
+						menu_mainMenuDraw();
+					}
+					break;
+				case THANKS_PAGE:
+					#ifndef NO_DATE_CHECK
+					drawDateSpecial(DATE_PM, MAIN_MENU);
+					#else
+					printStr("GCC Test Suite");
+					#endif
+					break;
+				case BLACKOUT:
+				default:
+					break;
+			}
 		}
 		
 	#ifndef NO_DATE_CHECK
@@ -535,8 +536,8 @@ void menu_mainMenu() {
 	// only move the stick if it wasn't already held for the last 10 ticks
 	uint8_t movable = stickheld % 10 == 0 && !stickLockout;
 	
-	// iterate over the menu items array as defined in menu.c
-	for (int i = 0; i < MENUITEMS_LEN; i++) {
+	// iterate over menu entry list enum
+	for (enum MENU_MAIN_ENTRY_LIST i = ENTRY_CONT_TEST; i <= ENTRY_DATA_EXPORT; i++) {
 		setCursorPos(2 + i, 0);
 		// is the item we're about to print the currently selected menu?
 		if (mainMenuCursorPos == i) {
@@ -579,17 +580,18 @@ void menu_mainMenu() {
 		} else {
 			setCursorPos(2 + i, 4);
 		}
-		
+
+		char *menuString = menu_getMenuNameFromEntry(i);
 		// disable export button if filesystem mount failed or no data ready
 		if (i == ENTRY_DATA_EXPORT) {
 			if (disableDataExport) {
-				printStrColor(GX_COLOR_NONE, GX_COLOR_GRAY, menuItems[i]);
+				printStrColor(GX_COLOR_NONE, GX_COLOR_GRAY, menuString);
 			} else {
-				printStr(menuItems[i]);
+				printStr(menuString);
 			}
 			printStrColor(GX_COLOR_NONE, GX_COLOR_GRAY, " (%s)", getDeviceString(getCurrentDevice()));
 		} else {
-			printStr(menuItems[i]);
+			printStr(menuString);
 		}
 	}
 
@@ -720,7 +722,96 @@ void menu_fileExport() {
 }
 
 void menu_setCurrentMenu(enum CURRENT_MENU menu) {
+	// special exit stuff that needs to happen for certain menus
+	switch (currentMenu) {
+		case WAVEFORM:
+			menu_oscilloscopeEnd();
+			break;
+		case CONTINUOUS_WAVEFORM:
+			menu_continuousEnd();
+			break;
+		case PLOT_2D:
+			menu_plot2dEnd();
+			break;
+		case TRIGGER_WAVEFORM:
+			menu_triggerOscilloscopeEnd();
+			break;
+		case GATE_MEASURE:
+			menu_gateMeasureEnd();
+			break;
+		case PLOT_BUTTON:
+			menu_plotButtonEnd();
+			break;
+		case CONTROLLER_TEST:
+			menu_controllerTestEnd();
+			break;
+		case COORD_MAP:
+			menu_coordViewEnd();
+			break;
+		case THANKS_PAGE:
+		default:
+			break;
+	}
+
+	// stop rumble if it didn't get stopped before
+	PAD_ControlMotor(0, PAD_MOTOR_STOP);
+	PAD_ControlMotor(3, PAD_MOTOR_STOP);
+	// just in case
+	lockExitEnabled = false;
+	autoTriggerEnabled = false;
+
+	bHeldCounter = 0;
+
 	currentMenu = menu;
+}
+
+enum CURRENT_MENU menu_getCurrentMenu() {
+	return currentMenu;
+}
+
+// returns null pointer if no string should be drawn
+char* menu_getMenuString(enum CURRENT_MENU menu) {
+	switch (menu) {
+		case CONTROLLER_TEST:
+			return "Controller Test";
+			break;
+		case WAVEFORM:
+			return "Stick Oscilloscope";
+			break;
+		case PLOT_2D:
+			return "2D Plot";
+			break;
+		case PLOT_BUTTON:
+			return "Button Timing Viewer";
+			break;
+		case IMAGE_TEST:
+			return "Image Test";
+			break;
+		case FILE_EXPORT:
+			return "Export Data";
+			break;
+		case COORD_MAP:
+			return "Coordinate Viewer";
+			break;
+		case CONTINUOUS_WAVEFORM:
+			return "Continuous Stick Oscilloscope";
+			break;
+		case TRIGGER_WAVEFORM:
+			return "Trigger Oscilloscope";
+			break;
+		case GATE_MEASURE:
+			return "Gate Visualizer";
+			break;
+		case ERR:
+			return "Error Handler";
+			break;
+		case MAIN_MENU:
+		case THANKS_PAGE:
+		case BLACKOUT:
+		default:
+			return NULL;
+			break;
+	}
 }
 
 // self-explanatory
