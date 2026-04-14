@@ -7,11 +7,11 @@
 #include <math.h>
 #include <string.h>
 #include <strings.h>
-#include <assert.h>
 
 #include <ogc/system.h>
 #include <ogc/pad.h>
 
+#include "submenu/errordisplay.h"
 #include "util/file.h"
 #include "util/print.h"
 #include "util/polling.h"
@@ -459,13 +459,19 @@ void loadBuiltinStickmaps() {
 	if (plot2dStickmaps == NULL && coordViewStickmaps == NULL) {
 		json_t *root;
 		enum STICKMAP_JSON_TYPE jsonType = identifyJson((char *) plot2d_stickmaps_json, &root);
-		
-		assert(jsonType == STICKMAP_TYPE_GTS);
+
+		if (jsonType != STICKMAP_TYPE_GTS) {
+			menu_errorDisplaySetError("Built-in json data failed to read");
+			return;
+		}
 		plot2dStickmaps = readJsonGTS(root, &plot2dStickmapsLen);
 		
 		jsonType = identifyJson((char *) coordview_stickmaps_json, &root);
-		
-		assert(jsonType == STICKMAP_TYPE_GTS);
+
+		if (jsonType != STICKMAP_TYPE_GTS) {
+			menu_errorDisplaySetError("Built-in json data failed to read");
+			return;
+		}
 		coordViewStickmaps = readJsonGTS(root, &coordViewStickmapsLen);
 		for (int i = 0; i < coordViewStickmapsLen; i++) {
 			genStickmapCoords(coordViewStickmaps[i]);

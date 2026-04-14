@@ -300,7 +300,9 @@ export OFILES := $(OFILES_BIN) $(OFILES_SOURCES)
 export HFILES := $(addsuffix .h,$(subst .,_,$(BINFILES)))
 
 # build a list of include paths
-export INCLUDE	=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
+# -iquote is used specificially for project headers, other libraries use -I
+# this is to help more visually separate project headers from other headers
+export INCLUDE	=	$(foreach dir,$(INCLUDES),-iquote $(CURDIR)/$(dir)) \
 			$(foreach dir,$(LIBDIRS_LOCAL),-I$(dir)/include)
 
 # pass the root folder of the project to the next run

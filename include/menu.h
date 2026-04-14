@@ -32,6 +32,11 @@ void menu_thanksPage();
 
 void menu_setCurrentMenu(enum CURRENT_MENU menu);
 
+// mainly used for errordisplay
+enum CURRENT_MENU menu_getCurrentMenu();
+
+char* menu_getMenuString(enum CURRENT_MENU menu);
+
 void menu_drawHeader();
 
 #endif //GTS_MENU_H
