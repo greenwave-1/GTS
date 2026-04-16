@@ -23,6 +23,16 @@ static uint8_t captureStartFrameCooldown = 0;
 
 static enum PLOT_2D_MENU_STATE menuState = PLOT_SETUP;
 static enum PLOT_2D_STATE plotState = PLOT_INPUT;
+static enum PLOT_2D_STICKMAP_TYPE stickmapType = NO_STICKMAP;
+
+static int selectedStickmap = 0;
+
+static Stickmap **builtinStickmaps = NULL;
+static int builtinStickmapsLen = 0;
+
+static ExternalStickmap *externalJsonList = NULL;
+static int externalJsonListLen = 0;
+static int externalJsonIndex = 0;
 
 // structs for storing controller data
 // data: used for display once marked ready
@@ -50,28 +60,20 @@ static bool autoCapture = false;
 static int autoCaptureCounter = 0;
 static bool autoCaptureStartReleased = true;
 
-// enum for what image to draw in 2d plot
-static enum IMAGE selectedImage = NO_IMAGE;
-static enum IMAGE selectedImageCopy = NO_IMAGE;
-
 static sampling_callback cb;
 static uint64_t prevSampleCallbackTick = 0;
 static uint64_t sampleCallbackTick = 0;
-static uint8_t ellipseCounter = 0;
-
-static Stickmap **builtinStickmaps = NULL;
-static int builtinStickmapsLen = 0;
 
 static void plot2dSamplingCallback() {
 	// time from last call of this function calculation
 	prevSampleCallbackTick = sampleCallbackTick;
 	sampleCallbackTick = gettime();
-	
+
 	readController(false);
-	
+
 	prevPosX = currPosX;
 	prevPosY = currPosY;
-	
+
 	if (!showCStick) {
 		currPosX = PAD_StickX(0);
 		currPosY = PAD_StickY(0);
@@ -79,7 +81,7 @@ static void plot2dSamplingCallback() {
 		currPosX = PAD_SubStickX(0);
 		currPosY = PAD_SubStickY(0);
 	}
-	
+
 	if ((plotState == PLOT_INPUT || autoCapture) && captureStartFrameCooldown == 0) {
 		// are we already capturing data?
 		if (captureStart) {
@@ -87,7 +89,7 @@ static void plot2dSamplingCallback() {
 			prevPosDiffY = abs(currPosY - prevPosY);
 			prevMovementHeldState = currMovementHeldState;
 			currMovementHeldState = *held;
-			
+
 			(*temp)->samples[(*temp)->sampleEnd].stickX = PAD_StickX(0);
 			(*temp)->samples[(*temp)->sampleEnd].stickY = PAD_StickY(0);
 			(*temp)->samples[(*temp)->sampleEnd].cStickX = PAD_SubStickX(0);
@@ -96,7 +98,7 @@ static void plot2dSamplingCallback() {
 			(*temp)->samples[(*temp)->sampleEnd].timeDiffUs = ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 			(*temp)->totalTimeUs += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 			(*temp)->sampleEnd++;
-			
+
 			// are we currently checking if the stick has stopped moving?
 			if ((prevPosDiffX < 2 && prevPosDiffY < 2 && prevMovementHeldState == currMovementHeldState) || (*temp)->sampleEnd == REC_SAMPLE_MAX) {
 				if (noMovementStartIndex == -1) {
@@ -106,7 +108,7 @@ static void plot2dSamplingCallback() {
 					// if a shorter capture already exists, weird...
 					noMovementTimer += ticks_to_microsecs(sampleCallbackTick - prevSampleCallbackTick);
 				}
-				
+
 				// not moving for 250 ms
 				if (noMovementTimer >= 250000 || (*temp)->sampleEnd == REC_SAMPLE_MAX) {
 					if (noMovementStartIndex != -1) {
@@ -121,7 +123,7 @@ static void plot2dSamplingCallback() {
 				noMovementStartIndex = -1;
 				noMovementTimer = 0;
 			}
-		
+
 		// get our initial start point, needed to know when to start actually recording
 		} else if (!haveStartPoint) {
 			bool setStartPoint = false;
@@ -130,7 +132,7 @@ static void plot2dSamplingCallback() {
 				// using the melee deadzone values (+-23) instead of +-10,
 				// since most controllers will be configured to not go past these values
 				if (abs(PAD_StickX(0)) < 23 && abs(PAD_StickY(0)) < 23 &&
-						abs(PAD_SubStickX(0)) < 23 && abs(PAD_SubStickY(0)) < 23) {
+					abs(PAD_SubStickX(0)) < 23 && abs(PAD_SubStickY(0)) < 23) {
 					setStartPoint = true;
 					// needed since stick will move fast if released, triggering another capture
 					captureStartFrameCooldown = 5;
@@ -139,7 +141,7 @@ static void plot2dSamplingCallback() {
 			} else if (*held == 0) {
 				setStartPoint = true;
 			}
-			
+
 			if (setStartPoint) {
 				if (!showCStick) {
 					startPosX = PAD_StickX(0);
@@ -153,7 +155,7 @@ static void plot2dSamplingCallback() {
 		// wait for stick to move outside ~10 units, or for buttons to be pressed to start recording
 		} else {
 			if ( abs(currPosX - startPosX) >= 10 || abs (currPosY - startPosY) >= 10 ||
-					(*held != 0 && !autoCapture)) {
+				(*held != 0 && !autoCapture)) {
 				captureStart = true;
 				clearRecordingArray(*temp);
 				(*temp)->samples[0].stickX = PAD_StickX(0);
@@ -167,7 +169,7 @@ static void plot2dSamplingCallback() {
 				(*temp)->dataExported = false;
 			}
 		}
-		
+
 		if ((*temp)->isRecordingReady && captureStart) {
 			// reset stuff
 			haveStartPoint = false;
@@ -191,27 +193,31 @@ static void setup() {
 		pressed = getButtonsDownPtr();
 		held = getButtonsHeldPtr();
 	}
-	
+
 	if (builtinStickmaps == NULL) {
 		builtinStickmaps = getBuiltinStickmap(STICKMAP_PLOT2D, &builtinStickmapsLen);
+	}
+
+	if (externalJsonList == NULL) {
+		externalJsonList = getExternalJsonList(&externalJsonListLen);
 	}
 
 	if (data == NULL) {
 		data = getRecordingData();
 		temp = getTempData();
 	}
-	
+
 	cb = PAD_SetSamplingCallback(plot2dSamplingCallback);
 	menuState = PLOT_POST_SETUP;
 	plotState = PLOT_DISPLAY;
-	
+
 	autoCaptureStartReleased = true;
-	
+
 	// check if existing recording is valid for this menu
 	if (!(RECORDING_TYPE_VALID_MENUS[(*data)->recordingType] & REC_2DPLOT_FLAG)) {
 		clearRecordingArray(*data);
 	}
-	
+
 	showCStick = false;
 	resetScrollingPrint();
 }
@@ -224,7 +230,7 @@ static void displayInstructions() {
 	drawFontButton(FONT_A);
 	printStr("to prepare a recording. Recording will start when "
 			 "any button is pressed, or when the stick moves.\n\n");
-			 
+
 	printStr("Use");
 	fontButtonSetDpadDirections(FONT_DPAD_UP | FONT_DPAD_DOWN);
 	drawFontButton(FONT_DPAD);
@@ -233,29 +239,29 @@ static void displayInstructions() {
 	drawFontButton(FONT_DPAD);
 	printStr("to change the graph\'s end point. Information on "
 			 "the last drawn point is shown on the left.\n\n");
-	
+
 	printStr("Where applicable, press L");
 	drawFontButton(FONT_L);
 	printStr(" and Z");
 	drawFontButton(FONT_Z);
 	printStr("together to show a more detailed description of "
 			 "the last sample's location.\n\n");
-	
+
 	printStr("Hold R");
 	drawFontButton(FONT_R);
 	printStr("to go faster, or L");
 	drawFontButton(FONT_L);
 	printStr("to move one point at a time.\n\n");
-	
+
 	printStr("Hold X");
 	drawFontButton(FONT_X);
 	printStr("to move the \"starting sample\" with the same controls "
 			 "as above. Info for the selected range is shown on the left.\n\n");
-			 
+
 	printStr("Press Y");
 	drawFontButton(FONT_Y);
 	printStr("to toggle which stick is captured.\n\n");
-	
+
 	printStr("Hold Start");
 	drawFontButton(FONT_START);
 	printStr("to toggle Auto-Trigger. Enabling this removes "
@@ -268,17 +274,17 @@ static void displayInstructions() {
 	printStr("+Z");
 	drawFontButton(FONT_Z);
 	printStr("), and only allows the stick to start a recording.");
-	
+
 	setWordWrap(false);
 	endScrollingPrint();
-	
+
 	if (isControllerConnected(CONT_PORT_1)) {
 		setCursorPos(0, 31);
 		printStr("Close Instructions (Z");
 		drawFontButton(FONT_Z);
 		printStr(")");
 	}
-	
+
 	if (*pressed == PAD_TRIGGER_Z && *held == PAD_TRIGGER_Z) {
 		menuState = PLOT_POST_SETUP;
 	}
@@ -286,9 +292,41 @@ static void displayInstructions() {
 
 static int dpadFlashIncrement = 0;
 static bool showDesc = false;
-
+static bool makingTextures = false;
+static bool stickmapChanged = false;
+static uint8_t ellipseCounter = 0;
 
 void menu_plot2d() {
+	// which stickmap array are we dealing with?
+	Stickmap **displayList;
+	int displayListLen = 0;
+	switch (stickmapType) {
+		case BUILTIN_STICKMAP:
+			displayList = builtinStickmaps;
+			displayListLen = builtinStickmapsLen;
+			break;
+		case EXTERNAL_STICKMAP:
+			displayList = externalJsonList[externalJsonIndex].stickmapArr;
+			displayListLen = externalJsonList[externalJsonIndex].stickmapArrLen;
+			break;
+		case NO_STICKMAP:
+		default:
+			displayList = NULL;
+			break;
+	}
+
+	// doublecheck bounds
+	if (selectedStickmap > displayListLen) {
+		selectedStickmap = 0;
+		stickmapChanged = true;
+	}
+
+	// load texture if needed
+	if (stickmapChanged) {
+		loadStickmapTexture(displayList[selectedStickmap]->texture.texData);
+		stickmapChanged = false;
+	}
+
 	switch (menuState) {
 		case PLOT_SETUP:
 			setup();
@@ -300,14 +338,20 @@ void menu_plot2d() {
 			// we're getting the address of the object itself here, not the address of the pointer,
 			// which means we will always point to the same object, regardless of a flip
 			ControllerRec *dispData = *data;
-			
+
 			if (!autoCapture && plotState != PLOT_INPUT && isControllerConnected(CONT_PORT_1)) {
 				setCursorPos(0, 32);
 				printStr("View Instructions (Z");
 				drawFontButton(FONT_Z);
 				printStr(")");
+				setCursorPos(1, 35);
+				printStr("Load JSON (L");
+				drawFontButton(FONT_L);
+				printStr("+A");
+				drawFontButton(FONT_A);
+				printStr(")");
 			}
-			
+
 			switch(plotState) {
 				case PLOT_INPUT:
 				case PLOT_DISPLAY:
@@ -324,82 +368,68 @@ void menu_plot2d() {
 						drawFontButton(FONT_A);
 						printStr("to prepare a recording");
 					}
-					
+
 					// check if last draw point needs to be reset
 					if (lastDrawPoint == -1) {
 						lastDrawPoint = dispData->sampleEnd - 1;
 					}
-					
+
 					setCursorPos(2, 37);
 					printStr("Toggle Stick (Y");
 					drawFontButton(FONT_Y);
 					printStr(")");
 
-					
+
 					// draw box around plot area
 					if (!showCStick) {
 						drawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
-						        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
-						        GX_COLOR_WHITE);
+								COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
+								GX_COLOR_WHITE);
 					} else {
 						drawBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
-						        COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
-						        GX_COLOR_YELLOW);
+								COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
+								GX_COLOR_YELLOW);
 					}
-					
+
 					setDepthForDrawCall(-10);
 					drawSolidBox(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128,
-					             COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
-					             GX_COLOR_BLACK);
-					
+								COORD_CIRCLE_CENTER_X + 128, SCREEN_POS_CENTER_Y + 128,
+								GX_COLOR_BLACK);
+
 					// selected stickmap
 					setCursorPos(4, 0);
 					printStr("Stickmap ");
+					if (stickmapType != NO_STICKMAP) {
+						printStr("%2d/%2d", selectedStickmap + 1, displayListLen);
+					}
+					setCursorPos(4, 14);
+					printStr(" (");
 					fontButtonSetDpadDirections(FONT_DPAD_UP | FONT_DPAD_DOWN);
 					drawFontButton(FONT_DPAD);
-					printStr(":  ");
+					printStr("):  ");
 					setCursorPos(5, 2);
-					switch (selectedImage) {
-						case A_WAIT:
-							printStr("Wait Attacks");
+
+					switch (stickmapType) {
+						case BUILTIN_STICKMAP:
+						case EXTERNAL_STICKMAP:
+							printStr(displayList[selectedStickmap]->name);
 							break;
-						case CROUCH:
-							printStr("Crouch");
-							break;
-						case DEADZONE:
-							printStr("Deadzones");
-							break;
-						case LEDGE_L:
-							printStr("Left Ledge");
-							break;
-						case LEDGE_R:
-							printStr("Right Ledge");
-							break;
-						case MOVE_WAIT:
-							printStr("Wait Movement");
-							break;
-						case NO_IMAGE:
-							printStr("None");
 						default:
+							printStr("None");
 							break;
 					}
-					
-					updateVtxDesc(VTX_TEXTURES, GX_MODULATE);
-					changeLoadedTexmap(TEXMAP_STICKMAPS);
-					changeStickmapTexture((int) selectedImage);
-					int stickmapIndex = -1;
-					
+
 					// draw image
-					if (selectedImage != NO_IMAGE) {
+					if (stickmapType != NO_STICKMAP) {
+						updateVtxDesc(VTX_TEXTURES, GX_MODULATE);
+						changeLoadedTexmap(TEXMAP_STICKMAP);
 						setDepthForDrawCall(-8);
-						drawTextureFull(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128, GX_COLOR_WHITE);
-						// set stickmap category for zones
-						stickmapIndex = selectedImage - 1;
+						drawTextureFull(COORD_CIRCLE_CENTER_X - 128, SCREEN_POS_CENTER_Y - 128, (GXColor) { 200, 200, 200, 255 } );
 					}
-					
+
 					if (dispData->isRecordingReady) {
 						convertedCoords = convertStickRawToMelee(dispData->samples[lastDrawPoint]);
-						
+
 						// print coordinates of last drawn point
 						// raw stick coordinates
 						setCursorPos(14, 0);
@@ -407,14 +437,14 @@ void menu_plot2d() {
 						setCursorPos(15, 2);
 						if (!showCStick) {
 							printStr("(%4d,%4d)\n", dispData->samples[lastDrawPoint].stickX,
-							         dispData->samples[lastDrawPoint].stickY);
+									dispData->samples[lastDrawPoint].stickY);
 							printStr("Melee XY:\n  (%s)", getMeleeCoordinateString(convertedCoords, AXIS_AXY));
 						} else {
 							printStr("(%4d,%4d)\n", dispData->samples[lastDrawPoint].cStickX,
-							         dispData->samples[lastDrawPoint].cStickY);
+									dispData->samples[lastDrawPoint].cStickY);
 							printStr("Melee XY:\n  (%s)", getMeleeCoordinateString(convertedCoords, AXIS_CXY));
 						}
-						
+
 						// show button presses of last drawn point
 						setCursorPos(18, 0);
 						printStr("Buttons Pressed:\n");
@@ -439,44 +469,44 @@ void menu_plot2d() {
 						if (dispData->samples[lastDrawPoint].buttons & PAD_TRIGGER_R) {
 							printStr("R ");
 						}
-						
+
 						int subcatIndex = -1, descIndex = -1;
 						setCursorPos(20, 0);
-						if (stickmapIndex != -1) {
+						if (stickmapType != NO_STICKMAP) {
 							printStr("Zone (L");
 							drawFontButton(FONT_L);
 							printStr("+Z");
 							drawFontButton(FONT_Z);
 							printStr("): ");
-							subcatIndex = getCoordSubcategory(convertedCoords, builtinStickmaps[stickmapIndex]);
-							
+							subcatIndex = getCoordSubcategory(convertedCoords, displayList[selectedStickmap]);
+
 							if (subcatIndex != -1) {
-								for (int i = builtinStickmaps[stickmapIndex]->subcategoryDescListLen - 1; i >= 0 ; i--) {
+								for (int i = displayList[selectedStickmap]->subcategoryDescListLen - 1; i >= 0 ; i--) {
 									if (subcatIndex >=
-									    builtinStickmaps[stickmapIndex]->subcategoryDescList[i].listIndexStart) {
+										displayList[selectedStickmap]->subcategoryDescList[i].listIndexStart) {
 										descIndex = i;
 										break;
 									}
 								}
 								if (descIndex != -1) {
-									printStr(builtinStickmaps[stickmapIndex]->subcategoryDescList[descIndex].name);
+									printStr(displayList[selectedStickmap]->subcategoryDescList[descIndex].name);
 								} else {
 									printStr("ERR: ");
-									printStr(builtinStickmaps[stickmapIndex]->subcategoryList[subcatIndex].name);
+									printStr(displayList[selectedStickmap]->subcategoryList[subcatIndex].name);
 								}
-								
+
 							} else {
 								printStr("None");
 							}
 						}
-						
+
 						// we need to calculate vertices ahead of time
-						
+
 						uint64_t timeFromFirstSampleDraw = 0;
-						
+
 						int frameIntervalIndex = 0;
 						int frameIntervalList[3000] = { -1 };
-						
+
 						// this is <= because lastDrawPoint is zero indexed
 						for (int i = map2dStartIndex; i <= lastDrawPoint; i++) {
 							// don't add from the first value
@@ -488,12 +518,12 @@ void menu_plot2d() {
 								frameIntervalIndex++;
 							}
 						}
-						
+
 						int dataIndex = map2dStartIndex;
 						int currFrameInterval = 0;
-						
+
 						updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
-						
+
 						// this is <= because lastDrawPoint is zero indexed
 						while (dataIndex <= lastDrawPoint) {
 							// is our current datapoint a frame interval?
@@ -502,10 +532,10 @@ void menu_plot2d() {
 								GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_INT, 1);
 								if (!showCStick) {
 									GX_Position3s16(COORD_CIRCLE_CENTER_X + dispData->samples[dataIndex].stickX,
-									                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].stickY, -4);
+													SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].stickY, -4);
 								} else {
 									GX_Position3s16(COORD_CIRCLE_CENTER_X + dispData->samples[dataIndex].cStickX,
-									                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].cStickY, -4);
+													SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].cStickY, -4);
 								}
 								if (dispData->samples[dataIndex].buttons != 0) {
 									GX_Color4u8(GX_COLOR_ORANGE.r, GX_COLOR_ORANGE.g, GX_COLOR_ORANGE.b, GX_COLOR_ORANGE.a);
@@ -518,24 +548,24 @@ void menu_plot2d() {
 							// samples between frame interval
 							else {
 								GX_SetPointSize(8, GX_TO_ZERO);
-								
+
 								int pointsToDraw;
 								if (currFrameInterval != frameIntervalIndex) {
 									pointsToDraw = frameIntervalList[currFrameInterval] - dataIndex;
 								} else {
 									pointsToDraw = lastDrawPoint - dataIndex + 1;
 								}
-								
+
 								GX_Begin(GX_POINTS, VTXFMT_PRIMITIVES_INT, pointsToDraw);
-								
+
 								int endPoint = dataIndex + pointsToDraw;
 								while (dataIndex < endPoint) {
 									if (!showCStick) {
 										GX_Position3s16(COORD_CIRCLE_CENTER_X + dispData->samples[dataIndex].stickX,
-										                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].stickY, -4);
+														SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].stickY, -4);
 									} else {
 										GX_Position3s16(COORD_CIRCLE_CENTER_X + dispData->samples[dataIndex].cStickX,
-										                SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].cStickY, -4);
+														SCREEN_POS_CENTER_Y - dispData->samples[dataIndex].cStickY, -4);
 									}
 									if (dispData->samples[dataIndex].buttons != 0) {
 										GX_Color4u8(GX_COLOR_ORANGE.r, GX_COLOR_ORANGE.g, GX_COLOR_ORANGE.b, GX_COLOR_WHITE.b);
@@ -547,23 +577,23 @@ void menu_plot2d() {
 							}
 							GX_End();
 						}
-						
+
 						// highlight last sample with a box
 						setDepthForDrawCall(-3);
 						if (!showCStick) {
 							drawBox((COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].stickX) - 3,
-							        (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) - 3,
-							        (COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].stickX) + 3,
-							        (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) + 3,
-							        GX_COLOR_WHITE);
+									(SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) - 3,
+									(COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].stickX) + 3,
+									(SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].stickY) + 3,
+									GX_COLOR_WHITE);
 						} else {
 							drawBox((COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].cStickX) - 3,
-							        (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].cStickY) - 3,
-							        (COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].cStickX) + 3,
-							        (SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].cStickY) + 3,
-							        GX_COLOR_WHITE);
+									(SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].cStickY) - 3,
+									(COORD_CIRCLE_CENTER_X + dispData->samples[lastDrawPoint].cStickX) + 3,
+									(SCREEN_POS_CENTER_Y - dispData->samples[lastDrawPoint].cStickY) + 3,
+									GX_COLOR_WHITE);
 						}
-						
+
 						setCursorPos(3, 30);
 						printStr("Total samples: %4u", dispData->sampleEnd);
 						setCursorPos(7, 0);
@@ -573,18 +603,18 @@ void menu_plot2d() {
 						fontButtonSetDpadDirections(FONT_DPAD_LEFT | FONT_DPAD_RIGHT);
 						drawFontButton(FONT_DPAD);
 						printStr("):\n %4u\n", map2dStartIndex + 1);
-						
+
 						printStr("Graph End(");
 						fontButtonSetDpadDirections(FONT_DPAD_LEFT | FONT_DPAD_RIGHT);
 						drawFontButton(FONT_DPAD);
 						printStr("):\n %4u\n", lastDrawPoint + 1);
-						
+
 						double timeFromStartMs = timeFromFirstSampleDraw / 1000.0;
 						printStr("Visible MS, frames:\n");
 						printStr(" %7.2f ms, %5.2ff", timeFromStartMs, timeFromStartMs / FRAME_TIME_MS_F);
-						
+
 						if (showDesc) {
-							if (stickmapIndex != -1) {
+							if (stickmapType != NO_STICKMAP) {
 								// dim background
 								// TODO: this doesn't work as expected
 								//  need to change scrollingprint to not draw in (0, 0) -> (640,480)
@@ -598,9 +628,9 @@ void menu_plot2d() {
 								setWordWrap(true);
 								if (descIndex != -1) {
 									printStr("Zone Name: %s\n",
-									         builtinStickmaps[stickmapIndex]->subcategoryDescList[descIndex].name);
+											 displayList[selectedStickmap]->subcategoryDescList[descIndex].name);
 									printStr("\nZone Desc: %s\n",
-									         builtinStickmaps[stickmapIndex]->subcategoryDescList[descIndex].desc);
+											 displayList[selectedStickmap]->subcategoryDescList[descIndex].desc);
 								} else {
 									printStr("Zone Name: None\n");
 									printStr("\nZone Desc: N/A\n");
@@ -612,7 +642,7 @@ void menu_plot2d() {
 								showDesc = false;
 							}
 						}
-						
+
 						// holding L makes only individual presses work
 						if (*held & PAD_TRIGGER_L) {
 							if (*pressed & PAD_BUTTON_LEFT) {
@@ -702,68 +732,121 @@ void menu_plot2d() {
 								}
 							}
 						}
-						
+
 						// make sure that the end never goes before the beginning
 						// TODO: print debug message if this occurs
 						if (lastDrawPoint < map2dStartIndex) {
 							map2dStartIndex = lastDrawPoint;
 						}
 					}
-					
+
 					// cycle the stickmap shown
 					// we want up/down to be pressed, and nothing else held
 					// checking *pressed here lets this be a one-shot until the button is released
 					if (*pressed == PAD_BUTTON_UP && *held == PAD_BUTTON_UP) {
-						selectedImage++;
-						if (!showCStick) {
-							selectedImage %= IMAGE_LEN;
+						stickmapChanged = true;
+						if (stickmapType == NO_STICKMAP) {
+							stickmapType = BUILTIN_STICKMAP;
 						} else {
-							// only first 3 options are valid for c-stick
-							selectedImage %= 3;
+							selectedStickmap++;
+							if (!showCStick) {
+								selectedStickmap %= displayListLen;
+							} else {
+								// only first 3 options are valid for c-stick
+								selectedStickmap %= 3;
+							}
 						}
 					} else if (*pressed == PAD_BUTTON_DOWN && *held == PAD_BUTTON_DOWN) {
-						selectedImage--;
-						if (selectedImage == -1) {
-							if (!showCStick) {
-								selectedImage = IMAGE_LEN - 1;
-							} else {
-								selectedImage = 2;
+						stickmapChanged = true;
+						if (stickmapType == NO_STICKMAP) {
+							stickmapType = BUILTIN_STICKMAP;
+						} else {
+							selectedStickmap--;
+							if (selectedStickmap == -1) {
+								if (!showCStick) {
+									selectedStickmap = displayListLen - 1;
+								} else {
+									selectedStickmap = 2;
+								}
 							}
 						}
 					}
-					
+
 					if (*pressed == PAD_TRIGGER_Z && *held == PAD_TRIGGER_Z && !autoCapture && plotState != PLOT_INPUT) {
 						menuState = PLOT_INSTRUCTIONS;
 					} else if (*pressed & PAD_BUTTON_Y && plotState != PLOT_INPUT) {
 						// cycle between analog and c-stick
+						// TODO: rewrite for new texture system
 						showCStick = !showCStick;
-						
-						// store and swap stickmaps
-						enum IMAGE temp = selectedImageCopy;
-						selectedImageCopy = selectedImage;
-						selectedImage = temp;
 					} else if (*pressed == PAD_TRIGGER_Z && *held == (PAD_TRIGGER_Z | PAD_TRIGGER_L) && !autoCapture && plotState != PLOT_INPUT) {
 						showDesc = !showDesc;
 					}
-					
-					if ((*pressed & PAD_BUTTON_A && !autoCapture) || captureStart) {
+
+					if ((*pressed == PAD_BUTTON_A && *held == PAD_BUTTON_A && !autoCapture) || captureStart) {
 						plotState = PLOT_INPUT;
 						(*temp)->isRecordingReady = false;
 					}
-					
+
 					if (captureStartFrameCooldown != 0) {
 						captureStartFrameCooldown--;
 					}
-					
+
 					break;
 				default:
 					printStr("how did we get here?");
 					break;
 			}
 			break;
+		case PLOT_FILE_PICKER:
+			if (externalJsonIndex == -1) {
+				if (isControllerConnected(CONT_PORT_1)) {
+					setCursorPos(1, 27);
+					printStr("Close File Picker (L");
+					drawFontButton(FONT_L);
+					printStr("+A");
+					drawFontButton(FONT_A);
+					printStr(")");
+				}
+				externalJsonIndex = drawJsonFilePicker(externalJsonList);
+				if (externalJsonIndex != -1 && !externalJsonList[externalJsonIndex].generatedTextures) {
+					makingTextures = true;
+					generateStickmapTextureAsync(externalJsonList[externalJsonIndex].stickmapArr, externalJsonList[externalJsonIndex].stickmapArrLen);
+					externalJsonList[externalJsonIndex].generatedTextures = true;
+				}
+			} else if (makingTextures) {
+				setCursorPos(10, 11);
+				printStr("Generating textures, please wait ");
+				printSpinningLineInterval(10);
+				if (isExternalStickmapReady()) {
+					makingTextures = false;
+				}
+			} else {
+				menuState = PLOT_POST_SETUP;
+				stickmapChanged = true;
+				selectedStickmap = 0;
+			}
+			break;
 		default:
 			printStr("how did we get here? menuState");
 			break;
+	}
+
+	if (!autoCapture && menuState != PLOT_SETUP) {
+		// L + A -> toggle file selection
+		if (*held == (PAD_BUTTON_A | PAD_TRIGGER_L) && (*pressed & (PAD_BUTTON_A | PAD_TRIGGER_L))) {
+			if (menuState == PLOT_POST_SETUP) {
+				menuState = PLOT_FILE_PICKER;
+				selectedStickmap = 0;
+				//selectedStickmapSub = 0;
+				externalJsonIndex = -1;
+				//stickmapType = EXTERNAL_STICKMAP;
+			} else if (menuState == PLOT_FILE_PICKER) {
+				menuState = PLOT_POST_SETUP;
+				externalJsonIndex = -1;
+				selectedStickmap = 0;
+				stickmapType = NO_STICKMAP;
+			}
+		}
 	}
 	fontButtonFlashIncrement(&dpadFlashIncrement, 30);
 }

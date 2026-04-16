@@ -15,6 +15,27 @@
 
 #include <ogc/gx.h>
 
+// struct that holds info on a generated texture
+// generated texture is int RGBA32 format (RBGA8)
+typedef struct RGBAStruct {
+	int widthPixels;
+	int heightPixels;
+	int widthBlocks;
+	int heightBlocks;
+	uint8_t *texData;
+} RGBAStruct;
+
+// initialises a struct with the given dimensions
+// memory for *texData _IS_ allocated here, so it should be ready
+// to directly pass to GX_InitTexObj()
+void initRGBAStruct(int x, int y, RGBAStruct *out);
+
+// set the pixel at coordinates (x,y) to color in texture
+void RGBASetPixelAt(int x, int y, GXColor color, RGBAStruct *texture);
+
+enum TEX_GEN_ASYNC_STATE { TEX_ASYNC_INIT, TEX_ASYNC_GEN, TEX_ASYNC_DONE };
+enum TEX_GEN_ASYNC_STATE isExternalStickmapReady();
+
 typedef struct StickmapSubcategory {
 	// info from json itself
 	const char *name;
@@ -48,9 +69,11 @@ typedef struct Stickmap {
 	StickmapSubcategory *subcategoryList;
 	// optional data
 	int subcategoryDescListLen;
+	RGBAStruct texture;
 	StickmapSubcategoryDesc *subcategoryDescList;
 } Stickmap;
 
+void generateStickmapTextureAsync(Stickmap **stickmapList, int len);
 
 enum STICKMAP_JSON_TYPE { STICKMAP_TYPE_ERR, STICKMAP_TYPE_NORMAL, STICKMAP_TYPE_GTS };
 
@@ -77,6 +100,7 @@ Stickmap **getBuiltinStickmap(enum STICKMAP_BUILTIN_LIST list, int *len);
 typedef struct ExternalStickmap {
 	char *fileName;
 	enum STICKMAP_JSON_TYPE stickmapType;
+	bool generatedTextures;
 	// 'array' of stickmaps
 	// done this way to simplify things a bit
 	// basically if a json is a 'normal' json, it will be treated

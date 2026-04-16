@@ -308,7 +308,7 @@ int main(int argc, char **argv) {
 		finishDraw(xfb[xfbSwitch]);
 		
 		#ifdef BENCH
-		gxtime = ticks_to_microsecs(gettime() - time);
+		gxtime = ticks_to_microsecs(gettime() - time) - us;
 		#endif
 		
 		// change framebuffer for next frame

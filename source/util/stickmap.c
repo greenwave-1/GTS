@@ -7,9 +7,11 @@
 #include <math.h>
 #include <string.h>
 #include <strings.h>
+#include <malloc.h>
 
 #include <ogc/system.h>
 #include <ogc/pad.h>
+#include <ogc/cache.h>
 
 #include "submenu/errordisplay.h"
 #include "util/file.h"
@@ -19,6 +21,127 @@
 // IF THESE ARE NOT FOUND AT COMPILE TIME, YOU ARE MISSING THE .json FILES IN data/
 #include "plot2d_stickmaps_json.h"
 #include "coordview_stickmaps_json.h"
+
+
+// TODO: should I generalize this for the normal image formats?
+void initRGBAStruct(int x, int y, RGBAStruct *out) {
+	// each block is 4x4
+	out->widthBlocks = x / 4;
+	out->heightBlocks = y / 4;
+
+	// if over, we allocate another block
+	if (x % 4) {
+		out->widthBlocks++;
+	}
+	if (y % 4) {
+		out->heightBlocks++;
+	}
+
+	// true width in pixels
+	out->widthPixels = out->widthBlocks * 4;
+	out->heightPixels = out->heightBlocks * 4;
+
+	// allocate texture memory
+	// RGBA32/RGBA8, so 4 bytes per pixel
+	// texture data is expected to be 32 byte aligned
+	int bufSize = GX_GetTexBufferSize(out->widthPixels, out->heightPixels, GX_TF_RGBA8, GX_FALSE, GX_FALSE);
+	uint8_t *buf = memalign(32, bufSize);
+
+	// clear memory
+	memset(buf, 0, bufSize);
+
+	out->texData = buf;
+}
+
+static int getPixelNum(int x, int y, int widthBlocks) {
+	return ((y / 4) * (16 * widthBlocks)) // how many whole blocks down
+		   + ((x / 4) * 16) // how many whole blocks right
+		   + ((y % 4) * 4) // how many rows down in the target block
+		   + (x % 4); // how many columns right in the target block
+}
+
+static int getAlphaOffset(int pixelNum) {
+	return (pixelNum * 2) + ((pixelNum / 16) * 32);
+}
+
+// RGBA32 texture format:
+// data is ordered into 4x4 pixel 'blocks', left to right, top to bottom
+// each block contains the list of pixels left to right, top to bottom _of that block_
+// 4 bytes per pixel, 64 bytes total, but data is separated into two groups:
+// first 32 bytes contain alpha and red for all pixels,
+// last 32 bytes contain green and blue for all pixels
+// for example, pixel at 0,0 would have A and R component at 0 and 1 in the list,
+// whereas G and B would be at 32 and 33
+void RGBASetPixelAt(int x, int y, GXColor color, RGBAStruct *texture) {
+	// what pixel?
+	int pixelNum = getPixelNum(x, y, texture->widthBlocks);
+
+	// alpha/red offset
+	int alphaOffset = getAlphaOffset(pixelNum);
+
+	// alpha
+	texture->texData[alphaOffset] = color.a;
+
+	// red
+	texture->texData[alphaOffset + 1] = color.r;
+
+	// green
+	texture->texData[alphaOffset + 32] = color.g;
+
+	// blue
+	texture->texData[alphaOffset + 32 + 1] = color.b;
+}
+
+static enum TEX_GEN_ASYNC_STATE texGenState = TEX_ASYNC_INIT;
+
+static Stickmap **smList = NULL;
+static int smListLen = 0;
+static void *generateStickmapTextureThread(void *arg) {
+	for (int i = 0; i < smListLen; i++) {
+		Stickmap *sm = smList[i];
+		if (sm->texture.texData == NULL) {
+			initRGBAStruct(256, 256, &sm->texture);
+			for (int y = 0; y < 256; y++) {
+				for (int x = 0; x < 256; x++) {
+					ControllerSample s;
+					s.stickX = x - 128;
+					s.stickY = y - 128;
+					MeleeCoordinates coords = convertStickRawToMelee(s);
+					int subcatIndex = getCoordSubcategory(coords, sm);
+
+					GXColor col = GX_COLOR_BLACK;
+					if (subcatIndex != -1) {
+						col = sm->subcategoryList[subcatIndex].color;
+						// dim color if outside normal zone
+						if (s.stickX != coords.stickX || s.stickY != coords.stickY) {
+							col.r *= 0.8;
+							col.g *= 0.8;
+							col.b *= 0.8;
+						}
+					}
+					RGBASetPixelAt(x, 255 - y, col, &sm->texture);
+				}
+			}
+			DCStoreRange(sm->texture.texData, GX_GetTexBufferSize(256, 256, GX_TF_RGBA8, GX_FALSE, GX_FALSE));
+		}
+	}
+	texGenState = TEX_ASYNC_DONE;
+	return NULL;
+}
+
+static lwp_t stickmap_thread = (lwp_t) NULL;
+void generateStickmapTextureAsync(Stickmap **stickmapList, int len) {
+	if (texGenState != TEX_ASYNC_GEN) {
+		texGenState = TEX_ASYNC_GEN;
+		smList = stickmapList;
+		smListLen = len;
+		LWP_CreateThread(&stickmap_thread, generateStickmapTextureThread, NULL, NULL, 2048, LWP_PRIO_NORMAL - 1);
+	}
+}
+
+enum TEX_GEN_ASYNC_STATE isExternalStickmapReady() {
+	return texGenState == TEX_ASYNC_DONE;
+}
 
 static void createSubCoordList(StickmapSubcategory *data) {
 	// we do this twice
@@ -297,7 +420,10 @@ Stickmap *readJsonNormal(json_t *root, const char *stickmapName) {
 			break;
 		}
 	}
-	
+
+	// used to determine if data has been initialized
+	retVal->texture.texData = NULL;
+
 	// return actual pointer if we're good
 	if (retVal->subcategoryListLen != 0) {
 		return retVal;
@@ -544,6 +670,7 @@ void loadExternalJsonList() {
 					free(buf);
 					externalStickmaps[externalStickmapsLen].fileName = externalJsonFiles[i];
 					externalStickmaps[externalStickmapsLen].stickmapArrLen = -1;
+					externalStickmaps[externalStickmapsLen].generatedTextures = false;
 					
 					// determine type of json
 					switch (externalStickmaps[externalStickmapsLen].stickmapType) {
@@ -701,6 +828,7 @@ void freeStickmap(Stickmap *target) {
 		// free other arrays
 		free(target->subcategoryList);
 		free(target->subcategoryDescList);
+		free(target->texture.texData);
 		
 		free(target);
 		

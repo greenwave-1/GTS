@@ -43,9 +43,9 @@
 			{
 				"name": "Right Cardinal",
 				"color": [
-					255,
-					175,
-					200,
+					100,
+					100,
+					100,
 					255
 				],
 				"quadrants": [
@@ -67,9 +67,9 @@
 			{
 				"name": "Quadrant 1",
 				"color": [
-					114,
-					214,
-					237,
+					50,
+					50,
+					50,
 					255
 				],
 				"quadrants": [
@@ -91,9 +91,9 @@
 			{
 				"name": "Up Cardinal",
 				"color": [
-					255,
-					175,
-					200,
+					100,
+					100,
+					100,
 					255
 				],
 				"quadrants": [
@@ -115,9 +115,9 @@
 			{
 				"name": "Quadrant 2",
 				"color": [
-					114,
-					214,
-					237,
+					50,
+					50,
+					50,
 					255
 				],
 				"quadrants": [
@@ -139,9 +139,9 @@
 			{
 				"name": "Left Cardinal",
 				"color": [
-					255,
-					175,
-					200,
+					100,
+					100,
+					100,
 					255
 				],
 				"quadrants": [
@@ -163,9 +163,9 @@
 			{
 				"name": "Quadrant 3",
 				"color": [
-					114,
-					214,
-					237,
+					50,
+					50,
+					50,
 					255
 				],
 				"quadrants": [
@@ -187,9 +187,9 @@
 			{
 				"name": "Down Cardinal",
 				"color": [
-					255,
-					175,
-					200,
+					100,
+					100,
+					100,
 					255
 				],
 				"quadrants": [
@@ -211,9 +211,9 @@
 			{
 				"name": "Quadrant 4",
 				"color": [
-					114,
-					214,
-					237,
+					50,
+					50,
+					50,
 					255
 				],
 				"quadrants": [
