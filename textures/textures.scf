@@ -19,12 +19,12 @@
 # stickmaps from PhobGCC project
 #   https://github.com/phobgcc/phobgcc-sw -> PhobGCC/rp2040/include/images/
 #   Manually decoded into pngs from runlength encoding
-<filepath="crouch.png" id="crouch" colfmt=4 />
-<filepath="await.png" id="await" colfmt=4 />
-<filepath="deadzone.png" id="deadzone" colfmt=4 />
-<filepath="ledge_l.png" id="ledgel" colfmt=4 />
-<filepath="ledge_r.png" id="ledger" colfmt=4 />
-<filepath="movewait.png" id="movewait" colfmt=4 />
+#<filepath="crouch.png" id="crouch" colfmt=4 />
+#<filepath="await.png" id="await" colfmt=4 />1
+#<filepath="deadzone.png" id="deadzone" colfmt=4 />
+#<filepath="ledge_l.png" id="ledgel" colfmt=4 />
+#<filepath="ledge_r.png" id="ledger" colfmt=4 />
+#<filepath="movewait.png" id="movewait" colfmt=4 />
 
 # gui buttons from m-overlay
 #   https://github.com/bkacjios/m-overlay -> source/textures/buttons/

@@ -33,7 +33,7 @@
 #define TEXMAP_FONT GX_TEXMAP0
 #define TEXMAP_FONT_BUTTON GX_TEXMAP1
 #define TEXMAP_CONTROLLER GX_TEXMAP2
-#define TEXMAP_STICKMAPS GX_TEXMAP3
+#define TEXMAP_STICKMAP GX_TEXMAP3
 #define TEXMAP_STICKOUTLINE GX_TEXMAP4
 #define TEXMAP_P GX_TEXMAP5
 
@@ -82,8 +82,9 @@ void changeLoadedTexmap(int newTexmap);
 // self-explanatory
 void getCurrentTexmapDims(int *width, int *height);
 
-// update what stickmap texture is loaded into TEXMAP_STICKMAPS
-void changeStickmapTexture(int image);
+// load a texture with the provided buffer
+// assumed 256x256 in RGBA8 format
+void loadStickmapTexture(void *buf);
 
 // basic initialization stuff
 void setupGX(GXRModeObj *rmode);
@@ -165,8 +166,6 @@ void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color);
 // draw part of a given texture
 void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, int ty2, GXColor color);
 
-// draw an option list (pickable strings)
-bool drawList(char** list, int listLen, int *currSelection);
 
 #ifndef NO_DATE_CHECK
 // true if standard "GCC Test Suite" text should be drawn

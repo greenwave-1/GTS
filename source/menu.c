@@ -156,6 +156,16 @@ static void *menu_preSetupThread(void *args) {
 	filesystemInitResult = initFilesystem();
 	
 	loadBuiltinStickmaps();
+
+	// create textures for 2d plot
+	int len = 0;
+	Stickmap **s = getBuiltinStickmap(STICKMAP_PLOT2D, &len);
+	generateStickmapTextureAsync(s, len);
+
+	// wait for textures to finish
+	while (!isExternalStickmapReady()) {
+		LWP_YieldThread();
+	}
 	
 	loadExternalJsonList();
 	
@@ -184,7 +194,7 @@ bool menu_runMenu() {
 		// spawn a thread for initialization of stuff that might take a bit...
 		if (menuInit == MENU_PRE_INIT) {
 			menuInit = MENU_INIT;
-			LWP_CreateThread(&menu_setup_thread, menu_preSetupThread, NULL, NULL, 2048, LWP_PRIO_NORMAL - 1);
+			LWP_CreateThread(&menu_setup_thread, menu_preSetupThread, NULL, NULL, 2048, LWP_PRIO_NORMAL - 2);
 		} else if (menuInit == MENU_INIT) {
 			setCursorPos(22, 46);
 			printStr("Loading.");

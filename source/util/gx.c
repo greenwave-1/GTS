@@ -56,9 +56,11 @@ static TPLFile tpl;
 static GXTexObj fontTex;
 static GXTexObj fontButtonTex;
 static GXTexObj controllerTex;
-static GXTexObj stickmapTexArr[6];
 static GXTexObj stickOutlineTex;
 static GXTexObj pTex;
+
+// external texture
+static GXTexObj stickmapTex;
 
 // keeps track of our current z depth, for drawing helper functions
 // TODO: z depth for specific elements (font, quads, lines, etc) need to be standardized
@@ -134,9 +136,8 @@ void getCurrentTexmapDims(int *width, int *height) {
 		case TEXMAP_FONT_BUTTON:
 			selection = &fontButtonTex;
 			break;
-		case TEXMAP_STICKMAPS:
-			// all of these are the same, so any will do
-			selection = &(stickmapTexArr[0]);
+		case TEXMAP_STICKMAP:
+			selection = &stickmapTex;
 			break;
 		case TEXMAP_NONE:
 		default:
@@ -149,11 +150,10 @@ void getCurrentTexmapDims(int *width, int *height) {
 	}
 }
 
-// expects enum IMAGE as defined in plot2d.h
-void changeStickmapTexture(int image) {
-	if (image > 0 && image < 7) {
-		// texmap array doesn't hold a "no image" texture, so we have to shift index by one from the provided enum
-		GX_LoadTexObj(&(stickmapTexArr[image - 1]), TEXMAP_STICKMAPS);
+void loadStickmapTexture(void *buf) {
+	if (buf != NULL) {
+		GX_InitTexObj(&stickmapTex, buf, 256, 256, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+		GX_LoadTexObj(&stickmapTex, TEXMAP_STICKMAP);
 	}
 }
 
@@ -250,19 +250,7 @@ void setupGX(GXRModeObj *rmode) {
 	// controller sheet
 	TPL_GetTexture(&tpl, controller, &controllerTex);
 	GX_LoadTexObj(&controllerTex, TEXMAP_CONTROLLER);
-	
-	// all the stickmaps
-	// we don't actually load all the stickmaps into the texmap slots, there aren't enough
-	// we'll switch what stickmap is in the texmap slot on when its needed
-	TPL_GetTexture(&tpl, deadzone, &stickmapTexArr[0]);
-	TPL_GetTexture(&tpl, await, &stickmapTexArr[1]);
-	TPL_GetTexture(&tpl, movewait, &stickmapTexArr[2]);
-	TPL_GetTexture(&tpl, crouch, &stickmapTexArr[3]);
-	TPL_GetTexture(&tpl, ledgel, &stickmapTexArr[4]);
-	TPL_GetTexture(&tpl, ledger, &stickmapTexArr[5]);
-	// load first one by default, because why not?
-	GX_LoadTexObj(&(stickmapTexArr[0]), TEXMAP_STICKMAPS);
-	
+
 	// stick outline for coordinate viewer
 	TPL_GetTexture(&tpl, outline, &stickOutlineTex);
 	GX_LoadTexObj(&stickOutlineTex, TEXMAP_STICKOUTLINE);
@@ -272,8 +260,10 @@ void setupGX(GXRModeObj *rmode) {
 	
 	TPL_GetTexture(&tpl, p, &pTex);
 	GX_LoadTexObj(&pTex, TEXMAP_P);
-	
+
 	TPL_CloseTPLFile(&tpl);
+
+	// stickmap texture is generated at runtime, so no need to do anything here
 	
 	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
 	
