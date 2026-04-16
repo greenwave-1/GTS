@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <ogc/pad.h>
 #include <ogc/timesupp.h>
@@ -412,7 +413,11 @@ void menu_plot2d() {
 					switch (stickmapType) {
 						case BUILTIN_STICKMAP:
 						case EXTERNAL_STICKMAP:
-							printStr(displayList[selectedStickmap]->name);
+							if (strlen(displayList[selectedStickmap]->name) > 20) {
+								printStr("%.*s...", 18, displayList[selectedStickmap]->name);
+							} else {
+								printStr(displayList[selectedStickmap]->name);
+							}
 							break;
 						default:
 							printStr("None");
@@ -488,11 +493,11 @@ void menu_plot2d() {
 										break;
 									}
 								}
-								if (descIndex != -1) {
-									printStr(displayList[selectedStickmap]->subcategoryDescList[descIndex].name);
+
+								if (strlen(displayList[selectedStickmap]->subcategoryDescList[descIndex].name) > 34) {
+									printStr("%d - %.*s...", subcatIndex + 1, 30, displayList[selectedStickmap]->subcategoryDescList[descIndex].name);
 								} else {
-									printStr("ERR: ");
-									printStr(displayList[selectedStickmap]->subcategoryList[subcatIndex].name);
+									printStr(displayList[selectedStickmap]->subcategoryDescList[descIndex].name);
 								}
 
 							} else {
@@ -626,15 +631,30 @@ void menu_plot2d() {
 								setDepthForDrawCall(0);
 								drawSolidBox(0, 0, 640, 4800, GX_COLOR_BLACK);
 								setWordWrap(true);
-								if (descIndex != -1) {
-									printStr("Zone Name: %s\n",
-											 displayList[selectedStickmap]->subcategoryDescList[descIndex].name);
-									printStr("\nZone Desc: %s\n",
-											 displayList[selectedStickmap]->subcategoryDescList[descIndex].desc);
+
+								printStr("Current List:\n - ");
+								if (externalJsonIndex == -1) {
+									printStr("Built-in\n\n");
 								} else {
-									printStr("Zone Name: None\n");
-									printStr("\nZone Desc: N/A\n");
+									printStr("%s\n\n", externalJsonList[externalJsonIndex].fileName);
 								}
+								printStr("Current Stickmap (");
+								fontButtonSetDpadDirections(FONT_DPAD_UP | FONT_DPAD_DOWN);
+								drawFontButton(FONT_DPAD);
+								printStr("):\n - ");
+								printStr("%s\n", displayList[selectedStickmap]->name);
+								printStr("\nDescription:\n - ");
+								printStr("%s\n\n", displayList[selectedStickmap]->desc);
+								printStr("Zones:\n");
+								for (int i = 0; i < displayList[selectedStickmap]->subcategoryDescListLen; i++) {
+									printStr("%d - %s", i + 1, displayList[selectedStickmap]->subcategoryDescList[i].name);
+
+									if (displayList[selectedStickmap]->subcategoryDescList[i].desc != NULL) {
+										printStr(": %s", displayList[selectedStickmap]->subcategoryDescList[i].desc);
+									}
+									printStr("\n\n");
+								}
+
 								setWordWrap(false);
 								endScrollingPrint();
 							} else {
@@ -824,6 +844,7 @@ void menu_plot2d() {
 				menuState = PLOT_POST_SETUP;
 				stickmapChanged = true;
 				selectedStickmap = 0;
+				stickmapType = EXTERNAL_STICKMAP;
 			}
 			break;
 		default:
