@@ -94,6 +94,7 @@ int main(int argc, char **argv) {
 	
 	#ifdef DEBUGGDB
 	DEBUG_Init(GDBSTUB_DEVICE_USB, 1);
+	_break();
 	#endif
 	
 	// do basic initialization
@@ -129,10 +130,6 @@ int main(int argc, char **argv) {
 	setupGX(rmode);
 
 	bool normalExit = false;
-	
-	#ifdef DEBUGGDB
-	_break();
-	#endif
 	
 	// there is a makefile target that will enable this
 	#ifdef DEBUGLOG

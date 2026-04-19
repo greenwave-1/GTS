@@ -9,6 +9,6 @@
 
 void menu_errorDisplay();
 
-void menu_errorDisplaySetError(char *str);
+void menu_errorDisplaySetError(char *str, ...);
 
 #endif //GTS_ERRORDISPLAY_H

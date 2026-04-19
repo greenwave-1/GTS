@@ -2,7 +2,7 @@
 // Created on 3/9/26.
 //
 
-#include "stickmap.h"
+#include "util/stickmap.h"
 
 #include <math.h>
 #include <string.h>
