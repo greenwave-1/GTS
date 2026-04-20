@@ -160,7 +160,7 @@ static void handleStringPre(const GXColor bg_color, const GXColor fg_color) {
 	changeLoadedTexmap(TEXMAP_FONT);
 	
 	// do a first loop to draw background color if needed
-	if (bg_color.a != 0x00 || allowWordWrap) {
+	if (bg_color.a != 0 || (bg_color.a != 0x00 && allowWordWrap)) {
 		setDepth(cursorZ - 1);
 		handleString(false, bg_color, fg_color);
 		restorePrevDepth();

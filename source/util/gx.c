@@ -1130,6 +1130,76 @@ void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, i
 	tempRotation = ROTATE_0;
 }
 
+
+// TODO: should I generalize this for the normal image formats?
+void initRGBAStruct(int x, int y, RGBAStruct *out) {
+	// each block is 4x4
+	out->widthBlocks = x / 4;
+	out->heightBlocks = y / 4;
+
+	// if over, we allocate another block
+	if (x % 4) {
+		out->widthBlocks++;
+	}
+	if (y % 4) {
+		out->heightBlocks++;
+	}
+
+	// true width in pixels
+	out->widthPixels = out->widthBlocks * 4;
+	out->heightPixels = out->heightBlocks * 4;
+
+	// allocate texture memory
+	// RGBA32/RGBA8, so 4 bytes per pixel
+	// texture data is expected to be 32 byte aligned
+	int bufSize = GX_GetTexBufferSize(out->widthPixels, out->heightPixels, GX_TF_RGBA8, GX_FALSE, GX_FALSE);
+	uint8_t *buf = memalign(32, bufSize);
+
+	// clear memory
+	memset(buf, 0, bufSize);
+
+	out->texData = buf;
+}
+
+static int getPixelNum(int x, int y, int widthBlocks) {
+	return ((y / 4) * (16 * widthBlocks)) // how many whole blocks down
+	       + ((x / 4) * 16) // how many whole blocks right
+	       + ((y % 4) * 4) // how many rows down in the target block
+	       + (x % 4); // how many columns right in the target block
+}
+
+static int getAlphaOffset(int pixelNum) {
+	return (pixelNum * 2) + ((pixelNum / 16) * 32);
+}
+
+// RGBA32 texture format:
+// data is ordered into 4x4 pixel 'blocks', left to right, top to bottom
+// each block contains the list of pixels left to right, top to bottom _of that block_
+// 4 bytes per pixel, 64 bytes total, but data is separated into two groups:
+// first 32 bytes contain alpha and red for all pixels,
+// last 32 bytes contain green and blue for all pixels
+// for example, pixel at 0,0 would have A and R component at 0 and 1 in the list,
+// whereas G and B would be at 32 and 33
+void RGBASetPixelAt(int x, int y, GXColor color, RGBAStruct *texture) {
+	// what pixel?
+	int pixelNum = getPixelNum(x, y, texture->widthBlocks);
+
+	// alpha/red offset
+	int alphaOffset = getAlphaOffset(pixelNum);
+
+	// alpha
+	texture->texData[alphaOffset] = color.a;
+
+	// red
+	texture->texData[alphaOffset + 1] = color.r;
+
+	// green
+	texture->texData[alphaOffset + 32] = color.g;
+
+	// blue
+	texture->texData[alphaOffset + 32 + 1] = color.b;
+}
+
 #ifndef NO_DATE_CHECK
 static void drawSnowParticles();
 const static int colorList[][3] = {

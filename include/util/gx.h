@@ -166,6 +166,23 @@ void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color);
 // draw part of a given texture
 void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, int ty2, GXColor color);
 
+// struct that holds info on a generated texture
+// generated texture is int RGBA32 format (RBGA8)
+typedef struct RGBAStruct {
+	int widthPixels;
+	int heightPixels;
+	int widthBlocks;
+	int heightBlocks;
+	uint8_t *texData;
+} RGBAStruct;
+
+// initialises a struct with the given dimensions
+// memory for *texData _IS_ allocated here, so it should be ready
+// to directly pass to GX_InitTexObj()
+void initRGBAStruct(int x, int y, RGBAStruct *out);
+
+// set the pixel at coordinates (x,y) to color in texture
+void RGBASetPixelAt(int x, int y, GXColor color, RGBAStruct *texture);
 
 #ifndef NO_DATE_CHECK
 // true if standard "GCC Test Suite" text should be drawn

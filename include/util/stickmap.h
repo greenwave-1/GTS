@@ -13,25 +13,7 @@
 
 #include <jansson.h>
 
-#include <ogc/gx.h>
-
-// struct that holds info on a generated texture
-// generated texture is int RGBA32 format (RBGA8)
-typedef struct RGBAStruct {
-	int widthPixels;
-	int heightPixels;
-	int widthBlocks;
-	int heightBlocks;
-	uint8_t *texData;
-} RGBAStruct;
-
-// initialises a struct with the given dimensions
-// memory for *texData _IS_ allocated here, so it should be ready
-// to directly pass to GX_InitTexObj()
-void initRGBAStruct(int x, int y, RGBAStruct *out);
-
-// set the pixel at coordinates (x,y) to color in texture
-void RGBASetPixelAt(int x, int y, GXColor color, RGBAStruct *texture);
+#include "util/gx.h"
 
 enum TEX_GEN_ASYNC_STATE { TEX_ASYNC_INIT, TEX_ASYNC_GEN, TEX_ASYNC_DONE };
 enum TEX_GEN_ASYNC_STATE isExternalStickmapReady();
