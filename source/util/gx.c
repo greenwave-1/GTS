@@ -159,8 +159,13 @@ void loadStickmapTexture(void *buf) {
 
 // basic initialization stuff
 void setupGX(GXRModeObj *rmode) {
+	GX_AbortFrame();
+	GX_Flush();
+
 	// allocate fifo space, 32 byte aligned
-	main_fifo_buf = memalign(32, DEFAULT_FIFO_SIZE);
+	if (main_fifo_buf == nullptr) {
+		main_fifo_buf = memalign(32, DEFAULT_FIFO_SIZE);
+	}
 	// clear newly allocated space
 	memset(main_fifo_buf, 0, DEFAULT_FIFO_SIZE);
 	

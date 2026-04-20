@@ -932,3 +932,11 @@ static void menu_blackout() {
 	restorePrevCursorDepth();
 }
 #endif
+
+// done here so other files dont have to specifically include errordisplay.h
+void menu_setError(char *str, ...) {
+	va_list list;
+	va_start(list, str);
+	menu_errorDisplaySetError(str, list);
+	va_end(list);
+}

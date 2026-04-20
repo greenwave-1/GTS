@@ -4,8 +4,6 @@
 
 #include "submenu/errordisplay.h"
 
-#include <stdarg.h>
-
 #ifdef DEBUGGDB
 #include <debug.h>
 #endif
@@ -29,14 +27,11 @@ void menu_errorDisplay() {
 	printStr(errorStr);
 }
 
-void menu_errorDisplaySetError(char *str, ...) {
+void menu_errorDisplaySetError(char *str, va_list list) {
 	#ifdef DEBUGGDB
 	_break();
 	#endif
-	va_list list;
-	va_start(list, str);
 	errorSource = menu_getCurrentMenu();
 	vsnprintf(errorStr, 1023, str, list);
 	menu_setCurrentMenu(ERR);
-	va_end(list);
 }
