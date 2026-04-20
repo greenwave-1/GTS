@@ -7,8 +7,10 @@
 
 #include "menu.h"
 
+#include <stdarg.h>
+
 void menu_errorDisplay();
 
-void menu_errorDisplaySetError(char *str, ...);
+void menu_errorDisplaySetError(char *str, va_list list);
 
 #endif //GTS_ERRORDISPLAY_H

@@ -43,4 +43,7 @@ char* menu_getMenuString(enum CURRENT_MENU menu);
 
 void menu_drawHeader();
 
+void menu_setError(char *str, ...);
+
+
 #endif //GTS_MENU_H
