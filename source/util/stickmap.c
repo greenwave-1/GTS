@@ -517,7 +517,7 @@ void loadBuiltinStickmaps() {
 		enum STICKMAP_JSON_TYPE jsonType = identifyJson((char *) plot2d_stickmaps_json, &root);
 
 		if (jsonType != STICKMAP_TYPE_GTS) {
-			menu_setError("Built-in json data failed to read");
+			menu_setError("Built-in json data for 2d plot failed to read");
 			return;
 		}
 		plot2dStickmaps = readJsonGTS(root, &plot2dStickmapsLen);
@@ -525,7 +525,7 @@ void loadBuiltinStickmaps() {
 		jsonType = identifyJson((char *) coordview_stickmaps_json, &root);
 
 		if (jsonType != STICKMAP_TYPE_GTS) {
-			menu_setError("Built-in json data failed to read");
+			menu_setError("Built-in json data for coord view failed to read");
 			return;
 		}
 		coordViewStickmaps = readJsonGTS(root, &coordViewStickmapsLen);
