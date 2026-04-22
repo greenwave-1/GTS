@@ -120,6 +120,16 @@ void flipData() {
 	tempData->dataExported = false;
 }
 
+static float getRadius(int x, int y) {
+	// put a wall of text about an octagon here...
+	float interiorAnglesSum = 6 * M_PI;
+	float halfInteriorAngle = interiorAnglesSum / 16;
+
+	float angle = fmod(atan2(x, y), (2 * M_PI / 8));
+
+	return 127 * sin(halfInteriorAngle) / sin(M_PI - angle - halfInteriorAngle);
+}
+
 // a lot of this comes from github.com/phobgcc/phobconfigtool
 MeleeCoordinates convertStickRawToMelee(ControllerSample sample) {
 	MeleeCoordinates ret;
@@ -129,22 +139,38 @@ MeleeCoordinates convertStickRawToMelee(ControllerSample sample) {
 
 	// store and scale coordinates (if necessary)
 	{
+
 		float fX = abs(sample.stickX), fY = abs(sample.stickY);
 		float fCX = abs(sample.cStickX), fCY = abs(sample.cStickY);
 
 		float mag = sqrt((fX * fX) + (fY * fY));
 		float cMag = sqrt((fCX * fCX) + (fCY * fCY));
 
-		// scale values if necessary
-		if (mag > 80) {
-			fX = (fX / mag) * 80;
-			fY = (fY / mag) * 80;
-		}
+		// first we clamp to the radius on an octagon
+		float prescaledRadius = getRadius((int)fX, (int)fY);
+		// scale coords to above radius
+		float scale = fmin(prescaledRadius / mag, 1.0);
+		fX = trunc(fX * scale);
+		fY = trunc(fY * scale);
 
-		if (cMag > 80) {
-			fCX = (fCX / cMag) * 80;
-			fCY = (fCY / cMag) * 80;
-		}
+		// now scale to normal 80 radius
+		mag = sqrt((fX * fX) + (fY * fY));
+		scale = fmin(80.0 / mag, 1.0);
+		fX = trunc(fX * scale);
+		fY = trunc(fY * scale);
+
+		// and do the same for c-stickus on an octagon
+		prescaledRadius = getRadius((int)fCX, (int)fCY);
+		// scale coords to above radius
+		scale = fmin(prescaledRadius / cMag, 1.0);
+		fCX = trunc(fCX * scale);
+		fCY = trunc(fCY * scale);
+
+		// now scale to normal 80 radius
+		cMag = sqrt((fCX * fCX) + (fCY * fCY));
+		scale = fmin(80.0 / cMag, 1.0);
+		fCX = trunc(fCX * scale);
+		fCY = trunc(fCY * scale);
 
 		// store values
 		ret.stickX = (int) fX, ret.stickY = (int) fY;
