@@ -885,6 +885,7 @@ static bool menu_checkBlackout() {
 					CARD_GetDirectory(CARD_SLOTB, &memcard, &memcardLen, false);
 				}
 				if (memcardLen != 0 && !isControllerConnected(CONT_PORT_1) && isControllerConnected(CONT_PORT_2)) {
+					CARD_Unmount(CARD_SLOTB);
 					return true;
 				}
 			} else {
@@ -895,6 +896,7 @@ static bool menu_checkBlackout() {
 			}
 		} else {
 			if (CARD_Probe(CARD_SLOTB) == 0) {
+				CARD_Unmount(CARD_SLOTB);
 				cardRemoved = true;
 			}
 		}
