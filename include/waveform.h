@@ -42,8 +42,8 @@ typedef struct MeleeCoordinates {
 	int8_t cStickX;
 	int8_t cStickY;
 
-	int stickMagnitude;
-	int cStickMagnitude;
+	double stickMagnitude;
+	double cStickMagnitude;
 
 	double stickAngle;
 	double cStickAngle;

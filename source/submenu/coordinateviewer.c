@@ -175,6 +175,9 @@ static int dpadFlashCounter = 0;
 static ControllerSample stickRaw;
 static MeleeCoordinates stickMelee;
 
+static int8_t xOffset = 0;
+static int8_t yOffset = 0;
+
 // coordinate viewer submenu
 // draws melee coordinates for both sticks on a circle
 // "overlays" can be toggled to show specific coordinate groups (shield drop, for example)
@@ -250,6 +253,12 @@ void menu_coordView() {
 				// get raw stick values
 				stickRaw.stickX = PAD_StickX(0), stickRaw.stickY = PAD_StickY(0);
 				stickRaw.cStickX = PAD_SubStickX(0), stickRaw.cStickY = PAD_SubStickY(0);
+
+				// override values if port 1 is disconnected and 4 is connected
+				if (isControllerConnected(CONT_PORT_4) && !isControllerConnected(CONT_PORT_1)) {
+					stickRaw.stickX = xOffset;
+					stickRaw.stickY = yOffset;
+				}
 				
 				// get converted stick values
 				stickMelee = convertStickRawToMelee(stickRaw);
@@ -262,17 +271,31 @@ void menu_coordView() {
 			if (selectedStickmap != 0) {
 				index = getCoordSubcategory(stickMelee, displayList[selectedStickmap - 1]);
 			}
-			
-			// print melee coordinates
-			setCursorPos(9, 0);
-			printStr("Analog Stick:");
-			setCursorPos(10, 2);
-			printStr("(%s)", getMeleeCoordinateString(stickMelee, AXIS_AXY));
-			
-			setCursorPos(11, 0);
-			printStr("C-Stick:");
-			setCursorPos(12, 2);
-			printStr("(%s)", getMeleeCoordinateString(stickMelee, AXIS_CXY));
+
+			// coordinate conversion test
+			if (!isControllerConnected(CONT_PORT_1) && isControllerConnected(CONT_PORT_4)) {
+				setCursorPos(9, 0);
+				printStr("DEBUG Raw->Melee (");
+				fontButtonSetDpadDirections(FONT_DPAD_UP | FONT_DPAD_DOWN | FONT_DPAD_LEFT | FONT_DPAD_RIGHT);
+				drawFontButton(FONT_DPAD);
+
+				printStr("):");
+				setCursorPos(10, 2);
+				printStr("(%4d,%4d)->\n  (%4d,%4d)", stickRaw.stickX, stickRaw.stickY, stickMelee.stickX, stickMelee.stickY);
+				setCursorPos(12, 2);
+				printStr("M: %4.1f A: %4.1f", stickMelee.stickMagnitude, stickMelee.stickAngle);
+			} else {
+				// print melee coordinates
+				setCursorPos(9, 0);
+				printStr("Analog Stick:");
+				setCursorPos(10, 2);
+				printStr("(%s)", getMeleeCoordinateString(stickMelee, AXIS_AXY));
+
+				setCursorPos(11, 0);
+				printStr("C-Stick:");
+				setCursorPos(12, 2);
+				printStr("(%s)", getMeleeCoordinateString(stickMelee, AXIS_CXY));
+			}
 			
 			setCursorPos(4, 0);
 			printStr("Stickmap %2d/%2d (", selectedStickmap, displayListLen);
@@ -481,7 +504,46 @@ void menu_coordView() {
 		if (*pressed == PAD_BUTTON_A && *held == PAD_BUTTON_A && menuState == COORD_VIEW_POST_SETUP) {
 			holdCoordinate = !holdCoordinate;
 		}
-		
+
+		// coordinate conversion test
+		if (isControllerConnected(CONT_PORT_4) && !isControllerConnected(CONT_PORT_1)) {
+			uint16_t p4Buttons = PAD_ButtonsDown(3), p4Held = PAD_ButtonsHeld(3);
+
+			bool moveSingleUnit = (p4Held & PAD_TRIGGER_L);
+
+			// modifying X
+			if (p4Held & PAD_BUTTON_X) {
+				if ((p4Buttons & PAD_BUTTON_RIGHT && moveSingleUnit) || (p4Held & PAD_BUTTON_RIGHT && !moveSingleUnit)) {
+					xOffset++;
+				}
+				else if ((p4Buttons & PAD_BUTTON_LEFT && moveSingleUnit) || (p4Held & PAD_BUTTON_LEFT && !moveSingleUnit)) {
+					xOffset--;
+				}
+			}
+			// modifying Y
+			else if (p4Held & PAD_BUTTON_Y) {
+				if ((p4Buttons & PAD_BUTTON_UP && moveSingleUnit) || (p4Held & PAD_BUTTON_UP && !moveSingleUnit)) {
+					yOffset++;
+				}
+				else if ((p4Buttons & PAD_BUTTON_DOWN && moveSingleUnit) || (p4Held & PAD_BUTTON_DOWN && !moveSingleUnit)) {
+					yOffset--;
+				}
+			} else {
+				if ((p4Buttons & PAD_BUTTON_RIGHT && moveSingleUnit) || (p4Held & PAD_BUTTON_RIGHT && !moveSingleUnit)) {
+					xOffset++;
+				}
+				else if ((p4Buttons & PAD_BUTTON_LEFT && moveSingleUnit) || (p4Held & PAD_BUTTON_LEFT && !moveSingleUnit)) {
+					xOffset--;
+				}
+				if ((p4Buttons & PAD_BUTTON_UP && moveSingleUnit) || (p4Held & PAD_BUTTON_UP && !moveSingleUnit)) {
+					yOffset++;
+				}
+				else if ((p4Buttons & PAD_BUTTON_DOWN && moveSingleUnit) || (p4Held & PAD_BUTTON_DOWN && !moveSingleUnit)) {
+					yOffset--;
+				}
+			}
+		}
+
 		fontButtonFlashIncrement(&dpadFlashCounter, 30);
 	}
 	
