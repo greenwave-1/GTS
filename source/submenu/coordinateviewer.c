@@ -281,9 +281,9 @@ void menu_coordView() {
 
 				printStr("):");
 				setCursorPos(10, 2);
-				printStr("(%4d,%4d)->\n  (%4d,%4d)", stickRaw.stickX, stickRaw.stickY, stickMelee.stickX, stickMelee.stickY);
+				printStr("   (%4d,%4d)->\n  (%s)", stickRaw.stickX, stickRaw.stickY, getMeleeCoordinateString(stickMelee, AXIS_AXY));
 				setCursorPos(12, 2);
-				printStr("M: %4.1f A: %4.1f", stickMelee.stickMagnitude, stickMelee.stickAngle);
+				printStr("Mag: %4.1f Ang: %4.1f", stickMelee.stickMagnitude, stickMelee.stickAngle);
 			} else {
 				// print melee coordinates
 				setCursorPos(9, 0);
