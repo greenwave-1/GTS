@@ -51,14 +51,20 @@ static ControllerRec *continuousMenuData = NULL;
 void initControllerRecStructs() {
 	if (!init) {
 		// data for most menus that do high-speed recording
+		// this is the buffer that is displayed
 		recordingData = malloc(sizeof(ControllerRec));
-		clearRecordingArray(recordingData);
+		// this is the working buffer
 		tempData = malloc(sizeof(ControllerRec));
-		clearRecordingArray(tempData);
-		
+
 		// continuous oscilloscope's data
 		continuousMenuData = malloc(sizeof(ControllerRec));
-		clearRecordingArray(continuousMenuData);
+
+		// clear
+		if (recordingData != NULL && tempData != NULL && continuousMenuData != NULL) {
+			clearRecordingArray(recordingData);
+			clearRecordingArray(tempData);
+			clearRecordingArray(continuousMenuData);
+		}
 		
 		init = true;
 	}
