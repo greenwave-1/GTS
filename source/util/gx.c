@@ -563,6 +563,11 @@ void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 	int initialZValue = zPrevDepth;
 	// don't allow further draw() calls to attempt to reset the zdepth
 	lockResetZDepth = true;
+
+	GXColor stickColor = GX_COLOR_WHITE;
+	if (drawnAxis == AXIS_CXY && type != GRAPH_TRIGGER) {
+		stickColor = GX_COLOR_YELLOW;
+	}
 	
 	// initialize data if needed
 	if (graphVisibleDatapoints == -1) {
@@ -954,14 +959,14 @@ void drawGraph(ControllerRec *data, enum GRAPH_TYPE type, bool isFrozen) {
 		setDepth(0);
 		// scroll bar at the top
 		drawLine(SCREEN_TIMEPLOT_START, SCREEN_POS_CENTER_Y - 128,
-		         SCREEN_TIMEPLOT_START + WAVEFORM_DISPLAY_WIDTH, SCREEN_POS_CENTER_Y - 128,
-		         GX_COLOR_GRAY);
+				SCREEN_TIMEPLOT_START + WAVEFORM_DISPLAY_WIDTH, SCREEN_POS_CENTER_Y - 128,
+				GX_COLOR_GRAY);
 		
 		// slider on scroll bar
 		//GX_SetLineWidth(24, GX_TO_ZERO);
 		drawLine(SCREEN_TIMEPLOT_START + sliderStart, SCREEN_POS_CENTER_Y - 128,
-		         SCREEN_TIMEPLOT_START + sliderEnd, SCREEN_POS_CENTER_Y - 128,
-		         GX_COLOR_WHITE);
+				SCREEN_TIMEPLOT_START + sliderEnd, SCREEN_POS_CENTER_Y - 128,
+		        stickColor);
 		GX_SetLineWidth(12, GX_TO_ZERO);
 		restorePrevDepth();
 	}
