@@ -323,7 +323,7 @@ void menu_plot2d() {
 	}
 
 	// load texture if needed
-	if (stickmapChanged) {
+	if (stickmapChanged && stickmapType != NO_STICKMAP) {
 		loadStickmapTexture(displayList[selectedStickmap]->texture.texData);
 		stickmapChanged = false;
 	}
@@ -860,7 +860,7 @@ void menu_plot2d() {
 				selectedStickmap = 0;
 				//selectedStickmapSub = 0;
 				externalJsonIndex = -1;
-				//stickmapType = EXTERNAL_STICKMAP;
+				stickmapType = NO_STICKMAP;
 			} else if (menuState == PLOT_FILE_PICKER) {
 				menuState = PLOT_POST_SETUP;
 				externalJsonIndex = -1;
