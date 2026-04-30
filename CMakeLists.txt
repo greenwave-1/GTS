@@ -11,7 +11,8 @@ cmake_minimum_required(VERSION 3.21)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
-project(GTS_${OGC_CONSOLE} LANGUAGES C)
+project(GTS LANGUAGES C)
+set(PROJECT_EXPORT_NAME ${PROJECT_NAME}_${OGC_CONSOLE})
 
 # these probably dont work
 option(GDB_DEBUGGING "Remote GDB debugging" OFF)
@@ -62,10 +63,14 @@ function(dkp_add_embedded_textures target)
 endfunction()
 
 # all .c files to be compiled
-add_executable(GTS_${OGC_CONSOLE}
+add_executable(
+        # output name?
+        ${PROJECT_EXPORT_NAME}
+
 		source/main.c
 		source/menu.c
 		source/waveform.c
+
 		# util sources
 		source/util/args.c
 		source/util/datetime.c
@@ -75,6 +80,8 @@ add_executable(GTS_${OGC_CONSOLE}
 		source/util/polling.c
 		source/util/print.c
 		source/util/stickmap.c
+        source/util/arena.c
+
 		# submenus
 		source/submenu/continuous.c
 		source/submenu/controllertest.c
@@ -92,7 +99,7 @@ add_executable(GTS_${OGC_CONSOLE}
 if(GDB_DEBUGGING)
 	message("Enabling GDB Debugging")
 	add_definitions(-DDEBUGGDB)
-	target_link_libraries(GTS_${OGC_CONSOLE} db)
+	target_link_libraries(${PROJECT_EXPORT_NAME} db)
 endif()
 
 if(LOGGING)
@@ -115,18 +122,18 @@ include_directories(
 		${DEVKITPRO}/portlibs/ppc/include
 )
 
-target_link_libraries(GTS_${OGC_CONSOLE} jansson fat)
+target_link_libraries(${PROJECT_EXPORT_NAME} jansson fat)
 
 # all warnings...
-target_compile_options(GTS_${OGC_CONSOLE} PRIVATE -Wall)
+target_compile_options(${PROJECT_EXPORT_NAME} PRIVATE -Wall)
 
 # link textures if it exists
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/textures/textures.scf)
-	add_dependencies(GTS_${OGC_CONSOLE} texconv)
+	add_dependencies(${PROJECT_EXPORT_NAME} texconv)
 	dkp_add_embedded_textures(texconv ${CMAKE_CURRENT_SOURCE_DIR}/textures/textures.scf)
 	get_target_property(TEXCONV_PATH texconv INTERFACE_INCLUDE_DIRECTORIES)
-	target_include_directories(GTS_${OGC_CONSOLE} PRIVATE ${TEXCONV_PATH})
-	target_link_libraries(GTS_${OGC_CONSOLE}
+	target_include_directories(${PROJECT_EXPORT_NAME} PRIVATE ${TEXCONV_PATH})
+	target_link_libraries(${PROJECT_EXPORT_NAME}
 			${TEXCONV_PATH}/textures_tpl.S
 	)
 endif()
@@ -137,13 +144,13 @@ dkp_add_embedded_binary_library(BUILTIN_JSON
 		${CMAKE_CURRENT_SOURCE_DIR}/data/coordview_stickmaps.json
 )
 
-add_dependencies(GTS_${OGC_CONSOLE} BUILTIN_JSON)
+add_dependencies(${PROJECT_EXPORT_NAME} BUILTIN_JSON)
 
 # get directory out from target
 # no idea how this should be done properly...
 get_target_property(JSON_INCLUDES BUILTIN_JSON INTERFACE_INCLUDE_DIRECTORIES)
-target_include_directories(GTS_${OGC_CONSOLE} PRIVATE ${JSON_INCLUDES})
-target_link_libraries(GTS_${OGC_CONSOLE}
+target_include_directories(${PROJECT_EXPORT_NAME} PRIVATE ${JSON_INCLUDES})
+target_link_libraries(${PROJECT_EXPORT_NAME}
 		# why does the order matter on these ???
 		# adding a newline to coordview seems to fix it ??
 		# there's a reason this is considered unsupported
@@ -159,7 +166,7 @@ execute_process(
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-target_compile_definitions(GTS_${OGC_CONSOLE} PRIVATE
+target_compile_definitions(${PROJECT_EXPORT_NAME} PRIVATE
         "-DCOMMIT_ID=\"${COMMIT_ID}\""
 )
 
@@ -171,16 +178,16 @@ execute_process(
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-target_compile_definitions(GTS_${OGC_CONSOLE} PRIVATE
+target_compile_definitions(${PROJECT_EXPORT_NAME} PRIVATE
         "-DBUILD_DATE=\"${BUILD_DATE}\""
 )
 
 # specify version string if found
 if(NOT "$ENV{VERSION_STR}" STREQUAL "")
-    target_compile_definitions(GTS_${OGC_CONSOLE} PRIVATE
+    target_compile_definitions(${PROJECT_EXPORT_NAME} PRIVATE
             "-DVERSION_NUMBER=\"$ENV{VERSION_STR}\""
     )
 endif()
 
 # build binary
-ogc_create_dol(GTS_${OGC_CONSOLE})
+ogc_create_dol(${PROJECT_EXPORT_NAME})

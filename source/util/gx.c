@@ -31,6 +31,10 @@ GXColor GXColorAlpha(GXColor color, uint8_t alpha) {
 	return (GXColor) { color.r, color.g, color.b, alpha };
 }
 
+uint32_t GXColorToU32(GXColor color) {
+	return ((uint32_t) color.r << 24) | ((uint32_t) color.g << 16) | ((uint32_t) color.b << 8) | (uint32_t) color.a;
+}
+
 // default fifo size, specific number from provided gx examples
 #define DEFAULT_FIFO_SIZE (256 * 1024)
 
