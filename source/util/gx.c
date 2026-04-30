@@ -150,9 +150,9 @@ void getCurrentTexmapDims(int *width, int *height) {
 	}
 }
 
-void loadStickmapTexture(void *buf) {
-	if (buf != NULL) {
-		GX_InitTexObj(&stickmapTex, buf, 256, 256, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+void loadStickmapTexture(TextureStruct *tex) {
+	if (tex != NULL && tex->texData != NULL) {
+		GX_InitTexObj(&stickmapTex, tex->texData, 256, 256, tex->textureFormat, GX_CLAMP, GX_CLAMP, GX_FALSE);
 		GX_LoadTexObj(&stickmapTex, TEXMAP_STICKMAP);
 	}
 }
@@ -1135,29 +1135,55 @@ void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, i
 	tempRotation = ROTATE_0;
 }
 
+void initTextureStruct(uint8_t textureFormat, int x, int y, TextureStruct *out) {
+	out->pixelsPerBlockWidth = 0;
+	out->pixelsPerBlockHeight = 0;
+	switch (textureFormat) {
+		case GX_TF_RGBA8:
+		case GX_TF_RGB5A3:
+		case GX_TF_RGB565:
+		case GX_TF_IA8:
+			out->pixelsPerBlockWidth = out->pixelsPerBlockHeight = 4;
+			break;
+		case GX_TF_IA4:
+		case GX_TF_I8:
+			out->pixelsPerBlockWidth = 8;
+			out->pixelsPerBlockHeight = 4;
+			break;
+		case GX_TF_I4:
+			out->pixelsPerBlockWidth = out->pixelsPerBlockHeight = 8;
+			break;
+		default:
+			break;
+	}
 
-// TODO: should I generalize this for the normal image formats?
-void initRGBAStruct(int x, int y, RGBAStruct *out) {
-	// each block is 4x4
-	out->widthBlocks = x / 4;
-	out->heightBlocks = y / 4;
+	// unsupported/unimplemented formats
+	if (out->pixelsPerBlockWidth == 0 || out->pixelsPerBlockHeight == 0) {
+		return;
+	}
+
+	out->textureFormat = textureFormat;
+
+	out->widthBlocks = x / out->pixelsPerBlockWidth;
+	out->heightBlocks = y / out->pixelsPerBlockHeight;
+	out->totalPixelsPerBlock = out->pixelsPerBlockWidth * out->pixelsPerBlockHeight;
 
 	// if over, we allocate another block
-	if (x % 4) {
+	if (x % out->pixelsPerBlockWidth) {
 		out->widthBlocks++;
 	}
-	if (y % 4) {
+	if (y % out->pixelsPerBlockHeight) {
 		out->heightBlocks++;
 	}
 
 	// true width in pixels
-	out->widthPixels = out->widthBlocks * 4;
-	out->heightPixels = out->heightBlocks * 4;
+	out->widthPixels = out->widthBlocks * out->pixelsPerBlockWidth;
+	out->heightPixels = out->heightBlocks * out->pixelsPerBlockHeight;
 
 	// allocate texture memory
 	// RGBA32/RGBA8, so 4 bytes per pixel
 	// texture data is expected to be 32 byte aligned
-	int bufSize = GX_GetTexBufferSize(out->widthPixels, out->heightPixels, GX_TF_RGBA8, GX_FALSE, GX_FALSE);
+	int bufSize = GX_GetTexBufferSize(out->widthPixels, out->heightPixels, out->textureFormat, GX_FALSE, GX_FALSE);
 	uint8_t *buf = memalign(32, bufSize);
 
 	// clear memory
@@ -1166,15 +1192,38 @@ void initRGBAStruct(int x, int y, RGBAStruct *out) {
 	out->texData = buf;
 }
 
-static int getPixelNum(int x, int y, int widthBlocks) {
-	return ((y / 4) * (16 * widthBlocks)) // how many whole blocks down
-	       + ((x / 4) * 16) // how many whole blocks right
-	       + ((y % 4) * 4) // how many rows down in the target block
-	       + (x % 4); // how many columns right in the target block
+static int getPixelNum(int x, int y, TextureStruct *tex) {
+	return
+			((y / tex->pixelsPerBlockHeight) * (tex->totalPixelsPerBlock * tex->widthBlocks)) // how many whole blocks down
+			+ ((x / tex->pixelsPerBlockWidth) * tex->totalPixelsPerBlock) // how many whole blocks right
+			+ ((y % tex->pixelsPerBlockHeight) * tex->pixelsPerBlockHeight) // how many rows down in the target block
+			+ (x % tex->pixelsPerBlockWidth); // how many columns right in the target block
 }
 
-static int getAlphaOffset(int pixelNum) {
-	return (pixelNum * 2) + ((pixelNum / 16) * 32);
+// order is slightly weird for rgba8
+static int getTexDataOffset(int pixelNum, TextureStruct *tex) {
+	int retIndex = pixelNum;
+	switch (tex->textureFormat) {
+		case GX_TF_RGBA8:
+			// technically there are 4 per, but for the purposes of finding the index, we need 2 here
+		case GX_TF_RGB5A3:
+		case GX_TF_RGB565:
+		case GX_TF_IA8:
+			retIndex *= 2;
+			break;
+		case GX_TF_I4:
+			retIndex /= 2;
+			break;
+		case GX_TF_IA4:
+		case GX_TF_I8:
+		default:
+			break;
+	}
+	if (tex->textureFormat == GX_TF_RGBA8) {
+		retIndex += (pixelNum / 16) * 32;
+		//(pixelNum * 2) + ((pixelNum / 16) * 32);
+	}
+	return retIndex;
 }
 
 // RGBA32 texture format:
@@ -1185,24 +1234,67 @@ static int getAlphaOffset(int pixelNum) {
 // last 32 bytes contain green and blue for all pixels
 // for example, pixel at 0,0 would have A and R component at 0 and 1 in the list,
 // whereas G and B would be at 32 and 33
-void RGBASetPixelAt(int x, int y, GXColor color, RGBAStruct *texture) {
+void TextureStructSetPixelAt(int x, int y, GXColor color, TextureStruct *texture) {
 	// what pixel?
-	int pixelNum = getPixelNum(x, y, texture->widthBlocks);
+	int pixelNum = getPixelNum(x, y, texture);
 
-	// alpha/red offset
-	int alphaOffset = getAlphaOffset(pixelNum);
+	// offset
+	int offset = getTexDataOffset(pixelNum, texture);
 
-	// alpha
-	texture->texData[alphaOffset] = color.a;
-
-	// red
-	texture->texData[alphaOffset + 1] = color.r;
-
-	// green
-	texture->texData[alphaOffset + 32] = color.g;
-
-	// blue
-	texture->texData[alphaOffset + 32 + 1] = color.b;
+	switch (texture->textureFormat) {
+		case GX_TF_RGBA8:
+			// alpha
+			texture->texData[offset] = color.a;
+			// red
+			texture->texData[offset + 1] = color.r;
+			// green
+			texture->texData[offset + 32] = color.g;
+			// blue
+			texture->texData[offset + 32 + 1] = color.b;
+			break;
+		case GX_TF_RGB5A3:
+			// does this color need an alpha component?
+			if (color.a != 0xFF) {
+				// alpha and red
+				texture->texData[offset] = (color.a / 32) << 5 | (color.r / 16);
+				// green and blue
+				texture->texData[offset + 1] = (color.g / 16) << 4 | (color.b / 16);
+			} else {
+				// alpha, red, and part of green
+				// 0b10000000 indicates no alpha, and colors are 5 bit depth instead of 4
+				texture->texData[offset] = 0b10000000 | (color.r / 8) << 2 | (color.g / 8) >> 3;
+				// rest of green and blue
+				texture->texData[offset + 1] = (color.g / 8) << 5 | (color.b / 8);
+			}
+			break;
+		case GX_TF_RGB565:
+			texture->texData[offset] = (color.r / 8) << 3 | (color.g / 4) >> 3;
+			texture->texData[offset + 1] = (color.g / 4) << 5 | (color.b / 8);
+			break;
+		case GX_TF_IA8:
+			texture->texData[offset] = color.a;
+			texture->texData[offset + 1] = ((uint8_t) (color.r + color.g + color.b)) / 3;
+			break;
+		case GX_TF_IA4:
+			texture->texData[offset] = (color.a / 2) << 4 | (((uint8_t) (color.r + color.g + color.b)) / 6);
+			break;
+		case GX_TF_I8:
+			texture->texData[offset] = ((uint32_t) color.r + (uint32_t) color.g + (uint32_t) color.b) / 3;
+			break;
+		case GX_TF_I4:
+			if (x % 2 == 1) {
+				// clear previous color
+				texture->texData[offset] &= 0b00001111;
+				texture->texData[offset] |= (((uint32_t) color.r + (uint32_t) color.g + (uint32_t) color.b) / 6) << 4;
+			} else {
+				// clear previous color
+				texture->texData[offset] &= 0b11110000;
+				texture->texData[offset] |= ((uint32_t) color.r + (uint32_t) color.g + (uint32_t) color.b) / 6;
+			}
+			break;
+		default:
+			break;
+	}
 }
 
 #ifndef NO_DATE_CHECK

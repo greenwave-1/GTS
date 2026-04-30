@@ -51,7 +51,7 @@ typedef struct Stickmap {
 	StickmapSubcategory *subcategoryList;
 	// optional data
 	int subcategoryDescListLen;
-	RGBAStruct texture;
+	TextureStruct texture;
 	StickmapSubcategoryDesc *subcategoryDescList;
 } Stickmap;
 

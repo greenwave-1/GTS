@@ -30,7 +30,8 @@ static void *generateStickmapTextureThread(void *arg) {
 	for (int i = 0; i < smListLen; i++) {
 		Stickmap *sm = smList[i];
 		if (sm->texture.texData == NULL) {
-			initRGBAStruct(256, 256, &sm->texture);
+			//initTextureStruct(GX_TF_RGBA8, 256, 256, &sm->texture);
+			initTextureStruct(GX_TF_RGB565, 256, 256, &sm->texture);
 			for (int y = 0; y < 256; y++) {
 				for (int x = 0; x < 256; x++) {
 					ControllerSample s;
@@ -49,10 +50,11 @@ static void *generateStickmapTextureThread(void *arg) {
 							col.b *= 0.8;
 						}
 					}
-					RGBASetPixelAt(x, 255 - y, col, &sm->texture);
+					TextureStructSetPixelAt(x, 255 - y, col, &sm->texture);
 				}
 			}
-			DCStoreRange(sm->texture.texData, GX_GetTexBufferSize(256, 256, GX_TF_RGBA8, GX_FALSE, GX_FALSE));
+			//DCStoreRange(sm->texture.texData, GX_GetTexBufferSize(256, 256, GX_TF_RGBA8, GX_FALSE, GX_FALSE));
+			DCStoreRange(sm->texture.texData, GX_GetTexBufferSize(256, 256, GX_TF_RGB565, GX_FALSE, GX_FALSE));
 		}
 	}
 	texGenState = TEX_ASYNC_DONE;
