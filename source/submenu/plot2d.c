@@ -324,7 +324,7 @@ void menu_plot2d() {
 
 	// load texture if needed
 	if (stickmapChanged && stickmapType != NO_STICKMAP) {
-		loadStickmapTexture(displayList[selectedStickmap]->texture.texData);
+		loadStickmapTexture(&displayList[selectedStickmap]->texture);
 		stickmapChanged = false;
 	}
 
