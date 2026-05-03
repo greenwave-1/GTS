@@ -408,7 +408,13 @@ Stickmap **readJsonGTS(json_t *root, int *len) {
 			continue;
 		}
 		temp->desc = json_string_value(dataFromJson);
-		
+
+		temp->whichStick = STICKMAP_NOT_SPECIFIED;
+		dataFromJson = json_object_get(data, "stickmap_c_stick");
+		if (json_is_boolean(dataFromJson)) {
+			temp->whichStick = json_boolean_value(dataFromJson) ? STICKMAP_C_STICK : STICKMAP_A_STICK;
+		}
+
 		// get subcategory names and descriptions
 		dataFromJson = json_object_get(data, "stickmap_subcategories");
 		if (!json_is_array(dataFromJson)) {
