@@ -501,7 +501,7 @@ void menu_coordView() {
 		}
 		
 		// "freeze" currently held coordinate
-		if (*pressed == PAD_BUTTON_A && *held == PAD_BUTTON_A && menuState == COORD_VIEW_POST_SETUP) {
+		if (*pressed == PAD_BUTTON_A && *held == PAD_BUTTON_A && menuState == COORD_VIEW_POST_SETUP && !menuLockEnabled) {
 			holdCoordinate = !holdCoordinate;
 		}
 
@@ -576,5 +576,6 @@ void menu_coordViewEnd() {
 }
 
 void menu_coordViewSetLockState(bool state) {
+	holdCoordinate = false;
 	menuLockEnabled = state;
 }

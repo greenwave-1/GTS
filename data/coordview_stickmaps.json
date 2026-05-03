@@ -5,6 +5,7 @@
 	{
 		"stickmap_name": "Firefox/Wavedash",
 		"stickmap_desc": "Min/Max coordinates for Firefox and Wavedash notches around the cardinals",
+		"stickmap_c_stick": false,
 		"stickmap_subcategories": [
 			{
 				"subcategory_desc": "Risks hitting deadzone, but works"
@@ -116,6 +117,7 @@
 	{
 		"stickmap_name": "Shield Drop",
 		"stickmap_desc": "Coordinates for Vanilla and UCF Shield Drops",
+		"stickmap_c_stick": false,
 		"stickmap_subcategories": [
 			{
 				"subcategory_desc": "Coordinates that will work without UCF"

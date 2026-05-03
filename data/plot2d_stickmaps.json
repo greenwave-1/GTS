@@ -5,6 +5,7 @@
 	{
 		"stickmap_name": "Deadzone/Cardinals",
 		"stickmap_desc": "Deadzone/Cardinals",
+		"stickmap_c_stick": false,
 		"stickmap_subcategories": [
 			{
 				"subcategory_name": "Right Cardinal",
@@ -237,6 +238,7 @@
 	{
 		"stickmap_name": "A Wait",
 		"stickmap_desc": "A Options wait facing right",
+		"stickmap_c_stick": false,
 		"stickmap_subcategories": [
 			{
 				"subcategory_name": "Down Smash",
@@ -845,6 +847,7 @@
 	{
 		"stickmap_name": "Move Wait",
 		"stickmap_desc": "Options out of wait facing right",
+		"stickmap_c_stick": false,
 		"stickmap_subcategories": [
 			{
 				"subcategory_name": "Crouch",
@@ -1309,6 +1312,7 @@
 	{
 		"stickmap_name": "Crouch",
 		"stickmap_desc": "Crouch options facing right",
+		"stickmap_c_stick": false,
 		"stickmap_subcategories": [
 			{
 				"subcategory_name": "Remain in Crouch",
@@ -1745,6 +1749,7 @@
 	{
 		"stickmap_name": "Ledge L",
 		"stickmap_desc": "Options from left ledge (facing right)",
+		"stickmap_c_stick": false,
 		"stickmap_subcategories": [
 			{
 				"subcategory_name": "Ledgedrop Fastfall After",
@@ -1961,6 +1966,7 @@
 	{
 		"stickmap_name": "Ledge R",
 		"stickmap_desc": "Options from right ledge (facing left)",
+		"stickmap_c_stick": false,
 		"stickmap_subcategories": [
 			{
 				"subcategory_name": "Ledgedrop Fastfall After",

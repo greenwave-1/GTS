@@ -18,6 +18,8 @@
 enum TEX_GEN_ASYNC_STATE { TEX_ASYNC_INIT, TEX_ASYNC_GEN, TEX_ASYNC_DONE };
 enum TEX_GEN_ASYNC_STATE isExternalStickmapReady();
 
+enum STICKMAP_WHICH_STICK { STICKMAP_NOT_SPECIFIED, STICKMAP_A_STICK, STICKMAP_C_STICK };
+
 typedef struct StickmapSubcategory {
 	// info from json itself
 	const char *name;
@@ -47,6 +49,7 @@ typedef struct StickmapSubcategoryDesc {
 typedef struct Stickmap {
 	const char *name;
 	const char *desc;
+	enum STICKMAP_WHICH_STICK whichStick;
 	int subcategoryListLen;
 	StickmapSubcategory *subcategoryList;
 	// optional data

@@ -371,8 +371,7 @@ int main(int argc, char **argv) {
 		VIDEO_Flush();
 		VIDEO_WaitForFlush();
 	}
-	
-	
+
 	// cleanup any malloc'd memory
 	freeControllerRecStructs();
 	menu_deInit();
