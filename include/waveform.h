@@ -12,6 +12,8 @@
 // TODO: this file should be renamed, along with "ControllerRec". I can't think of something better right now...
 
 // individual datapoint from a given controller poll
+// TODO: split the data for the sticks
+//  (make a generic "Stick recording" struct and store two of them per ControllerSample
 typedef struct ControllerSample {
 	// all analog values
 	// analog stick
@@ -35,6 +37,7 @@ typedef struct ControllerSample {
 	
 } ControllerSample;
 
+// TODO: same todo as above
 typedef struct MeleeCoordinates {
 	int8_t stickX;
 	int8_t stickY;

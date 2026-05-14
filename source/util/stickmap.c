@@ -38,7 +38,8 @@ static void *generateStickmapTextureThread(void *arg) {
 					s.stickX = x - 128;
 					s.stickY = y - 128;
 					MeleeCoordinates coords = convertStickRawToMelee(s);
-					int subcatIndex = getCoordSubcategory(coords, sm);
+					// we're storing our temp data in the analog stick vars
+					int subcatIndex = getCoordSubcategory(coords, STICKMAP_A_STICK, sm);
 
 					GXColor col = GX_COLOR_BLACK;
 					if (subcatIndex != -1) {
@@ -471,27 +472,52 @@ void genStickmapCoords(Stickmap *target) {
 	}
 }
 
-int getCoordSubcategory(MeleeCoordinates coord, Stickmap *stickmap) {
+int getCoordSubcategory(MeleeCoordinates coord, enum STICKMAP_WHICH_STICK whichStick, Stickmap *stickmap) {
+	// get the specified stick
+	int8_t stickX = 0;
+	int8_t stickY = 0;
+	double stickAngle = 0.0;
+	double stickMagnitude = 0.0;
+
+	switch (whichStick) {
+		case STICKMAP_A_STICK:
+			stickX = coord.stickX;
+			stickY = coord.stickY;
+			stickAngle = coord.stickAngle;
+			stickMagnitude = coord.stickMagnitude;
+			break;
+		case STICKMAP_C_STICK:
+			stickX = coord.cStickX;
+			stickY = coord.cStickY;
+			stickAngle = coord.cStickAngle;
+			stickMagnitude = coord.cStickMagnitude;
+			break;
+		case STICKMAP_NOT_SPECIFIED:
+		default:
+			menu_setError("Stick type not provided to test category");
+			break;
+	}
+
 	// iterate over each subcategory
 	for (int i = 0; i < stickmap->subcategoryListLen; i++) {
 		StickmapSubcategory *sub = &stickmap->subcategoryList[i];
 		// initial range check
-		int x = abs(coord.stickX);
-		int y = abs(coord.stickY);
+		int x = abs(stickX);
+		int y = abs(stickY);
 
 		if (x >= sub->minX && x <= sub->maxX &&
 			y >= sub->minY && y <= sub->maxY) {
 
 			// check angle
-			if (coord.stickAngle >= sub->angleMin && coord.stickAngle <= sub->angleMax) {
+			if (stickAngle >= sub->angleMin && stickAngle <= sub->angleMax) {
 				// check magnitude
-				if (coord.stickMagnitude >= sub->magnitudeMin && coord.stickMagnitude <= sub->magnitudeMax) {
+				if (stickMagnitude >= sub->magnitudeMin && stickMagnitude <= sub->magnitudeMax) {
 
 					// check quadrants
 					for (int j = 0; j < 4; j++) {
 						if (sub->quadrants[j]) {
-							int workingX = abs(coord.stickX);
-							int workingY = abs(coord.stickY);
+							int workingX = abs(stickX);
+							int workingY = abs(stickY);
 							// set sign based on quadrant
 							if (j == 1 || j == 2) {
 								workingX *= -1;
@@ -500,7 +526,7 @@ int getCoordSubcategory(MeleeCoordinates coord, Stickmap *stickmap) {
 								workingY *= -1;
 							}
 							// do signs match?
-							if (workingX == coord.stickX && workingY == coord.stickY) {
+							if (workingX == stickX && workingY == stickY) {
 								return i;
 							}
 						}

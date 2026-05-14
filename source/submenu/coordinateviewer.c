@@ -84,6 +84,8 @@ static int externalJsonListLen = 0;
 
 static bool showDesc = false;
 
+static enum STICKMAP_WHICH_STICK whichStick = STICKMAP_A_STICK;
+
 static void setup() {
 	if (pressed == NULL) {
 		pressed = getButtonsDownPtr();
@@ -230,6 +232,10 @@ void menu_coordView() {
 				printStr("+A");
 				drawFontButton(FONT_A);
 				printStr(")");
+				setCursorPos(2, 37);
+				printStr("Toggle Stick (Y");
+				drawFontButton(FONT_Y);
+				printStr(")");
 			}
 			setCursorPos(2, 0);
 			printStr("List (L");
@@ -269,7 +275,7 @@ void menu_coordView() {
 			
 			int index = -1;
 			if (selectedStickmap != 0) {
-				index = getCoordSubcategory(stickMelee, displayList[selectedStickmap - 1]);
+				index = getCoordSubcategory(stickMelee, whichStick, displayList[selectedStickmap - 1]);
 			}
 
 			// coordinate conversion test
@@ -321,7 +327,7 @@ void menu_coordView() {
 			if (selectedStickmap == 0) {
 				printStr("Shown     0/ 0 (");
 			} else {
-				printStr("Shown    %2d/%2d (", selectedStickmapSub,
+				printStr("Category %2d/%2d (", selectedStickmapSub,
 				         displayList[selectedStickmap - 1]->subcategoryDescListLen);
 			}
 			fontButtonSetDpadDirections(FONT_DPAD_UP | FONT_DPAD_DOWN);
@@ -345,13 +351,23 @@ void menu_coordView() {
 			
 			setPrintOffset(0);
 			setCursorPos(14, 0);
-			printStr("Result (A");
+			enum FONT_BUTTON_LIST s = FONT_STICK_A;
+			printStr("Result for ");
+			if (whichStick == STICKMAP_C_STICK) {
+				printStr("C-Stick");
+				s = FONT_STICK_C;
+			} else {
+				printStr("A-Stick");
+			}
+			drawFontButton(s);
+			setCursorPos(15,0);
+			printStr("(A");
 			drawFontButton(FONT_A);
-			printStr("to Hold):");
+			printStr("to Hold Position):");
 			
 			setPrintOffset(4);
 			
-			setCursorPos(15, 2);
+			setCursorPos(16, 2);
 			
 			if (!showDesc) {
 				if (index == -1 || selectedStickmap == 0) {
@@ -360,7 +376,7 @@ void menu_coordView() {
 					if (!holdCoordinate) {
 						scrollingPrintFreeze(true);
 					}
-					startScrollingPrint(30, 300, 270, 400,
+					startScrollingPrint(30, 320, 270, 400,
 					                    displayList[selectedStickmap - 1]->subcategoryList[index].color);
 					setWordWrap(true);
 					printStr(displayList[selectedStickmap - 1]->subcategoryList[index].name);
@@ -388,10 +404,18 @@ void menu_coordView() {
 			if (selectedStickmap != 0) {
 				drawStickmapOverlay(displayList[selectedStickmap - 1]);
 			}
-			
+
+			if (whichStick != STICKMAP_C_STICK) {
+				setDepth(-4);
+			}
+
 			// draw analog stick line
 			drawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, screenCoordX, screenCoordY, GX_COLOR_WHITE);
 			drawBox(screenCoordX - 4, screenCoordY - 4, screenCoordX + 4, screenCoordY + 4, GX_COLOR_WHITE);
+
+			if (whichStick != STICKMAP_C_STICK) {
+				restorePrevDepth();
+			}
 			
 			// draw c-stick line
 			drawLine(COORD_CIRCLE_CENTER_X, SCREEN_POS_CENTER_Y, screenCoordCX, screenCoordCY, GX_COLOR_YELLOW);
@@ -501,8 +525,17 @@ void menu_coordView() {
 		}
 		
 		// "freeze" currently held coordinate
-		if (*pressed == PAD_BUTTON_A && *held == PAD_BUTTON_A && menuState == COORD_VIEW_POST_SETUP && !menuLockEnabled) {
+		else if (*pressed == PAD_BUTTON_A && menuState == COORD_VIEW_POST_SETUP && !menuLockEnabled) {
 			holdCoordinate = !holdCoordinate;
+		}
+
+		// toggle tested stick
+		else if (*pressed == PAD_BUTTON_Y && menuState == COORD_VIEW_POST_SETUP && !menuLockEnabled) {
+			if (whichStick == STICKMAP_A_STICK) {
+				whichStick = STICKMAP_C_STICK;
+			} else {
+				whichStick = STICKMAP_A_STICK;
+			}
 		}
 
 		// coordinate conversion test
@@ -576,6 +609,8 @@ void menu_coordViewEnd() {
 }
 
 void menu_coordViewSetLockState(bool state) {
-	holdCoordinate = false;
-	menuLockEnabled = state;
+	if (menuLockEnabled != state) {
+		holdCoordinate = false;
+		menuLockEnabled = state;
+	}
 }
