@@ -74,7 +74,7 @@ Stickmap **readJsonGTS(json_t *root, int *len);
 void genStickmapCoords(Stickmap *target);
 
 // identify what subcategory a given coordinate pair belongs to, if at all
-int getCoordSubcategory(MeleeCoordinates coord, Stickmap *stickmap);
+int getCoordSubcategory(MeleeCoordinates coord, enum STICKMAP_WHICH_STICK whichStick, Stickmap *stickmap);
 
 void loadBuiltinStickmaps();
 
