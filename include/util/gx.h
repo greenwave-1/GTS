@@ -23,8 +23,8 @@
 // center of screen, 640x480
 // TODO: probably should get these from rmode, just in case...
 #define SCREEN_POS_CENTER_X 320
-#define SCREEN_POS_CENTER_Y 240
-#define COORD_CIRCLE_CENTER_X 430
+#define SCREEN_POS_CENTER_Y 250
+#define COORD_CIRCLE_CENTER_X 420
 #define SCREEN_TIMEPLOT_START 70
 
 
