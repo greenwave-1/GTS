@@ -1,6 +1,6 @@
 # GCC Test Suite (GTS)
 
-GCC Test Suite (GTS) is an open source GameCube controller tester, and an alternative to SmashScope.
+GCC Test Suite (GTS) is an open source GameCube controller tester, with a focus on tests for competitive Melee.
 
 Currently not feature-complete, but in a workable state.
 
@@ -19,6 +19,8 @@ Currently not feature-complete, but in a workable state.
   Shows timing information in frames.
   - Gate Visualizer - Shows the rough state of a given stick gate. Measured by moving the stick slowly around the gate.
   - Export Data - Exports a recording from certain above menus to csv format. 
+- Coordinate Viewer and 2D Plot allow for importing stickmaps from external storage. 
+Place [Altimor stickmap json](https://marp-e3fcf.web.app/) in `/gts/stickmaps/`. 
 - Recordings from some menus can be viewed in other menus. An asterisk will appear next to a menu entry to indicate
 this. 
 - Works on GameCube and Wii, at 480i and 480p.
@@ -77,4 +79,5 @@ it repeatedly). Also thanks for putting up with me in the Discord :)
 - SmashScope and its creators for giving me a baseline to strive for
 - The DevkitPro team and Extrems for making stuff like this a lot more accessible
 - bkacjios / m-overlay for button assets
+- Altimor for stickmap json format
 - Z. B. Wells for being my "Archaic Language Consultant"
