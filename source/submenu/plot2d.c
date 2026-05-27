@@ -359,19 +359,17 @@ void menu_plot2d() {
 			ControllerRec *dispData = *data;
 
 			if (isControllerConnected(CONT_PORT_1)) {
-				if (plotState != PLOT_INPUT) {
-					if (!autoCapture) {
-						setCursorPos(0, 32);
-						printStr("View Instructions (Z");
-						drawFontButton(FONT_Z);
-						printStr(")");
-						setCursorPos(1, 35);
-						printStr("Load JSON (L");
-						drawFontButton(FONT_L);
-						printStr("+A");
-						drawFontButton(FONT_A);
-						printStr(")");
-					}
+				if (plotState != PLOT_INPUT && !autoCapture) {
+					setCursorPos(0, 32);
+					printStr("View Instructions (Z");
+					drawFontButton(FONT_Z);
+					printStr(")");
+					setCursorPos(1, 35);
+					printStr("Load JSON (L");
+					drawFontButton(FONT_L);
+					printStr("+A");
+					drawFontButton(FONT_A);
+					printStr(")");
 					setCursorPos(2, 37);
 					printStr("Toggle Stick (Y");
 					drawFontButton(FONT_Y);
