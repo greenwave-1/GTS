@@ -80,7 +80,6 @@ add_executable(
 		source/util/polling.c
 		source/util/print.c
 		source/util/stickmap.c
-        source/util/arena.c
 
 		# submenus
 		source/submenu/continuous.c
