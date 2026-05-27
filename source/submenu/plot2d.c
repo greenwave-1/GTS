@@ -819,18 +819,20 @@ void menu_plot2d() {
 						}
 					}
 
-					if (*pressed == PAD_TRIGGER_Z && *held == PAD_TRIGGER_Z && !autoCapture && plotState != PLOT_INPUT) {
-						menuState = PLOT_INSTRUCTIONS;
-					} else if (*pressed & PAD_BUTTON_Y && plotState != PLOT_INPUT) {
-						// cycle between analog and c-stick
-						// TODO: rewrite for new texture system
-						if (whichStick == STICKMAP_A_STICK) {
-							whichStick = STICKMAP_C_STICK;
-						} else {
-							whichStick = STICKMAP_A_STICK;
+					if (!autoCapture && plotState != PLOT_INPUT) {
+						if (*pressed == PAD_TRIGGER_Z && *held == PAD_TRIGGER_Z) {
+							menuState = PLOT_INSTRUCTIONS;
+						} else if (*pressed & PAD_BUTTON_Y) {
+							// cycle between analog and c-stick
+							// TODO: rewrite for new texture system
+							if (whichStick == STICKMAP_A_STICK) {
+								whichStick = STICKMAP_C_STICK;
+							} else {
+								whichStick = STICKMAP_A_STICK;
+							}
+						} else if (*pressed == PAD_TRIGGER_Z && *held == (PAD_TRIGGER_Z | PAD_TRIGGER_L)) {
+							showDesc = !showDesc;
 						}
-					} else if (*pressed == PAD_TRIGGER_Z && *held == (PAD_TRIGGER_Z | PAD_TRIGGER_L) && !autoCapture && plotState != PLOT_INPUT) {
-						showDesc = !showDesc;
 					}
 
 					if ((*pressed == PAD_BUTTON_A && *held == PAD_BUTTON_A && !autoCapture) || captureStart) {
