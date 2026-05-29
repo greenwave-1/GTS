@@ -35,3 +35,6 @@ make clean
 
 cd $release_folder/wii/
 zip ../wii.zip apps/GTS/*
+cd ..
+rm -r wii/
+
