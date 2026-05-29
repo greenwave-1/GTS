@@ -14,17 +14,24 @@ DATE=`date -I`
 
 make VERSION=$1
 
-mkdir -p release/wii/apps/GTS
-cp wii-homebrew-channel-data/meta.xml release/wii/apps/GTS/
-cp wii-homebrew-channel-data/icon.png release/wii/apps/GTS/
+release_folder="release_$1"
 
-mv GTS_WII.dol release/wii/apps/GTS/boot.dol
-mv GTS_GC.dol release/GTS_GC.dol
+mkdir -p $release_folder/wii/apps/GTS
+mkdir $release_folder/elfs
 
-sed -i 's/VERSION/'$1'/g' release/wii/apps/GTS/meta.xml
-sed -i 's/DATE/'$DATE'/g' release/wii/apps/GTS/meta.xml
+cp wii-homebrew-channel-data/meta.xml $release_folder/wii/apps/GTS/
+cp wii-homebrew-channel-data/icon.png $release_folder/wii/apps/GTS/
+
+mv GTS_WII.dol $release_folder/wii/apps/GTS/boot.dol
+mv GTS_GC.dol $release_folder/GTS_GC.dol
+
+mv GTS_GC.elf $release_folder/elfs/
+mv GTS_WII.elf $release_folder/elfs/
+
+sed -i 's/VERSION/'$1'/g' $release_folder/wii/apps/GTS/meta.xml
+sed -i 's/DATE/'$DATE'/g' $release_folder/wii/apps/GTS/meta.xml
 
 make clean
 
-cd release/wii/
+cd $release_folder/wii/
 zip ../wii.zip apps/GTS/*
