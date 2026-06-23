@@ -1301,7 +1301,6 @@ void TextureStructSetPixelAt(int x, int y, GXColor color, TextureStruct *texture
 	}
 }
 
-#ifndef NO_DATE_CHECK
 static void drawSnowParticles();
 const static int colorList[][3] = {
 		{ 0xe5, 0x00, 0x00 },
@@ -1324,32 +1323,30 @@ bool drawDateSpecial(enum DATE_CHECK_LIST date, enum CURRENT_MENU menu) {
 	lockResetZDepth = true;
 	
 	bool drawNormalText = true;
-	
+
 	updateVtxDesc(VTX_PRIMITIVES, GX_PASSCLR);
 	int sizeOfQuads = 144;
 	switch (date) {
 		case DATE_PM:
-			if (menu != MAIN_MENU && menu != THANKS_PAGE) {
-				break;
+			if (menu == MAIN_MENU || menu == THANKS_PAGE) {
+				drawNormalText = false;
+				// 6 quads total across 144 pixels
+				sizeOfQuads = 144 / 6;
+				setDepth(-10);
+				for (int i = 0; i < 6; i++) {
+					drawSolidBox(35 + (sizeOfQuads * i), 35,
+					             39 + (sizeOfQuads * (i + 1)), 58,
+					             (GXColor) {colorList[i][0], colorList[i][1], colorList[i][2], 0xFF} );
+				}
+				restorePrevDepth();
+				printStrColor(GX_COLOR_BLACK, GX_COLOR_WHITE, "GCC Test Suite");
 			}
-			drawNormalText = false;
-			// 6 quads total across 144 pixels
-			sizeOfQuads = 144 / 6;
-			setDepth(-10);
-			for (int i = 0; i < 6; i++) {
-				drawSolidBox(35 + (sizeOfQuads * i), 35,
-				                  39 + (sizeOfQuads * (i + 1)), 58,
-				                  (GXColor) {colorList[i][0], colorList[i][1], colorList[i][2], 0xFF} );
-			}
-			restorePrevDepth();
-			printStrColor(GX_COLOR_BLACK, GX_COLOR_WHITE, "GCC Test Suite");
 			break;
 		case DATE_AF:
-			if (menu != MAIN_MENU) {
-				break;
+			if (menu == MAIN_MENU) {
+				drawNormalText = false;
+				printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "Unregistered HyperCam 2");
 			}
-			drawNormalText = false;
-			printStrColor(GX_COLOR_WHITE, GX_COLOR_BLACK, "Unregistered HyperCam 2");
 			break;
 		case DATE_CMAS:
 			// call snow code
@@ -1494,4 +1491,3 @@ static void drawSnowParticles() {
 		restorePrevDepthFromDrawCall();
 	}
 }
-#endif

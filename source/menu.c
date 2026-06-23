@@ -13,6 +13,7 @@
 #include <ogc/video.h>
 #include <ogc/lwp.h>
 #include <ogc/libversion.h>
+#include <ogc/card.h>
 
 #include "waveform.h"
 #include "util/stickmap.h"
@@ -25,14 +26,10 @@
 
 #ifdef DEBUGLOG
 #include "util/logging.h"
-#else
-#include <ogc/card.h>
 #endif
 
-#ifndef NO_DATE_CHECK
 #include "util/datetime.h"
 static enum DATE_CHECK_LIST date;
-#endif
 
 // should I have a "parent" header that includes these?
 #include "submenu/oscilloscope.h"
@@ -133,14 +130,12 @@ static uint8_t thanksPageCounter = 0;
 
 static void menu_mainMenuDraw();
 
-#ifndef DEBUGLOG
 static bool menu_checkBlackout();
 static void menu_blackout();
 
 // used for checkBlackout()
 static void *workarea = NULL;
 static bool blackoutTriggered = false;
-#endif
 
 static lwp_t menu_setup_thread = (lwp_t) NULL;
 
@@ -149,10 +144,8 @@ static enum MENU_INIT_STATE menuInit = MENU_PRE_INIT;
 
 // these functions can take multiple frames to complete, so they should happen asynchronously
 static void *menu_preSetupThread(void *args) {
-	#ifndef NO_DATE_CHECK
 	date = checkDate();
-	#endif
-	
+
 	filesystemInitResult = initFilesystem();
 	
 	loadBuiltinStickmaps();
@@ -280,11 +273,9 @@ bool menu_runMenu() {
 		case ERR:
 			menu_errorDisplay();
 			break;
-		#ifndef DEBUGLOG
 		case BLACKOUT:
 			menu_blackout();
 			break;
-		#endif
 		default:
 			printStr("currentMenu is invalid value, how did this happen?\n");
 			break;
@@ -424,37 +415,23 @@ bool menu_runMenu() {
 // done this way so that it can be drawn anytime, even during exit fadeout
 void menu_drawHeader() {
 	resetCursor();
-	
-	#ifndef NO_DATE_CHECK
-	if (drawDateSpecial(date, currentMenu)) {
-	#endif
-		char *headerStr = menu_getMenuString(currentMenu);
-		if (headerStr != NULL) {
-			printStr(headerStr);
-		} else {
-			switch (currentMenu) {
-				case MAIN_MENU:
-					printStr("GCC Test Suite");
-					if (mainMenuDraw) {
-						menu_mainMenuDraw();
-					}
-					break;
-				case THANKS_PAGE:
-					#ifndef NO_DATE_CHECK
-					drawDateSpecial(DATE_PM, MAIN_MENU);
-					#else
-					printStr("GCC Test Suite");
-					#endif
-					break;
-				case BLACKOUT:
-				default:
-					break;
+
+	switch (currentMenu) {
+		case THANKS_PAGE:
+			drawDateSpecial(DATE_PM, THANKS_PAGE);
+			drawDateSpecial(date, currentMenu);
+			break;
+		case MAIN_MENU:
+			if (mainMenuDraw) {
+				menu_mainMenuDraw();
+				resetCursor();
 			}
-		}
-		
-	#ifndef NO_DATE_CHECK
+		default:
+			if (drawDateSpecial(date, currentMenu)) {
+				printStr(menu_getMenuString(currentMenu));
+			}
+			break;
 	}
-	#endif
 }
 
 static int colSelection = 0;
@@ -685,13 +662,11 @@ void menu_mainMenu() {
 		mainMenuDraw = !mainMenuDraw;
 	}
 	
-	#ifndef DEBUGLOG
 	if (!blackoutTriggered) {
 		if (menu_checkBlackout()) {
 			currentMenu = BLACKOUT;
 		}
 	}
-	#endif
 }
 
 void menu_fileExport() {
@@ -817,6 +792,7 @@ char* menu_getMenuString(enum CURRENT_MENU menu) {
 			break;
 		case MAIN_MENU:
 		case THANKS_PAGE:
+			return "GCC Test Suite";
 		case BLACKOUT:
 		default:
 			return NULL;
@@ -852,7 +828,6 @@ void menu_thanksPage() {
 	printStr("\n\nLicensed under GNU GPLv3");
 }
 
-#ifndef DEBUGLOG
 static bool initCard = false;
 static bool cardRemoved = false;
 static bool cardMounting = false;
@@ -867,6 +842,7 @@ static void mount_callback(int32_t chn, int32_t res) {
 }
 
 static bool menu_checkBlackout() {
+	#ifndef DEBUGLOG
 	if (!initCard) {
 		cardInitCode = CARD_Init("GGSE", "A4");
 		workarea = memalign(32, CARD_WORKAREA);
@@ -901,6 +877,7 @@ static bool menu_checkBlackout() {
 			}
 		}
 	}
+	#endif
 	
 	return false;
 }
@@ -933,7 +910,6 @@ static void menu_blackout() {
 	setFontScale(1);
 	restorePrevCursorDepth();
 }
-#endif
 
 // done here so other files dont have to specifically include errordisplay.h
 void menu_setError(char *str, ...) {

@@ -187,9 +187,7 @@ void initTextureStruct(uint8_t textureFormat, int x, int y, TextureStruct *out);
 // set the pixel at coordinates (x,y) to color in texture
 void TextureStructSetPixelAt(int x, int y, GXColor color, TextureStruct *texture);
 
-#ifndef NO_DATE_CHECK
 // true if standard "GCC Test Suite" text should be drawn
 bool drawDateSpecial(enum DATE_CHECK_LIST date, enum CURRENT_MENU menu);
-#endif
 
 #endif //GTS_GX_H

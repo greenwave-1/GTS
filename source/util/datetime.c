@@ -30,8 +30,6 @@ char *getDateTimeStr() {
 	return retStr;
 }
 
-#ifndef NO_DATE_CHECK
-
 static struct tm * getCurrTimeInfo() {
 	time_t currTime;
 	struct tm * timeinfo;
@@ -84,4 +82,3 @@ enum DATE_CHECK_LIST checkDate() {
 	
 	return DATE_NONE;
 }
-#endif

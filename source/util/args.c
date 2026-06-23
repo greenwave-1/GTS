@@ -39,7 +39,6 @@ void handleArgs(int argc, char **argv) {
 			case 0:
 				break;
 			case 'd':
-				#ifndef NO_DATE_CHECK
 				if (optarg) {
 					if (strcasecmp(optarg, "pm") == 0) {
 						forceDate(DATE_PM);
@@ -54,7 +53,6 @@ void handleArgs(int argc, char **argv) {
 						forceDate(DATE_NONE);
 					}
 				}
-				#endif
 				break;
 			case 'm':
 				if (optarg) {
@@ -86,6 +84,9 @@ void handleArgs(int argc, char **argv) {
 					}
 					if (strcasecmp(optarg, "thanks") == 0) {
 						menu_setCurrentMenu(THANKS_PAGE);
+					}
+					if (strcasecmp(optarg, "blackout") == 0) {
+						menu_setCurrentMenu(BLACKOUT);
 					}
 				}
 				break;
