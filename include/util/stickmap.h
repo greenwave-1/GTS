@@ -11,6 +11,7 @@
 
 #include "waveform.h"
 
+#include <stdint.h>
 #include <jansson.h>
 
 #include "util/gx.h"
@@ -19,6 +20,14 @@ enum TEX_GEN_ASYNC_STATE { TEX_ASYNC_INIT, TEX_ASYNC_GEN, TEX_ASYNC_DONE };
 enum TEX_GEN_ASYNC_STATE isExternalStickmapReady();
 
 enum STICKMAP_WHICH_STICK { STICKMAP_NOT_SPECIFIED, STICKMAP_A_STICK, STICKMAP_C_STICK };
+
+// OK SO THIS IS DUMB BUT I HOPE IT WORKS
+// i'm doing a "bad thing" here, where the coordinate buffer can be in either:
+// stickmap or ExternalStickmap
+// the idea is that with external files, i can allocate one block of memory, then subdivide it to each stickmap
+// each subcategory will get a pointer to the start of its buffer
+// done this way so that I don't risk fragmentation when loading a new external file, since i only have to
+// free a single buffer. i still have to traverse the structure and unset pointers tho...
 
 typedef struct StickmapSubcategory {
 	// info from json itself
@@ -37,7 +46,7 @@ typedef struct StickmapSubcategory {
 	
 	// info derived from above
 	int numOfCoords;
-	int (*coordList)[2];
+	int8_t (*coordList)[2];
 } StickmapSubcategory;
 
 typedef struct StickmapSubcategoryDesc {
@@ -55,6 +64,8 @@ typedef struct Stickmap {
 	// optional data
 	int subcategoryDescListLen;
 	TextureStruct texture;
+	int totalCoords;
+	void *stickmapBufferStart;
 	StickmapSubcategoryDesc *subcategoryDescList;
 } Stickmap;
 
@@ -69,10 +80,6 @@ enum STICKMAP_JSON_TYPE identifyJson(const char jsonFile[], json_t **root);
 Stickmap *readJsonNormal(json_t *root, const char *stickmapName);
 Stickmap **readJsonGTS(json_t *root, int *len);
 
-// optionally generate list of coordinates and store them
-// mainly used for actually drawing a stickmap, instead of just validating a single coordinate
-void genStickmapCoords(Stickmap *target);
-
 // identify what subcategory a given coordinate pair belongs to, if at all
 int getCoordSubcategory(MeleeCoordinates coord, enum STICKMAP_WHICH_STICK whichStick, Stickmap *stickmap);
 
@@ -86,6 +93,8 @@ typedef struct ExternalStickmap {
 	char *fileName;
 	enum STICKMAP_JSON_TYPE stickmapType;
 	bool generatedTextures;
+	void *coordBuffer;
+	int coordBufferSize;
 	// 'array' of stickmaps
 	// done this way to simplify things a bit
 	// basically if a json is a 'normal' json, it will be treated

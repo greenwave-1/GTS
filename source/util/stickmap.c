@@ -77,74 +77,89 @@ enum TEX_GEN_ASYNC_STATE isExternalStickmapReady() {
 }
 
 static void createSubCoordList(StickmapSubcategory *data) {
-	// we do this twice
-	for (int iter = 0; iter < 2; iter++) {
-		int totalCoords = 0;
-		
-		// iterate over provided range
-		for (int x = data->minX; x <= data->maxX; x++) {
-			for (int y = data->minY; y <= data->maxY; y++) {
-				ControllerSample s;
-				s.stickX = x;
-				s.stickY = y;
-				MeleeCoordinates temp = convertStickRawToMelee(s);
+	int totalCoords = 0;
 
-				// ignore values that were scaled
-				if (temp.stickX != x || temp.stickY != y) {
-					continue;
-				}
+	// iterate over provided range
+	for (int x = data->minX; x <= data->maxX; x++) {
+		for (int y = data->minY; y <= data->maxY; y++) {
+			ControllerSample s;
+			s.stickX = x;
+			s.stickY = y;
+			MeleeCoordinates temp = convertStickRawToMelee(s);
 
-				// check angle
-				if (temp.stickAngle >= data->angleMin && temp.stickAngle <= data->angleMax) {
-					// check magnitude
-					if (temp.stickMagnitude >= data->magnitudeMin && temp.stickMagnitude  <= data->magnitudeMax) {
+			// ignore values that were scaled
+			if (temp.stickX != x || temp.stickY != y) {
+				continue;
+			}
 
-						// iterate over each valid quadrant
-						for (int i = 0; i < 4; i++) {
-							if (data->quadrants[i]) {
-								// check if we would be storing a "negative zero"
-								if (((i == 1 || i == 2) && x == 0) ||
-									(i > 1 && y == 0)) {
-									continue;
-								}
-
-								// store values on second run
-								if (iter == 1) {
-									data->coordList[totalCoords][0] = temp.stickX;
-									data->coordList[totalCoords][1] = temp.stickY;
-
-									// set sign based on quadrant
-									// x
-									if (i == 1 || i == 2) {
-										data->coordList[totalCoords][0] *= -1;
-									}
-
-									// y
-									if (i > 1) {
-										data->coordList[totalCoords][1] *= -1;
-									}
-								}
-
-								// increment
-								totalCoords++;
+			// check angle
+			if (temp.stickAngle >= data->angleMin && temp.stickAngle <= data->angleMax) {
+				// check magnitude
+				if (temp.stickMagnitude >= data->magnitudeMin && temp.stickMagnitude <= data->magnitudeMax) {
+					// iterate over each valid quadrant
+					for (int i = 0; i < 4; i++) {
+						if (data->quadrants[i]) {
+							// check if we would be storing a "negative zero"
+							if (((i == 1 || i == 2) && x == 0) ||
+							    (i > 1 && y == 0)) {
+								continue;
 							}
+
+							// if a buffer exists, store the values
+							if (data->numOfCoords > 0 && data->coordList != NULL) {
+								data->coordList[totalCoords][0] = temp.stickX;
+								data->coordList[totalCoords][1] = temp.stickY;
+								// set sign based on quadrant
+								// x
+								if (i == 1 || i == 2) {
+									data->coordList[totalCoords][0] *= -1;
+								}
+								// y
+								if (i > 1) {
+									data->coordList[totalCoords][1] *= -1;
+								}
+							}
+							// increment
+							totalCoords++;
 						}
 					}
 				}
 			}
 		}
-		
-		// allocate memory on first run
-		if (iter == 0) {
-			if (totalCoords == 0) {
-				return;
+	}
+
+	// do nothing
+	if (totalCoords == 0) {
+		return;
+	}
+
+	// store total coords if we haven't already
+	if (data->numOfCoords == 0) {
+		data->numOfCoords = totalCoords;
+	}
+}
+
+static void getStickmapCoordNum(Stickmap *target) {
+	// only set it if we haven't yet
+	if (target->totalCoords == 0) {
+		// get total number of coords
+		for (int i = 0; i < target->subcategoryListLen; i++) {
+			createSubCoordList(&target->subcategoryList[i]);
+			if (target->subcategoryList[i].numOfCoords > 0) {
+				target->totalCoords += target->subcategoryList[i].numOfCoords;
 			}
-			data->numOfCoords = totalCoords;
-			data->coordList = malloc(sizeof(int[data->numOfCoords][2]));
-			if (data->coordList == NULL) {
-				data->numOfCoords = 0;
-				return;
-			}
+		}
+	}
+}
+
+static void setStickmapCoordList(Stickmap *target) {
+	// buffer should already be allocated
+	if (target->stickmapBufferStart != NULL) {
+		void *buf = target->stickmapBufferStart;
+		for (int i = 0; i < target->subcategoryListLen; i++) {
+			target->subcategoryList[i].coordList = buf;
+			buf += (target->subcategoryList[i].numOfCoords * 2);
+			createSubCoordList(&target->subcategoryList[i]);
 		}
 	}
 }
@@ -357,6 +372,9 @@ Stickmap *readJsonNormal(json_t *root, const char *stickmapName) {
 	// used to determine if data has been initialized
 	retVal->texture.texData = NULL;
 
+	retVal->totalCoords = 0;
+	retVal->stickmapBufferStart = NULL;
+
 	// return actual pointer if we're good
 	if (retVal->subcategoryListLen != 0) {
 		return retVal;
@@ -466,9 +484,46 @@ Stickmap **readJsonGTS(json_t *root, int *len) {
 	return NULL;
 }
 
-void genStickmapCoords(Stickmap *target) {
-	for (int i = 0; i < target->subcategoryListLen; i++) {
-		createSubCoordList(&target->subcategoryList[i]);
+static void createExternalStickmapCoordList(ExternalStickmap *target) {
+	// get total coords if we haven't already
+	if (target->coordBufferSize == 0) {
+		for (int i = 0; i < target->stickmapArrLen; i++) {
+			getStickmapCoordNum(target->stickmapArr[i]);
+			if (target->stickmapArr[i]->totalCoords > 0) {
+				target->coordBufferSize += target->stickmapArr[i]->totalCoords;
+			}
+		}
+	}
+
+	// arbitrary size restriction, 5MB
+	// each coord is a pair
+	if (target->coordBuffer == NULL && target->coordBufferSize > 0 && target->coordBufferSize < (2500000)) {
+		target->coordBuffer = malloc( sizeof(int8_t[2]) * target->coordBufferSize );
+	}
+
+	if (target->coordBuffer != NULL) {
+		void *workingPointer = target->coordBuffer;
+
+		for (int i = 0; i < target->stickmapArrLen; i++) {
+			target->stickmapArr[i]->stickmapBufferStart = workingPointer;
+			workingPointer += (target->stickmapArr[i]->totalCoords * 2);
+			setStickmapCoordList(target->stickmapArr[i]);
+		}
+	}
+}
+
+static void destroyExternalStickmapCoordList(ExternalStickmap *target) {
+	if (target->coordBuffer != NULL) {
+		// unset all references to buffer first
+		for (int i = 0; i < target->stickmapArrLen; i++) {
+			Stickmap *s = target->stickmapArr[i];
+			for (int j = 0; j < s->subcategoryListLen; j++) {
+				s->subcategoryList[j].coordList = NULL;
+			}
+			s->stickmapBufferStart = NULL;
+		}
+		free(target->coordBuffer);
+		target->coordBuffer = NULL;
 	}
 }
 
@@ -562,9 +617,19 @@ void loadBuiltinStickmaps() {
 			menu_setError("Built-in json data for coord view failed to read");
 			return;
 		}
+
 		coordViewStickmaps = readJsonGTS(root, &coordViewStickmapsLen);
 		for (int i = 0; i < coordViewStickmapsLen; i++) {
-			genStickmapCoords(coordViewStickmaps[i]);
+			Stickmap *s = coordViewStickmaps[i];
+			getStickmapCoordNum(s);
+			// allocate buffer
+			if (s->totalCoords > 0 && s->totalCoords < 25000) {
+				s->stickmapBufferStart = malloc( sizeof(int8_t[2]) * s->totalCoords );
+			}
+
+			if (s->stickmapBufferStart != NULL) {
+				setStickmapCoordList(s);
+			}
 		}
 	}
 }
@@ -593,6 +658,9 @@ static bool readFilesystemForJson = false;
 
 static ExternalStickmap *externalStickmaps = NULL;
 static int externalStickmapsLen = 0;
+
+static int currentExternalStickmapCoordView = -1;
+static int currentExternalStickmap2dPlot = -1;
 
 void loadExternalJsonList() {
 	if (!readFilesystemForJson) {
@@ -635,6 +703,8 @@ void loadExternalJsonList() {
 					externalStickmaps[externalStickmapsLen].fileName = externalJsonFiles[i];
 					externalStickmaps[externalStickmapsLen].stickmapArrLen = -1;
 					externalStickmaps[externalStickmapsLen].generatedTextures = false;
+					externalStickmaps[externalStickmapsLen].coordBuffer = NULL;
+					externalStickmaps[externalStickmapsLen].coordBufferSize = 0;
 					
 					// determine type of json
 					switch (externalStickmaps[externalStickmapsLen].stickmapType) {
@@ -667,9 +737,6 @@ void loadExternalJsonList() {
 					
 					// only increment our index if we actually got data...
 					if (externalStickmaps[externalStickmapsLen].stickmapArrLen > 0) {
-						for (int j = 0; j < externalStickmaps[externalStickmapsLen].stickmapArrLen; j++) {
-							genStickmapCoords(externalStickmaps[externalStickmapsLen].stickmapArr[j]);
-						}
 						externalStickmapsLen++;
 					}
 				}
@@ -785,14 +852,18 @@ int drawJsonFilePicker(ExternalStickmap *list) {
 
 void freeStickmap(Stickmap *target) {
 	if (target != NULL) {
-		// free coordinate array if applicable
-		for (int i = 0; i < target->subcategoryListLen; i++) {
-			free(target->subcategoryList[i].coordList);
-		}
+		// we don't free the coord list here since it can be in one of two places
+
 		// free other arrays
-		free(target->subcategoryList);
-		free(target->subcategoryDescList);
-		free(target->texture.texData);
+		if (target->subcategoryList != NULL) {
+			free(target->subcategoryList);
+		}
+		if (target->subcategoryDescList != NULL) {
+			free(target->subcategoryDescList);
+		}
+		if (target->texture.texData != NULL) {
+			free(target->texture.texData);
+		}
 		
 		free(target);
 		
@@ -803,9 +874,11 @@ void freeStickmap(Stickmap *target) {
 void freeBuiltinJsonList() {
 	if (coordViewStickmaps != NULL && plot2dStickmaps != NULL) {
 		for (int i = 0; i < coordViewStickmapsLen; i++) {
+			free(coordViewStickmaps[i]->stickmapBufferStart);
 			freeStickmap(coordViewStickmaps[i]);
 		}
 		for (int i = 0; i < plot2dStickmapsLen; i++) {
+			free(plot2dStickmaps[i]->stickmapBufferStart);
 			freeStickmap(plot2dStickmaps[i]);
 		}
 	}
@@ -813,6 +886,7 @@ void freeBuiltinJsonList() {
 
 void freeExternalJsonList() {
 	if (externalJsonNum != 0) {
+		destroyExternalStickmapCoordList(externalStickmaps);
 		for (int i = 0; i < externalJsonNum; i++) {
 			ExternalStickmap *ptr = &externalStickmaps[i];
 			for (int j = 0; j < ptr->stickmapArrLen; j++) {
