@@ -12,7 +12,7 @@
 // YY-MM-DD_HH-MM-SS format
 char *getDateTimeStr() {
 	// 32 chars max
-	char *retStr = malloc(sizeof(char) * 32);
+	char *retStr = calloc(32, sizeof(char));
 	
 	// get current time
 	time_t currTime;
