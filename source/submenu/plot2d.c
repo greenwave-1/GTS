@@ -868,7 +868,7 @@ void menu_plot2d() {
 				setCursorPos(10, 11);
 				printStr("Generating textures, please wait ");
 				printSpinningLineInterval(10);
-				if (isExternalStickmapReady()) {
+				if (isStickmapTextureGenDone()) {
 					makingTextures = false;
 				}
 			} else {

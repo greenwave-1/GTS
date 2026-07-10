@@ -17,7 +17,7 @@
 #include "util/gx.h"
 
 enum TEX_GEN_ASYNC_STATE { TEX_ASYNC_INIT, TEX_ASYNC_GEN, TEX_ASYNC_DONE };
-enum TEX_GEN_ASYNC_STATE isExternalStickmapReady();
+bool isStickmapTextureGenDone();
 
 enum STICKMAP_WHICH_STICK { STICKMAP_NOT_SPECIFIED, STICKMAP_A_STICK, STICKMAP_C_STICK };
 

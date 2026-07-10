@@ -154,9 +154,16 @@ void getCurrentTexmapDims(int *width, int *height) {
 	}
 }
 
+static bool isTextureObjInit = false;
 void loadStickmapTexture(TextureStruct *tex) {
 	if (tex != NULL && tex->texData != NULL) {
-		GX_InitTexObj(&stickmapTex, tex->texData, 256, 256, tex->textureFormat, GX_CLAMP, GX_CLAMP, GX_FALSE);
+		if (!isTextureObjInit) {
+			GX_InitTexObj(&stickmapTex, tex->texData, 256, 256, tex->textureFormat, GX_CLAMP, GX_CLAMP, GX_FALSE);
+			isTextureObjInit = true;
+		} else {
+			// not sure if this is faster? i would assume so?
+			GX_InitTexObjData(&stickmapTex, tex->texData);
+		}
 		GX_LoadTexObj(&stickmapTex, TEXMAP_STICKMAP);
 	}
 }
@@ -1184,6 +1191,7 @@ void initTextureStruct(uint8_t textureFormat, int x, int y, TextureStruct *out) 
 	out->widthPixels = out->widthBlocks * out->pixelsPerBlockWidth;
 	out->heightPixels = out->heightBlocks * out->pixelsPerBlockHeight;
 
+	/*
 	// allocate texture memory
 	// RGBA32/RGBA8, so 4 bytes per pixel
 	// texture data is expected to be 32 byte aligned
@@ -1194,6 +1202,7 @@ void initTextureStruct(uint8_t textureFormat, int x, int y, TextureStruct *out) 
 	memset(buf, 0, bufSize);
 
 	out->texData = buf;
+	 */
 }
 
 static int getPixelNum(int x, int y, TextureStruct *tex) {

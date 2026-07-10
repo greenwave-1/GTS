@@ -29,9 +29,11 @@ static int smListLen = 0;
 static void *generateStickmapTextureThread(void *arg) {
 	for (int i = 0; i < smListLen; i++) {
 		Stickmap *sm = smList[i];
-		if (sm->texture.texData == NULL) {
+		// don't do anything if there isn't a buffer allocated
+		// TODO: make this an error case?
+		if (sm->texture.texData != NULL) {
 			//initTextureStruct(GX_TF_RGBA8, 256, 256, &sm->texture);
-			initTextureStruct(GX_TF_RGB565, 256, 256, &sm->texture);
+			//initTextureStruct(GX_TF_RGB565, 256, 256, &sm->texture);
 			for (int y = 0; y < 256; y++) {
 				for (int x = 0; x < 256; x++) {
 					ControllerSample s;
@@ -72,7 +74,7 @@ void generateStickmapTextureAsync(Stickmap **stickmapList, int len) {
 	}
 }
 
-enum TEX_GEN_ASYNC_STATE isExternalStickmapReady() {
+bool isStickmapTextureGenDone() {
 	return texGenState == TEX_ASYNC_DONE;
 }
 
@@ -484,49 +486,6 @@ Stickmap **readJsonGTS(json_t *root, int *len) {
 	return NULL;
 }
 
-static void createExternalStickmapCoordList(ExternalStickmap *target) {
-	// get total coords if we haven't already
-	if (target->coordBufferSize == 0) {
-		for (int i = 0; i < target->stickmapArrLen; i++) {
-			getStickmapCoordNum(target->stickmapArr[i]);
-			if (target->stickmapArr[i]->totalCoords > 0) {
-				target->coordBufferSize += target->stickmapArr[i]->totalCoords;
-			}
-		}
-	}
-
-	// arbitrary size restriction, 5MB
-	// each coord is a pair
-	if (target->coordBuffer == NULL && target->coordBufferSize > 0 && target->coordBufferSize < (2500000)) {
-		target->coordBuffer = malloc( sizeof(int8_t[2]) * target->coordBufferSize );
-	}
-
-	if (target->coordBuffer != NULL) {
-		void *workingPointer = target->coordBuffer;
-
-		for (int i = 0; i < target->stickmapArrLen; i++) {
-			target->stickmapArr[i]->stickmapBufferStart = workingPointer;
-			workingPointer += (target->stickmapArr[i]->totalCoords * 2);
-			setStickmapCoordList(target->stickmapArr[i]);
-		}
-	}
-}
-
-static void destroyExternalStickmapCoordList(ExternalStickmap *target) {
-	if (target->coordBuffer != NULL) {
-		// unset all references to buffer first
-		for (int i = 0; i < target->stickmapArrLen; i++) {
-			Stickmap *s = target->stickmapArr[i];
-			for (int j = 0; j < s->subcategoryListLen; j++) {
-				s->subcategoryList[j].coordList = NULL;
-			}
-			s->stickmapBufferStart = NULL;
-		}
-		free(target->coordBuffer);
-		target->coordBuffer = NULL;
-	}
-}
-
 int getCoordSubcategory(MeleeCoordinates coord, enum STICKMAP_WHICH_STICK whichStick, Stickmap *stickmap) {
 	// get the specified stick
 	int8_t stickX = 0;
@@ -597,6 +556,7 @@ int getCoordSubcategory(MeleeCoordinates coord, enum STICKMAP_WHICH_STICK whichS
 }
 
 static Stickmap **plot2dStickmaps = NULL;
+static uint8_t *plot2dStickmapTextures = NULL;
 static int plot2dStickmapsLen = 0;
 static Stickmap **coordViewStickmaps = NULL;
 static int coordViewStickmapsLen = 0;
@@ -610,6 +570,28 @@ void loadBuiltinStickmaps() {
 			return;
 		}
 		plot2dStickmaps = readJsonGTS(root, &plot2dStickmapsLen);
+
+		// allocate space for the total number of stickmaps present
+		int bufSize = GX_GetTexBufferSize(256, 256, GX_TF_RGB565, GX_FALSE, GX_FALSE);
+		// single contiguous block of memory
+		plot2dStickmapTextures = memalign(32, bufSize * plot2dStickmapsLen);
+
+		// clear memory
+		memset(plot2dStickmapTextures, 0, bufSize * plot2dStickmapsLen);
+
+		{
+			uint8_t *temp = plot2dStickmapTextures;
+			for (int i = 0; i < plot2dStickmapsLen; i++) {
+				// init struct
+				initTextureStruct(GX_TF_RGB565, 256, 256, &plot2dStickmaps[i]->texture);
+				// assign buffer
+				plot2dStickmaps[i]->texture.texData = temp;
+				temp += bufSize;
+			}
+		}
+
+		// start texture generation
+		generateStickmapTextureAsync(plot2dStickmaps, plot2dStickmapsLen);
 		
 		jsonType = identifyJson((char *) coordview_stickmaps_json, &root);
 
@@ -755,10 +737,68 @@ ExternalStickmap* getExternalJsonList(int *length) {
 	*length = -1;
 	return NULL;
 }
+
+// we create one big buffer and subdivide it ourselves
+static void createExternalStickmapCoordList(ExternalStickmap *target) {
+	// get total coords if we haven't already
+	if (target->coordBufferSize == 0) {
+		for (int i = 0; i < target->stickmapArrLen; i++) {
+			getStickmapCoordNum(target->stickmapArr[i]);
+			if (target->stickmapArr[i]->totalCoords > 0) {
+				target->coordBufferSize += target->stickmapArr[i]->totalCoords;
+			}
+		}
+	}
+
+	// arbitrary size restriction, 5MB
+	// each coord is a pair
+	if (target->coordBuffer == NULL && target->coordBufferSize > 0 && target->coordBufferSize < (2500000)) {
+		target->coordBuffer = malloc( sizeof(int8_t[2]) * target->coordBufferSize );
+	}
+
+	if (target->coordBuffer != NULL) {
+		void *workingPointer = target->coordBuffer;
+
+		for (int i = 0; i < target->stickmapArrLen; i++) {
+			target->stickmapArr[i]->stickmapBufferStart = workingPointer;
+			workingPointer += (target->stickmapArr[i]->totalCoords * 2);
+			setStickmapCoordList(target->stickmapArr[i]);
+		}
+	}
+}
+
+static void destroyExternalStickmapCoordList(ExternalStickmap *target) {
+	if (target->coordBuffer != NULL) {
+		// unset all references to buffer first
+		// since this might be used later, we need to unset these to be safe
+		for (int i = 0; i < target->stickmapArrLen; i++) {
+			Stickmap *s = target->stickmapArr[i];
+			for (int j = 0; j < s->subcategoryListLen; j++) {
+				s->subcategoryList[j].coordList = NULL;
+			}
+			s->stickmapBufferStart = NULL;
+		}
+		free(target->coordBuffer);
+		target->coordBuffer = NULL;
+	}
+}
+
+static void setExternalStickmapTextures(ExternalStickmap *target) {
+	// unset previous target
+	if (currentExternalStickmap2dPlot != -1) {
+		for (int i = 0; i < target->stickmapArrLen; i++) {
+			externalStickmaps[currentExternalStickmap2dPlot].stickmapArr[i]->texture.texData = NULL;
+		}
+	}
+
+	// start generating textures
+	// TODO
+
+}
+
 // var for counting how long the stick has been held away from neutral
 static uint8_t stickheld = 0;
 static int stickYPos = 0, stickYPrevPos = 0;
-
 static int jsonPickerCursor = 0;
 int drawJsonFilePicker(ExternalStickmap *list) {
 	printStr("Choose a file (%s):\n\n", getDeviceString(getCurrentDevice()));
@@ -852,21 +892,23 @@ int drawJsonFilePicker(ExternalStickmap *list) {
 
 void freeStickmap(Stickmap *target) {
 	if (target != NULL) {
-		// we don't free the coord list here since it can be in one of two places
-
-		// free other arrays
+		// we might free some stuff in a parent function, depending on where allocation actually took place
+		// this is indicated by a null pointer
+		// (basically only applies to builtin coordview list)
+		if (target->stickmapBufferStart != NULL) {
+			free(target->stickmapBufferStart);
+		}
 		if (target->subcategoryList != NULL) {
 			free(target->subcategoryList);
 		}
 		if (target->subcategoryDescList != NULL) {
 			free(target->subcategoryDescList);
 		}
-		if (target->texture.texData != NULL) {
-			free(target->texture.texData);
-		}
-		
+
+		// texture data is always allocated externally, so we don't free it here
+
 		free(target);
-		
+
 		target = NULL;
 	}
 }
@@ -874,13 +916,15 @@ void freeStickmap(Stickmap *target) {
 void freeBuiltinJsonList() {
 	if (coordViewStickmaps != NULL && plot2dStickmaps != NULL) {
 		for (int i = 0; i < coordViewStickmapsLen; i++) {
-			free(coordViewStickmaps[i]->stickmapBufferStart);
+			// builtin coordview stickmap allocations are the most 'normal' case
 			freeStickmap(coordViewStickmaps[i]);
 		}
+
 		for (int i = 0; i < plot2dStickmapsLen; i++) {
-			free(plot2dStickmaps[i]->stickmapBufferStart);
 			freeStickmap(plot2dStickmaps[i]);
 		}
+		// free preallocated block for 2d plot textures
+		free(plot2dStickmapTextures);
 	}
 }
 
@@ -890,9 +934,15 @@ void freeExternalJsonList() {
 		for (int i = 0; i < externalJsonNum; i++) {
 			ExternalStickmap *ptr = &externalStickmaps[i];
 			for (int j = 0; j < ptr->stickmapArrLen; j++) {
+				// coordlist will be free'd in the above function call, so this function call won't try to free it
 				freeStickmap(ptr->stickmapArr[j]);
 			}
 		}
+
+		// free external stickmap 2d plot texture block
+		// TODO
+
+		// and the rest of it...
 		free(externalStickmaps);
 		free(externalJsonFiles);
 		externalStickmaps = NULL;

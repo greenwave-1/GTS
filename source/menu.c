@@ -151,12 +151,12 @@ static void *menu_preSetupThread(void *args) {
 	loadBuiltinStickmaps();
 
 	// create textures for 2d plot
-	int len = 0;
-	Stickmap **s = getBuiltinStickmap(STICKMAP_PLOT2D, &len);
-	generateStickmapTextureAsync(s, len);
+	//int len = 0;
+	//Stickmap **s = getBuiltinStickmap(STICKMAP_PLOT2D, &len);
+	//generateStickmapTextureAsync(s, len);
 
 	// wait for textures to finish
-	while (!isExternalStickmapReady()) {
+	while (!isStickmapTextureGenDone()) {
 		LWP_YieldThread();
 	}
 	
