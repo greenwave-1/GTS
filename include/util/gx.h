@@ -180,8 +180,7 @@ void drawTextureFullScaled(int x1, int y1, int x2, int y2, GXColor color);
 void drawSubTexture(int x1, int y1, int x2, int y2, int tx1, int ty1, int tx2, int ty2, GXColor color);
 
 // initialises a struct with the given dimensions
-// memory for *texData _IS_ allocated here, so it should be ready
-// to directly pass to GX_InitTexObj()
+// memory for *texData is _NOT_ allocated here
 void initTextureStruct(uint8_t textureFormat, int x, int y, TextureStruct *out);
 
 // set the pixel at coordinates (x,y) to color in texture
