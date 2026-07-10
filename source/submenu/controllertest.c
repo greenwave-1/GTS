@@ -138,7 +138,8 @@ void menu_controllerTest() {
 				// mainly useful for phobgcc calibration stuffs
 				{
 					int8_t max = abs(origin.substickX) > abs(origin.substickY) ? abs(origin.substickX) : abs(origin.substickY);
-					if (max >= 100) {
+					// abs() on signed 8 bit int may not work
+					if (max >= 100 || max == -128) {
 						if (originFlashCounter >= 30) {
 							printStrColor(GX_COLOR_RED, GX_COLOR_WHITE, "(%4d,%4d)", origin.substickX, origin.substickY);
 						} else {
