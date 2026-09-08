@@ -22,6 +22,18 @@
 #include "plot2d_stickmaps_json.h"
 #include "coordview_stickmaps_json.h"
 
+// TODO: this is probably VERY wrong
+//  find out what the proper way is...
+static int getFreeMem() {
+	int retVal = 0;
+	#ifdef HW_DOL
+	retVal = SYS_GetArena1Size();
+	#else
+	retVal = mallinfo().fordblks;
+	#endif
+	return retVal;
+}
+
 static enum TEX_GEN_ASYNC_STATE texGenState = TEX_ASYNC_INIT;
 
 static Stickmap **smList = NULL;
@@ -655,7 +667,7 @@ void loadExternalJsonList() {
 					// if at ANY point we have less than 1MB of memory left, stop
 					// technically this should be different on wii, since it seems like malloc's go to arena2
 					// after a certain point...
-					if (SYS_GetArena1Size() < (1024 * 1000)) {
+					if (getFreeMem() < (1024 * 1000)) {
 						break;
 					}
 					
