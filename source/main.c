@@ -30,6 +30,21 @@ static GXRModeObj *rmode = NULL;
 static VIRetraceCallback cb;
 
 static char* resetMessage = "Exiting...";
+static bool isResetAllowed = false;
+
+static bool doReset() {
+	bool state = SYS_ResetButtonDown();
+	if (isResetAllowed) {
+		return state;
+	} else {
+		// allow reset once we detect it being released
+		if (!state) {
+			isResetAllowed = true;
+		}
+	}
+
+	return false;
+}
 
 void retraceCallback(uint32_t retraceCnt) {
 	setSamplingRate();
@@ -134,7 +149,7 @@ int main(int argc, char **argv) {
 			}
 			
 			// exit completely if reset is pressed
-			if (SYS_ResetButtonDown()) {
+			if (doReset()) {
 				cleanupBeforeExit();
 				return 0;
 			}
@@ -263,7 +278,7 @@ int main(int argc, char **argv) {
 		}
 		#endif
 		
-		if (SYS_ResetButtonDown()) {
+		if (doReset()) {
 			break;
 		}
 		
