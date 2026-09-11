@@ -195,10 +195,11 @@ void setupGX(GXRModeObj *rmode) {
 	
 	// other gx setup stuff
 	GX_SetViewport(0, 0, rmodePtr->fbWidth, rmodePtr->efbHeight,0,1);
+	GX_SetScissor(0, 0, rmodePtr->fbWidth, rmodePtr->efbHeight);
+	GX_SetDispCopyFrame2Field(rmodePtr->copy_interlaced);
+	GX_SetDispCopySrc(0,0,rmodePtr->fbWidth,rmodePtr->efbHeight);
 	float yscale = GX_GetYScaleFactor(rmodePtr->efbHeight, rmodePtr->xfbHeight);
 	uint32_t xfbHeight = GX_SetDispCopyYScale(yscale);
-	GX_SetScissor(0, 0, rmodePtr->fbWidth, rmodePtr->efbHeight);
-	GX_SetDispCopySrc(0,0,rmodePtr->fbWidth,rmodePtr->efbHeight);
 	GX_SetDispCopyDst(rmodePtr->fbWidth, xfbHeight);
 	GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
 	

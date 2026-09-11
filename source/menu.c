@@ -168,8 +168,13 @@ static void *menu_preSetupThread(void *args) {
 
 void menu_deInit() {
 	// cleanup for any specific submenus...
-	freeExternalJsonList();
-	freeBuiltinJsonList();
+	// did the initialization job ever finish?
+	if (menuInit == MENU_POST_INIT) {
+		freeExternalJsonList();
+		freeBuiltinJsonList();
+	} else {
+		LWP_SuspendThread(menu_setup_thread);
+	}
 	#ifndef DEBUGLOG
 	free(workarea);
 	#endif
