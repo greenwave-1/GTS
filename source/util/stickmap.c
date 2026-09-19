@@ -2,6 +2,53 @@
 // Created on 3/9/26.
 //
 
+// OH BOY THIS IS A BIG ONE
+// there's a ton of stuff going on here:
+// json parsing, coordinate calcs, memory allocations, texture gen threads...
+
+// TODO: there's a better way to organize this
+//  separate coordinate and stickmap logic from json parsing?
+//  maybe also separate stickmap loading stuff?
+//  maybe just suck less?
+
+// below is the general flow for json file to stickmap object w/ coordinate list or texture
+// (mainly doing this because i need a clearer picture of whats going on to try and make memory less dumb:
+// json file:
+//  - read into char* via file.c readFile()
+//  - there is an (arbitrary) file size limit of ~250KB
+// char* of file contents:
+//  - parse for json data, into json_t*
+//  - i _think_ memory for json_t stuff isn't a problem?
+// json_t*:
+//  - two main things, identify type, and has data to be converted
+//  - TODO: json_decref() root and other jansson vars
+// struct Stickmap:
+//  - json_t* root is passed to either readJsonNormal() or readJsonGTS()
+//  - readJsonGTS() is basically a wrapper around readJsonNormal() (it may call readJsonNormal() one or more times)
+//  - if readJsonNormal(), we get a single struct Stickmap*
+//  - if readJsonGTS(), we get an array of struct Stickmap*
+//  - TODO: see if readJsonGTS() can return an array of struct Stickmap (list of object, not list of pointers)
+//    - this doesn't matter as much as coordinate list and texture gen stuff tho...
+//  - Stickmap contains:
+//    - StickmapSubcategory array -> actual data for making stickmap area, basically pulled directly from json data
+//      - uses decodeJsonSubcategory(), here's where a ton of the actual json data conversion is
+//    - StickmapSubcategoryDesc array -> we parse above entries, and group subcategories that make a proper stickmap area
+//      - name, description, and index of where this group starts in the StickmapSubcategory array
+//    - at this point, we don't have a coordinate list or texture allocated, we want the bare minimum amount of data right now
+//
+// in theory, we only need to keep the Stickmap stuff, so should i try to allocate the other stuff in a buffer that
+// i can clear? should i have it use the end of the stack via a memspace? the stickmaps _should_ stick around until
+// the program closes, so as long as there aren't enough json files to fill memory, clean management of them shouldn't
+// matter too much...
+//
+// SO, from here, the idea is that the coordinate list and/or the texture will use an already allocated buffer.
+// when a different stickmap is requested to be shown, we generate that coordinate list/texture then and only then.
+// what i'm not sure about yet is: do i want to have room in the buffer for multiple stickmaps to have data ready,
+// or do i want to have the buffer be for ONLY the currently selected file?
+// there's enough memory for it, but idk if i wanna write the memory management...
+// thank you for coming to my ted talk
+
+
 #include "util/stickmap.h"
 
 #include <math.h>
@@ -199,6 +246,9 @@ enum STICKMAP_JSON_TYPE identifyJson(const char jsonFile[], json_t **root) {
 			else if (json_is_integer(normalToken)) {
 				retVal = STICKMAP_TYPE_NORMAL;
 			}
+			// just to be safe...
+			json_decref(gtsToken);
+			json_decref(normalToken);
 		}
 	}
 	
@@ -206,6 +256,10 @@ enum STICKMAP_JSON_TYPE identifyJson(const char jsonFile[], json_t **root) {
 }
 
 static bool decodeJsonSubcategory(StickmapSubcategory *target, json_t *data) {
+	if (target == NULL) {
+		return false;
+	}
+
 	target->coordList = NULL;
 	target->numOfCoords = 0;
 	
@@ -294,9 +348,10 @@ static bool decodeJsonSubcategory(StickmapSubcategory *target, json_t *data) {
 			return false;
 		}
 		target->magnitudeMax = json_integer_value(dataFromJson);
+		return true;
 	}
-	
-	return true;
+
+	return false;
 }
 
 // dumb
@@ -604,7 +659,7 @@ void loadBuiltinStickmaps() {
 
 		// start texture generation
 		generateStickmapTextureAsync(plot2dStickmaps, plot2dStickmapsLen);
-		
+
 		jsonType = identifyJson((char *) coordview_stickmaps_json, &root);
 
 		if (jsonType != STICKMAP_TYPE_GTS) {

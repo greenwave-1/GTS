@@ -167,6 +167,8 @@ FILE *openFile(char *filename, char *modes) {
 	return retFile;
 }
 
+// TODO: should this use a static buffer since we have a file size restriction?
+//  possible issue wrt different access times but i dont think i keep any files read 'in' around for long...
 char* readFile(FILE *inFile, int *length) {
 	if (inFile == NULL) {
 		return NULL;
@@ -222,6 +224,8 @@ char** getFilesystemJson(int *len) {
 		dirList = readdir(jsonDir);
 	}
 
+	closedir(jsonDir);
+
 	if (counter == 0) {
 		return NULL;
 	}
@@ -254,6 +258,8 @@ char** getFilesystemJson(int *len) {
 
 		dirList = readdir(jsonDir);
 	}
+
+	closedir(jsonDir);
 
 	if (*len != counter) {
 		*len = 0;
