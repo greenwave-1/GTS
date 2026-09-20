@@ -230,25 +230,24 @@ enum STICKMAP_JSON_TYPE identifyJson(const char jsonFile[], json_t **root) {
 	
 	json_error_t jsonError;
 	*root = json_loads(jsonFile, 0, &jsonError);
-	
+
 	if (json_is_array(*root)) {
 		// check if this is formatted for gts
 		json_t *data = json_array_get(*root, 0);
 		if (json_is_object(data)) {
-			json_t *gtsToken = json_object_get(data, "format_gts");
-			json_t *normalToken = json_object_get(data, "displayMode");
+			json_t *token = NULL;
 			
 			// check for gts specific token
-			if (json_is_boolean(gtsToken) && json_boolean_value(gtsToken)) {
+			json_object_get(data, "format_gts");
+			if (json_is_boolean(token) && json_boolean_value(token)) {
 				retVal = STICKMAP_TYPE_GTS;
 			}
+
 			// check for random field that is likely to indicate altimor stickmap format
-			else if (json_is_integer(normalToken)) {
+			token = json_object_get_new(data, "displayMode");
+			else if (json_is_integer(token)) {
 				retVal = STICKMAP_TYPE_NORMAL;
 			}
-			// just to be safe...
-			json_decref(gtsToken);
-			json_decref(normalToken);
 		}
 	}
 	
@@ -788,6 +787,10 @@ void loadExternalJsonList() {
 					if (externalStickmaps[externalStickmapsLen].stickmapArrLen > 0) {
 						externalStickmapsLen++;
 					}
+
+					// free memory
+					// apparently this is all that's needed since i'm only getting converted values or borrowed refs?
+					json_decref(root);
 				}
 			}
 		}
