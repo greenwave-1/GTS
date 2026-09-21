@@ -232,19 +232,22 @@ enum STICKMAP_JSON_TYPE identifyJson(const char jsonFile[], json_t **root) {
 	*root = json_loads(jsonFile, 0, &jsonError);
 
 	if (json_is_array(*root)) {
-		json_t *gtsToken = json_object_get(data, "format_gts");
-		json_t *normalToken = json_object_get(data, "displayMode");
+		json_t *data = json_array_get(*root, 0);
+		if (json_is_object(data)) {
+			json_t *gtsToken = json_object_get(data, "format_gts");
+			json_t *normalToken = json_object_get(data, "displayMode");
 
-		// check for gts specific token
-		if (json_is_boolean(gtsToken) && json_boolean_value(gtsToken)) {
-			retVal = STICKMAP_TYPE_GTS;
-		}
-		// check for random field that is likely to indicate altimor stickmap format
-		else if (json_is_integer(normalToken)) {
-			retVal = STICKMAP_TYPE_NORMAL;
+			// check for gts specific token
+			if (json_is_boolean(gtsToken) && json_boolean_value(gtsToken)) {
+				retVal = STICKMAP_TYPE_GTS;
+			}
+				// check for random field that is likely to indicate altimor stickmap format
+			else if (json_is_integer(normalToken)) {
+				retVal = STICKMAP_TYPE_NORMAL;
+			}
 		}
 	}
-	
+
 	return retVal;
 }
 

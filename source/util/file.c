@@ -74,26 +74,28 @@ enum FS_DEVICE_LIST getCurrentDevice() {
 
 bool attemptOpenDevice(enum FS_DEVICE_LIST device) {
 	bool ret = false;
-	switch (device) {
-		case DEVICE_CARD_A:
-			ret = (chdir("carda:/") == 0);
-			break;
-		case DEVICE_CARD_B:
-			ret = (chdir("cardb:/") == 0);
-			break;
-		case DEVICE_GC_SP2:
-		case DEVICE_WII_SD:
-			ret = (chdir("sd:/") == 0);
-			break;
-		case DEVICE_WII_USB:
-			ret = (chdir("usb:/") == 0);
-			break;
-		default:
-			break;
-	}
-	
-	if (ret) {
-		identifyCurrentDevice();
+	if (initFilesystem()) {
+		switch (device) {
+			case DEVICE_CARD_A:
+				ret = (chdir("carda:/") == 0);
+				break;
+			case DEVICE_CARD_B:
+				ret = (chdir("cardb:/") == 0);
+				break;
+			case DEVICE_GC_SP2:
+			case DEVICE_WII_SD:
+				ret = (chdir("sd:/") == 0);
+				break;
+			case DEVICE_WII_USB:
+				ret = (chdir("usb:/") == 0);
+				break;
+			default:
+				break;
+		}
+
+		if (ret) {
+			identifyCurrentDevice();
+		}
 	}
 	
 	return ret;
@@ -170,6 +172,10 @@ FILE *openFile(char *filename, char *modes) {
 // TODO: should this use a static buffer since we have a file size restriction?
 //  possible issue wrt different access times but i dont think i keep any files read 'in' around for long...
 char* readFile(FILE *inFile, int *length) {
+	if (!initFilesystem()) {
+		return NULL;
+	}
+
 	if (inFile == NULL) {
 		return NULL;
 	}
