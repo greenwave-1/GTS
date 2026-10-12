@@ -69,16 +69,18 @@
 #include "plot2d_stickmaps_json.h"
 #include "coordview_stickmaps_json.h"
 
+// defining an arbitrary upper limit to memory, just in case...
 // TODO: this is probably VERY wrong
 //  find out what the proper way is...
+
+#ifdef HW_DOL
+#define MAX_ALLOWED_SIZE 18'000'000
+#else
+#define MAX_ALLOWED_SIZE 75'000'000
+#endif
+
 static int getFreeMem() {
-	int retVal = 0;
-	#ifdef HW_DOL
-	retVal = SYS_GetArena1Size();
-	#else
-	retVal = mallinfo().fordblks;
-	#endif
-	return retVal;
+	return MAX_ALLOWED_SIZE - malloc_footprint();
 }
 
 static enum TEX_GEN_ASYNC_STATE texGenState = TEX_ASYNC_INIT;
