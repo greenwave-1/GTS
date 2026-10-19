@@ -64,7 +64,7 @@ Accept the defaults when prompted.
 a distributable zip file for wii
 
 ## Reporting Problems:
-For problems, open an issue. Be sure to check `CONTRIBUTING.md` to make things easier. Please don't DM me. 
+For problems, open an issue. Be sure to check `CONTRIBUTING.md` to make things easier. 
 
 ## Why?
 Originally, I wanted a test program that worked on Gamecube, since SmashScope was for Wii only. I got motivation to
