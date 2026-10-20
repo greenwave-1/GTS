@@ -69,6 +69,25 @@
 #include "plot2d_stickmaps_json.h"
 #include "coordview_stickmaps_json.h"
 
+// limits defined below _should_ keep gts from running out of memory
+
+// well above the actual number of valid coords, but eh
+#define STICKMAP_COORD_NUM_MAX 25'000
+
+// total stickmaps allowed to be in one json file
+#define STICKMAP_FILE_MAX 25
+
+// the thought here is that two stickmaps can be loaded at a time, and with the limits defined as above,
+// we'll know the max amount of memory they can use
+// for a given file
+
+// 25 stickmaps total:
+// - 25'000 coord pairs allowed, ~50KB per, ~1.25MB total
+// - 25 stickmap textures allowed, ~130KB per (round up to 150KB because eh), ~3.75MB
+// - so ideally, ~5MB MAX per stickmap fully loaded into memory
+// (this will actually be lower, since there isn't a situation where both are generated for one file,
+//  but again, this is meant as an absolute max)
+
 // defining an arbitrary upper limit to memory, just in case...
 // TODO: this is probably VERY wrong
 //  find out what the proper way is...
@@ -670,7 +689,7 @@ void loadBuiltinStickmaps() {
 			Stickmap *s = coordViewStickmaps[i];
 			getStickmapCoordNum(s);
 			// allocate buffer
-			if (s->totalCoords > 0 && s->totalCoords < 25000) {
+			if (s->totalCoords > 0 && s->totalCoords < STICKMAP_COORD_NUM_MAX) {
 				s->stickmapBufferStart = malloc( sizeof(int8_t[2]) * s->totalCoords );
 			}
 
@@ -808,21 +827,21 @@ ExternalStickmap* getExternalJsonList(int *length) {
 }
 
 // we create one big buffer and subdivide it ourselves
+// TODO: make this reuse an existing buffer instead of reallocating
 static void createExternalStickmapCoordList(ExternalStickmap *target) {
 	// get total coords if we haven't already
 	if (target->coordBufferSize == 0) {
 		for (int i = 0; i < target->stickmapArrLen; i++) {
 			getStickmapCoordNum(target->stickmapArr[i]);
-			if (target->stickmapArr[i]->totalCoords > 0) {
+			if (target->stickmapArr[i]->totalCoords > 0 && target->stickmapArr[i]->totalCoords < STICKMAP_COORD_NUM_MAX) {
 				target->coordBufferSize += target->stickmapArr[i]->totalCoords;
 			}
 		}
 	}
 
-	// arbitrary size restriction, 5MB
-	// each coord is a pair
-	if (target->coordBuffer == NULL && target->coordBufferSize > 0 && target->coordBufferSize < (2500000)) {
-		target->coordBuffer = malloc( sizeof(int8_t[2]) * target->coordBufferSize );
+	// actual size is double the stored coordBufferSize, since they are coordinate pairs
+	if (target->coordBuffer == NULL && target->coordBufferSize > 0 && target->coordBufferSize < (STICKMAP_COORD_NUM_MAX * STICKMAP_FILE_MAX)) {
+		target->coordBuffer = malloc( sizeof(int8_t) * 2 * target->coordBufferSize );
 	}
 
 	if (target->coordBuffer != NULL) {
@@ -836,6 +855,8 @@ static void createExternalStickmapCoordList(ExternalStickmap *target) {
 	}
 }
 
+// TODO: make this reuse an existing buffer instead of freeing
+//  basically, remove pointers from *target
 static void destroyExternalStickmapCoordList(ExternalStickmap *target) {
 	if (target->coordBuffer != NULL) {
 		// unset all references to buffer first
