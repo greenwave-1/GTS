@@ -302,9 +302,19 @@ bool menu_runMenu() {
 		// change bottom message depending on what menu we are in
 		switch (currentMenu) {
 			case MAIN_MENU:
-				printStr("Press Start");
-				drawFontButton(FONT_START);
-				printStr("to exit.");
+                if (*pressed == 0 && *held == PAD_BUTTON_START && !startHeldAfter) {
+                    printStr("Exiting");
+                    printEllipse(startHeldCounter, 20);
+                    // exit the program if start is held
+                    startHeldCounter++;
+                    if (startHeldCounter > 61) {
+                        return true;
+                    }
+                } else {
+                    printStr("Hold Start");
+                    drawFontButton(FONT_START);
+                    printStr("to exit.");
+                }
 				int col = 52 - (sizeof(VERSION_NUMBER));
 				if (col > 25) {
 					setCursorPos(22, col);
@@ -359,10 +369,9 @@ bool menu_runMenu() {
 		}
 		bHeldCounter = 0;
 	}
-	
-	// exit the program if start is pressed
-	if (*pressed == PAD_BUTTON_START && currentMenu == MAIN_MENU) {
-		return true;
+
+	if (startHeldCounter > 0 && *held ^ PAD_BUTTON_START) {
+		startHeldCounter = 0;
 	}
 
 	// default case, tells main.c while loop to continue
