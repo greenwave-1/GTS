@@ -379,9 +379,6 @@ void menu_drawHeader() {
 	#endif
 		switch(currentMenu) {
 			case MAIN_MENU:
-				if (mainMenuDraw) {
-					menu_mainMenuDraw();
-				}
 				printStr("GCC Test Suite");
 				break;
 			case THANKS_PAGE:
@@ -619,6 +616,10 @@ void menu_mainMenu() {
 	} else {
 		thanksPageCounter = 0;
 	}
+
+    if (mainMenuDraw) {
+        menu_mainMenuDraw();
+    }
 	
 	if (PAD_ButtonsDown(1) == PAD_TRIGGER_Z) {
 		mainMenuDraw = !mainMenuDraw;
