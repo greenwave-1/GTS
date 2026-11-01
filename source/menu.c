@@ -430,6 +430,7 @@ bool menu_runMenu() {
 // done this way so that it can be drawn anytime, even during exit fadeout
 void menu_drawHeader() {
 	resetCursor();
+
 	switch (currentMenu) {
 		case THANKS_PAGE:
 			drawDateSpecial(DATE_PM, THANKS_PAGE);
