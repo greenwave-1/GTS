@@ -349,19 +349,19 @@ bool menu_runMenu() {
 		switch (currentMenu) {
 			case MAIN_MENU:
 			case ERR:
-                if (*pressed == 0 && *held == PAD_BUTTON_START && !startHeldAfter) {
-                    printStr("Exiting");
-                    printEllipse(startHeldCounter, 20);
-                    // exit the program if start is held
-                    startHeldCounter++;
-                    if (startHeldCounter > 61) {
-                        return true;
-                    }
-                } else {
-                    printStr("Hold Start");
-                    drawFontButton(FONT_START);
-                    printStr("to exit.");
-                }
+				if (*pressed == 0 && *held == PAD_BUTTON_START && !startHeldAfter) {
+					printStr("Exiting");
+					printEllipse(startHeldCounter, 20);
+					// exit the program if start is held
+					startHeldCounter++;
+					if (startHeldCounter > 61) {
+						return true;
+					}
+				} else {
+					printStr("Hold Start");
+					drawFontButton(FONT_START);
+					printStr("to exit.");
+				}
 				
 				int col = 52 - (sizeof(VERSION_NUMBER));
 				if (col > 25) {
@@ -666,10 +666,10 @@ void menu_mainMenu() {
 	} else {
 		thanksPageCounter = 0;
 	}
-
-    if (mainMenuDraw) {
-        menu_mainMenuDraw();
-    }
+	
+	if (mainMenuDraw) {
+		menu_mainMenuDraw();
+	}
 	
 	if (PAD_ButtonsDown(2) == PAD_TRIGGER_Z) {
 		mainMenuDraw = !mainMenuDraw;
